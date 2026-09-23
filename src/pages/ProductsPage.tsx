@@ -23,7 +23,7 @@ import { useToast } from '../contexts/ToastContext';
 import {
   type VariantGroup, type VariantOption, type AddonGroup, type AddonOption,
   type StepNum, type ScheduleState, type SpecialInfoItem,
-  StepIndicator, Step1Basics, Step2SpecialInfo, Step3Categories, Step4Customise, Step5Schedule, Step6Review,
+  StepIndicator, Step1Basics, StepSpecialInfo, StepCategories, Step4Customise, Step5Schedule, Step6Review,
 } from './ProductWizardSteps';
 import { LucideIconByName } from '../components/ui/IconPicker';
 
@@ -584,10 +584,10 @@ function ProductEditView({
             <Step1Basics form={form} setForm={setForm} imageFile={imageFile} setImageFile={setImageFile} currencySymbol={currencySymbol} nameError={nameError} descError={descError} existingImageUrl={existingImageUrl} />
           )}
           {step === 2 && (
-            <Step3Categories shopId={shopId} categories={categoriesList} selectedCategoryIds={selectedCategoryIds} setSelectedCategoryIds={setSelectedCategoryIds} taxRates={taxRatesList} selectedTaxRateId={selectedTaxRateId} setSelectedTaxRateId={setSelectedTaxRateId} categoryError={categoryError} taxRateError={taxRateError} hideTaxRate={mode === 'simple'} />
+            <StepCategories shopId={shopId} categories={categoriesList} selectedCategoryIds={selectedCategoryIds} setSelectedCategoryIds={setSelectedCategoryIds} taxRates={taxRatesList} selectedTaxRateId={selectedTaxRateId} setSelectedTaxRateId={setSelectedTaxRateId} categoryError={categoryError} taxRateError={taxRateError} hideTaxRate={mode === 'simple'} />
           )}
           {step === 3 && (
-            <Step2SpecialInfo specialInfo={specialInfo} setSpecialInfo={setSpecialInfo} />
+            <StepSpecialInfo specialInfo={specialInfo} setSpecialInfo={setSpecialInfo} />
           )}
           {step === 4 && (
             <Step4Customise variantGroups={variantGroups} addVariantGroup={addVariantGroup} removeVariantGroup={removeVariantGroup} updateVariantGroupName={updateVariantGroupName} addVariantOption={addVariantOption} removeVariantOption={removeVariantOption} updateVariantOption={updateVariantOption} addonGroups={addonGroups} addAddonGroup={addAddonGroup} removeAddonGroup={removeAddonGroup} updateAddonGroup={updateAddonGroup} addAddonOption={addAddonOption} removeAddonOption={removeAddonOption} updateAddonOption={updateAddonOption} />
@@ -893,8 +893,8 @@ function AddProductModal({ shopId, onClose }: AddProductModalProps) {
             )}
             <div key={step} className={direction === 'forward' ? 'animate-slide-in-right' : 'animate-slide-in-left'}>
               {step === 1 && <Step1Basics form={form} setForm={setForm} imageFile={imageFile} setImageFile={setImageFile} currencySymbol={currencySymbol} nameError={nameError} descError={descError} />}
-              {step === 2 && <Step3Categories shopId={shopId} categories={categoriesList} selectedCategoryIds={selectedCategoryIds} setSelectedCategoryIds={setSelectedCategoryIds} taxRates={taxRatesList} selectedTaxRateId={selectedTaxRateId} setSelectedTaxRateId={setSelectedTaxRateId} categoryError={categoryError} taxRateError={taxRateError} hideTaxRate={mode === 'simple'} />}
-              {step === 3 && <Step2SpecialInfo specialInfo={specialInfo} setSpecialInfo={setSpecialInfo} />}
+              {step === 2 && <StepCategories shopId={shopId} categories={categoriesList} selectedCategoryIds={selectedCategoryIds} setSelectedCategoryIds={setSelectedCategoryIds} taxRates={taxRatesList} selectedTaxRateId={selectedTaxRateId} setSelectedTaxRateId={setSelectedTaxRateId} categoryError={categoryError} taxRateError={taxRateError} hideTaxRate={mode === 'simple'} />}
+              {step === 3 && <StepSpecialInfo specialInfo={specialInfo} setSpecialInfo={setSpecialInfo} />}
               {step === 4 && <Step4Customise variantGroups={variantGroups} addVariantGroup={addVariantGroup} removeVariantGroup={removeVariantGroup} updateVariantGroupName={updateVariantGroupName} addVariantOption={addVariantOption} removeVariantOption={removeVariantOption} updateVariantOption={updateVariantOption} addonGroups={addonGroups} addAddonGroup={addAddonGroup} removeAddonGroup={removeAddonGroup} updateAddonGroup={updateAddonGroup} addAddonOption={addAddonOption} removeAddonOption={removeAddonOption} updateAddonOption={updateAddonOption} />}
               {step === 6 && <Step6Review form={form} imageFile={imageFile} selectedCategoryIds={selectedCategoryIds} categories={categoriesList} taxRates={taxRatesList} selectedTaxRateId={selectedTaxRateId} variantGroups={variantGroups} addonGroups={addonGroups} currencySymbol={currencySymbol} specialInfo={specialInfo} />}
             </div>

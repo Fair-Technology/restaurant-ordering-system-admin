@@ -20,7 +20,7 @@ import { useToast } from '../contexts/ToastContext';
 import {
   type VariantGroup, type VariantOption, type AddonGroup, type AddonOption,
   type StepNum, type SpecialInfoItem,
-  StepIndicator, Step1Basics, Step2SpecialInfo, Step3Categories, Step4Customise, Step6Review,
+  StepIndicator, Step1Basics, StepSpecialInfo, StepCategories, Step4Customise, Step6Review,
 } from './ProductWizardSteps';
 
 export function EditProductPage() {
@@ -51,7 +51,7 @@ export function EditProductPage() {
   const [step, setStep] = useState<StepNum>(1);
   const [direction, setDirection] = useState<'forward' | 'back'>('forward');
 
-  const stepSequence: StepNum[] = mode === 'simple' ? [1, 3, 6] : [1, 2, 3, 4, 6];
+  const stepSequence: StepNum[] = mode === 'simple' ? [1, 2, 6] : [1, 2, 3, 4, 6];
   const isFirstStep = step === stepSequence[0];
   const isLastStep = step === stepSequence[stepSequence.length - 1];
 
@@ -169,7 +169,7 @@ export function EditProductPage() {
       setDescError(de);
       return !ne && !de;
     }
-    if (s === 3) {
+    if (s === 2) {
       const hasNoCategory = selectedCategoryIds.length === 0;
       const hasNoTax = mode === 'extended' && hasTaxRates && selectedTaxRateId === null;
       setCategoryError(hasNoCategory);
@@ -316,7 +316,7 @@ export function EditProductPage() {
             />
           )}
           {step === 2 && (
-            <Step3Categories
+            <StepCategories
               shopId={shopId!}
               categories={categoriesList}
               selectedCategoryIds={selectedCategoryIds}
@@ -330,7 +330,7 @@ export function EditProductPage() {
             />
           )}
           {step === 3 && (
-            <Step2SpecialInfo specialInfo={specialInfo} setSpecialInfo={setSpecialInfo} />
+            <StepSpecialInfo specialInfo={specialInfo} setSpecialInfo={setSpecialInfo} />
           )}
           {step === 4 && (
             <Step4Customise
@@ -380,7 +380,7 @@ export function EditProductPage() {
           <>
             <MyButton type="button" variant="secondary" onClick={goBack}>← {t('products.wizardBack')}</MyButton>
             <div className="flex-1" />
-            {mode === 'extended' && (step === 2 || step === 4) && (
+            {mode === 'extended' && (step === 3 || step === 4) && (
               <MyButton type="button" variant="ghost" onClick={goNext}>{t('products.wizardSkip')}</MyButton>
             )}
             <MyButton type="button" onClick={goNext}>{t('products.wizardNext')} →</MyButton>

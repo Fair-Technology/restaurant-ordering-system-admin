@@ -216,7 +216,7 @@ interface Step2Props {
   setSpecialInfo: (items: SpecialInfoItem[]) => void;
 }
 
-export function Step2SpecialInfo({ specialInfo, setSpecialInfo }: Step2Props) {
+export function StepSpecialInfo({ specialInfo, setSpecialInfo }: Step2Props) {
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [dropdownStyle, setDropdownStyle] = useState<{ top: number; left: number; width: number }>({ top: 0, left: 0, width: 0 });
@@ -341,7 +341,7 @@ interface Step3Props {
   hideTaxRate?: boolean;
 }
 
-export function Step3Categories({
+export function StepCategories({
   shopId,
   categories,
   selectedCategoryIds,
