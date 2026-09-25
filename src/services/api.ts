@@ -613,8 +613,6 @@ export type ShopResponse = {
   callerPermissions?: string[];
   /** ISO 3166-1 alpha-2 country code (e.g. "AU", "DE") */
   countryCode?: string;
-  /** Tax rates seeded from country on shop creation */
-  taxRates?: { id?: string; label?: string; rate?: number }[];
   /** Menu languages offered by this shop; first entry is the original language */
   menuLanguages?: MenuLanguage[];
   /** Industry / business type */

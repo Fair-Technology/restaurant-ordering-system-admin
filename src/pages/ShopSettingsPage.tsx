@@ -18,6 +18,11 @@ import { CurrencyInput } from '../components/ui/CurrencyInput';
 import { useToast } from '../contexts/ToastContext';
 import { PaymentsCard } from '../components/shop/PaymentsCard';
 import { accentContrastOnWhite, contrastRatio } from '../utils/contrast';
+import { useShopReferenceLists } from '../features/menu/useShopReferenceLists';
+import { formatRate, labelFor } from '../features/menu/foodInfo';
+import type { MenuLanguage } from '../services/api';
+
+const MENU_LANGUAGES: MenuLanguage[] = ['de', 'en'];
 
 type DayKey = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 type TimeSlot = { open: string; close: string };
@@ -39,7 +44,7 @@ const inputClass = 'w-full border border-gray-200 rounded-lg bg-white text-gray-
 
 export function ShopSettingsPage() {
   const { shopId } = useParams<{ shopId: string }>();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const toast = useToast();
   const { data: shop, isLoading, isError, refetch } = useGetShopByIdQuery(
     { shopId: shopId! },
@@ -58,6 +63,7 @@ export function ShopSettingsPage() {
   const [updateShop] = useUpdateShopMutation();
   const [requestShopNameChange] = useRequestShopNameChangeMutation();
   const [cancelShopNameChange] = useCancelShopNameChangeMutation();
+  const { refs } = useShopReferenceLists(shopId!);
 
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -100,6 +106,9 @@ export function ShopSettingsPage() {
   const [isSavingAddress, setIsSavingAddress] = useState(false);
   const [addressError, setAddressError] = useState<string | null>(null);
 
+  const [languagesState, setLanguagesState] = useState<MenuLanguage[] | null>(null);
+  const [isSavingLanguages, setIsSavingLanguages] = useState(false);
+
   if (isLoading) return <MySpinner label={t('shops.loadingSettings')} />;
   if (isError || !shop) return <p className="text-red-500">{t('shops.failedToLoadShop')}</p>;
 
@@ -138,6 +147,25 @@ export function ShopSettingsPage() {
     state: shop.address?.state ?? '',
     postcode: shop.address?.postcode ?? '',
     country: shop.address?.country ?? '',
+  };
+
+  const originalLanguage: MenuLanguage = shop.menuLanguages?.[0] ?? 'de';
+  const currentLanguages = languagesState ?? shop.menuLanguages ?? [originalLanguage];
+
+  const handleSaveLanguages = async () => {
+    setIsSavingLanguages(true);
+    try {
+      await updateShop({
+        shopId: shopId!,
+        updateShopRequest: { menuLanguages: currentLanguages },
+      }).unwrap();
+      refetch();
+      toast.success(t('shops.menuLanguagesSaved'));
+    } catch {
+      toast.error(t('shops.menuLanguagesFailed'));
+    } finally {
+      setIsSavingLanguages(false);
+    }
   };
 
   const DAYS: { key: DayKey; label: string }[] = [
@@ -620,31 +648,97 @@ export function ShopSettingsPage() {
       {/* Payments card */}
       <PaymentsCard shop={shop} onRefetch={refetch} />
 
-      {/* Tax Rates card */}
+      {/* Menu languages card */}
       <MyCard className="p-5 space-y-3">
         <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-          {t('shops.taxRatesTitle')}
+          {t('shops.menuLanguagesTitle')}
         </p>
-        {(shop.taxRates ?? []).length === 0 ? (
-          <p className="text-sm text-gray-400">{t('shops.taxRatesEmpty')}</p>
-        ) : (
+        <p className="text-sm text-gray-700">
+          {t('shops.menuLanguagesOriginal', { language: t(`shops.languageName.${originalLanguage}`) })}
+        </p>
+        <div className="space-y-2">
+          {MENU_LANGUAGES.filter((lang) => lang !== originalLanguage).map((lang) => (
+            <label key={lang} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={currentLanguages.includes(lang)}
+                onChange={(e) =>
+                  setLanguagesState(
+                    e.target.checked
+                      ? [...currentLanguages, lang]
+                      : currentLanguages.filter((l) => l !== lang),
+                  )
+                }
+                className="accent-gray-900"
+              />
+              {t(`shops.languageName.${lang}`)}
+            </label>
+          ))}
+        </div>
+        <p className="text-xs text-gray-400">
+          {t('shops.menuLanguagesHelp', { original: t(`shops.languageName.${originalLanguage}`) })}
+        </p>
+        <div className="border-t border-gray-200 pt-4">
+          <MyButton onClick={handleSaveLanguages} disabled={isSavingLanguages}>
+            {isSavingLanguages ? t('shops.menuLanguagesSaving') : t('shops.menuLanguagesSave')}
+          </MyButton>
+        </div>
+      </MyCard>
+
+      {/* Tax classes card */}
+      <MyCard className="p-5 space-y-3">
+        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+          {t('shops.taxClassesTitle')}
+        </p>
+        {!refs || refs.taxClasses.filter((c) => c.isActive).length === 0 ? (
+          <p className="text-sm text-gray-400">{t('shops.taxClassesEmpty', { country: shop.countryCode ?? '' })}</p>
+        ) : refs.taxRatesUniformAcrossModes ? (
           <div className="space-y-0">
-            {(shop.taxRates ?? []).map((rate) => (
-              <div
-                key={rate.id}
-                className="flex items-center justify-between border-t border-gray-200 py-2.5 first:border-t-0 first:pt-0"
-              >
-                <span className="text-sm text-gray-700">{rate.label}</span>
-                <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-500 font-mono">
-                  {rate.rate != null ? `${(rate.rate * 100).toFixed(1).replace(/\.0$/, '')}%` : '—'}
-                </span>
-              </div>
-            ))}
+            {refs.taxClasses.filter((c) => c.isActive).map((c) => {
+              const rates = refs.currentTaxRates.find((r) => r.taxClassId === c.id)?.rates;
+              return (
+                <div
+                  key={c.id}
+                  className="flex items-center justify-between border-t border-gray-200 py-2.5 first:border-t-0 first:pt-0"
+                >
+                  <span className="text-sm text-gray-700">{labelFor(c.labels, i18n.language)}</span>
+                  <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-500 font-mono">
+                    {formatRate(rates?.collection ?? null)}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-xs text-gray-400 uppercase tracking-wide">
+                  <th className="text-left font-medium py-1.5" />
+                  <th className="text-right font-medium py-1.5">{t('shops.taxModeCollection')}</th>
+                  <th className="text-right font-medium py-1.5">{t('shops.taxModeDelivery')}</th>
+                  <th className="text-right font-medium py-1.5">{t('shops.taxModeDineIn')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {refs.taxClasses.filter((c) => c.isActive).map((c) => {
+                  const rates = refs.currentTaxRates.find((r) => r.taxClassId === c.id)?.rates;
+                  return (
+                    <tr key={c.id} className="border-t border-gray-200">
+                      <td className="py-2 text-gray-700">{labelFor(c.labels, i18n.language)}</td>
+                      <td className="py-2 text-right font-mono text-xs text-gray-500">{formatRate(rates?.collection ?? null)}</td>
+                      <td className="py-2 text-right font-mono text-xs text-gray-500">{formatRate(rates?.delivery ?? null)}</td>
+                      <td className="py-2 text-right font-mono text-xs text-gray-500">{formatRate(rates?.dine_in ?? null)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
         {shop.countryCode && (
           <p className="text-xs text-gray-400">
-            {t('shops.taxRatesNote', { country: shop.countryCode })}
+            {t('shops.taxClassesNote', { country: shop.countryCode })}
           </p>
         )}
       </MyCard>
