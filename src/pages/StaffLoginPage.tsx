@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { useNavigate, useParams, Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useStaffLoginMutation } from '../services/api';
-import { readStaffSession, writeStaffSession } from '../features/staff/staffSession';
+import { useDispatch } from 'react-redux';
+import { readStaffSession } from '../features/staff/staffSession';
+import { startStaffSession } from '../features/staff/startStaffSession';
 import { MyCard } from '../components/ui/MyCard';
 import { MyButton } from '../components/ui/MyButton';
 import { MyInput } from '../components/ui/MyInput';
@@ -11,6 +13,7 @@ export function StaffLoginPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const dispatch = useDispatch();
   const [staffLogin, { isLoading }] = useStaffLoginMutation();
 
   const [username, setUsername] = useState('');
@@ -29,7 +32,7 @@ export function StaffLoginPage() {
       const result = await staffLogin({
         staffLoginRequest: { shopSlug: slug ?? '', username, password },
       }).unwrap();
-      writeStaffSession(result);
+      startStaffSession(dispatch, result);
       navigate(`/shops/${result.shopId}/orders`, { replace: true });
     } catch (err) {
       const code = (err as { data?: { error?: string } })?.data?.error;
