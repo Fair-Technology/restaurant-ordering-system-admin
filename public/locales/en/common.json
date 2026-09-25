@@ -440,6 +440,8 @@
     "name": "Name",
     "namePlaceholder": "Category name",
     "hasStar": "Show star icon",
+    "taxClass": "Tax class",
+    "taxClassHelp": "Every dish in this category inherits this tax class.",
     "deleteTypeToConfirm": "Type \"{{name}}\" to confirm",
     "created": "Category created.",
     "saved": "Category saved.",

@@ -440,6 +440,8 @@
     "name": "Name",
     "namePlaceholder": "Kategoriename",
     "hasStar": "Stern-Symbol anzeigen",
+    "taxClass": "Steuerklasse",
+    "taxClassHelp": "Alle Gerichte in dieser Kategorie übernehmen diese Steuerklasse.",
     "deleteTypeToConfirm": "Geben Sie \"{{name}}\" zur Bestätigung ein",
     "created": "Kategorie erstellt.",
     "saved": "Kategorie gespeichert.",

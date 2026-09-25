@@ -9,11 +9,13 @@ import { MyInput } from '../components/ui/MyInput';
 import { MySpinner } from '../components/ui/MySpinner';
 import { Breadcrumb } from '../components/ui/Breadcrumb';
 import { useToast } from '../contexts/ToastContext';
+import { useShopReferenceLists } from '../features/menu/useShopReferenceLists';
+import { labelFor } from '../features/menu/foodInfo';
 
 export function EditCategoryPage() {
   const { shopId, categoryId } = useParams<{ shopId: string; categoryId: string }>();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const toast = useToast();
 
   const { data: shop } = useGetShopByIdQuery({ shopId: shopId! });
@@ -25,9 +27,11 @@ export function EditCategoryPage() {
     useUpdateCategoryMutation();
   const [deleteCategory, { isLoading: isDeleting, isError: isDeleteError }] =
     useDeleteCategoryMutation();
+  const { refs } = useShopReferenceLists(shopId!);
 
   const [name, setName] = useState('');
   const [icon, setIcon] = useState<string | null>(null);
+  const [taxClassId, setTaxClassId] = useState('');
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleteConfirmName, setDeleteConfirmName] = useState('');
 
@@ -35,6 +39,7 @@ export function EditCategoryPage() {
     if (category) {
       setName(category.name ?? '');
       setIcon(category.icon ?? null);
+      setTaxClassId(category.taxClassId ?? '');
     }
   }, [category]);
 
@@ -47,7 +52,11 @@ export function EditCategoryPage() {
       await updateCategory({
         shopId: shopId!,
         categoryId: categoryId!,
-        updateCategoryRequest: { name, icon: icon ?? undefined },
+        updateCategoryRequest: {
+          name,
+          icon: icon ?? undefined,
+          ...(taxClassId ? { taxClassId } : {}),
+        },
       }).unwrap();
       toast.success(t('categories.saved'));
       navigate(`/shops/${shopId}/categories`);
@@ -98,6 +107,23 @@ export function EditCategoryPage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
+          {(refs?.taxClasses.length ?? 0) > 0 && (
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-gray-700">{t('categories.taxClass')}</label>
+              <select
+                value={taxClassId}
+                onChange={(e) => setTaxClassId(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg bg-white text-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400"
+              >
+                {refs!.taxClasses.filter((c) => c.isActive).map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {labelFor(c.labels, i18n.language)}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-400">{t('categories.taxClassHelp')}</p>
+            </div>
+          )}
           <div className="flex gap-2">
             <MyButton
               type="button"
