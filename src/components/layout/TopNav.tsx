@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { NavLink, useParams } from 'react-router-dom';
+import { NavLink, useParams, useNavigate } from 'react-router-dom';
 import { useMsal } from '@azure/msal-react';
 import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft, Menu, X,
   Package, ClipboardList, Tag, CreditCard, Settings, Store,
-  Users, History,
+  Users, History, LogOut,
   Circle,
 } from 'lucide-react';
 import {
@@ -14,14 +14,17 @@ import {
   useUpdateShopMutation,
 } from '../../services/api';
 import { shopNavItems } from '../../features/shops/shopNav';
+import { clearStaffSession, readStaffSession } from '../../features/staff/staffSession';
 import { AccountSettingsModal } from './AccountSettingsModal';
 import { GoLiveCriteriaModal, PauseShopModal } from '../shop/GoLiveModal';
 
 export function TopNav() {
   const { shopId } = useParams<{ shopId?: string }>();
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { accounts } = useMsal();
   const user = accounts[0];
+  const staffSession = readStaffSession();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
@@ -52,10 +55,12 @@ export function TopNav() {
 
   const shopNavContent = shopId ? (
     <>
-      <NavLink to="/shops" end className={({ isActive }) => navItemClass(isActive)}>
-        <ArrowLeft size={16} className="flex-shrink-0" />
-        {t('nav.myShops')}
-      </NavLink>
+      {!staffSession && (
+        <NavLink to="/shops" end className={({ isActive }) => navItemClass(isActive)}>
+          <ArrowLeft size={16} className="flex-shrink-0" />
+          {t('nav.myShops')}
+        </NavLink>
+      )}
       {nav.includes('orders') && (
         <>
           {divider}
@@ -157,7 +162,28 @@ export function TopNav() {
   );
 
   // ── User row (shared) ─────────────────────────────────────────────────────
-  const userRow = (
+  const userRow = staffSession ? (
+    <div className="w-full flex items-center gap-2.5 px-1 py-1">
+      <div className="relative w-8 h-8 flex-shrink-0">
+        <div className="w-8 h-8 rounded-full bg-gray-900 flex items-center justify-center">
+          <span className="text-xs font-semibold text-white">
+            {staffSession.username.charAt(0).toUpperCase()}
+          </span>
+        </div>
+      </div>
+      <span className="flex-1 text-xs text-gray-600 truncate">{staffSession.username}</span>
+      <button
+        onClick={() => {
+          clearStaffSession();
+          navigate(`/${staffSession.shopSlug}/staff`);
+        }}
+        aria-label={t('staffLogin.signOut')}
+        className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors flex-shrink-0"
+      >
+        <LogOut size={14} />
+      </button>
+    </div>
+  ) : (
     <button
       onClick={() => setAccountOpen(true)}
       className="w-full flex items-center gap-2.5 px-1 py-1 rounded-xl hover:bg-gray-100 transition-colors text-left"

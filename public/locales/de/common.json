@@ -371,6 +371,35 @@
     "empty": "Noch keine Aktivität.",
     "loadError": "Aktivität konnte nicht geladen werden."
   },
+  "staff": {
+    "title": "Mitarbeiter-Zugänge",
+    "usage": "{{count}} von {{limit}} Zugängen belegt",
+    "username": "Benutzername",
+    "displayName": "Anzeigename (optional)",
+    "password": "Passwort",
+    "role": "Rolle",
+    "roleManager": "Manager",
+    "roleStaff": "Mitarbeiter",
+    "add": "Zugang anlegen",
+    "resetPassword": "Passwort zurücksetzen",
+    "deactivate": "Deaktivieren",
+    "activate": "Aktivieren",
+    "delete": "Löschen",
+    "confirmDelete": "Diesen Zugang löschen?",
+    "locked": "Gesperrt",
+    "inactive": "Inaktiv",
+    "loginUrl": "Anmeldeadresse für Mitarbeiter: {{url}}",
+    "saveFailed": "Speichern fehlgeschlagen. {{error}}",
+    "empty": "Noch keine Mitarbeiter-Zugänge.",
+    "loadError": "Mitarbeiter-Zugänge konnten nicht geladen werden."
+  },
+  "staffLogin": {
+    "title": "Mitarbeiter-Anmeldung",
+    "submit": "Anmelden",
+    "failed": "Benutzername oder Passwort falsch.",
+    "locked": "Zu viele Versuche. Bitte in 15 Minuten erneut versuchen oder den Inhaber bitten, das Passwort zurückzusetzen.",
+    "signOut": "Abmelden"
+  },
   "categories": {
     "addCategory": "+ Neue Kategorie",
     "newCategory": "Neue Kategorie",

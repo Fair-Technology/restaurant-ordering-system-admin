@@ -13,9 +13,12 @@ import { EditProductPage } from '../pages/EditProductPage';
 import { OrdersPage } from '../pages/OrdersPage';
 import { SubscriptionPage } from '../pages/SubscriptionPage';
 import { ActivityPage } from '../pages/ActivityPage';
+import { StaffPage } from '../pages/StaffPage';
+import { StaffLoginPage } from '../pages/StaffLoginPage';
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
+  { path: '/:slug/staff', element: <StaffLoginPage /> },
   {
     element: <RequireAuth />,
     children: [
@@ -33,6 +36,7 @@ export const router = createBrowserRouter([
               { path: 'categories', element: <CategoriesPage /> },
               { path: 'subscription', element: <SubscriptionPage /> },
               { path: 'settings', element: <ShopSettingsPage /> },
+              { path: 'staff', element: <StaffPage /> },
               { path: 'activity', element: <ActivityPage /> },
             ],
           },

@@ -313,6 +313,48 @@ const injectedRtkApi = api.injectEndpoints({
       }),
       providesTags: ['Audit'],
     }),
+    staffLogin: build.mutation<StaffLoginApiResponse, StaffLoginApiArg>({
+      query: (queryArg) => ({
+        url: `/staff/login`,
+        method: "POST",
+        body: queryArg.staffLoginRequest,
+      }),
+    }),
+    listStaff: build.query<ListStaffApiResponse, ListStaffApiArg>({
+      query: (queryArg) => ({ url: `/shops/${queryArg.shopId}/staff` }),
+      providesTags: ['Staff'],
+    }),
+    createStaff: build.mutation<CreateStaffApiResponse, CreateStaffApiArg>({
+      query: (queryArg) => ({
+        url: `/shops/${queryArg.shopId}/staff`,
+        method: "POST",
+        body: queryArg.createStaffRequest,
+      }),
+      invalidatesTags: ['Staff'],
+    }),
+    updateStaff: build.mutation<UpdateStaffApiResponse, UpdateStaffApiArg>({
+      query: (queryArg) => ({
+        url: `/shops/${queryArg.shopId}/staff/${queryArg.staffId}`,
+        method: "PATCH",
+        body: queryArg.updateStaffRequest,
+      }),
+      invalidatesTags: ['Staff'],
+    }),
+    resetStaffPassword: build.mutation<ResetStaffPasswordApiResponse, ResetStaffPasswordApiArg>({
+      query: (queryArg) => ({
+        url: `/shops/${queryArg.shopId}/staff/${queryArg.staffId}/password`,
+        method: "POST",
+        body: queryArg.resetStaffPasswordRequest,
+      }),
+      invalidatesTags: ['Staff'],
+    }),
+    deleteStaff: build.mutation<DeleteStaffApiResponse, DeleteStaffApiArg>({
+      query: (queryArg) => ({
+        url: `/shops/${queryArg.shopId}/staff/${queryArg.staffId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ['Staff'],
+    }),
   }),
   overrideExisting: false,
 });
@@ -1276,6 +1318,77 @@ export type GetAuditEntriesApiArg = {
   pageSize?: number;
 };
 
+export type StaffRole = 'manager' | 'staff';
+export type StaffAccountDto = {
+  id: string;
+  username: string;
+  displayName: string | null;
+  role: StaffRole;
+  isActive: boolean;
+  isLocked: boolean;
+  lastLoginAt: string | null;
+  createdAt: string;
+};
+export type ListStaffResponse = {
+  staff: StaffAccountDto[];
+  /** Staff-account limit from the shop's plan, or null when the plan has none, or -1 when unlimited */
+  limit: number | null;
+  activeCount: number;
+};
+export type ListStaffApiResponse = ListStaffResponse;
+export type ListStaffApiArg = { shopId: string };
+
+export type CreateStaffRequest = {
+  username: string;
+  password: string;
+  role: StaffRole;
+  displayName?: string | null;
+};
+export type CreateStaffApiResponse = StaffAccountDto;
+export type CreateStaffApiArg = {
+  shopId: string;
+  createStaffRequest: CreateStaffRequest;
+};
+
+export type UpdateStaffRequest = {
+  role?: StaffRole;
+  displayName?: string | null;
+  isActive?: boolean;
+};
+export type UpdateStaffApiResponse = StaffAccountDto;
+export type UpdateStaffApiArg = {
+  shopId: string;
+  staffId: string;
+  updateStaffRequest: UpdateStaffRequest;
+};
+
+export type ResetStaffPasswordRequest = { password: string };
+export type ResetStaffPasswordApiResponse = StaffAccountDto;
+export type ResetStaffPasswordApiArg = {
+  shopId: string;
+  staffId: string;
+  resetStaffPasswordRequest: ResetStaffPasswordRequest;
+};
+
+export type DeleteStaffApiResponse = { id: string; deleted: true };
+export type DeleteStaffApiArg = { shopId: string; staffId: string };
+
+export type StaffLoginRequest = {
+  shopSlug: string;
+  username: string;
+  password: string;
+};
+export type StaffLoginApiResponse = {
+  token: string;
+  expiresAt: string;
+  shopId: string;
+  shopSlug: string;
+  staffId: string;
+  username: string;
+  role: StaffRole;
+};
+export type StaffLoginApiArg = { staffLoginRequest: StaffLoginRequest };
+
 export const {
   useGetShopsQuery,
   useCreateShopMutation,
@@ -1316,4 +1429,10 @@ export const {
   useCreateStripeAccountSessionMutation,
   useDisconnectStripeAccountMutation,
   useGetAuditEntriesQuery,
+  useStaffLoginMutation,
+  useListStaffQuery,
+  useCreateStaffMutation,
+  useUpdateStaffMutation,
+  useResetStaffPasswordMutation,
+  useDeleteStaffMutation,
 } = injectedRtkApi;

@@ -8,10 +8,9 @@ describe('shopNavItems', () => {
   });
 
   it('manager defaults', () => {
-    // step 26 adds 'staff' to the permission set and to the expectation
     expect(
       shopNavItems(['view_orders', 'manage_menu', 'manage_staff', 'view_audit']),
-    ).toEqual(['orders', 'products', 'categories', 'activity']);
+    ).toEqual(['orders', 'products', 'categories', 'staff', 'activity']);
   });
 
   it('owner', () => {
@@ -24,6 +23,6 @@ describe('shopNavItems', () => {
         'manage_billing',
         'view_audit',
       ]),
-    ).toEqual(['orders', 'products', 'categories', 'subscription', 'settings', 'activity']);
+    ).toEqual(['orders', 'products', 'categories', 'subscription', 'settings', 'staff', 'activity']);
   });
 });

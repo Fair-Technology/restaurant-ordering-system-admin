@@ -371,6 +371,35 @@
     "empty": "No activity yet.",
     "loadError": "Could not load activity."
   },
+  "staff": {
+    "title": "Staff logins",
+    "usage": "{{count}} of {{limit}} logins in use",
+    "username": "Username",
+    "displayName": "Display name (optional)",
+    "password": "Password",
+    "role": "Role",
+    "roleManager": "Manager",
+    "roleStaff": "Staff",
+    "add": "Add login",
+    "resetPassword": "Reset password",
+    "deactivate": "Deactivate",
+    "activate": "Activate",
+    "delete": "Delete",
+    "confirmDelete": "Delete this login?",
+    "locked": "Locked",
+    "inactive": "Inactive",
+    "loginUrl": "Staff sign-in address: {{url}}",
+    "saveFailed": "Could not save. {{error}}",
+    "empty": "No staff logins yet.",
+    "loadError": "Could not load staff logins."
+  },
+  "staffLogin": {
+    "title": "Staff sign-in",
+    "submit": "Sign in",
+    "failed": "Wrong username or password.",
+    "locked": "Too many attempts. Try again in 15 minutes or ask the owner to reset your password.",
+    "signOut": "Sign out"
+  },
   "categories": {
     "addCategory": "+ New Category",
     "newCategory": "New Category",
