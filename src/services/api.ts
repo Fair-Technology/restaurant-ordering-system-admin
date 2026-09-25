@@ -355,6 +355,10 @@ const injectedRtkApi = api.injectEndpoints({
       }),
       invalidatesTags: ['Staff'],
     }),
+    getReferenceLists: build.query<GetReferenceListsApiResponse, GetReferenceListsApiArg>({
+      query: (a) => ({ url: `/reference-lists/${a.countryCode}` }),
+      providesTags: ['ReferenceLists'],
+    }),
   }),
   overrideExisting: false,
 });
@@ -526,6 +530,29 @@ export type GetOrderByPaymentIntentApiArg = {
   /** Stripe PaymentIntent ID (starts with pi_) */
   paymentIntentId: string;
 };
+export type MenuLanguage = 'de' | 'en';
+export type TranslationMap = Partial<Record<MenuLanguage, string>>;
+export type LocalizedLabel = Record<MenuLanguage, string>;
+export type SpiceLevel = 'mild' | 'medium' | 'hot';
+export type FulfilmentModeKey = 'collection' | 'delivery' | 'dine_in';
+export type ReferenceEntry = { id: string; labels: LocalizedLabel; isActive: boolean };
+export type AdditiveEntry = ReferenceEntry & { code: number };
+export type ReferenceListsResponse = {
+  countryCode: string;
+  allergens: ReferenceEntry[];
+  additives: AdditiveEntry[];
+  taxClasses: ReferenceEntry[];
+  defaultTaxClassId: string | null;
+  taxRates: { taxClassId: string; fulfilmentMode: FulfilmentModeKey; rateBasisPoints: number; effectiveFrom: string }[];
+  currentTaxRates: { taxClassId: string; rates: Record<FulfilmentModeKey, number | null> }[];
+  taxRatesUniformAcrossModes: boolean;
+  dietaryTags: { id: string; labels: LocalizedLabel }[];
+  spiceLevels: { id: SpiceLevel; labels: LocalizedLabel }[];
+  updatedAt: string | null;
+};
+export type GetReferenceListsApiResponse = ReferenceListsResponse;
+export type GetReferenceListsApiArg = { countryCode: string };
+
 export type ProductSchedule = {
   startDate: string;
   endDate?: string | null;
@@ -588,6 +615,8 @@ export type ShopResponse = {
   countryCode?: string;
   /** Tax rates seeded from country on shop creation */
   taxRates?: { id?: string; label?: string; rate?: number }[];
+  /** Menu languages offered by this shop; first entry is the original language */
+  menuLanguages?: MenuLanguage[];
   /** Industry / business type */
   industry?: string;
   /** Shop branding configuration, or null if not configured. */
@@ -792,6 +821,8 @@ export type UpdateShopRequest = {
       close?: string;
     }[];
   };
+  /** Menu languages offered by this shop; first entry is the original language and cannot change */
+  menuLanguages?: MenuLanguage[];
 };
 export type DeleteResponse = {
   /** Whether deletion was successful */
@@ -810,6 +841,10 @@ export type CategoryResponse = {
   icon?: string;
   /** Whether category is deleted */
   isDeleted?: boolean;
+  /** Tax class for dishes in this category; null when the country has no tax classes set up */
+  taxClassId?: string | null;
+  /** Translations of the category name, keyed by menu language */
+  nameTranslations?: TranslationMap;
   /** Creation timestamp */
   createdAt?: string;
   /** Last update timestamp */
@@ -823,6 +858,10 @@ export type CreateCategoryRequest = {
   sortOrder?: number;
   /** Lucide icon name */
   icon?: string;
+  /** Tax class id; absent defaults to the country default */
+  taxClassId?: string;
+  /** Translations of the category name, keyed by menu language */
+  nameTranslations?: TranslationMap;
 };
 export type UpdateCategoryRequest = {
   /** Category name */
@@ -831,6 +870,10 @@ export type UpdateCategoryRequest = {
   sortOrder?: number;
   /** Lucide icon name, null to remove */
   icon?: string | null;
+  /** Tax class id */
+  taxClassId?: string;
+  /** Translations of the category name, keyed by menu language */
+  nameTranslations?: TranslationMap;
 };
 export type ProductResponse = {
   /** Product ID */
@@ -863,17 +906,39 @@ export type ProductResponse = {
   }[];
   /** Special info items (dietary labels, badges, etc.) */
   specialInfo?: { name: string; icon: string }[];
+  /** Translations of the product name, keyed by menu language */
+  nameTranslations?: TranslationMap;
+  /** Translations of the product description, keyed by menu language */
+  descriptionTranslations?: TranslationMap;
+  /** Declared allergen ids, or null when not yet declared */
+  allergenIds?: string[] | null;
+  /** Declared additive ids, or null when not yet declared */
+  additiveIds?: string[] | null;
+  /** Dietary tag ids */
+  dietaryTagIds?: string[];
+  /** Spiciness, or null when not set */
+  spiceLevel?: SpiceLevel | null;
+  /** Preparation time in minutes, or null when not set */
+  prepMinutes?: number | null;
+  /** Tax class override for this dish, or null to inherit from its category */
+  taxClassId?: string | null;
+  /** Whether both allergens and additives have been declared */
+  isDeclared?: boolean;
   /** Product variant groups (optional) */
   variantGroups?: {
     /** Variant group ID */
     id?: string;
     /** Variant group name */
     name?: string;
+    /** Translations of the group name, keyed by menu language */
+    nameTranslations?: TranslationMap;
     options?: {
       /** Option ID */
       id?: string;
       /** Option name */
       name?: string;
+      /** Translations of the option name, keyed by menu language */
+      nameTranslations?: TranslationMap;
       /** Price difference in cents */
       priceDelta?: number;
       /** Whether option is available */
@@ -886,6 +951,8 @@ export type ProductResponse = {
     id?: string;
     /** Addon group name */
     name?: string;
+    /** Translations of the group name, keyed by menu language */
+    nameTranslations?: TranslationMap;
     /** Minimum selectable options */
     minSelectable?: number;
     /** Maximum selectable options */
@@ -895,6 +962,8 @@ export type ProductResponse = {
       id?: string;
       /** Option name */
       name?: string;
+      /** Translations of the option name, keyed by menu language */
+      nameTranslations?: TranslationMap;
       /** Price difference in cents */
       priceDelta?: number;
       /** Whether option is available */
@@ -933,6 +1002,22 @@ export type CreateProductRequest = {
   }[];
   /** Special info items (dietary labels, badges, etc.) */
   specialInfo?: { name: string; icon: string }[];
+  /** Translations of the product name, keyed by menu language */
+  nameTranslations?: TranslationMap;
+  /** Translations of the product description, keyed by menu language */
+  descriptionTranslations?: TranslationMap;
+  /** Declared allergen ids, or null when not yet declared */
+  allergenIds?: string[] | null;
+  /** Declared additive ids, or null when not yet declared */
+  additiveIds?: string[] | null;
+  /** Dietary tag ids */
+  dietaryTagIds?: string[];
+  /** Spiciness, or null when not set */
+  spiceLevel?: SpiceLevel | null;
+  /** Preparation time in minutes, or null when not set */
+  prepMinutes?: number | null;
+  /** Tax class override for this dish, or null to inherit from its category */
+  taxClassId?: string | null;
   /** Whether product is available */
   isAvailable?: boolean;
   /** Tax rate ID from the shop's taxRates list, or null to clear */
@@ -940,14 +1025,16 @@ export type CreateProductRequest = {
   variantGroups?: {
     id: string;
     name: string;
-    options: { id: string; name: string; priceDelta: number; isAvailable: boolean }[];
+    nameTranslations?: TranslationMap;
+    options: { id: string; name: string; nameTranslations?: TranslationMap; priceDelta: number; isAvailable: boolean }[];
   }[];
   addonGroups?: {
     id: string;
     name: string;
+    nameTranslations?: TranslationMap;
     minSelectable: number;
     maxSelectable: number;
-    options: { id: string; name: string; priceDelta: number; isAvailable: boolean }[];
+    options: { id: string; name: string; nameTranslations?: TranslationMap; priceDelta: number; isAvailable: boolean }[];
   }[];
   /** Optional availability schedule; null = no time restriction */
   schedule?: ProductSchedule | null;
@@ -970,6 +1057,22 @@ export type UpdateProductRequest = {
   }[];
   /** Special info items (dietary labels, badges, etc.) */
   specialInfo?: { name: string; icon: string }[];
+  /** Translations of the product name, keyed by menu language */
+  nameTranslations?: TranslationMap;
+  /** Translations of the product description, keyed by menu language */
+  descriptionTranslations?: TranslationMap;
+  /** Declared allergen ids, or null when not yet declared */
+  allergenIds?: string[] | null;
+  /** Declared additive ids, or null when not yet declared */
+  additiveIds?: string[] | null;
+  /** Dietary tag ids */
+  dietaryTagIds?: string[];
+  /** Spiciness, or null when not set */
+  spiceLevel?: SpiceLevel | null;
+  /** Preparation time in minutes, or null when not set */
+  prepMinutes?: number | null;
+  /** Tax class override for this dish, or null to inherit from its category */
+  taxClassId?: string | null;
   /** Whether product is available */
   isAvailable?: boolean;
   /** Tax rate ID from the shop's taxRates list, or null to clear */
@@ -978,9 +1081,11 @@ export type UpdateProductRequest = {
   variantGroups?: {
     id: string;
     name: string;
+    nameTranslations?: TranslationMap;
     options: {
       id: string;
       name: string;
+      nameTranslations?: TranslationMap;
       /** Price delta in cents */
       priceDelta: number;
       isAvailable: boolean;
@@ -990,11 +1095,13 @@ export type UpdateProductRequest = {
   addonGroups?: {
     id: string;
     name: string;
+    nameTranslations?: TranslationMap;
     minSelectable: number;
     maxSelectable: number;
     options: {
       id: string;
       name: string;
+      nameTranslations?: TranslationMap;
       /** Price delta in cents */
       priceDelta: number;
       isAvailable: boolean;
@@ -1427,4 +1534,5 @@ export const {
   useUpdateStaffMutation,
   useResetStaffPasswordMutation,
   useDeleteStaffMutation,
+  useGetReferenceListsQuery,
 } = injectedRtkApi;

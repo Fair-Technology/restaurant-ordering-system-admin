@@ -9,7 +9,6 @@ import { ShopSettingsPage } from '../pages/ShopSettingsPage';
 import { CategoriesPage } from '../pages/CategoriesPage';
 import { EditCategoryPage } from '../pages/EditCategoryPage';
 import { ProductsPage } from '../pages/ProductsPage';
-import { EditProductPage } from '../pages/EditProductPage';
 import { OrdersPage } from '../pages/OrdersPage';
 import { SubscriptionPage } from '../pages/SubscriptionPage';
 import { ActivityPage } from '../pages/ActivityPage';
@@ -41,7 +40,6 @@ export const router = createBrowserRouter([
             ],
           },
           { path: '/shops/:shopId/categories/:categoryId/edit', element: <EditCategoryPage /> },
-          { path: '/shops/:shopId/products/:productId', element: <EditProductPage /> },
         ],
       },
     ],

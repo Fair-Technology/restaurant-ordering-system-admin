@@ -62,6 +62,6 @@ const baseQueryWithStaffGuard: BaseQueryFn<string | FetchArgs, unknown, FetchBas
 export const baseApi = createApi({
   reducerPath: 'api',
   baseQuery: baseQueryWithStaffGuard,
-  tagTypes: ['Products', 'Categories', 'Orders', 'Plans', 'Subscriptions', 'Shops', 'Audit', 'Staff'],
+  tagTypes: ['Products', 'Categories', 'Orders', 'Plans', 'Subscriptions', 'Shops', 'Audit', 'Staff', 'ReferenceLists'],
   endpoints: () => ({}),
 });
