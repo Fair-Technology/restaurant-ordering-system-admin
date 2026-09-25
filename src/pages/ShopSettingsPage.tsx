@@ -17,6 +17,7 @@ import { MyInput } from '../components/ui/MyInput';
 import { CurrencyInput } from '../components/ui/CurrencyInput';
 import { useToast } from '../contexts/ToastContext';
 import { PaymentsCard } from '../components/shop/PaymentsCard';
+import { accentContrastOnWhite, contrastRatio } from '../utils/contrast';
 
 type DayKey = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 type TimeSlot = { open: string; close: string };
@@ -75,12 +76,7 @@ export function ShopSettingsPage() {
   const [isSavingStatus, setIsSavingStatus] = useState(false);
   const [statusError, setStatusError] = useState<string | null>(null);
 
-  const [colorsState, setColorsState] = useState<{
-    primary: string;
-    secondary: string;
-    tertiary: string;
-    background: string;
-  } | null>(null);
+  const [accentState, setAccentState] = useState<string | null>(null);
   const [isSavingColors, setIsSavingColors] = useState(false);
   const [colorsError, setColorsError] = useState<string | null>(null);
 
@@ -126,12 +122,11 @@ export function ShopSettingsPage() {
     pausedMessage: shop.pausedMessage ?? '',
   };
 
-  const currentColors = colorsState ?? {
-    primary: shop.branding?.colors?.primary ?? '#3B82F6',
-    secondary: shop.branding?.colors?.secondary ?? '#10B981',
-    tertiary: shop.branding?.colors?.tertiary ?? '#F59E0B',
-    background: shop.branding?.colors?.background ?? '#1F2937',
-  };
+  const currentAccent = accentState ?? shop.branding?.accentColor ?? '#C2410C';
+  const accentCheck = accentContrastOnWhite(currentAccent);
+  const accentOnColor = accentCheck && contrastRatio(currentAccent, '#000000') > contrastRatio(currentAccent, '#FFFFFF')
+    ? '#000000'
+    : '#FFFFFF';
 
   const currentDetails = detailsState ?? {
     minOrderAmountCents: shop.minOrderAmountCents ?? 0,
@@ -231,7 +226,7 @@ export function ShopSettingsPage() {
           branding: {
             logoUrl: shop.branding?.logoUrl ?? undefined,
             heroImageUrl: shop.branding?.heroImageUrl ?? undefined,
-            colors: currentColors,
+            accentColor: currentAccent,
           },
         },
       }).unwrap();
@@ -539,43 +534,45 @@ export function ShopSettingsPage() {
 
       <MyCard className="p-5 space-y-4">
         <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-          {t('shops.colorsTitle')}
+          {t('shops.accentTitle')}
         </p>
-        <div className="space-y-3">
-          {(
-            [
-              { key: 'primary', label: t('shops.colorPrimary') },
-              { key: 'secondary', label: t('shops.colorSecondary') },
-              { key: 'tertiary', label: t('shops.colorTertiary') },
-              { key: 'background', label: t('shops.colorBackground') },
-            ] as { key: keyof typeof currentColors; label: string }[]
-          ).map(({ key, label }) => (
-            <div key={key} className="flex items-center gap-3">
-              <span className="text-sm text-gray-600 w-28 shrink-0">{label}</span>
-              <input
-                type="color"
-                value={currentColors[key]}
-                onChange={(e) => setColorsState({ ...currentColors, [key]: e.target.value })}
-                className="w-8 h-8 rounded cursor-pointer border-0 bg-transparent p-0"
-              />
-              <input
-                type="text"
-                value={currentColors[key]}
-                maxLength={7}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  if (/^#[0-9a-fA-F]{0,6}$/.test(val)) {
-                    setColorsState({ ...currentColors, [key]: val });
-                  }
-                }}
-                className={`${inputClass} w-28 font-mono`}
-              />
-            </div>
-          ))}
+        <p className="text-sm text-gray-500">{t('shops.accentHelp')}</p>
+        <div className="flex items-center gap-3">
+          <input
+            type="color"
+            value={currentAccent}
+            onChange={(e) => setAccentState(e.target.value)}
+            className="w-8 h-8 rounded cursor-pointer border-0 bg-transparent p-0"
+          />
+          <input
+            type="text"
+            value={currentAccent}
+            maxLength={7}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (/^#[0-9a-fA-F]{0,6}$/.test(val)) {
+                setAccentState(val);
+              }
+            }}
+            className={`${inputClass} w-28 font-mono`}
+          />
+          <button
+            type="button"
+            disabled
+            className="px-3 py-2 rounded-lg text-sm font-medium"
+            style={{ backgroundColor: currentAccent, color: accentOnColor }}
+          >
+            {t('shops.colorsSave')}
+          </button>
         </div>
+        {accentCheck && !accentCheck.ok && (
+          <p className="text-sm text-red-600">
+            {t('shops.accentTooLight', { ratio: accentCheck.ratio.toFixed(2) })}
+          </p>
+        )}
         {colorsError && <p className="text-sm text-red-600">{colorsError}</p>}
         <div className="border-t border-gray-200 pt-4">
-          <MyButton onClick={handleSaveColors} disabled={isSavingColors}>
+          <MyButton onClick={handleSaveColors} disabled={isSavingColors || !accentCheck?.ok}>
             {isSavingColors ? t('shops.colorsSaving') : t('shops.colorsSave')}
           </MyButton>
         </div>

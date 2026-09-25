@@ -542,16 +542,8 @@ export type ShopBranding = {
   logoUrl?: string | null;
   /** Hero image URL (must start with https://) */
   heroImageUrl?: string | null;
-  colors: {
-    /** Primary brand color (hex) */
-    primary: string;
-    /** Secondary brand color (hex) */
-    secondary: string;
-    /** Tertiary brand color (hex) */
-    tertiary: string;
-    /** Background color (hex) */
-    background: string;
-  };
+  /** Accent color (hex), used for buttons and highlights on the storefront */
+  accentColor?: string | null;
 } | null;
 export type ShopResponse = {
   /** Shop ID */
