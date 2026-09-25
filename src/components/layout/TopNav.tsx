@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft, Menu, X,
   Package, ClipboardList, Tag, CreditCard, Settings, Store,
+  Users, History,
   Circle,
 } from 'lucide-react';
 import {
@@ -12,6 +13,7 @@ import {
   useLazyGetGoLiveStatusQuery,
   useUpdateShopMutation,
 } from '../../services/api';
+import { shopNavItems } from '../../features/shops/shopNav';
 import { AccountSettingsModal } from './AccountSettingsModal';
 import { GoLiveCriteriaModal, PauseShopModal } from '../shop/GoLiveModal';
 
@@ -33,11 +35,8 @@ export function TopNav() {
     { skip: !shopId },
   );
 
-  const currentUserId = user?.localAccountId;
-  const role = shopId && currentShop
-    ? (currentShop.members ?? []).find((m) => m.userId === currentUserId && m.isActive)?.role ?? null
-    : null;
-  const isOwner = role === 'owner';
+  const perms = currentShop?.callerPermissions ?? [];
+  const nav = shopNavItems(perms);
 
   // Close drawer on navigation
   useEffect(() => {
@@ -51,33 +50,67 @@ export function TopNav() {
 
   const divider = <hr className="border-t border-gray-100 my-0.5" />;
 
-  const shopNavItems = shopId ? (
+  const shopNavContent = shopId ? (
     <>
       <NavLink to="/shops" end className={({ isActive }) => navItemClass(isActive)}>
         <ArrowLeft size={16} className="flex-shrink-0" />
         {t('nav.myShops')}
       </NavLink>
-      {divider}
-      <NavLink to={`/shops/${shopId}/orders`} className={({ isActive }) => navItemClass(isActive)}>
-        <ClipboardList size={16} className="flex-shrink-0" />
-        {t('nav.orders')}
-      </NavLink>
-      {divider}
-      <NavLink to={`/shops/${shopId}`} end className={({ isActive }) => navItemClass(isActive)}>
-        <Package size={16} className="flex-shrink-0" />
-        {t('nav.products')}
-      </NavLink>
-      {divider}
-      <NavLink to={`/shops/${shopId}/categories`} className={({ isActive }) => navItemClass(isActive)}>
-        <Tag size={16} className="flex-shrink-0" />
-        {t('nav.categories')}
-      </NavLink>
-      {divider}
-      <NavLink to={`/shops/${shopId}/subscription`} className={({ isActive }) => navItemClass(isActive)}>
-        <CreditCard size={16} className="flex-shrink-0" />
-        {t('nav.subscription')}
-      </NavLink>
-      {isOwner && (
+      {nav.includes('orders') && (
+        <>
+          {divider}
+          <NavLink to={`/shops/${shopId}/orders`} className={({ isActive }) => navItemClass(isActive)}>
+            <ClipboardList size={16} className="flex-shrink-0" />
+            {t('nav.orders')}
+          </NavLink>
+        </>
+      )}
+      {nav.includes('products') && (
+        <>
+          {divider}
+          <NavLink to={`/shops/${shopId}`} end className={({ isActive }) => navItemClass(isActive)}>
+            <Package size={16} className="flex-shrink-0" />
+            {t('nav.products')}
+          </NavLink>
+        </>
+      )}
+      {nav.includes('categories') && (
+        <>
+          {divider}
+          <NavLink to={`/shops/${shopId}/categories`} className={({ isActive }) => navItemClass(isActive)}>
+            <Tag size={16} className="flex-shrink-0" />
+            {t('nav.categories')}
+          </NavLink>
+        </>
+      )}
+      {nav.includes('subscription') && (
+        <>
+          {divider}
+          <NavLink to={`/shops/${shopId}/subscription`} className={({ isActive }) => navItemClass(isActive)}>
+            <CreditCard size={16} className="flex-shrink-0" />
+            {t('nav.subscription')}
+          </NavLink>
+        </>
+      )}
+      {nav.includes('staff') && (
+        <>
+          {divider}
+          <NavLink to={`/shops/${shopId}/staff`} className={({ isActive }) => navItemClass(isActive)}>
+            <Users size={16} className="flex-shrink-0" />
+            {t('nav.staff')}
+          </NavLink>
+        </>
+      )}
+      {nav.includes('activity') && (
+        <>
+          {divider}
+          <NavLink to={`/shops/${shopId}/activity`} className={({ isActive }) => navItemClass(isActive)}>
+            <History size={16} className="flex-shrink-0" />
+            {t('nav.activity')}
+          </NavLink>
+        </>
+      )}
+      {nav.includes('settings') && (
         <>
           {divider}
           <NavLink to={`/shops/${shopId}/settings`} className={({ isActive }) => navItemClass(isActive)}>
@@ -164,7 +197,7 @@ export function TopNav() {
       {shopLogo}
       {/* Nav items */}
       <nav className="flex-1 px-3 pt-2 pb-4 overflow-y-auto">
-        {shopNavItems}
+        {shopNavContent}
       </nav>
 
       {/* Bottom: user row */}
@@ -179,7 +212,7 @@ export function TopNav() {
     <div className="flex flex-col h-full">
       {/* Nav items */}
       <nav className="flex-1 px-3 pt-2 pb-4 overflow-y-auto">
-        {shopNavItems}
+        {shopNavContent}
       </nav>
 
       {/* Bottom: user row */}

@@ -15,7 +15,9 @@
     "signOut": "Sign out",
     "myShops": "My shops",
     "shopOnline": "Shop Online",
-    "shopOffline": "Shop Offline"
+    "shopOffline": "Shop Offline",
+    "staff": "Staff",
+    "activity": "Activity"
   },
   "subscription": {
     "currentPlan": "Current Plan",
@@ -363,6 +365,11 @@
       "cash_collected": "Paid in cash",
       "refunded_in_cash": "Refunded in cash"
     }
+  },
+  "activity": {
+    "title": "Activity",
+    "empty": "No activity yet.",
+    "loadError": "Could not load activity."
   },
   "categories": {
     "addCategory": "+ New Category",

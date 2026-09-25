@@ -303,6 +303,16 @@ const injectedRtkApi = api.injectEndpoints({
       }),
       invalidatesTags: (_r, _e, { shopId }) => [{ type: 'Shops' as const, id: shopId }],
     }),
+    getAuditEntries: build.query<GetAuditEntriesApiResponse, GetAuditEntriesApiArg>({
+      query: (queryArg) => ({
+        url: `/shops/${queryArg.shopId}/audit`,
+        params: {
+          page: queryArg.page,
+          pageSize: queryArg.pageSize,
+        },
+      }),
+      providesTags: ['Audit'],
+    }),
   }),
   overrideExisting: false,
 });
@@ -536,12 +546,10 @@ export type ShopResponse = {
   createdAt?: string;
   /** Last update timestamp */
   updatedAt?: string;
-  /** Shop members */
-  members?: {
-    userId?: string;
-    role?: string;
-    isActive?: boolean;
-  }[];
+  /** The signed-in caller's role on this shop, or 'superadmin' when accessed as a platform admin, or null when not a member */
+  callerRole?: 'owner' | 'manager' | 'staff' | 'superadmin' | null;
+  /** Permissions the signed-in caller has on this shop */
+  callerPermissions?: string[];
   /** ISO 3166-1 alpha-2 country code (e.g. "AU", "DE") */
   countryCode?: string;
   /** Tax rates seeded from country on shop creation */
@@ -1233,6 +1241,41 @@ export type CreateStripeAccountSessionApiArg = {
 
 export type DisconnectStripeAccountApiArg = { shopId: string };
 
+export type AuditActorType = 'owner' | 'staff' | 'superadmin' | 'system';
+export type AuditChange = {
+  field: string;
+  from: unknown;
+  to: unknown;
+};
+export type AuditEntry = {
+  id: string;
+  shopId: string;
+  timestamp: string;
+  actorType: AuditActorType;
+  actorId: string;
+  action: string;
+  entityType: string;
+  entityId: string;
+  entityName: string;
+  changes?: AuditChange[];
+};
+export type AuditEntriesResponse = {
+  entries: AuditEntry[];
+  total: number;
+  page: number;
+  pageSize: number;
+  actorLabels: Record<string, string>;
+};
+export type GetAuditEntriesApiResponse = AuditEntriesResponse;
+export type GetAuditEntriesApiArg = {
+  /** Shop ID */
+  shopId: string;
+  /** 1-based page number (default: 1) */
+  page?: number;
+  /** Number of entries per page (default: 20) */
+  pageSize?: number;
+};
+
 export const {
   useGetShopsQuery,
   useCreateShopMutation,
@@ -1272,4 +1315,5 @@ export const {
   useLazyGetGoLiveStatusQuery,
   useCreateStripeAccountSessionMutation,
   useDisconnectStripeAccountMutation,
+  useGetAuditEntriesQuery,
 } = injectedRtkApi;

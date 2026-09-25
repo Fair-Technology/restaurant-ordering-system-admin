@@ -1,16 +1,12 @@
 import { useParams, Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useMsal } from '@azure/msal-react';
 import { useGetShopByIdQuery, useReactivateShopMutation } from '../../services/api';
 import { MySpinner } from '../ui/MySpinner';
-import { ShopRoleContext } from '../../features/shops/ShopRoleContext';
 import { useState } from 'react';
 
 export function ShopLayout() {
   const { shopId } = useParams<{ shopId: string }>();
   const { t } = useTranslation();
-  const { accounts } = useMsal();
-  const currentUserId = accounts[0]?.localAccountId;
   const { data: shop, isLoading, isError } = useGetShopByIdQuery({ shopId: shopId! });
   const [reactivateShop] = useReactivateShopMutation();
   const [reactivateError, setReactivateError] = useState<string | null>(null);
@@ -19,11 +15,7 @@ export function ShopLayout() {
   if (isLoading) return <MySpinner label={t('shops.loadingShop')} />;
   if (isError || !shop) return <p className="text-red-500">{t('shops.failedToLoadShop')}</p>;
 
-  const role = (shop.members ?? []).find(
-    (m) => m.userId === currentUserId && m.isActive,
-  )?.role ?? null;
-
-  const isOwner = role === 'owner';
+  const isOwner = (shop.callerPermissions ?? []).includes('manage_billing');
 
   async function handleReactivate() {
     if (!shopId) return;
@@ -39,7 +31,7 @@ export function ShopLayout() {
   }
 
   return (
-    <ShopRoleContext.Provider value={role}>
+    <>
       {shop.isDeactivatedDueToLimits && (
         <div className="mx-4 mt-4 flex flex-col gap-2 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm">
           <p>{t('subscription.deactivatedBanner')}</p>
@@ -56,6 +48,6 @@ export function ShopLayout() {
         </div>
       )}
       <Outlet />
-    </ShopRoleContext.Provider>
+    </>
   );
 }

@@ -15,7 +15,9 @@
     "signOut": "Abmelden",
     "myShops": "Meine Shops",
     "shopOnline": "Shop Online",
-    "shopOffline": "Shop Offline"
+    "shopOffline": "Shop Offline",
+    "staff": "Mitarbeiter",
+    "activity": "Aktivität"
   },
   "subscription": {
     "currentPlan": "Aktueller Plan",
@@ -363,6 +365,11 @@
       "cash_collected": "Bar bezahlt",
       "refunded_in_cash": "Bar erstattet"
     }
+  },
+  "activity": {
+    "title": "Aktivität",
+    "empty": "Noch keine Aktivität.",
+    "loadError": "Aktivität konnte nicht geladen werden."
   },
   "categories": {
     "addCategory": "+ Neue Kategorie",

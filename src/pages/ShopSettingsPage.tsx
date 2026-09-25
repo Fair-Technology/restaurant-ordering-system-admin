@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useMsal } from '@azure/msal-react';
 import {
   useGetShopByIdQuery,
   useGenerateShopLogoUploadUrlMutation,
@@ -41,8 +40,6 @@ export function ShopSettingsPage() {
   const { shopId } = useParams<{ shopId: string }>();
   const { t } = useTranslation();
   const toast = useToast();
-  const { accounts } = useMsal();
-  const currentUserId = accounts[0]?.localAccountId;
   const { data: shop, isLoading, isError, refetch } = useGetShopByIdQuery(
     { shopId: shopId! },
     { refetchOnMountOrArgChange: true },
@@ -110,12 +107,9 @@ export function ShopSettingsPage() {
   if (isLoading) return <MySpinner label={t('shops.loadingSettings')} />;
   if (isError || !shop) return <p className="text-red-500">{t('shops.failedToLoadShop')}</p>;
 
-  const members = shop.members ?? [];
-  const isCurrentUserOwner = members.some(
-    (m) => m.userId === currentUserId && m.isActive && m.role === 'owner',
-  );
+  const canManageShop = (shop.callerPermissions ?? []).includes('manage_shop');
 
-  if (!isCurrentUserOwner) {
+  if (!canManageShop) {
     return (
       <div className="max-w-lg">
         <MyCard className="p-5">
