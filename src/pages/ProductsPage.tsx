@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { ProductResponse } from '../services/api';
 import {
@@ -28,6 +28,7 @@ import {
 import { useShopReferenceLists } from '../features/menu/useShopReferenceLists';
 import { EMPTY_FOOD_INFO, effectiveTaxClassId, foodInfoFromProduct, labelFor } from '../features/menu/foodInfo';
 import type { FoodInfo } from '../features/menu/foodInfo';
+import { countMissingTranslations } from '../features/menu/translations';
 
 // ── Bulk import types ──────────────────────────────────────────────────────────
 
@@ -1517,6 +1518,7 @@ export function ProductsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: products, isLoading, isError } = useGetProductsByShopQuery({ shopId: shopId! });
   const { data: shop } = useGetShopByIdQuery({ shopId: shopId! });
+  const { data: categories } = useGetCategoriesByShopQuery({ shopId: shopId! });
   const currencySymbol = shop?.currency ? getCurrencySymbol(shop.currency) : '$';
 
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
@@ -1569,9 +1571,27 @@ export function ProductsPage() {
   );
   const isEmpty = !products?.length;
 
+  const extraLanguage = (shop?.menuLanguages?.length ?? 1) > 1 ? shop!.menuLanguages![1] : null;
+  const missingTranslations = extraLanguage
+    ? countMissingTranslations(products ?? [], categories ?? [], extraLanguage)
+    : 0;
+
   return (
     <>
       <div className="space-y-6">
+        {extraLanguage && missingTranslations > 0 && (
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5">
+            <p className="text-sm text-amber-800">
+              {t('products.translationsBanner', { count: missingTranslations })}
+            </p>
+            <Link
+              to={`/shops/${shopId}/translations`}
+              className="text-sm font-medium text-amber-900 underline underline-offset-2 flex-shrink-0"
+            >
+              {t('products.translationsBannerLink')}
+            </Link>
+          </div>
+        )}
         <div className="flex justify-end">
           <MyButton
             variant="secondary"

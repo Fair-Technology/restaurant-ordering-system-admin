@@ -17,7 +17,8 @@
     "shopOnline": "Shop Online",
     "shopOffline": "Shop Offline",
     "staff": "Mitarbeiter",
-    "activity": "Aktivität"
+    "activity": "Aktivität",
+    "translations": "Übersetzungen"
   },
   "subscription": {
     "currentPlan": "Aktueller Plan",
@@ -333,7 +334,9 @@
     "taxClassNoneYet": "Noch keine Steuerklasse",
     "notOnMenu": "Nicht auf der Karte – Allergene angeben",
     "notDeclared": "Nicht angegeben",
-    "refsLoadError": "Allergen- und Steuerlisten konnten nicht geladen werden."
+    "refsLoadError": "Allergen- und Steuerlisten konnten nicht geladen werden.",
+    "translationsBanner": "Bei {{count}} Texten fehlt eine Übersetzung.",
+    "translationsBannerLink": "Jetzt übersetzen"
   },
   "variants": {
     "title": "Varianten",
@@ -461,5 +464,22 @@
     "saved": "Kategorie gespeichert.",
     "deleted": "Kategorie gelöscht.",
     "reordered": "Kategoriereihenfolge gespeichert."
+  },
+  "translations": {
+    "title": "Übersetzungen",
+    "subtitle": "Karte übersetzen – {{language}}. Leere Felder zeigen den Originaltext.",
+    "missing": "{{count}} fehlen",
+    "noExtraLanguage": "Fügen Sie in den Einstellungen eine zweite Menüsprache hinzu, um Ihre Karte zu übersetzen.",
+    "goToSettings": "Einstellungen öffnen",
+    "categoriesHeading": "Kategorien",
+    "dishesHeading": "Gerichte",
+    "original": "Original",
+    "save": "Speichern",
+    "saving": "Speichern…",
+    "saved": "Übersetzung gespeichert.",
+    "failed": "Übersetzung konnte nicht gespeichert werden.",
+    "loading": "Übersetzungen werden geladen…",
+    "loadError": "Ihre Karte konnte nicht geladen werden.",
+    "empty": "Ihre Karte enthält noch keine Gerichte."
   }
 }

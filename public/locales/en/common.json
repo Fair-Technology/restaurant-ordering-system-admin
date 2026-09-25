@@ -17,7 +17,8 @@
     "shopOnline": "Shop Online",
     "shopOffline": "Shop Offline",
     "staff": "Staff",
-    "activity": "Activity"
+    "activity": "Activity",
+    "translations": "Translations"
   },
   "subscription": {
     "currentPlan": "Current Plan",
@@ -333,7 +334,9 @@
     "taxClassNoneYet": "No tax class yet",
     "notOnMenu": "Not on menu — declare allergens",
     "notDeclared": "Not declared",
-    "refsLoadError": "Could not load allergen and tax lists."
+    "refsLoadError": "Could not load allergen and tax lists.",
+    "translationsBanner": "{{count}} texts are missing a translation.",
+    "translationsBannerLink": "Translate now"
   },
   "variants": {
     "title": "Variants",
@@ -461,5 +464,22 @@
     "saved": "Category saved.",
     "deleted": "Category deleted.",
     "reordered": "Category order saved."
+  },
+  "translations": {
+    "title": "Translations",
+    "subtitle": "Translate your menu into {{language}}. Leave a field empty to show the original.",
+    "missing": "{{count}} missing",
+    "noExtraLanguage": "Add a second menu language in Settings to translate your menu.",
+    "goToSettings": "Open settings",
+    "categoriesHeading": "Categories",
+    "dishesHeading": "Dishes",
+    "original": "Original",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Translation saved.",
+    "failed": "Could not save the translation.",
+    "loading": "Loading translations…",
+    "loadError": "Could not load your menu.",
+    "empty": "Your menu has no dishes yet."
   }
 }

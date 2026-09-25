@@ -10,7 +10,7 @@ describe('shopNavItems', () => {
   it('manager defaults', () => {
     expect(
       shopNavItems(['view_orders', 'manage_menu', 'manage_staff', 'view_audit']),
-    ).toEqual(['orders', 'products', 'categories', 'staff', 'activity']);
+    ).toEqual(['orders', 'products', 'categories', 'translations', 'staff', 'activity']);
   });
 
   it('owner', () => {
@@ -23,6 +23,6 @@ describe('shopNavItems', () => {
         'manage_billing',
         'view_audit',
       ]),
-    ).toEqual(['orders', 'products', 'categories', 'subscription', 'settings', 'staff', 'activity']);
+    ).toEqual(['orders', 'products', 'categories', 'translations', 'subscription', 'settings', 'staff', 'activity']);
   });
 });
