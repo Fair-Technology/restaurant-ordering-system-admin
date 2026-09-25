@@ -388,12 +388,28 @@
     "previousPage": "Zurück",
     "nextPage": "Weiter",
     "pageInfo": "Seite {{page}} von {{total}}",
-    "status": {
+    "state": {
+      "PLACED": "Eingegangen",
+      "ACCEPTED": "Angenommen",
+      "IN_PREPARATION": "In Zubereitung",
+      "READY": "Fertig",
+      "OUT_FOR_DELIVERY": "In Zustellung",
+      "COMPLETED": "Abgeschlossen",
+      "REJECTED": "Abgelehnt",
+      "CANCELLED": "Storniert"
+    },
+    "fulfilment": {
+      "collection": "Abholung",
+      "delivery": "Lieferung",
+      "dine_in": "Vor Ort"
+    },
+    "payment": {
       "paid": "Bezahlt",
-      "pending_payment": "Zahlung ausstehend",
-      "failed": "Fehlgeschlagen",
-      "cancelled": "Storniert",
-      "refunded": "Erstattet"
+      "refunded": "Erstattet",
+      "partially_refunded": "Teilweise erstattet",
+      "cash_due": "Barzahlung offen",
+      "cash_collected": "Bar bezahlt",
+      "refunded_in_cash": "Bar erstattet"
     }
   },
   "categories": {

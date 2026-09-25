@@ -388,12 +388,28 @@
     "previousPage": "Previous",
     "nextPage": "Next",
     "pageInfo": "Page {{page}} of {{total}}",
-    "status": {
+    "state": {
+      "PLACED": "Placed",
+      "ACCEPTED": "Accepted",
+      "IN_PREPARATION": "In preparation",
+      "READY": "Ready",
+      "OUT_FOR_DELIVERY": "Out for delivery",
+      "COMPLETED": "Completed",
+      "REJECTED": "Rejected",
+      "CANCELLED": "Cancelled"
+    },
+    "fulfilment": {
+      "collection": "Collection",
+      "delivery": "Delivery",
+      "dine_in": "Dine-in"
+    },
+    "payment": {
       "paid": "Paid",
-      "pending_payment": "Pending Payment",
-      "failed": "Failed",
-      "cancelled": "Cancelled",
-      "refunded": "Refunded"
+      "refunded": "Refunded",
+      "partially_refunded": "Partly refunded",
+      "cash_due": "Cash due",
+      "cash_collected": "Paid in cash",
+      "refunded_in_cash": "Refunded in cash"
     }
   },
   "categories": {

@@ -1189,17 +1189,38 @@ export type OrderItemResponse = {
   selectedAddonOptionNames?: string[] | null;
   lineTotalCents: number;
 };
+export type OrderState = "PLACED" | "ACCEPTED" | "READY" | "OUT_FOR_DELIVERY" | "COMPLETED" | "REJECTED" | "CANCELLED";
+export type OrderDisplayState = OrderState | "IN_PREPARATION";
+export type OrderPaymentMethod = "card" | "cash";
+export type OrderPaymentStatus = "paid" | "refunded" | "partially_refunded" | "cash_due" | "cash_collected" | "refunded_in_cash";
+export type OrderFulfilmentMode = "collection" | "delivery" | "dine_in";
+export type OrderHistoryEntryResponse = {
+  from: OrderState | null;
+  to: OrderState;
+  at: string;
+  actor:
+    | { type: "system" }
+    | { type: "customer" }
+    | { type: "owner" | "staff" | "superadmin"; id: string };
+  reason?: string;
+};
 export type OrderResponse = {
   id: string;
   orderRef: string;
-  status: "pending_payment" | "paid" | "failed" | "cancelled" | "refunded";
+  state: OrderState;
+  displayState: OrderDisplayState;
+  fulfilmentMode: OrderFulfilmentMode;
+  paymentMethod: OrderPaymentMethod;
+  paymentStatus: OrderPaymentStatus;
+  readyAt: string | null;
   items: OrderItemResponse[];
   subtotalCents: number;
   currency: string;
   customerName: string;
   customerEmail: string;
   customerPhone: string;
-  customerNotes?: string | null;
+  customerNotes?: string;
+  history: OrderHistoryEntryResponse[];
   createdAt: string;
 };
 export type OrdersPageResponse = {
@@ -1211,7 +1232,11 @@ export type OrdersPageResponse = {
 export type OrderByPaymentIntentResponse = {
   orderId: string;
   orderRef: string;
-  status: "pending_payment" | "paid" | "failed" | "cancelled" | "refunded";
+  state: OrderState;
+  displayState: OrderDisplayState;
+  fulfilmentMode: OrderFulfilmentMode;
+  paymentStatus: OrderPaymentStatus;
+  readyAt: string | null;
   items: OrderItemResponse[];
   subtotalCents: number;
   currency: string;
