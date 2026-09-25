@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 import {
   useGetShopByIdQuery,
-  useGetMyInvitationsQuery,
   useLazyGetGoLiveStatusQuery,
   useUpdateShopMutation,
 } from '../../services/api';
@@ -33,9 +32,6 @@ export function TopNav() {
     { shopId: shopId! },
     { skip: !shopId },
   );
-
-  const { data: invitationsData } = useGetMyInvitationsQuery();
-  const pendingInviteCount = invitationsData?.invitations?.length ?? 0;
 
   const currentUserId = user?.localAccountId;
   const role = shopId && currentShop
@@ -139,11 +135,6 @@ export function TopNav() {
             {user?.name?.charAt(0).toUpperCase() ?? '?'}
           </span>
         </div>
-        {pendingInviteCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-red-500 rounded-full flex items-center justify-center text-white text-[8px] font-bold leading-none">
-            {pendingInviteCount}
-          </span>
-        )}
       </div>
       <span className="flex-1 text-xs text-gray-600 truncate">{user?.name}</span>
     </button>

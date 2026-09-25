@@ -185,57 +185,6 @@ const injectedRtkApi = api.injectEndpoints({
         body: queryArg.setShopLogoRequest,
       }),
     }),
-    addShopMember: build.mutation<AddShopMemberApiResponse, AddShopMemberApiArg>({
-      query: (queryArg) => ({
-        url: `/shops/${queryArg.shopId}/members`,
-        method: "POST",
-        body: { email: queryArg.email, role: queryArg.roleId },
-      }),
-    }),
-    getMyInvitations: build.query<GetMyInvitationsApiResponse, void>({
-      query: () => ({ url: `/users/me/invitations` }),
-      providesTags: ['Invitations'],
-    }),
-    acceptShopInvitation: build.mutation<AcceptShopInvitationApiResponse, AcceptShopInvitationApiArg>({
-      query: (queryArg) => ({
-        url: `/shops/${queryArg.shopId}/invitations/accept`,
-        method: 'POST',
-      }),
-      invalidatesTags: ['Invitations', 'Shops'],
-    }),
-    declineShopInvitation: build.mutation<DeclineShopInvitationApiResponse, DeclineShopInvitationApiArg>({
-      query: (queryArg) => ({
-        url: `/shops/${queryArg.shopId}/invitations/decline`,
-        method: 'POST',
-      }),
-      invalidatesTags: ['Invitations'],
-    }),
-    removeShopMember: build.mutation<RemoveShopMemberApiResponse, RemoveShopMemberApiArg>({
-      query: (queryArg) => ({
-        url: `/shops/${queryArg.shopId}/members/${queryArg.userId}`,
-        method: "DELETE",
-      }),
-    }),
-    createShopRole: build.mutation<CreateShopRoleApiResponse, CreateShopRoleApiArg>({
-      query: (queryArg) => ({
-        url: `/shops/${queryArg.shopId}/roles`,
-        method: "POST",
-        body: { name: queryArg.name, permissions: queryArg.permissions },
-      }),
-    }),
-    updateShopRole: build.mutation<UpdateShopRoleApiResponse, UpdateShopRoleApiArg>({
-      query: (queryArg) => ({
-        url: `/shops/${queryArg.shopId}/roles/${queryArg.roleId}`,
-        method: "PATCH",
-        body: { name: queryArg.name, permissions: queryArg.permissions },
-      }),
-    }),
-    deleteShopRole: build.mutation<DeleteShopRoleApiResponse, DeleteShopRoleApiArg>({
-      query: (queryArg) => ({
-        url: `/shops/${queryArg.shopId}/roles/${queryArg.roleId}`,
-        method: "DELETE",
-      }),
-    }),
     requestShopNameChange: build.mutation<
       { id: string; pendingNameChange: { requestedName: string; requestedSlug: string; requestedBy: string; requestedAt: string } },
       { shopId: string; requestedName: string }
@@ -536,76 +485,6 @@ export type ProductSchedule = {
   /** Optional label shown during the offer window (e.g. "Happy Hour") */
   offerLabel?: string | null;
 };
-export type ShopMembersResponse = {
-  members: {
-    userId: string;
-    role: string;
-    isActive: boolean;
-  }[];
-};
-export type ShopRolesResponse = {
-  roles: { id: string; name: string; permissions: string[] }[];
-};
-export type AddShopMemberApiResponse =
-  /** status 200 Member added successfully */ ShopMembersResponse;
-export type AddShopMemberApiArg = {
-  /** Shop ID */
-  shopId: string;
-  /** Email address of the user to invite */
-  email: string;
-  /** Role ID to assign ('owner' or a custom role id from shop.roles) */
-  roleId: string;
-};
-export type InvitationResponse = {
-  shopId: string;
-  shopName: string;
-  shopSlug: string;
-  role: string;
-};
-export type GetMyInvitationsApiResponse = {
-  invitations: InvitationResponse[];
-};
-export type AcceptShopInvitationApiResponse = {
-  shopId: string;
-  userId: string;
-  role: string;
-};
-export type AcceptShopInvitationApiArg = {
-  shopId: string;
-};
-export type DeclineShopInvitationApiResponse = {
-  shopId: string;
-  userId: string;
-};
-export type DeclineShopInvitationApiArg = {
-  shopId: string;
-};
-export type CreateShopRoleApiResponse = /** status 200 Role created */ ShopRolesResponse;
-export type CreateShopRoleApiArg = {
-  shopId: string;
-  name: string;
-  permissions: string[];
-};
-export type UpdateShopRoleApiResponse = /** status 200 Role updated */ ShopRolesResponse;
-export type UpdateShopRoleApiArg = {
-  shopId: string;
-  roleId: string;
-  name?: string;
-  permissions?: string[];
-};
-export type DeleteShopRoleApiResponse = /** status 200 Role deleted */ ShopRolesResponse;
-export type DeleteShopRoleApiArg = {
-  shopId: string;
-  roleId: string;
-};
-export type RemoveShopMemberApiResponse =
-  /** status 200 Member removed successfully */ ShopMembersResponse;
-export type RemoveShopMemberApiArg = {
-  /** Shop ID */
-  shopId: string;
-  /** Entra Object ID of the member to remove */
-  userId: string;
-};
 export type ShopBranding = {
   /** Logo URL (must start with https://) */
   logoUrl?: string | null;
@@ -663,8 +542,6 @@ export type ShopResponse = {
     role?: string;
     isActive?: boolean;
   }[];
-  /** Custom roles defined for this shop */
-  roles?: { id?: string; name?: string; permissions?: string[] }[];
   /** ISO 3166-1 alpha-2 country code (e.g. "AU", "DE") */
   countryCode?: string;
   /** Tax rates seeded from country on shop creation */
@@ -1382,11 +1259,6 @@ export const {
   useStripeWebhookMutation,
   useGetOrdersByShopQuery,
   useGetOrderByPaymentIntentQuery,
-  useAddShopMemberMutation,
-  useRemoveShopMemberMutation,
-  useCreateShopRoleMutation,
-  useUpdateShopRoleMutation,
-  useDeleteShopRoleMutation,
   useRequestShopNameChangeMutation,
   useCancelShopNameChangeMutation,
   useGetVisiblePlansQuery,
@@ -1396,9 +1268,6 @@ export const {
   useCancelShopSubscriptionMutation,
   useResumeShopSubscriptionMutation,
   useReactivateShopMutation,
-  useGetMyInvitationsQuery,
-  useAcceptShopInvitationMutation,
-  useDeclineShopInvitationMutation,
   useGetGoLiveStatusQuery,
   useLazyGetGoLiveStatusQuery,
   useCreateStripeAccountSessionMutation,
