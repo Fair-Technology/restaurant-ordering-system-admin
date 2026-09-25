@@ -366,7 +366,7 @@ function ProductEditView({
   const [direction, setDirection] = useState<'forward' | 'back'>('forward');
   const [initialized, setInitialized] = useState(false);
 
-  const stepSequence: StepNum[] = mode === 'simple' ? [1, 3, 6] : [1, 2, 3, 4, 6];
+  const stepSequence: StepNum[] = mode === 'simple' ? [1, 2, 6] : [1, 2, 3, 4, 6];
   const isFirstStep = step === stepSequence[0];
   const isLastStep = step === stepSequence[stepSequence.length - 1];
 
@@ -449,7 +449,7 @@ function ProductEditView({
       setNameError(ne); setDescError(de);
       return !ne && !de;
     }
-    if (s === 3) {
+    if (s === 2) {
       const hasNoCategory = selectedCategoryIds.length === 0;
       const hasNoTax = mode === 'extended' && hasTaxRates && selectedTaxRateId === null;
       setCategoryError(hasNoCategory); setTaxRateError(hasNoTax);
@@ -611,7 +611,7 @@ function ProductEditView({
           <>
             <MyButton type="button" variant="secondary" onClick={goBack}>← {t('products.wizardBack')}</MyButton>
             <div className="flex-1" />
-            {mode === 'extended' && (step === 2 || step === 4) && (
+            {mode === 'extended' && (step === 3 || step === 4) && (
               <MyButton type="button" variant="ghost" onClick={goNext}>{t('products.wizardSkip')}</MyButton>
             )}
             <MyButton type="button" onClick={goNext}>{t('products.wizardNext')} →</MyButton>
@@ -721,7 +721,7 @@ function AddProductModal({ shopId, onClose }: AddProductModalProps) {
   const [step, setStep] = useState<StepNum>(1);
   const [direction, setDirection] = useState<'forward' | 'back'>('forward');
 
-  const stepSequence: StepNum[] = mode === 'simple' ? [1, 3, 6] : [1, 2, 3, 4, 6];
+  const stepSequence: StepNum[] = mode === 'simple' ? [1, 2, 6] : [1, 2, 3, 4, 6];
   const isFirstStep = step === stepSequence[0];
   const isLastStep = step === stepSequence[stepSequence.length - 1];
 
@@ -771,7 +771,7 @@ function AddProductModal({ shopId, onClose }: AddProductModalProps) {
       setNameError(ne); setDescError(de);
       return !ne && !de;
     }
-    if (s === 3) {
+    if (s === 2) {
       const hasNoCategory = selectedCategoryIds.length === 0;
       const hasNoTax = mode === 'extended' && hasTaxRates && selectedTaxRateId === null;
       setCategoryError(hasNoCategory); setTaxRateError(hasNoTax);
@@ -913,7 +913,7 @@ function AddProductModal({ shopId, onClose }: AddProductModalProps) {
               <>
                 <MyButton type="button" variant="secondary" onClick={goBack}>← {t('products.wizardBack')}</MyButton>
                 <div className="flex-1" />
-                {mode === 'extended' && (step === 2 || step === 4) && (
+                {mode === 'extended' && (step === 3 || step === 4) && (
                   <MyButton type="button" variant="ghost" onClick={goNext}>{t('products.wizardSkip')}</MyButton>
                 )}
                 <MyButton type="button" onClick={goNext}>{t('products.wizardNext')} →</MyButton>
