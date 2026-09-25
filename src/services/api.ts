@@ -904,8 +904,6 @@ export type ProductResponse = {
     /** Whether this is the primary image */
     isPrimary?: boolean;
   }[];
-  /** Special info items (dietary labels, badges, etc.) */
-  specialInfo?: { name: string; icon: string }[];
   /** Translations of the product name, keyed by menu language */
   nameTranslations?: TranslationMap;
   /** Translations of the product description, keyed by menu language */
@@ -974,8 +972,6 @@ export type ProductResponse = {
   isAvailable?: boolean;
   /** Whether product is deleted */
   isDeleted?: boolean;
-  /** Tax rate ID from the shop's taxRates list, or null */
-  taxRateId?: string | null;
   /** Optional availability schedule */
   schedule?: ProductSchedule | null;
   /** Creation timestamp */
@@ -1000,8 +996,6 @@ export type CreateProductRequest = {
     url?: string;
     isPrimary?: boolean;
   }[];
-  /** Special info items (dietary labels, badges, etc.) */
-  specialInfo?: { name: string; icon: string }[];
   /** Translations of the product name, keyed by menu language */
   nameTranslations?: TranslationMap;
   /** Translations of the product description, keyed by menu language */
@@ -1020,8 +1014,6 @@ export type CreateProductRequest = {
   taxClassId?: string | null;
   /** Whether product is available */
   isAvailable?: boolean;
-  /** Tax rate ID from the shop's taxRates list, or null to clear */
-  taxRateId?: string | null;
   variantGroups?: {
     id: string;
     name: string;
@@ -1055,8 +1047,6 @@ export type UpdateProductRequest = {
     url?: string;
     isPrimary?: boolean;
   }[];
-  /** Special info items (dietary labels, badges, etc.) */
-  specialInfo?: { name: string; icon: string }[];
   /** Translations of the product name, keyed by menu language */
   nameTranslations?: TranslationMap;
   /** Translations of the product description, keyed by menu language */
@@ -1075,8 +1065,6 @@ export type UpdateProductRequest = {
   taxClassId?: string | null;
   /** Whether product is available */
   isAvailable?: boolean;
-  /** Tax rate ID from the shop's taxRates list, or null to clear */
-  taxRateId?: string | null;
   /** Variant groups (single-select per group, e.g. Size) */
   variantGroups?: {
     id: string;
