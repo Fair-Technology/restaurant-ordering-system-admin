@@ -829,8 +829,6 @@ export type UpdateShopRequest = {
   pausedMessage?: string;
   /** Payment policy */
   paymentPolicy?: "pay_online";
-  /** Allow guest checkout */
-  allowGuestCheckout?: boolean;
   /** Minimum order amount in cents */
   minOrderAmountCents?: number;
   address?: {
