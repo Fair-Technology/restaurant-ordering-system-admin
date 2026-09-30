@@ -218,6 +218,7 @@
     "newProduct": "Neues Produkt",
     "loading": "Produkte werden geladen...",
     "loadError": "Produkte konnten nicht geladen werden.",
+    "refreshing": "Liste wird aktualisiert…",
     "empty": "Noch keine Produkte.",
     "uncategorized": "Nicht kategorisiert",
     "availabilityRequiresCategory": "Füge diesem Produkt eine Kategorie hinzu, bevor du es verfügbar machst.",

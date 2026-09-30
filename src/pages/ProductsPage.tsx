@@ -29,6 +29,7 @@ import { useShopReferenceLists } from '../features/menu/useShopReferenceLists';
 import { EMPTY_FOOD_INFO, effectiveTaxClassId, foodInfoFromProduct, labelFor } from '../features/menu/foodInfo';
 import type { FoodInfo } from '../features/menu/foodInfo';
 import { countMissingTranslations } from '../features/menu/translations';
+import { isListRefreshing } from '../features/menu/productListStatus';
 
 // ── Bulk import types ──────────────────────────────────────────────────────────
 
@@ -1516,7 +1517,8 @@ export function ProductsPage() {
   const { shopId } = useParams<{ shopId: string }>();
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { data: products, isLoading, isError } = useGetProductsByShopQuery({ shopId: shopId! });
+  const { data: products, isLoading, isFetching, isError } = useGetProductsByShopQuery({ shopId: shopId! });
+  const isRefreshing = isListRefreshing({ isLoading, isFetching });
   const { data: shop } = useGetShopByIdQuery({ shopId: shopId! });
   const { data: categories } = useGetCategoriesByShopQuery({ shopId: shopId! });
   const currencySymbol = shop?.currency ? getCurrencySymbol(shop.currency) : '$';
@@ -1592,7 +1594,17 @@ export function ProductsPage() {
             </Link>
           </div>
         )}
-        <div className="flex justify-end">
+        <div className="flex items-center justify-between gap-3">
+          {/* The list refetch after a save takes a moment; without this the
+              old rows read as a save that didn't take. */}
+          <p role="status" className="flex items-center gap-2 text-sm text-gray-500">
+            {isRefreshing && (
+              <>
+                <span className="w-3.5 h-3.5 rounded-full border-2 border-gray-200 border-t-gray-600 animate-spin" />
+                {t('products.refreshing')}
+              </>
+            )}
+          </p>
           <MyButton
             variant="secondary"
             onClick={() => setSearchParams((p) => { const n = new URLSearchParams(p); n.set('importProducts', '1'); return n; })}
@@ -1601,41 +1613,43 @@ export function ProductsPage() {
           </MyButton>
         </div>
 
-        {isEmpty && <p className="text-gray-400 text-sm">{t('products.empty')}</p>}
+        <div aria-busy={isRefreshing} className={`space-y-6 transition-opacity ${isRefreshing ? 'opacity-60' : ''}`}>
+          {isEmpty && <p className="text-gray-400 text-sm">{t('products.empty')}</p>}
 
-        {sortedCategories.map((cat) => (
-          <section key={cat.id}>
-            <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2 px-1">
-              {cat.name}
-            </h2>
-            <MyCard>
-              <ProductTable
-                products={byCategory.get(cat.id)!}
-                onSelect={setSelectedProductId}
-                shopId={shopId!}
-                onScheduleClick={setScheduleModalProduct}
-                currencySymbol={currencySymbol}
-              />
-            </MyCard>
-          </section>
-        ))}
+          {sortedCategories.map((cat) => (
+            <section key={cat.id}>
+              <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2 px-1">
+                {cat.name}
+              </h2>
+              <MyCard>
+                <ProductTable
+                  products={byCategory.get(cat.id)!}
+                  onSelect={setSelectedProductId}
+                  shopId={shopId!}
+                  onScheduleClick={setScheduleModalProduct}
+                  currencySymbol={currencySymbol}
+                />
+              </MyCard>
+            </section>
+          ))}
 
-        {uncategorized.length > 0 && (
-          <section>
-            <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2 px-1">
-              {t('products.uncategorized')}
-            </h2>
-            <MyCard>
-              <ProductTable
-                products={uncategorized}
-                onSelect={setSelectedProductId}
-                shopId={shopId!}
-                onScheduleClick={setScheduleModalProduct}
-                currencySymbol={currencySymbol}
-              />
-            </MyCard>
-          </section>
-        )}
+          {uncategorized.length > 0 && (
+            <section>
+              <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2 px-1">
+                {t('products.uncategorized')}
+              </h2>
+              <MyCard>
+                <ProductTable
+                  products={uncategorized}
+                  onSelect={setSelectedProductId}
+                  shopId={shopId!}
+                  onScheduleClick={setScheduleModalProduct}
+                  currencySymbol={currencySymbol}
+                />
+              </MyCard>
+            </section>
+          )}
+        </div>
       </div>
 
       {selectedProductId && (

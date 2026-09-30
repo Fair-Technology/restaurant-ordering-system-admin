@@ -218,6 +218,7 @@
     "newProduct": "New Product",
     "loading": "Loading products...",
     "loadError": "Failed to load products.",
+    "refreshing": "Updating list…",
     "empty": "No products yet.",
     "uncategorized": "Uncategorized",
     "availabilityRequiresCategory": "Add a category to this product before making it available.",
