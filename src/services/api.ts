@@ -142,10 +142,10 @@ const injectedRtkApi = api.injectEndpoints({
           shopId: queryArg.shopId,
         },
       }),
-      invalidatesTags: (_result, _error, arg) => [
-        { type: 'Products', id: arg.productId },
-        'Products',
-      ],
+      // Only the shop's list: the deleted dish's own entry must not refetch
+      // (the detail drawer is still subscribed when this lands, and the
+      // bare 'Products' tag would hit it too).
+      invalidatesTags: (_result, _error, arg) => [{ type: 'Products' as const, id: `LIST-${arg.shopId}` }],
     }),
     generateUploadUrl: build.mutation<
       GenerateUploadUrlApiResponse,
