@@ -30,6 +30,7 @@ import { EMPTY_FOOD_INFO, effectiveTaxClassId, foodInfoFromProduct, labelFor } f
 import type { FoodInfo } from '../features/menu/foodInfo';
 import { countMissingTranslations } from '../features/menu/translations';
 import { isListRefreshing } from '../features/menu/productListStatus';
+import { wizardBackAction, wizardStepSequence } from '../features/menu/wizardSteps';
 
 // ── Bulk import types ──────────────────────────────────────────────────────────
 
@@ -407,7 +408,7 @@ function ProductEditView({
   const [direction, setDirection] = useState<'forward' | 'back'>('forward');
   const [initialized, setInitialized] = useState(false);
 
-  const stepSequence: StepNum[] = mode === 'simple' ? [1, 2, 3, 6] : [1, 2, 3, 4, 6];
+  const stepSequence = wizardStepSequence(mode);
   const isFirstStep = step === stepSequence[0];
   const isLastStep = step === stepSequence[stepSequence.length - 1];
 
@@ -504,9 +505,10 @@ function ProductEditView({
     setStep(stepSequence[idx + 1]);
   }
   function goBack() {
-    const idx = stepSequence.indexOf(step);
+    const back = wizardBackAction(stepSequence, step);
+    if (back.kind === 'exit') { onBack(); return; }
     setDirection('back');
-    setStep(stepSequence[idx - 1]);
+    setStep(back.step);
   }
   function jumpTo(n: StepNum) { setDirection(n < step ? 'back' : 'forward'); setStep(n); }
 
@@ -666,7 +668,7 @@ function ProductEditView({
         )}
         {isLastStep && (
           <>
-            <MyButton type="button" variant="secondary" onClick={onBack}>← {t('products.wizardBack')}</MyButton>
+            <MyButton type="button" variant="secondary" onClick={goBack}>← {t('products.wizardBack')}</MyButton>
             <div className="flex-1" />
             <MyButton type="button" disabled={isBusy} onClick={handleSubmit}>{submitLabel}</MyButton>
           </>
@@ -765,7 +767,7 @@ function AddProductModal({ shopId, onClose }: AddProductModalProps) {
   const [step, setStep] = useState<StepNum>(1);
   const [direction, setDirection] = useState<'forward' | 'back'>('forward');
 
-  const stepSequence: StepNum[] = mode === 'simple' ? [1, 2, 3, 6] : [1, 2, 3, 4, 6];
+  const stepSequence = wizardStepSequence(mode);
   const isFirstStep = step === stepSequence[0];
   const isLastStep = step === stepSequence[stepSequence.length - 1];
 
@@ -819,9 +821,10 @@ function AddProductModal({ shopId, onClose }: AddProductModalProps) {
     setStep(stepSequence[idx + 1]);
   }
   function goBack() {
-    const idx = stepSequence.indexOf(step);
+    const back = wizardBackAction(stepSequence, step);
+    if (back.kind === 'exit') { onClose(); return; }
     setDirection('back');
-    setStep(stepSequence[idx - 1]);
+    setStep(back.step);
   }
   function jumpTo(n: StepNum) { setDirection(n < step ? 'back' : 'forward'); setStep(n); }
 
