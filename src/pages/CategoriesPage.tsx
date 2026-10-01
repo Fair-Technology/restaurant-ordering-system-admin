@@ -29,6 +29,8 @@ import { MyButton } from '../components/ui/MyButton';
 import { MyInput } from '../components/ui/MyInput';
 import { MySpinner } from '../components/ui/MySpinner';
 import { useToast } from '../contexts/ToastContext';
+import { useShopReferenceLists } from '../features/menu/useShopReferenceLists';
+import { labelFor } from '../features/menu/foodInfo';
 
 type Category = NonNullable<GetCategoriesByShopApiResponse>[number];
 
@@ -43,18 +45,26 @@ function CreateCategoryModal({
   existingCount: number;
   onClose: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const toast = useToast();
   const [createCategory, { isLoading, isError, error }] = useCreateCategoryMutation();
+  const { refs } = useShopReferenceLists(shopId);
   const [name, setName] = useState('');
   const [icon, setIcon] = useState<string | null>(null);
+  const [taxClassOverride, setTaxClassOverride] = useState<string | null>(null);
+  const taxClassId = taxClassOverride ?? refs?.defaultTaxClassId ?? '';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await createCategory({
         shopId,
-        createCategoryRequest: { name, sortOrder: existingCount, icon: icon ?? undefined },
+        createCategoryRequest: {
+          name,
+          sortOrder: existingCount,
+          icon: icon ?? undefined,
+          ...(taxClassId ? { taxClassId } : {}),
+        },
       }).unwrap();
       toast.success(t('categories.created'));
       onClose();
@@ -103,6 +113,23 @@ function CreateCategoryModal({
                   className="flex-1"
                 />
               </div>
+              {(refs?.taxClasses.length ?? 0) > 0 && (
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-gray-700">{t('categories.taxClass')}</label>
+                  <select
+                    value={taxClassId}
+                    onChange={(e) => setTaxClassOverride(e.target.value)}
+                    className="w-full border border-gray-200 rounded-lg bg-white text-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400"
+                  >
+                    {refs!.taxClasses.filter((c) => c.isActive).map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {labelFor(c.labels, i18n.language)}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-400">{t('categories.taxClassHelp')}</p>
+                </div>
+              )}
             </div>
 
             {/* Footer */}
@@ -129,8 +156,10 @@ interface SortableCategoryItemProps {
 }
 
 function SortableCategoryItem({ cat, shopId }: SortableCategoryItemProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [updateCategory] = useUpdateCategoryMutation();
+  const { refs } = useShopReferenceLists(shopId);
+  const taxClass = refs?.taxClasses.find((c) => c.id === cat.taxClassId);
   const {
     attributes,
     listeners,
@@ -171,7 +200,14 @@ function SortableCategoryItem({ cat, shopId }: SortableCategoryItemProps) {
       <IconPickerInline value={cat.icon ?? null} onChange={handleIconChange} />
 
       {/* Name */}
-      <p className="font-medium text-gray-900 truncate">{cat.name}</p>
+      <div className="flex items-center gap-2 min-w-0">
+        <p className="font-medium text-gray-900 truncate">{cat.name}</p>
+        {taxClass && (
+          <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 flex-shrink-0">
+            {labelFor(taxClass.labels, i18n.language)}
+          </span>
+        )}
+      </div>
 
       {/* Edit */}
       <Link

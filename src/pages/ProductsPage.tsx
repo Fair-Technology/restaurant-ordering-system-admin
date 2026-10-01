@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { ProductResponse } from '../services/api';
 import {
@@ -22,10 +22,15 @@ import { Calendar, Pencil, Trash2, X } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 import {
   type VariantGroup, type VariantOption, type AddonGroup, type AddonOption,
-  type StepNum, type ScheduleState, type SpecialInfoItem,
-  StepIndicator, Step1Basics, Step2SpecialInfo, Step3Categories, Step4Customise, Step5Schedule, Step6Review,
+  type StepNum, type ScheduleState,
+  StepIndicator, Step1Basics, StepFoodInfo, StepCategories, Step4Customise, Step5Schedule, Step6Review,
 } from './ProductWizardSteps';
-import { LucideIconByName } from '../components/ui/IconPicker';
+import { useShopReferenceLists } from '../features/menu/useShopReferenceLists';
+import { EMPTY_FOOD_INFO, effectiveTaxClassId, foodInfoFromProduct, labelFor } from '../features/menu/foodInfo';
+import type { FoodInfo } from '../features/menu/foodInfo';
+import { countMissingTranslations } from '../features/menu/translations';
+import { isListRefreshing } from '../features/menu/productListStatus';
+import { wizardBackAction, wizardStepSequence } from '../features/menu/wizardSteps';
 
 // ── Bulk import types ──────────────────────────────────────────────────────────
 
@@ -54,11 +59,15 @@ function ProductDetailView({
   onDeleted: () => void;
   onClose: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const toast = useToast();
   const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const { refs } = useShopReferenceLists(shopId);
   const imageUrl = product.images?.length ? product.images[product.images.length - 1].url : undefined;
+  const allergens = (refs?.allergens ?? []).filter((a) => (product.allergenIds ?? []).includes(a.id));
+  const additives = (refs?.additives ?? []).filter((a) => (product.additiveIds ?? []).includes(a.id));
+  const dietaryTags = (refs?.dietaryTags ?? []).filter((tag) => (product.dietaryTagIds ?? []).includes(tag.id));
 
   const handleDelete = async () => {
     try {
@@ -240,20 +249,56 @@ function ProductDetailView({
           </div>
         )}
 
-        {/* Special Info */}
-        {(product.specialInfo?.length ?? 0) > 0 && (
+        {/* Allergens */}
+        <div>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+            {t('products.allergens')}
+          </p>
+          {product.allergenIds === undefined || product.allergenIds === null ? (
+            <p className="text-sm text-gray-400">{t('products.notDeclared')}</p>
+          ) : allergens.length === 0 ? (
+            <p className="text-sm text-gray-400">{t('products.allergensNone')}</p>
+          ) : (
+            <div className="flex flex-wrap gap-1.5">
+              {allergens.map((a) => (
+                <span key={a.id} className="text-xs px-2.5 py-0.5 rounded-full bg-gray-100 border border-gray-200 text-gray-700">
+                  {labelFor(a.labels, i18n.language)}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Additives */}
+        <div>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+            {t('products.additives')}
+          </p>
+          {product.additiveIds === undefined || product.additiveIds === null ? (
+            <p className="text-sm text-gray-400">{t('products.notDeclared')}</p>
+          ) : additives.length === 0 ? (
+            <p className="text-sm text-gray-400">{t('products.additivesNone')}</p>
+          ) : (
+            <div className="flex flex-wrap gap-1.5">
+              {additives.map((a) => (
+                <span key={a.id} className="text-xs px-2.5 py-0.5 rounded-full bg-gray-100 border border-gray-200 text-gray-700">
+                  {a.code} {labelFor(a.labels, i18n.language)}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Dietary tags */}
+        {dietaryTags.length > 0 && (
           <div>
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-              Special Info
+              {t('products.dietaryTags')}
             </p>
             <div className="flex flex-wrap gap-1.5">
-              {product.specialInfo!.map((item, idx) => (
-                <span
-                  key={idx}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-100 border border-gray-200 text-xs text-gray-700"
-                >
-                  <LucideIconByName name={item.icon} size={12} />
-                  {item.name}
+              {dietaryTags.map((tag) => (
+                <span key={tag.id} className="text-xs px-2.5 py-0.5 rounded-full bg-gray-100 border border-gray-200 text-gray-700">
+                  {labelFor(tag.labels, i18n.language)}
                 </span>
               ))}
             </div>
@@ -336,21 +381,17 @@ function ProductEditView({
   shopId,
   currencySymbol,
   categoriesList,
-  taxRatesList,
-  hasTaxRates,
   onSaved,
   onBack,
 }: {
   productId: string;
   shopId: string;
   currencySymbol: string;
-  categoriesList: { id: string; name: string }[];
-  taxRatesList: { id: string; label: string }[];
-  hasTaxRates: boolean;
+  categoriesList: { id: string; name: string; taxClassId?: string | null }[];
   onSaved: () => void;
   onBack: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const toast = useToast();
 
   const { data: product, isLoading: productLoading } = useGetProductByIdQuery(
@@ -360,29 +401,28 @@ function ProductEditView({
   const [updateProduct, { isLoading: isUpdating, isError: isUpdateError }] = useUpdateProductMutation();
   const [generateUploadUrl] = useGenerateUploadUrlMutation();
   const [addProductImage] = useAddProductImageMutation();
+  const { refs } = useShopReferenceLists(shopId);
 
   const [mode, setMode] = useState<'simple' | 'extended'>('simple');
   const [step, setStep] = useState<StepNum>(1);
   const [direction, setDirection] = useState<'forward' | 'back'>('forward');
   const [initialized, setInitialized] = useState(false);
 
-  const stepSequence: StepNum[] = mode === 'simple' ? [1, 3, 6] : [1, 2, 3, 4, 6];
+  const stepSequence = wizardStepSequence(mode);
   const isFirstStep = step === stepSequence[0];
   const isLastStep = step === stepSequence[stepSequence.length - 1];
 
   const [form, setForm] = useState({ name: '', description: '', price: 0 });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
-  const [selectedTaxRateId, setSelectedTaxRateId] = useState<string | null>(null);
+  const [foodInfo, setFoodInfo] = useState<FoodInfo>(EMPTY_FOOD_INFO);
   const [variantGroups, setVariantGroups] = useState<VariantGroup[]>([]);
   const [addonGroups, setAddonGroups] = useState<AddonGroup[]>([]);
-  const [specialInfo, setSpecialInfo] = useState<SpecialInfoItem[]>([]);
   const [isUploading, setIsUploading] = useState(false);
 
   const [nameError, setNameError] = useState(false);
   const [descError, setDescError] = useState(false);
   const [categoryError, setCategoryError] = useState(false);
-  const [taxRateError, setTaxRateError] = useState(false);
 
   useEffect(() => {
     if (product && !initialized) {
@@ -392,14 +432,16 @@ function ProductEditView({
         price: product.price ?? 0,
       });
       setSelectedCategoryIds(product.categories?.map((c) => c.id!).filter(Boolean) ?? []);
-      setSelectedTaxRateId(product.taxRateId ?? null);
+      setFoodInfo(foodInfoFromProduct(product));
       setVariantGroups(
         (product.variantGroups ?? []).map((g) => ({
           id: g.id ?? crypto.randomUUID(),
           name: g.name ?? '',
+          nameTranslations: g.nameTranslations ?? {},
           options: (g.options ?? []).map((o) => ({
             id: o.id ?? crypto.randomUUID(),
             name: o.name ?? '',
+            nameTranslations: o.nameTranslations ?? {},
             priceDelta: o.priceDelta ?? 0,
             isAvailable: o.isAvailable ?? true,
           })),
@@ -409,18 +451,17 @@ function ProductEditView({
         (product.addonGroups ?? []).map((g) => ({
           id: g.id ?? crypto.randomUUID(),
           name: g.name ?? '',
+          nameTranslations: g.nameTranslations ?? {},
           minSelectable: g.minSelectable ?? 0,
           maxSelectable: g.maxSelectable ?? 1,
           options: (g.options ?? []).map((o) => ({
             id: o.id ?? crypto.randomUUID(),
             name: o.name ?? '',
+            nameTranslations: o.nameTranslations ?? {},
             priceDelta: o.priceDelta ?? 0,
             isAvailable: o.isAvailable ?? true,
           })),
         })),
-      );
-      setSpecialInfo(
-        (product.specialInfo ?? []).map((si) => ({ icon: si.icon, name: si.name })),
       );
       setInitialized(true);
     }
@@ -449,11 +490,10 @@ function ProductEditView({
       setNameError(ne); setDescError(de);
       return !ne && !de;
     }
-    if (s === 3) {
+    if (s === 2) {
       const hasNoCategory = selectedCategoryIds.length === 0;
-      const hasNoTax = mode === 'extended' && hasTaxRates && selectedTaxRateId === null;
-      setCategoryError(hasNoCategory); setTaxRateError(hasNoTax);
-      return !hasNoCategory && !hasNoTax;
+      setCategoryError(hasNoCategory);
+      return !hasNoCategory;
     }
     return true;
   }
@@ -465,9 +505,10 @@ function ProductEditView({
     setStep(stepSequence[idx + 1]);
   }
   function goBack() {
-    const idx = stepSequence.indexOf(step);
+    const back = wizardBackAction(stepSequence, step);
+    if (back.kind === 'exit') { onBack(); return; }
     setDirection('back');
-    setStep(stepSequence[idx - 1]);
+    setStep(back.step);
   }
   function jumpTo(n: StepNum) { setDirection(n < step ? 'back' : 'forward'); setStep(n); }
 
@@ -483,8 +524,12 @@ function ProductEditView({
           categoryIds: selectedCategoryIds,
           variantGroups,
           addonGroups,
-          taxRateId: selectedTaxRateId,
-          specialInfo: specialInfo.length > 0 ? specialInfo : undefined,
+          allergenIds: foodInfo.allergenIds,
+          additiveIds: foodInfo.additiveIds,
+          dietaryTagIds: foodInfo.dietaryTagIds,
+          spiceLevel: foodInfo.spiceLevel,
+          prepMinutes: foodInfo.prepMinutes,
+          taxClassId: foodInfo.taxClassId,
         },
       }).unwrap();
 
@@ -526,6 +571,10 @@ function ProductEditView({
     4: t('products.wizardStep4Subtitle'),
     6: t('products.wizardStep6Subtitle'),
   };
+  const effectiveTaxClassLabelId = effectiveTaxClassId(selectedCategoryIds, categoriesList, foodInfo.taxClassId);
+  const effectiveTaxClassLabel = effectiveTaxClassLabelId
+    ? labelFor((refs?.taxClasses ?? []).find((c) => c.id === effectiveTaxClassLabelId)?.labels ?? { de: '', en: '' }, i18n.language)
+    : t('products.taxClassNoneYet');
 
   if (productLoading || !initialized) {
     return (
@@ -584,16 +633,16 @@ function ProductEditView({
             <Step1Basics form={form} setForm={setForm} imageFile={imageFile} setImageFile={setImageFile} currencySymbol={currencySymbol} nameError={nameError} descError={descError} existingImageUrl={existingImageUrl} />
           )}
           {step === 2 && (
-            <Step3Categories shopId={shopId} categories={categoriesList} selectedCategoryIds={selectedCategoryIds} setSelectedCategoryIds={setSelectedCategoryIds} taxRates={taxRatesList} selectedTaxRateId={selectedTaxRateId} setSelectedTaxRateId={setSelectedTaxRateId} categoryError={categoryError} taxRateError={taxRateError} hideTaxRate={mode === 'simple'} />
+            <StepCategories shopId={shopId} categories={categoriesList} selectedCategoryIds={selectedCategoryIds} setSelectedCategoryIds={setSelectedCategoryIds} taxClasses={refs?.taxClasses ?? []} taxClassOverride={foodInfo.taxClassId} setTaxClassOverride={(id) => setFoodInfo({ ...foodInfo, taxClassId: id })} categoryError={categoryError} showTaxOverride={mode === 'extended'} />
           )}
           {step === 3 && (
-            <Step2SpecialInfo specialInfo={specialInfo} setSpecialInfo={setSpecialInfo} />
+            <StepFoodInfo foodInfo={foodInfo} setFoodInfo={setFoodInfo} refs={refs} showOptional={mode === 'extended'} />
           )}
           {step === 4 && (
             <Step4Customise variantGroups={variantGroups} addVariantGroup={addVariantGroup} removeVariantGroup={removeVariantGroup} updateVariantGroupName={updateVariantGroupName} addVariantOption={addVariantOption} removeVariantOption={removeVariantOption} updateVariantOption={updateVariantOption} addonGroups={addonGroups} addAddonGroup={addAddonGroup} removeAddonGroup={removeAddonGroup} updateAddonGroup={updateAddonGroup} addAddonOption={addAddonOption} removeAddonOption={removeAddonOption} updateAddonOption={updateAddonOption} />
           )}
           {step === 6 && (
-            <Step6Review form={form} imageFile={imageFile} existingImageUrl={existingImageUrl} selectedCategoryIds={selectedCategoryIds} categories={categoriesList} taxRates={taxRatesList} selectedTaxRateId={selectedTaxRateId} variantGroups={variantGroups} addonGroups={addonGroups} currencySymbol={currencySymbol} specialInfo={specialInfo} />
+            <Step6Review form={form} imageFile={imageFile} existingImageUrl={existingImageUrl} selectedCategoryIds={selectedCategoryIds} categories={categoriesList} variantGroups={variantGroups} addonGroups={addonGroups} currencySymbol={currencySymbol} foodInfo={foodInfo} refs={refs} effectiveTaxClassLabel={effectiveTaxClassLabel} />
           )}
         </div>
       </div>
@@ -611,7 +660,7 @@ function ProductEditView({
           <>
             <MyButton type="button" variant="secondary" onClick={goBack}>← {t('products.wizardBack')}</MyButton>
             <div className="flex-1" />
-            {mode === 'extended' && (step === 2 || step === 4) && (
+            {(step === 3 || (mode === 'extended' && step === 4)) && (
               <MyButton type="button" variant="ghost" onClick={goNext}>{t('products.wizardSkip')}</MyButton>
             )}
             <MyButton type="button" onClick={goNext}>{t('products.wizardNext')} →</MyButton>
@@ -619,7 +668,7 @@ function ProductEditView({
         )}
         {isLastStep && (
           <>
-            <MyButton type="button" variant="secondary" onClick={onBack}>← {t('products.wizardBack')}</MyButton>
+            <MyButton type="button" variant="secondary" onClick={goBack}>← {t('products.wizardBack')}</MyButton>
             <div className="flex-1" />
             <MyButton type="button" disabled={isBusy} onClick={handleSubmit}>{submitLabel}</MyButton>
           </>
@@ -653,10 +702,9 @@ function ProductModal({
   const [mode, setMode] = useState<'view' | 'edit'>('view');
 
   const currencySymbol = shop?.currency ? getCurrencySymbol(shop.currency) : '$';
-  const taxRates = shop?.taxRates ?? [];
-  const hasTaxRates = taxRates.length > 0;
-  const categoriesList = (categories ?? []).filter((c): c is { id: string; name: string } => !!c.id && !!c.name);
-  const taxRatesList = taxRates.filter((r): r is { id: string; label: string } => !!r.id && !!r.label);
+  const categoriesList = (categories ?? []).filter(
+    (c): c is { id: string; name: string; taxClassId?: string | null } => !!c.id && !!c.name,
+  );
 
   return (
     <>
@@ -682,8 +730,6 @@ function ProductModal({
               shopId={shopId}
               currencySymbol={currencySymbol}
               categoriesList={categoriesList}
-              taxRatesList={taxRatesList}
-              hasTaxRates={hasTaxRates}
               onSaved={onClose}
               onBack={() => setMode('view')}
             />
@@ -702,7 +748,7 @@ interface AddProductModalProps {
 }
 
 function AddProductModal({ shopId, onClose }: AddProductModalProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const toast = useToast();
 
   const { data: shop } = useGetShopByIdQuery({ shopId });
@@ -711,42 +757,31 @@ function AddProductModal({ shopId, onClose }: AddProductModalProps) {
   const [createProduct, { isLoading, isError, error }] = useCreateProductMutation();
   const [generateUploadUrl] = useGenerateUploadUrlMutation();
   const [addProductImage] = useAddProductImageMutation();
+  const { refs } = useShopReferenceLists(shopId);
 
-  const taxRates = shop?.taxRates ?? [];
-  const hasTaxRates = taxRates.length > 0;
-  const categoriesList = (categories ?? []).filter((c): c is { id: string; name: string } => !!c.id && !!c.name);
-  const taxRatesList = taxRates.filter((r): r is { id: string; label: string } => !!r.id && !!r.label);
+  const categoriesList = (categories ?? []).filter(
+    (c): c is { id: string; name: string; taxClassId?: string | null } => !!c.id && !!c.name,
+  );
 
   const [mode, setMode] = useState<'simple' | 'extended'>('simple');
   const [step, setStep] = useState<StepNum>(1);
   const [direction, setDirection] = useState<'forward' | 'back'>('forward');
 
-  const stepSequence: StepNum[] = mode === 'simple' ? [1, 3, 6] : [1, 2, 3, 4, 6];
+  const stepSequence = wizardStepSequence(mode);
   const isFirstStep = step === stepSequence[0];
   const isLastStep = step === stepSequence[stepSequence.length - 1];
 
   const [form, setForm] = useState({ name: '', description: '', price: 0 });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
-  const [selectedTaxRateId, setSelectedTaxRateId] = useState<string | null>(null);
+  const [foodInfo, setFoodInfo] = useState<FoodInfo>(EMPTY_FOOD_INFO);
   const [variantGroups, setVariantGroups] = useState<VariantGroup[]>([]);
   const [addonGroups, setAddonGroups] = useState<AddonGroup[]>([]);
-  const [specialInfo, setSpecialInfo] = useState<SpecialInfoItem[]>([]);
   const [isUploading, setIsUploading] = useState(false);
 
   const [nameError, setNameError] = useState(false);
   const [descError, setDescError] = useState(false);
   const [categoryError, setCategoryError] = useState(false);
-  const [taxRateError, setTaxRateError] = useState(false);
-
-  useEffect(() => {
-    if (mode === 'simple') {
-      setSelectedTaxRateId(taxRatesList[0]?.id ?? null);
-    } else {
-      setSelectedTaxRateId(null);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode]);
 
   // Variant helpers
   const addVariantGroup = () => setVariantGroups((gs) => [...gs, { id: crypto.randomUUID(), name: '', options: [] }]);
@@ -771,11 +806,10 @@ function AddProductModal({ shopId, onClose }: AddProductModalProps) {
       setNameError(ne); setDescError(de);
       return !ne && !de;
     }
-    if (s === 3) {
+    if (s === 2) {
       const hasNoCategory = selectedCategoryIds.length === 0;
-      const hasNoTax = mode === 'extended' && hasTaxRates && selectedTaxRateId === null;
-      setCategoryError(hasNoCategory); setTaxRateError(hasNoTax);
-      return !hasNoCategory && !hasNoTax;
+      setCategoryError(hasNoCategory);
+      return !hasNoCategory;
     }
     return true;
   }
@@ -787,9 +821,10 @@ function AddProductModal({ shopId, onClose }: AddProductModalProps) {
     setStep(stepSequence[idx + 1]);
   }
   function goBack() {
-    const idx = stepSequence.indexOf(step);
+    const back = wizardBackAction(stepSequence, step);
+    if (back.kind === 'exit') { onClose(); return; }
     setDirection('back');
-    setStep(stepSequence[idx - 1]);
+    setStep(back.step);
   }
   function jumpTo(n: StepNum) { setDirection(n < step ? 'back' : 'forward'); setStep(n); }
 
@@ -802,10 +837,14 @@ function AddProductModal({ shopId, onClose }: AddProductModalProps) {
           description: form.description,
           price: form.price,
           categoryIds: selectedCategoryIds,
-          taxRateId: selectedTaxRateId,
           variantGroups: variantGroups.length > 0 ? variantGroups : undefined,
           addonGroups: addonGroups.length > 0 ? addonGroups : undefined,
-          specialInfo: specialInfo.length > 0 ? specialInfo : undefined,
+          allergenIds: foodInfo.allergenIds,
+          additiveIds: foodInfo.additiveIds,
+          dietaryTagIds: foodInfo.dietaryTagIds,
+          spiceLevel: foodInfo.spiceLevel,
+          prepMinutes: foodInfo.prepMinutes,
+          taxClassId: foodInfo.taxClassId,
         },
       }).unwrap();
 
@@ -845,6 +884,10 @@ function AddProductModal({ shopId, onClose }: AddProductModalProps) {
     4: t('products.wizardStep4Subtitle'),
     6: t('products.wizardStep6Subtitle'),
   };
+  const effectiveTaxClassLabelId = effectiveTaxClassId(selectedCategoryIds, categoriesList, foodInfo.taxClassId);
+  const effectiveTaxClassLabel = effectiveTaxClassLabelId
+    ? labelFor((refs?.taxClasses ?? []).find((c) => c.id === effectiveTaxClassLabelId)?.labels ?? { de: '', en: '' }, i18n.language)
+    : t('products.taxClassNoneYet');
 
   return (
     <>
@@ -893,10 +936,10 @@ function AddProductModal({ shopId, onClose }: AddProductModalProps) {
             )}
             <div key={step} className={direction === 'forward' ? 'animate-slide-in-right' : 'animate-slide-in-left'}>
               {step === 1 && <Step1Basics form={form} setForm={setForm} imageFile={imageFile} setImageFile={setImageFile} currencySymbol={currencySymbol} nameError={nameError} descError={descError} />}
-              {step === 2 && <Step3Categories shopId={shopId} categories={categoriesList} selectedCategoryIds={selectedCategoryIds} setSelectedCategoryIds={setSelectedCategoryIds} taxRates={taxRatesList} selectedTaxRateId={selectedTaxRateId} setSelectedTaxRateId={setSelectedTaxRateId} categoryError={categoryError} taxRateError={taxRateError} hideTaxRate={mode === 'simple'} />}
-              {step === 3 && <Step2SpecialInfo specialInfo={specialInfo} setSpecialInfo={setSpecialInfo} />}
+              {step === 2 && <StepCategories shopId={shopId} categories={categoriesList} selectedCategoryIds={selectedCategoryIds} setSelectedCategoryIds={setSelectedCategoryIds} taxClasses={refs?.taxClasses ?? []} taxClassOverride={foodInfo.taxClassId} setTaxClassOverride={(id) => setFoodInfo({ ...foodInfo, taxClassId: id })} categoryError={categoryError} showTaxOverride={mode === 'extended'} />}
+              {step === 3 && <StepFoodInfo foodInfo={foodInfo} setFoodInfo={setFoodInfo} refs={refs} showOptional={mode === 'extended'} />}
               {step === 4 && <Step4Customise variantGroups={variantGroups} addVariantGroup={addVariantGroup} removeVariantGroup={removeVariantGroup} updateVariantGroupName={updateVariantGroupName} addVariantOption={addVariantOption} removeVariantOption={removeVariantOption} updateVariantOption={updateVariantOption} addonGroups={addonGroups} addAddonGroup={addAddonGroup} removeAddonGroup={removeAddonGroup} updateAddonGroup={updateAddonGroup} addAddonOption={addAddonOption} removeAddonOption={removeAddonOption} updateAddonOption={updateAddonOption} />}
-              {step === 6 && <Step6Review form={form} imageFile={imageFile} selectedCategoryIds={selectedCategoryIds} categories={categoriesList} taxRates={taxRatesList} selectedTaxRateId={selectedTaxRateId} variantGroups={variantGroups} addonGroups={addonGroups} currencySymbol={currencySymbol} specialInfo={specialInfo} />}
+              {step === 6 && <Step6Review form={form} imageFile={imageFile} selectedCategoryIds={selectedCategoryIds} categories={categoriesList} variantGroups={variantGroups} addonGroups={addonGroups} currencySymbol={currencySymbol} foodInfo={foodInfo} refs={refs} effectiveTaxClassLabel={effectiveTaxClassLabel} />}
             </div>
           </div>
 
@@ -913,7 +956,7 @@ function AddProductModal({ shopId, onClose }: AddProductModalProps) {
               <>
                 <MyButton type="button" variant="secondary" onClick={goBack}>← {t('products.wizardBack')}</MyButton>
                 <div className="flex-1" />
-                {mode === 'extended' && (step === 2 || step === 4) && (
+                {(step === 3 || (mode === 'extended' && step === 4)) && (
                   <MyButton type="button" variant="ghost" onClick={goNext}>{t('products.wizardSkip')}</MyButton>
                 )}
                 <MyButton type="button" onClick={goNext}>{t('products.wizardNext')} →</MyButton>
@@ -938,10 +981,6 @@ function AddProductModal({ shopId, onClose }: AddProductModalProps) {
 function BulkImportModal({ shopId, onClose }: { shopId: string; onClose: () => void }) {
   const { data: shop } = useGetShopByIdQuery({ shopId });
   const currencySymbol = shop?.currency ? getCurrencySymbol(shop.currency) : '$';
-  const taxRatesList = (shop?.taxRates ?? []).filter(
-    (r): r is { id: string; label: string; rate: number } => !!r.id && !!r.label,
-  );
-  const defaultTaxRateId = taxRatesList[0]?.id ?? null;
   const [createProduct] = useCreateProductMutation();
 
   const [step, setStep] = useState<ImportStep>('upload');
@@ -1003,7 +1042,6 @@ function BulkImportModal({ shopId, onClose }: { shopId: string; onClose: () => v
             name: row.name,
             description: row.description,
             price: Math.round(row.price! * 100),
-            taxRateId: defaultTaxRateId,
             categoryIds: [],
             images: row.image_url
               ? [{ id: crypto.randomUUID(), url: row.image_url }]
@@ -1410,6 +1448,11 @@ function ProductTable({
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 flex-wrap">
                 <span className="text-sm font-medium text-gray-900 truncate">{product.name}</span>
+                {product.isDeclared === false && (
+                  <span className="ml-2 inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">
+                    {t('products.notOnMenu')}
+                  </span>
+                )}
                 {product.schedule ? (
                   <>
                     <button
@@ -1477,8 +1520,10 @@ export function ProductsPage() {
   const { shopId } = useParams<{ shopId: string }>();
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { data: products, isLoading, isError } = useGetProductsByShopQuery({ shopId: shopId! });
+  const { data: products, isLoading, isFetching, isError } = useGetProductsByShopQuery({ shopId: shopId! });
+  const isRefreshing = isListRefreshing({ isLoading, isFetching });
   const { data: shop } = useGetShopByIdQuery({ shopId: shopId! });
+  const { data: categories } = useGetCategoriesByShopQuery({ shopId: shopId! });
   const currencySymbol = shop?.currency ? getCurrencySymbol(shop.currency) : '$';
 
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
@@ -1531,10 +1576,38 @@ export function ProductsPage() {
   );
   const isEmpty = !products?.length;
 
+  const extraLanguage = (shop?.menuLanguages?.length ?? 1) > 1 ? shop!.menuLanguages![1] : null;
+  const missingTranslations = extraLanguage
+    ? countMissingTranslations(products ?? [], categories ?? [], extraLanguage)
+    : 0;
+
   return (
     <>
       <div className="space-y-6">
-        <div className="flex justify-end">
+        {extraLanguage && missingTranslations > 0 && (
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5">
+            <p className="text-sm text-amber-800">
+              {t('products.translationsBanner', { count: missingTranslations })}
+            </p>
+            <Link
+              to={`/shops/${shopId}/translations`}
+              className="text-sm font-medium text-amber-900 underline underline-offset-2 flex-shrink-0"
+            >
+              {t('products.translationsBannerLink')}
+            </Link>
+          </div>
+        )}
+        <div className="flex items-center justify-between gap-3">
+          {/* The list refetch after a save takes a moment; without this the
+              old rows read as a save that didn't take. */}
+          <p role="status" className="flex items-center gap-2 text-sm text-gray-500">
+            {isRefreshing && (
+              <>
+                <span className="w-3.5 h-3.5 rounded-full border-2 border-gray-200 border-t-gray-600 animate-spin" />
+                {t('products.refreshing')}
+              </>
+            )}
+          </p>
           <MyButton
             variant="secondary"
             onClick={() => setSearchParams((p) => { const n = new URLSearchParams(p); n.set('importProducts', '1'); return n; })}
@@ -1543,41 +1616,43 @@ export function ProductsPage() {
           </MyButton>
         </div>
 
-        {isEmpty && <p className="text-gray-400 text-sm">{t('products.empty')}</p>}
+        <div aria-busy={isRefreshing} className={`space-y-6 transition-opacity ${isRefreshing ? 'opacity-60' : ''}`}>
+          {isEmpty && <p className="text-gray-400 text-sm">{t('products.empty')}</p>}
 
-        {sortedCategories.map((cat) => (
-          <section key={cat.id}>
-            <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2 px-1">
-              {cat.name}
-            </h2>
-            <MyCard>
-              <ProductTable
-                products={byCategory.get(cat.id)!}
-                onSelect={setSelectedProductId}
-                shopId={shopId!}
-                onScheduleClick={setScheduleModalProduct}
-                currencySymbol={currencySymbol}
-              />
-            </MyCard>
-          </section>
-        ))}
+          {sortedCategories.map((cat) => (
+            <section key={cat.id}>
+              <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2 px-1">
+                {cat.name}
+              </h2>
+              <MyCard>
+                <ProductTable
+                  products={byCategory.get(cat.id)!}
+                  onSelect={setSelectedProductId}
+                  shopId={shopId!}
+                  onScheduleClick={setScheduleModalProduct}
+                  currencySymbol={currencySymbol}
+                />
+              </MyCard>
+            </section>
+          ))}
 
-        {uncategorized.length > 0 && (
-          <section>
-            <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2 px-1">
-              {t('products.uncategorized')}
-            </h2>
-            <MyCard>
-              <ProductTable
-                products={uncategorized}
-                onSelect={setSelectedProductId}
-                shopId={shopId!}
-                onScheduleClick={setScheduleModalProduct}
-                currencySymbol={currencySymbol}
-              />
-            </MyCard>
-          </section>
-        )}
+          {uncategorized.length > 0 && (
+            <section>
+              <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2 px-1">
+                {t('products.uncategorized')}
+              </h2>
+              <MyCard>
+                <ProductTable
+                  products={uncategorized}
+                  onSelect={setSelectedProductId}
+                  shopId={shopId!}
+                  onScheduleClick={setScheduleModalProduct}
+                  currencySymbol={currencySymbol}
+                />
+              </MyCard>
+            </section>
+          )}
+        </div>
       </div>
 
       {selectedProductId && (

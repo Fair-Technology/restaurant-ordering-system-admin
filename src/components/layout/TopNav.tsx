@@ -1,26 +1,30 @@
 import { useState, useEffect } from 'react';
-import { NavLink, useParams } from 'react-router-dom';
+import { NavLink, useParams, useNavigate } from 'react-router-dom';
 import { useMsal } from '@azure/msal-react';
 import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft, Menu, X,
   Package, ClipboardList, Tag, CreditCard, Settings, Store,
+  Users, History, LogOut, Languages,
   Circle,
 } from 'lucide-react';
 import {
   useGetShopByIdQuery,
-  useGetMyInvitationsQuery,
   useLazyGetGoLiveStatusQuery,
   useUpdateShopMutation,
 } from '../../services/api';
+import { shopNavItems } from '../../features/shops/shopNav';
+import { clearStaffSession, readStaffSession } from '../../features/staff/staffSession';
 import { AccountSettingsModal } from './AccountSettingsModal';
 import { GoLiveCriteriaModal, PauseShopModal } from '../shop/GoLiveModal';
 
 export function TopNav() {
   const { shopId } = useParams<{ shopId?: string }>();
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { accounts } = useMsal();
   const user = accounts[0];
+  const staffSession = readStaffSession();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
@@ -34,14 +38,8 @@ export function TopNav() {
     { skip: !shopId },
   );
 
-  const { data: invitationsData } = useGetMyInvitationsQuery();
-  const pendingInviteCount = invitationsData?.invitations?.length ?? 0;
-
-  const currentUserId = user?.localAccountId;
-  const role = shopId && currentShop
-    ? (currentShop.members ?? []).find((m) => m.userId === currentUserId && m.isActive)?.role ?? null
-    : null;
-  const isOwner = role === 'owner';
+  const perms = currentShop?.callerPermissions ?? [];
+  const nav = shopNavItems(perms);
 
   // Close drawer on navigation
   useEffect(() => {
@@ -55,33 +53,78 @@ export function TopNav() {
 
   const divider = <hr className="border-t border-gray-100 my-0.5" />;
 
-  const shopNavItems = shopId ? (
+  const shopNavContent = shopId ? (
     <>
-      <NavLink to="/shops" end className={({ isActive }) => navItemClass(isActive)}>
-        <ArrowLeft size={16} className="flex-shrink-0" />
-        {t('nav.myShops')}
-      </NavLink>
-      {divider}
-      <NavLink to={`/shops/${shopId}/orders`} className={({ isActive }) => navItemClass(isActive)}>
-        <ClipboardList size={16} className="flex-shrink-0" />
-        {t('nav.orders')}
-      </NavLink>
-      {divider}
-      <NavLink to={`/shops/${shopId}`} end className={({ isActive }) => navItemClass(isActive)}>
-        <Package size={16} className="flex-shrink-0" />
-        {t('nav.products')}
-      </NavLink>
-      {divider}
-      <NavLink to={`/shops/${shopId}/categories`} className={({ isActive }) => navItemClass(isActive)}>
-        <Tag size={16} className="flex-shrink-0" />
-        {t('nav.categories')}
-      </NavLink>
-      {divider}
-      <NavLink to={`/shops/${shopId}/subscription`} className={({ isActive }) => navItemClass(isActive)}>
-        <CreditCard size={16} className="flex-shrink-0" />
-        {t('nav.subscription')}
-      </NavLink>
-      {isOwner && (
+      {!staffSession && (
+        <NavLink to="/shops" end className={({ isActive }) => navItemClass(isActive)}>
+          <ArrowLeft size={16} className="flex-shrink-0" />
+          {t('nav.myShops')}
+        </NavLink>
+      )}
+      {nav.includes('orders') && (
+        <>
+          {divider}
+          <NavLink to={`/shops/${shopId}/orders`} className={({ isActive }) => navItemClass(isActive)}>
+            <ClipboardList size={16} className="flex-shrink-0" />
+            {t('nav.orders')}
+          </NavLink>
+        </>
+      )}
+      {nav.includes('products') && (
+        <>
+          {divider}
+          <NavLink to={`/shops/${shopId}`} end className={({ isActive }) => navItemClass(isActive)}>
+            <Package size={16} className="flex-shrink-0" />
+            {t('nav.products')}
+          </NavLink>
+        </>
+      )}
+      {nav.includes('categories') && (
+        <>
+          {divider}
+          <NavLink to={`/shops/${shopId}/categories`} className={({ isActive }) => navItemClass(isActive)}>
+            <Tag size={16} className="flex-shrink-0" />
+            {t('nav.categories')}
+          </NavLink>
+        </>
+      )}
+      {nav.includes('translations') && (currentShop?.menuLanguages?.length ?? 1) > 1 && (
+        <>
+          {divider}
+          <NavLink to={`/shops/${shopId}/translations`} className={({ isActive }) => navItemClass(isActive)}>
+            <Languages size={16} className="flex-shrink-0" />
+            {t('nav.translations')}
+          </NavLink>
+        </>
+      )}
+      {nav.includes('subscription') && (
+        <>
+          {divider}
+          <NavLink to={`/shops/${shopId}/subscription`} className={({ isActive }) => navItemClass(isActive)}>
+            <CreditCard size={16} className="flex-shrink-0" />
+            {t('nav.subscription')}
+          </NavLink>
+        </>
+      )}
+      {nav.includes('staff') && (
+        <>
+          {divider}
+          <NavLink to={`/shops/${shopId}/staff`} className={({ isActive }) => navItemClass(isActive)}>
+            <Users size={16} className="flex-shrink-0" />
+            {t('nav.staff')}
+          </NavLink>
+        </>
+      )}
+      {nav.includes('activity') && (
+        <>
+          {divider}
+          <NavLink to={`/shops/${shopId}/activity`} className={({ isActive }) => navItemClass(isActive)}>
+            <History size={16} className="flex-shrink-0" />
+            {t('nav.activity')}
+          </NavLink>
+        </>
+      )}
+      {nav.includes('settings') && (
         <>
           {divider}
           <NavLink to={`/shops/${shopId}/settings`} className={({ isActive }) => navItemClass(isActive)}>
@@ -128,7 +171,28 @@ export function TopNav() {
   );
 
   // ── User row (shared) ─────────────────────────────────────────────────────
-  const userRow = (
+  const userRow = staffSession ? (
+    <div className="w-full flex items-center gap-2.5 px-1 py-1">
+      <div className="relative w-8 h-8 flex-shrink-0">
+        <div className="w-8 h-8 rounded-full bg-gray-900 flex items-center justify-center">
+          <span className="text-xs font-semibold text-white">
+            {staffSession.username.charAt(0).toUpperCase()}
+          </span>
+        </div>
+      </div>
+      <span className="flex-1 text-xs text-gray-600 truncate">{staffSession.username}</span>
+      <button
+        onClick={() => {
+          clearStaffSession();
+          navigate(`/${staffSession.shopSlug}/staff`);
+        }}
+        aria-label={t('staffLogin.signOut')}
+        className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors flex-shrink-0"
+      >
+        <LogOut size={14} />
+      </button>
+    </div>
+  ) : (
     <button
       onClick={() => setAccountOpen(true)}
       className="w-full flex items-center gap-2.5 px-1 py-1 rounded-xl hover:bg-gray-100 transition-colors text-left"
@@ -139,11 +203,6 @@ export function TopNav() {
             {user?.name?.charAt(0).toUpperCase() ?? '?'}
           </span>
         </div>
-        {pendingInviteCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-red-500 rounded-full flex items-center justify-center text-white text-[8px] font-bold leading-none">
-            {pendingInviteCount}
-          </span>
-        )}
       </div>
       <span className="flex-1 text-xs text-gray-600 truncate">{user?.name}</span>
     </button>
@@ -173,7 +232,7 @@ export function TopNav() {
       {shopLogo}
       {/* Nav items */}
       <nav className="flex-1 px-3 pt-2 pb-4 overflow-y-auto">
-        {shopNavItems}
+        {shopNavContent}
       </nav>
 
       {/* Bottom: user row */}
@@ -188,7 +247,7 @@ export function TopNav() {
     <div className="flex flex-col h-full">
       {/* Nav items */}
       <nav className="flex-1 px-3 pt-2 pb-4 overflow-y-auto">
-        {shopNavItems}
+        {shopNavContent}
       </nav>
 
       {/* Bottom: user row */}

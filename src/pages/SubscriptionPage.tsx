@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useMsal } from '@azure/msal-react';
 import { CheckCircle2 } from 'lucide-react';
 import {
   useGetShopByIdQuery,
@@ -191,15 +190,12 @@ function PlanCard({
 export function SubscriptionPage() {
   const { shopId } = useParams<{ shopId: string }>();
   const { t } = useTranslation();
-  const { accounts } = useMsal();
   const [searchParams, setSearchParams] = useSearchParams();
   const [upgradeError, setUpgradeError] = useState<string | null>(null);
   const [upgradingPlanId, setUpgradingPlanId] = useState<string | null>(null);
   const [isDowngrading, setIsDowngrading] = useState(false);
   const [isResuming, setIsResuming] = useState(false);
   const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-
-  const currentUserId = accounts[0]?.localAccountId;
 
   const { data: shop, isLoading: shopLoading } = useGetShopByIdQuery({ shopId: shopId! });
   const { data: subscriptionData, isLoading: subLoading } = useGetShopSubscriptionQuery(
@@ -221,8 +217,7 @@ export function SubscriptionPage() {
     });
   }
 
-  const isOwner =
-    (shop?.members ?? []).find((m) => m.userId === currentUserId && m.isActive)?.role === 'owner';
+  const isOwner = (shop?.callerPermissions ?? []).includes('manage_billing');
 
   const subscription = subscriptionData?.subscription;
 

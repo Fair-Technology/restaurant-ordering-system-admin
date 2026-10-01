@@ -1,14 +1,7 @@
 import type { AccountInfo } from '@azure/msal-browser';
 import { useMsal } from '@azure/msal-react';
-import { X, LogOut, Mail } from 'lucide-react';
+import { X, LogOut } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import {
-  useGetMyInvitationsQuery,
-  useAcceptShopInvitationMutation,
-  useDeclineShopInvitationMutation,
-} from '../../services/api';
-import { MyButton } from '../ui/MyButton';
-import { useToast } from '../../contexts/ToastContext';
 
 interface AccountSettingsModalProps {
   user: AccountInfo;
@@ -18,33 +11,6 @@ interface AccountSettingsModalProps {
 export function AccountSettingsModal({ user, onClose }: AccountSettingsModalProps) {
   const { t, i18n } = useTranslation();
   const { instance } = useMsal();
-  const toast = useToast();
-
-  const { data, isLoading, refetch } = useGetMyInvitationsQuery();
-  const [acceptShopInvitation] = useAcceptShopInvitationMutation();
-  const [declineShopInvitation] = useDeclineShopInvitationMutation();
-
-  const invitations = data?.invitations ?? [];
-
-  const handleAccept = async (shopId: string) => {
-    try {
-      await acceptShopInvitation({ shopId }).unwrap();
-      toast.success(t('invitations.acceptSuccess'));
-      refetch();
-    } catch {
-      toast.error(t('invitations.acceptFailed'));
-    }
-  };
-
-  const handleDecline = async (shopId: string) => {
-    try {
-      await declineShopInvitation({ shopId }).unwrap();
-      toast.success(t('invitations.declineSuccess'));
-      refetch();
-    } catch {
-      toast.error(t('invitations.declineFailed'));
-    }
-  };
 
   return (
     <>
@@ -74,59 +40,6 @@ export function AccountSettingsModal({ user, onClose }: AccountSettingsModalProp
               <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
               <p className="text-xs text-gray-400 truncate">{user.username}</p>
             </div>
-          </div>
-
-          {/* Invitations */}
-          <div className="px-5 py-4 flex-1 overflow-y-auto">
-            <div className="flex items-center gap-2 mb-3">
-              <Mail size={14} className="text-gray-400 flex-shrink-0" />
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                {t('invitations.title')}
-              </p>
-              {invitations.length > 0 && (
-                <span className="ml-auto text-xs bg-red-100 text-red-600 font-semibold px-1.5 py-0.5 rounded-full">
-                  {invitations.length}
-                </span>
-              )}
-            </div>
-
-            {isLoading ? (
-              <p className="text-xs text-gray-400 py-2">{t('invitations.loading')}</p>
-            ) : invitations.length === 0 ? (
-              <p className="text-xs text-gray-400 py-2">{t('invitations.empty')}</p>
-            ) : (
-              <div className="space-y-0">
-                {invitations.map((invite, i) => (
-                  <div
-                    key={invite.shopId}
-                    className={`flex items-center justify-between py-3 ${
-                      i > 0 ? 'border-t border-gray-100' : ''
-                    }`}
-                  >
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{invite.shopName}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{invite.role}</p>
-                    </div>
-                    <div className="flex gap-1.5 ml-3 shrink-0">
-                      <MyButton
-                        variant="primary"
-                        size="sm"
-                        onClick={() => handleAccept(invite.shopId)}
-                      >
-                        {t('invitations.accept')}
-                      </MyButton>
-                      <MyButton
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDecline(invite.shopId)}
-                      >
-                        {t('invitations.decline')}
-                      </MyButton>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
 
           {/* Language + sign out */}

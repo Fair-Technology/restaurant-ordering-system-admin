@@ -2,17 +2,11 @@ import { useState, useRef, useEffect } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useMsal } from '@azure/msal-react';
 import {
   useGetShopByIdQuery,
   useGenerateShopLogoUploadUrlMutation,
   useSetShopLogoMutation,
   useUpdateShopMutation,
-  useAddShopMemberMutation,
-  useRemoveShopMemberMutation,
-  useCreateShopRoleMutation,
-  useUpdateShopRoleMutation,
-  useDeleteShopRoleMutation,
   useRequestShopNameChangeMutation,
   useCancelShopNameChangeMutation,
 } from '../services/api';
@@ -23,6 +17,12 @@ import { MyInput } from '../components/ui/MyInput';
 import { CurrencyInput } from '../components/ui/CurrencyInput';
 import { useToast } from '../contexts/ToastContext';
 import { PaymentsCard } from '../components/shop/PaymentsCard';
+import { accentContrastOnWhite, contrastRatio } from '../utils/contrast';
+import { useShopReferenceLists } from '../features/menu/useShopReferenceLists';
+import { formatRate, labelFor } from '../features/menu/foodInfo';
+import type { MenuLanguage } from '../services/api';
+
+const MENU_LANGUAGES: MenuLanguage[] = ['de', 'en'];
 
 type DayKey = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 type TimeSlot = { open: string; close: string };
@@ -30,9 +30,6 @@ type OpeningHoursState = Record<DayKey, TimeSlot[]>;
 
 const ALL_DAYS: DayKey[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 const DEFAULT_SLOT: TimeSlot = { open: '09:00', close: '17:00' };
-
-const ALL_PERMISSIONS = ['view_orders', 'manage_products', 'manage_shop'] as const;
-type ShopPermission = (typeof ALL_PERMISSIONS)[number];
 
 function buildInitialHours(shopHours: Record<string, unknown> | undefined): OpeningHoursState {
   const result = {} as OpeningHoursState;
@@ -47,10 +44,8 @@ const inputClass = 'w-full border border-gray-200 rounded-lg bg-white text-gray-
 
 export function ShopSettingsPage() {
   const { shopId } = useParams<{ shopId: string }>();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const toast = useToast();
-  const { accounts } = useMsal();
-  const currentUserId = accounts[0]?.localAccountId;
   const { data: shop, isLoading, isError, refetch } = useGetShopByIdQuery(
     { shopId: shopId! },
     { refetchOnMountOrArgChange: true },
@@ -66,13 +61,9 @@ export function ShopSettingsPage() {
   const [generateShopLogoUploadUrl] = useGenerateShopLogoUploadUrlMutation();
   const [setShopLogo] = useSetShopLogoMutation();
   const [updateShop] = useUpdateShopMutation();
-  const [addShopMember] = useAddShopMemberMutation();
-  const [removeShopMember] = useRemoveShopMemberMutation();
-  const [createShopRole] = useCreateShopRoleMutation();
-  const [updateShopRole] = useUpdateShopRoleMutation();
-  const [deleteShopRole] = useDeleteShopRoleMutation();
   const [requestShopNameChange] = useRequestShopNameChangeMutation();
   const [cancelShopNameChange] = useCancelShopNameChangeMutation();
+  const { refs } = useShopReferenceLists(shopId!);
 
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -91,12 +82,7 @@ export function ShopSettingsPage() {
   const [isSavingStatus, setIsSavingStatus] = useState(false);
   const [statusError, setStatusError] = useState<string | null>(null);
 
-  const [colorsState, setColorsState] = useState<{
-    primary: string;
-    secondary: string;
-    tertiary: string;
-    background: string;
-  } | null>(null);
+  const [accentState, setAccentState] = useState<string | null>(null);
   const [isSavingColors, setIsSavingColors] = useState(false);
   const [colorsError, setColorsError] = useState<string | null>(null);
 
@@ -120,33 +106,15 @@ export function ShopSettingsPage() {
   const [isSavingAddress, setIsSavingAddress] = useState(false);
   const [addressError, setAddressError] = useState<string | null>(null);
 
-  const [newMemberEmail, setNewMemberEmail] = useState('');
-  const [newMemberRoleId, setNewMemberRoleId] = useState<string>('staff');
-  const [isAddingMember, setIsAddingMember] = useState(false);
-  const [memberAddError, setMemberAddError] = useState<string | null>(null);
-  const [memberRemoveError, setMemberRemoveError] = useState<string | null>(null);
-
-  const [newRoleName, setNewRoleName] = useState('');
-  const [newRolePerms, setNewRolePerms] = useState<ShopPermission[]>([]);
-  const [isCreatingRole, setIsCreatingRole] = useState(false);
-  const [roleCreateError, setRoleCreateError] = useState<string | null>(null);
-
-  const [editingRoleId, setEditingRoleId] = useState<string | null>(null);
-  const [editRoleName, setEditRoleName] = useState('');
-  const [editRolePerms, setEditRolePerms] = useState<ShopPermission[]>([]);
-  const [isSavingRole, setIsSavingRole] = useState(false);
-  const [roleSaveError, setRoleSaveError] = useState<string | null>(null);
-  const [roleDeleteError, setRoleDeleteError] = useState<string | null>(null);
+  const [languagesState, setLanguagesState] = useState<MenuLanguage[] | null>(null);
+  const [isSavingLanguages, setIsSavingLanguages] = useState(false);
 
   if (isLoading) return <MySpinner label={t('shops.loadingSettings')} />;
   if (isError || !shop) return <p className="text-red-500">{t('shops.failedToLoadShop')}</p>;
 
-  const members = shop.members ?? [];
-  const isCurrentUserOwner = members.some(
-    (m) => m.userId === currentUserId && m.isActive && m.role === 'owner',
-  );
+  const canManageShop = (shop.callerPermissions ?? []).includes('manage_shop');
 
-  if (!isCurrentUserOwner) {
+  if (!canManageShop) {
     return (
       <div className="max-w-lg">
         <MyCard className="p-5">
@@ -156,8 +124,6 @@ export function ShopSettingsPage() {
     );
   }
 
-  const shopRoles = shop.roles ?? [];
-
   const currentHours = hoursState ?? buildInitialHours(shop.openingHours as Record<string, unknown> | undefined);
 
   const currentStatus = statusState ?? {
@@ -165,12 +131,11 @@ export function ShopSettingsPage() {
     pausedMessage: shop.pausedMessage ?? '',
   };
 
-  const currentColors = colorsState ?? {
-    primary: shop.branding?.colors?.primary ?? '#3B82F6',
-    secondary: shop.branding?.colors?.secondary ?? '#10B981',
-    tertiary: shop.branding?.colors?.tertiary ?? '#F59E0B',
-    background: shop.branding?.colors?.background ?? '#1F2937',
-  };
+  const currentAccent = accentState ?? shop.branding?.accentColor ?? '#C2410C';
+  const accentCheck = accentContrastOnWhite(currentAccent);
+  const accentOnColor = accentCheck && contrastRatio(currentAccent, '#000000') > contrastRatio(currentAccent, '#FFFFFF')
+    ? '#000000'
+    : '#FFFFFF';
 
   const currentDetails = detailsState ?? {
     minOrderAmountCents: shop.minOrderAmountCents ?? 0,
@@ -184,6 +149,25 @@ export function ShopSettingsPage() {
     country: shop.address?.country ?? '',
   };
 
+  const originalLanguage: MenuLanguage = shop.menuLanguages?.[0] ?? 'de';
+  const currentLanguages = languagesState ?? shop.menuLanguages ?? [originalLanguage];
+
+  const handleSaveLanguages = async () => {
+    setIsSavingLanguages(true);
+    try {
+      await updateShop({
+        shopId: shopId!,
+        updateShopRequest: { menuLanguages: currentLanguages },
+      }).unwrap();
+      refetch();
+      toast.success(t('shops.menuLanguagesSaved'));
+    } catch {
+      toast.error(t('shops.menuLanguagesFailed'));
+    } finally {
+      setIsSavingLanguages(false);
+    }
+  };
+
   const DAYS: { key: DayKey; label: string }[] = [
     { key: 'mon', label: t('shops.ohMon') },
     { key: 'tue', label: t('shops.ohTue') },
@@ -193,12 +177,6 @@ export function ShopSettingsPage() {
     { key: 'sat', label: t('shops.ohSat') },
     { key: 'sun', label: t('shops.ohSun') },
   ];
-
-  const PERM_LABELS: Record<ShopPermission, string> = {
-    view_orders: t('shops.rolesPermViewOrders'),
-    manage_products: t('shops.rolesPermManageProducts'),
-    manage_shop: t('shops.rolesPermManageShop'),
-  };
 
   function toggleDay(day: DayKey) {
     const next = { ...currentHours };
@@ -276,7 +254,7 @@ export function ShopSettingsPage() {
           branding: {
             logoUrl: shop.branding?.logoUrl ?? undefined,
             heroImageUrl: shop.branding?.heroImageUrl ?? undefined,
-            colors: currentColors,
+            accentColor: currentAccent,
           },
         },
       }).unwrap();
@@ -389,100 +367,6 @@ export function ShopSettingsPage() {
     }
   };
 
-  const handleAddMember = async () => {
-    if (!newMemberEmail.trim()) {
-      setMemberAddError(t('shops.membersEmailRequired'));
-      return;
-    }
-    setIsAddingMember(true);
-    setMemberAddError(null);
-    try {
-      await addShopMember({
-        shopId: shopId!,
-        email: newMemberEmail.trim(),
-        roleId: newMemberRoleId,
-      }).unwrap();
-      setNewMemberEmail('');
-      setNewMemberRoleId('staff');
-      toast.success(t('shops.membersInviteSent'));
-      refetch();
-    } catch (err: any) {
-      const msg = err?.data?.error ?? t('shops.membersAddFailed');
-      setMemberAddError(msg);
-    } finally {
-      setIsAddingMember(false);
-    }
-  };
-
-  const handleRemoveMember = async (targetUserId: string) => {
-    setMemberRemoveError(null);
-    try {
-      await removeShopMember({ shopId: shopId!, userId: targetUserId }).unwrap();
-      refetch();
-    } catch (err: any) {
-      const msg = err?.data?.error ?? t('shops.membersRemoveFailed');
-      setMemberRemoveError(msg);
-    }
-  };
-
-  const handleCreateRole = async () => {
-    if (!newRoleName.trim()) return;
-    setIsCreatingRole(true);
-    setRoleCreateError(null);
-    try {
-      await createShopRole({
-        shopId: shopId!,
-        name: newRoleName.trim(),
-        permissions: newRolePerms,
-      }).unwrap();
-      setNewRoleName('');
-      setNewRolePerms([]);
-      toast.success(t('shops.rolesAddSuccess'));
-      refetch();
-    } catch (err: any) {
-      setRoleCreateError(err?.data?.error ?? t('shops.rolesAddFailed'));
-    } finally {
-      setIsCreatingRole(false);
-    }
-  };
-
-  const startEditRole = (role: { id?: string; name?: string; permissions?: string[] }) => {
-    setEditingRoleId(role.id ?? '');
-    setEditRoleName(role.name ?? '');
-    setEditRolePerms((role.permissions ?? []) as ShopPermission[]);
-    setRoleSaveError(null);
-  };
-
-  const handleSaveRole = async () => {
-    if (!editingRoleId) return;
-    setIsSavingRole(true);
-    setRoleSaveError(null);
-    try {
-      await updateShopRole({
-        shopId: shopId!,
-        roleId: editingRoleId,
-        name: editRoleName,
-        permissions: editRolePerms,
-      }).unwrap();
-      setEditingRoleId(null);
-      refetch();
-    } catch (err: any) {
-      setRoleSaveError(err?.data?.error ?? t('shops.rolesAddFailed'));
-    } finally {
-      setIsSavingRole(false);
-    }
-  };
-
-  const handleDeleteRole = async (roleId: string) => {
-    setRoleDeleteError(null);
-    try {
-      await deleteShopRole({ shopId: shopId!, roleId }).unwrap();
-      refetch();
-    } catch (err: any) {
-      setRoleDeleteError(err?.data?.error ?? t('shops.rolesDeleteFailed'));
-    }
-  };
-
   const previewSlug = shop.slug;
 
   const shopUrl = `${import.meta.env.VITE_SHOP_BASE_URL ?? 'https://www.example.com'}/shops/${previewSlug}`;
@@ -503,11 +387,6 @@ export function ShopSettingsPage() {
   ];
 
   const currentLogoUrl = shop.branding?.logoUrl;
-
-  const roleOptions = [
-    { id: 'owner', name: 'Owner' },
-    ...shopRoles.map((r) => ({ id: r.id ?? '', name: r.name ?? '' })),
-  ];
 
   return (
     <div className="max-w-lg space-y-4">
@@ -683,43 +562,45 @@ export function ShopSettingsPage() {
 
       <MyCard className="p-5 space-y-4">
         <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-          {t('shops.colorsTitle')}
+          {t('shops.accentTitle')}
         </p>
-        <div className="space-y-3">
-          {(
-            [
-              { key: 'primary', label: t('shops.colorPrimary') },
-              { key: 'secondary', label: t('shops.colorSecondary') },
-              { key: 'tertiary', label: t('shops.colorTertiary') },
-              { key: 'background', label: t('shops.colorBackground') },
-            ] as { key: keyof typeof currentColors; label: string }[]
-          ).map(({ key, label }) => (
-            <div key={key} className="flex items-center gap-3">
-              <span className="text-sm text-gray-600 w-28 shrink-0">{label}</span>
-              <input
-                type="color"
-                value={currentColors[key]}
-                onChange={(e) => setColorsState({ ...currentColors, [key]: e.target.value })}
-                className="w-8 h-8 rounded cursor-pointer border-0 bg-transparent p-0"
-              />
-              <input
-                type="text"
-                value={currentColors[key]}
-                maxLength={7}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  if (/^#[0-9a-fA-F]{0,6}$/.test(val)) {
-                    setColorsState({ ...currentColors, [key]: val });
-                  }
-                }}
-                className={`${inputClass} w-28 font-mono`}
-              />
-            </div>
-          ))}
+        <p className="text-sm text-gray-500">{t('shops.accentHelp')}</p>
+        <div className="flex items-center gap-3">
+          <input
+            type="color"
+            value={currentAccent}
+            onChange={(e) => setAccentState(e.target.value)}
+            className="w-8 h-8 rounded cursor-pointer border-0 bg-transparent p-0"
+          />
+          <input
+            type="text"
+            value={currentAccent}
+            maxLength={7}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (/^#[0-9a-fA-F]{0,6}$/.test(val)) {
+                setAccentState(val);
+              }
+            }}
+            className={`${inputClass} w-28 font-mono`}
+          />
+          <button
+            type="button"
+            disabled
+            className="px-3 py-2 rounded-lg text-sm font-medium"
+            style={{ backgroundColor: currentAccent, color: accentOnColor }}
+          >
+            {t('shops.colorsSave')}
+          </button>
         </div>
+        {accentCheck && !accentCheck.ok && (
+          <p className="text-sm text-red-600">
+            {t('shops.accentTooLight', { ratio: accentCheck.ratio.toFixed(2) })}
+          </p>
+        )}
         {colorsError && <p className="text-sm text-red-600">{colorsError}</p>}
         <div className="border-t border-gray-200 pt-4">
-          <MyButton onClick={handleSaveColors} disabled={isSavingColors}>
+          <MyButton onClick={handleSaveColors} disabled={isSavingColors || !accentCheck?.ok}>
             {isSavingColors ? t('shops.colorsSaving') : t('shops.colorsSave')}
           </MyButton>
         </div>
@@ -767,31 +648,97 @@ export function ShopSettingsPage() {
       {/* Payments card */}
       <PaymentsCard shop={shop} onRefetch={refetch} />
 
-      {/* Tax Rates card */}
+      {/* Menu languages card */}
       <MyCard className="p-5 space-y-3">
         <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-          {t('shops.taxRatesTitle')}
+          {t('shops.menuLanguagesTitle')}
         </p>
-        {(shop.taxRates ?? []).length === 0 ? (
-          <p className="text-sm text-gray-400">{t('shops.taxRatesEmpty')}</p>
-        ) : (
+        <p className="text-sm text-gray-700">
+          {t('shops.menuLanguagesOriginal', { language: t(`shops.languageName.${originalLanguage}`) })}
+        </p>
+        <div className="space-y-2">
+          {MENU_LANGUAGES.filter((lang) => lang !== originalLanguage).map((lang) => (
+            <label key={lang} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={currentLanguages.includes(lang)}
+                onChange={(e) =>
+                  setLanguagesState(
+                    e.target.checked
+                      ? [...currentLanguages, lang]
+                      : currentLanguages.filter((l) => l !== lang),
+                  )
+                }
+                className="accent-gray-900"
+              />
+              {t(`shops.languageName.${lang}`)}
+            </label>
+          ))}
+        </div>
+        <p className="text-xs text-gray-400">
+          {t('shops.menuLanguagesHelp', { original: t(`shops.languageName.${originalLanguage}`) })}
+        </p>
+        <div className="border-t border-gray-200 pt-4">
+          <MyButton onClick={handleSaveLanguages} disabled={isSavingLanguages}>
+            {isSavingLanguages ? t('shops.menuLanguagesSaving') : t('shops.menuLanguagesSave')}
+          </MyButton>
+        </div>
+      </MyCard>
+
+      {/* Tax classes card */}
+      <MyCard className="p-5 space-y-3">
+        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+          {t('shops.taxClassesTitle')}
+        </p>
+        {!refs || refs.taxClasses.filter((c) => c.isActive).length === 0 ? (
+          <p className="text-sm text-gray-400">{t('shops.taxClassesEmpty', { country: shop.countryCode ?? '' })}</p>
+        ) : refs.taxRatesUniformAcrossModes ? (
           <div className="space-y-0">
-            {(shop.taxRates ?? []).map((rate) => (
-              <div
-                key={rate.id}
-                className="flex items-center justify-between border-t border-gray-200 py-2.5 first:border-t-0 first:pt-0"
-              >
-                <span className="text-sm text-gray-700">{rate.label}</span>
-                <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-500 font-mono">
-                  {rate.rate != null ? `${(rate.rate * 100).toFixed(1).replace(/\.0$/, '')}%` : '—'}
-                </span>
-              </div>
-            ))}
+            {refs.taxClasses.filter((c) => c.isActive).map((c) => {
+              const rates = refs.currentTaxRates.find((r) => r.taxClassId === c.id)?.rates;
+              return (
+                <div
+                  key={c.id}
+                  className="flex items-center justify-between border-t border-gray-200 py-2.5 first:border-t-0 first:pt-0"
+                >
+                  <span className="text-sm text-gray-700">{labelFor(c.labels, i18n.language)}</span>
+                  <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-500 font-mono">
+                    {formatRate(rates?.collection ?? null)}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-xs text-gray-400 uppercase tracking-wide">
+                  <th className="text-left font-medium py-1.5" />
+                  <th className="text-right font-medium py-1.5">{t('shops.taxModeCollection')}</th>
+                  <th className="text-right font-medium py-1.5">{t('shops.taxModeDelivery')}</th>
+                  <th className="text-right font-medium py-1.5">{t('shops.taxModeDineIn')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {refs.taxClasses.filter((c) => c.isActive).map((c) => {
+                  const rates = refs.currentTaxRates.find((r) => r.taxClassId === c.id)?.rates;
+                  return (
+                    <tr key={c.id} className="border-t border-gray-200">
+                      <td className="py-2 text-gray-700">{labelFor(c.labels, i18n.language)}</td>
+                      <td className="py-2 text-right font-mono text-xs text-gray-500">{formatRate(rates?.collection ?? null)}</td>
+                      <td className="py-2 text-right font-mono text-xs text-gray-500">{formatRate(rates?.delivery ?? null)}</td>
+                      <td className="py-2 text-right font-mono text-xs text-gray-500">{formatRate(rates?.dine_in ?? null)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
         {shop.countryCode && (
           <p className="text-xs text-gray-400">
-            {t('shops.taxRatesNote', { country: shop.countryCode })}
+            {t('shops.taxClassesNote', { country: shop.countryCode })}
           </p>
         )}
       </MyCard>
@@ -907,231 +854,6 @@ export function ShopSettingsPage() {
         <div className="mt-4 border-t border-gray-200 pt-4">
           <MyButton onClick={handleSaveHours} disabled={isSavingHours}>
             {isSavingHours ? t('shops.ohSavingHours') : t('shops.ohSaveHours')}
-          </MyButton>
-        </div>
-      </MyCard>
-
-      {/* Roles card */}
-      <MyCard className="p-5 space-y-4">
-        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-          {t('shops.rolesTitle')}
-        </p>
-        {shopRoles.length === 0 && (
-          <p className="text-sm text-gray-400">{t('shops.rolesEmpty')}</p>
-        )}
-        <div className="space-y-0">
-          {shopRoles.map((role) => {
-            const isEditing = editingRoleId === role.id;
-            const membersUsingRole = members.filter(
-              (m) => m.isActive && m.role === role.id,
-            ).length;
-            return (
-              <div
-                key={role.id}
-                className="border-t border-gray-200 py-3 first:border-t-0 first:pt-0"
-              >
-                {isEditing ? (
-                  <div className="space-y-3">
-                    <MyInput
-                      label={t('shops.detailsName')}
-                      value={editRoleName}
-                      onChange={(e) => setEditRoleName(e.target.value)}
-                    />
-                    <div className="space-y-1">
-                      <span className="text-xs text-gray-500">{t('shops.rolesTitle')}</span>
-                      <div className="flex flex-wrap gap-2">
-                        {ALL_PERMISSIONS.map((perm) => (
-                          <label key={perm} className="flex items-center gap-1.5 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={editRolePerms.includes(perm)}
-                              onChange={(e) => {
-                                setEditRolePerms(
-                                  e.target.checked
-                                    ? [...editRolePerms, perm]
-                                    : editRolePerms.filter((p) => p !== perm),
-                                );
-                              }}
-                              className="accent-gray-900"
-                            />
-                            <span className="text-xs text-gray-600">{PERM_LABELS[perm]}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                    {roleSaveError && <p className="text-sm text-red-600">{roleSaveError}</p>}
-                    <div className="flex gap-2">
-                      <MyButton onClick={handleSaveRole} disabled={isSavingRole}>
-                        {isSavingRole ? t('shops.rolesAdding') : t('shops.rolesSave')}
-                      </MyButton>
-                      <MyButton variant="ghost" onClick={() => setEditingRoleId(null)}>
-                        {t('shops.detailsCancel')}
-                      </MyButton>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm text-gray-900 font-medium">{role.name}</span>
-                      {(role.permissions ?? []).map((perm) => (
-                        <span
-                          key={perm}
-                          className="text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-500"
-                        >
-                          {PERM_LABELS[perm as ShopPermission] ?? perm}
-                        </span>
-                      ))}
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0 ml-2">
-                      <MyButton variant="ghost" onClick={() => startEditRole(role)}>
-                        Edit
-                      </MyButton>
-                      <MyButton
-                        variant="ghost"
-                        disabled={membersUsingRole > 0}
-                        onClick={() => handleDeleteRole(role.id ?? '')}
-                      >
-                        {t('shops.rolesDelete')}
-                      </MyButton>
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-        {roleDeleteError && <p className="text-sm text-red-600">{roleDeleteError}</p>}
-        <div className="border-t border-gray-200 pt-4 space-y-3">
-          <p className="text-xs text-gray-400 uppercase tracking-wide">{t('shops.rolesAdd')}</p>
-          <MyInput
-            label={t('shops.detailsName')}
-            value={newRoleName}
-            placeholder="e.g. Kitchen"
-            onChange={(e) => {
-              setNewRoleName(e.target.value);
-              setRoleCreateError(null);
-            }}
-          />
-          <div className="space-y-1">
-            <span className="text-xs text-gray-500">{t('shops.rolesTitle')}</span>
-            <div className="flex flex-wrap gap-2">
-              {ALL_PERMISSIONS.map((perm) => (
-                <label key={perm} className="flex items-center gap-1.5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={newRolePerms.includes(perm)}
-                    onChange={(e) => {
-                      setNewRolePerms(
-                        e.target.checked
-                          ? [...newRolePerms, perm]
-                          : newRolePerms.filter((p) => p !== perm),
-                      );
-                    }}
-                    className="accent-gray-900"
-                  />
-                  <span className="text-xs text-gray-600">{PERM_LABELS[perm]}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-          {roleCreateError && <p className="text-sm text-red-600">{roleCreateError}</p>}
-          <MyButton
-            onClick={handleCreateRole}
-            disabled={isCreatingRole || !newRoleName.trim()}
-          >
-            {isCreatingRole ? t('shops.rolesAdding') : t('shops.rolesAdd')}
-          </MyButton>
-        </div>
-      </MyCard>
-
-      {/* Members card */}
-      <MyCard className="p-5 space-y-4">
-        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-          {t('shops.membersTitle')}
-        </p>
-        <div className="space-y-0">
-          {members.length === 0 && (
-            <p className="text-sm text-gray-400">{t('shops.membersEmpty')}</p>
-          )}
-          {members.map((member) => {
-            const activeOwnerCount = members.filter(
-              (m) => m.isActive && m.role === 'owner',
-            ).length;
-            const isLastActiveOwner =
-              member.isActive && member.role === 'owner' && activeOwnerCount === 1;
-            const roleName = member.role === 'owner'
-              ? 'Owner'
-              : shopRoles.find((r) => r.id === member.role)?.name ?? member.role;
-            return (
-              <div
-                key={member.userId}
-                className="flex items-center justify-between border-t border-gray-200 py-3 first:border-t-0 first:pt-0"
-              >
-                <div className="flex items-center gap-2 min-w-0">
-                  <span
-                    className="text-sm text-gray-900 font-mono truncate"
-                    title={member.userId}
-                  >
-                    {(member.userId ?? '').slice(0, 8)}…
-                  </span>
-                  <span
-                    className={`text-xs px-1.5 py-0.5 rounded font-medium ${
-                      member.role === 'owner'
-                        ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                        : 'bg-gray-100 text-gray-500'
-                    }`}
-                  >
-                    {roleName}
-                  </span>
-                  {!member.isActive && (
-                    <span className="text-xs px-1.5 py-0.5 rounded bg-yellow-50 text-yellow-700 border border-yellow-200">
-                      {t('shops.membersInvited')}
-                    </span>
-                  )}
-                </div>
-                <MyButton
-                  variant="ghost"
-                  disabled={isLastActiveOwner}
-                  onClick={() => handleRemoveMember(member.userId!)}
-                >
-                  {t('shops.membersRemove')}
-                </MyButton>
-              </div>
-            );
-          })}
-        </div>
-        {memberRemoveError && <p className="text-sm text-red-600">{memberRemoveError}</p>}
-        <div className="border-t border-gray-200 pt-4 space-y-3">
-          <p className="text-xs text-gray-400 uppercase tracking-wide">
-            {t('shops.membersAddTitle')}
-          </p>
-          <MyInput
-            label={t('shops.membersEmail')}
-            type="email"
-            value={newMemberEmail}
-            placeholder={t('shops.membersEmailPlaceholder')}
-            onChange={(e) => {
-              setNewMemberEmail(e.target.value);
-              setMemberAddError(null);
-            }}
-          />
-          <div className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-gray-700">{t('shops.membersRoleLabel')}</span>
-            <select
-              value={newMemberRoleId}
-              onChange={(e) => setNewMemberRoleId(e.target.value)}
-              className={inputClass}
-            >
-              {roleOptions.map((opt) => (
-                <option key={opt.id} value={opt.id}>
-                  {opt.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          {memberAddError && <p className="text-sm text-red-600">{memberAddError}</p>}
-          <MyButton onClick={handleAddMember} disabled={isAddingMember}>
-            {isAddingMember ? t('shops.membersAdding') : t('shops.membersAdd')}
           </MyButton>
         </div>
       </MyCard>

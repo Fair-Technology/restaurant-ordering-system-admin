@@ -3,19 +3,12 @@ import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useGetOrdersByShopQuery } from '../services/api';
 import type { OrderResponse } from '../services/api';
+import { ORDER_STATE_BADGE } from '../features/orders/orderState';
 import { MyCard } from '../components/ui/MyCard';
 import { MySpinner } from '../components/ui/MySpinner';
 import { MyButton } from '../components/ui/MyButton';
 
 const PAGE_SIZE = 10;
-
-const STATUS_COLORS: Record<OrderResponse['status'], string> = {
-  paid: 'bg-green-50 text-green-700 border border-green-200',
-  pending_payment: 'bg-yellow-50 text-yellow-700 border border-yellow-200',
-  failed: 'bg-red-50 text-red-700 border border-red-200',
-  cancelled: 'bg-gray-100 text-gray-500 border border-gray-200',
-  refunded: 'bg-gray-100 text-gray-500 border border-gray-200',
-};
 
 function formatCurrency(cents: number, currency: string): string {
   return `$${(cents / 100).toFixed(2)} ${currency}`;
@@ -48,8 +41,14 @@ function OrderRow({ order }: OrderRowProps) {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <span className="font-mono font-semibold text-gray-900">{order.orderRef}</span>
-            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[order.status]}`}>
-              {t(`orders.status.${order.status}`)}
+            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${ORDER_STATE_BADGE[order.displayState]}`}>
+              {t(`orders.state.${order.displayState}`)}
+            </span>
+            <span className="text-xs text-gray-500">
+              {t(`orders.fulfilment.${order.fulfilmentMode}`)}
+            </span>
+            <span className="text-xs text-gray-500">
+              {t(`orders.payment.${order.paymentStatus}`)}
             </span>
           </div>
           <span className="text-sm font-semibold text-gray-900">

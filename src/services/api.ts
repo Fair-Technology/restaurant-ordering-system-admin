@@ -142,10 +142,10 @@ const injectedRtkApi = api.injectEndpoints({
           shopId: queryArg.shopId,
         },
       }),
-      invalidatesTags: (_result, _error, arg) => [
-        { type: 'Products', id: arg.productId },
-        'Products',
-      ],
+      // Only the shop's list: the deleted dish's own entry must not refetch
+      // (the detail drawer is still subscribed when this lands, and the
+      // bare 'Products' tag would hit it too).
+      invalidatesTags: (_result, _error, arg) => [{ type: 'Products' as const, id: `LIST-${arg.shopId}` }],
     }),
     generateUploadUrl: build.mutation<
       GenerateUploadUrlApiResponse,
@@ -183,57 +183,6 @@ const injectedRtkApi = api.injectEndpoints({
         url: `/shops/${queryArg.shopId}/logo`,
         method: "POST",
         body: queryArg.setShopLogoRequest,
-      }),
-    }),
-    addShopMember: build.mutation<AddShopMemberApiResponse, AddShopMemberApiArg>({
-      query: (queryArg) => ({
-        url: `/shops/${queryArg.shopId}/members`,
-        method: "POST",
-        body: { email: queryArg.email, role: queryArg.roleId },
-      }),
-    }),
-    getMyInvitations: build.query<GetMyInvitationsApiResponse, void>({
-      query: () => ({ url: `/users/me/invitations` }),
-      providesTags: ['Invitations'],
-    }),
-    acceptShopInvitation: build.mutation<AcceptShopInvitationApiResponse, AcceptShopInvitationApiArg>({
-      query: (queryArg) => ({
-        url: `/shops/${queryArg.shopId}/invitations/accept`,
-        method: 'POST',
-      }),
-      invalidatesTags: ['Invitations', 'Shops'],
-    }),
-    declineShopInvitation: build.mutation<DeclineShopInvitationApiResponse, DeclineShopInvitationApiArg>({
-      query: (queryArg) => ({
-        url: `/shops/${queryArg.shopId}/invitations/decline`,
-        method: 'POST',
-      }),
-      invalidatesTags: ['Invitations'],
-    }),
-    removeShopMember: build.mutation<RemoveShopMemberApiResponse, RemoveShopMemberApiArg>({
-      query: (queryArg) => ({
-        url: `/shops/${queryArg.shopId}/members/${queryArg.userId}`,
-        method: "DELETE",
-      }),
-    }),
-    createShopRole: build.mutation<CreateShopRoleApiResponse, CreateShopRoleApiArg>({
-      query: (queryArg) => ({
-        url: `/shops/${queryArg.shopId}/roles`,
-        method: "POST",
-        body: { name: queryArg.name, permissions: queryArg.permissions },
-      }),
-    }),
-    updateShopRole: build.mutation<UpdateShopRoleApiResponse, UpdateShopRoleApiArg>({
-      query: (queryArg) => ({
-        url: `/shops/${queryArg.shopId}/roles/${queryArg.roleId}`,
-        method: "PATCH",
-        body: { name: queryArg.name, permissions: queryArg.permissions },
-      }),
-    }),
-    deleteShopRole: build.mutation<DeleteShopRoleApiResponse, DeleteShopRoleApiArg>({
-      query: (queryArg) => ({
-        url: `/shops/${queryArg.shopId}/roles/${queryArg.roleId}`,
-        method: "DELETE",
       }),
     }),
     requestShopNameChange: build.mutation<
@@ -353,6 +302,62 @@ const injectedRtkApi = api.injectEndpoints({
         method: 'DELETE',
       }),
       invalidatesTags: (_r, _e, { shopId }) => [{ type: 'Shops' as const, id: shopId }],
+    }),
+    getAuditEntries: build.query<GetAuditEntriesApiResponse, GetAuditEntriesApiArg>({
+      query: (queryArg) => ({
+        url: `/shops/${queryArg.shopId}/audit`,
+        params: {
+          page: queryArg.page,
+          pageSize: queryArg.pageSize,
+        },
+      }),
+      providesTags: ['Audit'],
+    }),
+    staffLogin: build.mutation<StaffLoginApiResponse, StaffLoginApiArg>({
+      query: (queryArg) => ({
+        url: `/staff/login`,
+        method: "POST",
+        body: queryArg.staffLoginRequest,
+      }),
+    }),
+    listStaff: build.query<ListStaffApiResponse, ListStaffApiArg>({
+      query: (queryArg) => ({ url: `/shops/${queryArg.shopId}/staff` }),
+      providesTags: ['Staff'],
+    }),
+    createStaff: build.mutation<CreateStaffApiResponse, CreateStaffApiArg>({
+      query: (queryArg) => ({
+        url: `/shops/${queryArg.shopId}/staff`,
+        method: "POST",
+        body: queryArg.createStaffRequest,
+      }),
+      invalidatesTags: ['Staff'],
+    }),
+    updateStaff: build.mutation<UpdateStaffApiResponse, UpdateStaffApiArg>({
+      query: (queryArg) => ({
+        url: `/shops/${queryArg.shopId}/staff/${queryArg.staffId}`,
+        method: "PATCH",
+        body: queryArg.updateStaffRequest,
+      }),
+      invalidatesTags: ['Staff'],
+    }),
+    resetStaffPassword: build.mutation<ResetStaffPasswordApiResponse, ResetStaffPasswordApiArg>({
+      query: (queryArg) => ({
+        url: `/shops/${queryArg.shopId}/staff/${queryArg.staffId}/password`,
+        method: "POST",
+        body: queryArg.resetStaffPasswordRequest,
+      }),
+      invalidatesTags: ['Staff'],
+    }),
+    deleteStaff: build.mutation<DeleteStaffApiResponse, DeleteStaffApiArg>({
+      query: (queryArg) => ({
+        url: `/shops/${queryArg.shopId}/staff/${queryArg.staffId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ['Staff'],
+    }),
+    getReferenceLists: build.query<GetReferenceListsApiResponse, GetReferenceListsApiArg>({
+      query: (a) => ({ url: `/reference-lists/${a.countryCode}` }),
+      providesTags: ['ReferenceLists'],
     }),
   }),
   overrideExisting: false,
@@ -525,6 +530,29 @@ export type GetOrderByPaymentIntentApiArg = {
   /** Stripe PaymentIntent ID (starts with pi_) */
   paymentIntentId: string;
 };
+export type MenuLanguage = 'de' | 'en';
+export type TranslationMap = Partial<Record<MenuLanguage, string>>;
+export type LocalizedLabel = Record<MenuLanguage, string>;
+export type SpiceLevel = 'mild' | 'medium' | 'hot';
+export type FulfilmentModeKey = 'collection' | 'delivery' | 'dine_in';
+export type ReferenceEntry = { id: string; labels: LocalizedLabel; isActive: boolean };
+export type AdditiveEntry = ReferenceEntry & { code: number };
+export type ReferenceListsResponse = {
+  countryCode: string;
+  allergens: ReferenceEntry[];
+  additives: AdditiveEntry[];
+  taxClasses: ReferenceEntry[];
+  defaultTaxClassId: string | null;
+  taxRates: { taxClassId: string; fulfilmentMode: FulfilmentModeKey; rateBasisPoints: number; effectiveFrom: string }[];
+  currentTaxRates: { taxClassId: string; rates: Record<FulfilmentModeKey, number | null> }[];
+  taxRatesUniformAcrossModes: boolean;
+  dietaryTags: { id: string; labels: LocalizedLabel }[];
+  spiceLevels: { id: SpiceLevel; labels: LocalizedLabel }[];
+  updatedAt: string | null;
+};
+export type GetReferenceListsApiResponse = ReferenceListsResponse;
+export type GetReferenceListsApiArg = { countryCode: string };
+
 export type ProductSchedule = {
   startDate: string;
   endDate?: string | null;
@@ -536,91 +564,13 @@ export type ProductSchedule = {
   /** Optional label shown during the offer window (e.g. "Happy Hour") */
   offerLabel?: string | null;
 };
-export type ShopMembersResponse = {
-  members: {
-    userId: string;
-    role: string;
-    isActive: boolean;
-  }[];
-};
-export type ShopRolesResponse = {
-  roles: { id: string; name: string; permissions: string[] }[];
-};
-export type AddShopMemberApiResponse =
-  /** status 200 Member added successfully */ ShopMembersResponse;
-export type AddShopMemberApiArg = {
-  /** Shop ID */
-  shopId: string;
-  /** Email address of the user to invite */
-  email: string;
-  /** Role ID to assign ('owner' or a custom role id from shop.roles) */
-  roleId: string;
-};
-export type InvitationResponse = {
-  shopId: string;
-  shopName: string;
-  shopSlug: string;
-  role: string;
-};
-export type GetMyInvitationsApiResponse = {
-  invitations: InvitationResponse[];
-};
-export type AcceptShopInvitationApiResponse = {
-  shopId: string;
-  userId: string;
-  role: string;
-};
-export type AcceptShopInvitationApiArg = {
-  shopId: string;
-};
-export type DeclineShopInvitationApiResponse = {
-  shopId: string;
-  userId: string;
-};
-export type DeclineShopInvitationApiArg = {
-  shopId: string;
-};
-export type CreateShopRoleApiResponse = /** status 200 Role created */ ShopRolesResponse;
-export type CreateShopRoleApiArg = {
-  shopId: string;
-  name: string;
-  permissions: string[];
-};
-export type UpdateShopRoleApiResponse = /** status 200 Role updated */ ShopRolesResponse;
-export type UpdateShopRoleApiArg = {
-  shopId: string;
-  roleId: string;
-  name?: string;
-  permissions?: string[];
-};
-export type DeleteShopRoleApiResponse = /** status 200 Role deleted */ ShopRolesResponse;
-export type DeleteShopRoleApiArg = {
-  shopId: string;
-  roleId: string;
-};
-export type RemoveShopMemberApiResponse =
-  /** status 200 Member removed successfully */ ShopMembersResponse;
-export type RemoveShopMemberApiArg = {
-  /** Shop ID */
-  shopId: string;
-  /** Entra Object ID of the member to remove */
-  userId: string;
-};
 export type ShopBranding = {
   /** Logo URL (must start with https://) */
   logoUrl?: string | null;
   /** Hero image URL (must start with https://) */
   heroImageUrl?: string | null;
-  colors: {
-    /** Primary brand color (hex) */
-    primary: string;
-    /** Secondary brand color (hex) */
-    secondary: string;
-    /** Tertiary brand color (hex) */
-    tertiary: string;
-    /** Background color (hex) */
-    background: string;
-  };
+  /** Accent color (hex), used for buttons and highlights on the storefront */
+  accentColor?: string | null;
 } | null;
 export type ShopResponse = {
   /** Shop ID */
@@ -657,18 +607,14 @@ export type ShopResponse = {
   createdAt?: string;
   /** Last update timestamp */
   updatedAt?: string;
-  /** Shop members */
-  members?: {
-    userId?: string;
-    role?: string;
-    isActive?: boolean;
-  }[];
-  /** Custom roles defined for this shop */
-  roles?: { id?: string; name?: string; permissions?: string[] }[];
+  /** The signed-in caller's role on this shop, or 'superadmin' when accessed as a platform admin, or null when not a member */
+  callerRole?: 'owner' | 'manager' | 'staff' | 'superadmin' | null;
+  /** Permissions the signed-in caller has on this shop */
+  callerPermissions?: string[];
   /** ISO 3166-1 alpha-2 country code (e.g. "AU", "DE") */
   countryCode?: string;
-  /** Tax rates seeded from country on shop creation */
-  taxRates?: { id?: string; label?: string; rate?: number }[];
+  /** Menu languages offered by this shop; first entry is the original language */
+  menuLanguages?: MenuLanguage[];
   /** Industry / business type */
   industry?: string;
   /** Shop branding configuration, or null if not configured. */
@@ -829,8 +775,6 @@ export type UpdateShopRequest = {
   pausedMessage?: string;
   /** Payment policy */
   paymentPolicy?: "pay_online";
-  /** Allow guest checkout */
-  allowGuestCheckout?: boolean;
   /** Minimum order amount in cents */
   minOrderAmountCents?: number;
   address?: {
@@ -875,6 +819,8 @@ export type UpdateShopRequest = {
       close?: string;
     }[];
   };
+  /** Menu languages offered by this shop; first entry is the original language and cannot change */
+  menuLanguages?: MenuLanguage[];
 };
 export type DeleteResponse = {
   /** Whether deletion was successful */
@@ -893,6 +839,10 @@ export type CategoryResponse = {
   icon?: string;
   /** Whether category is deleted */
   isDeleted?: boolean;
+  /** Tax class for dishes in this category; null when the country has no tax classes set up */
+  taxClassId?: string | null;
+  /** Translations of the category name, keyed by menu language */
+  nameTranslations?: TranslationMap;
   /** Creation timestamp */
   createdAt?: string;
   /** Last update timestamp */
@@ -906,6 +856,10 @@ export type CreateCategoryRequest = {
   sortOrder?: number;
   /** Lucide icon name */
   icon?: string;
+  /** Tax class id; absent defaults to the country default */
+  taxClassId?: string;
+  /** Translations of the category name, keyed by menu language */
+  nameTranslations?: TranslationMap;
 };
 export type UpdateCategoryRequest = {
   /** Category name */
@@ -914,6 +868,10 @@ export type UpdateCategoryRequest = {
   sortOrder?: number;
   /** Lucide icon name, null to remove */
   icon?: string | null;
+  /** Tax class id */
+  taxClassId?: string;
+  /** Translations of the category name, keyed by menu language */
+  nameTranslations?: TranslationMap;
 };
 export type ProductResponse = {
   /** Product ID */
@@ -944,19 +902,39 @@ export type ProductResponse = {
     /** Whether this is the primary image */
     isPrimary?: boolean;
   }[];
-  /** Special info items (dietary labels, badges, etc.) */
-  specialInfo?: { name: string; icon: string }[];
+  /** Translations of the product name, keyed by menu language */
+  nameTranslations?: TranslationMap;
+  /** Translations of the product description, keyed by menu language */
+  descriptionTranslations?: TranslationMap;
+  /** Declared allergen ids, or null when not yet declared */
+  allergenIds?: string[] | null;
+  /** Declared additive ids, or null when not yet declared */
+  additiveIds?: string[] | null;
+  /** Dietary tag ids */
+  dietaryTagIds?: string[];
+  /** Spiciness, or null when not set */
+  spiceLevel?: SpiceLevel | null;
+  /** Preparation time in minutes, or null when not set */
+  prepMinutes?: number | null;
+  /** Tax class override for this dish, or null to inherit from its category */
+  taxClassId?: string | null;
+  /** Whether both allergens and additives have been declared */
+  isDeclared?: boolean;
   /** Product variant groups (optional) */
   variantGroups?: {
     /** Variant group ID */
     id?: string;
     /** Variant group name */
     name?: string;
+    /** Translations of the group name, keyed by menu language */
+    nameTranslations?: TranslationMap;
     options?: {
       /** Option ID */
       id?: string;
       /** Option name */
       name?: string;
+      /** Translations of the option name, keyed by menu language */
+      nameTranslations?: TranslationMap;
       /** Price difference in cents */
       priceDelta?: number;
       /** Whether option is available */
@@ -969,6 +947,8 @@ export type ProductResponse = {
     id?: string;
     /** Addon group name */
     name?: string;
+    /** Translations of the group name, keyed by menu language */
+    nameTranslations?: TranslationMap;
     /** Minimum selectable options */
     minSelectable?: number;
     /** Maximum selectable options */
@@ -978,6 +958,8 @@ export type ProductResponse = {
       id?: string;
       /** Option name */
       name?: string;
+      /** Translations of the option name, keyed by menu language */
+      nameTranslations?: TranslationMap;
       /** Price difference in cents */
       priceDelta?: number;
       /** Whether option is available */
@@ -988,8 +970,6 @@ export type ProductResponse = {
   isAvailable?: boolean;
   /** Whether product is deleted */
   isDeleted?: boolean;
-  /** Tax rate ID from the shop's taxRates list, or null */
-  taxRateId?: string | null;
   /** Optional availability schedule */
   schedule?: ProductSchedule | null;
   /** Creation timestamp */
@@ -1014,23 +994,37 @@ export type CreateProductRequest = {
     url?: string;
     isPrimary?: boolean;
   }[];
-  /** Special info items (dietary labels, badges, etc.) */
-  specialInfo?: { name: string; icon: string }[];
+  /** Translations of the product name, keyed by menu language */
+  nameTranslations?: TranslationMap;
+  /** Translations of the product description, keyed by menu language */
+  descriptionTranslations?: TranslationMap;
+  /** Declared allergen ids, or null when not yet declared */
+  allergenIds?: string[] | null;
+  /** Declared additive ids, or null when not yet declared */
+  additiveIds?: string[] | null;
+  /** Dietary tag ids */
+  dietaryTagIds?: string[];
+  /** Spiciness, or null when not set */
+  spiceLevel?: SpiceLevel | null;
+  /** Preparation time in minutes, or null when not set */
+  prepMinutes?: number | null;
+  /** Tax class override for this dish, or null to inherit from its category */
+  taxClassId?: string | null;
   /** Whether product is available */
   isAvailable?: boolean;
-  /** Tax rate ID from the shop's taxRates list, or null to clear */
-  taxRateId?: string | null;
   variantGroups?: {
     id: string;
     name: string;
-    options: { id: string; name: string; priceDelta: number; isAvailable: boolean }[];
+    nameTranslations?: TranslationMap;
+    options: { id: string; name: string; nameTranslations?: TranslationMap; priceDelta: number; isAvailable: boolean }[];
   }[];
   addonGroups?: {
     id: string;
     name: string;
+    nameTranslations?: TranslationMap;
     minSelectable: number;
     maxSelectable: number;
-    options: { id: string; name: string; priceDelta: number; isAvailable: boolean }[];
+    options: { id: string; name: string; nameTranslations?: TranslationMap; priceDelta: number; isAvailable: boolean }[];
   }[];
   /** Optional availability schedule; null = no time restriction */
   schedule?: ProductSchedule | null;
@@ -1051,19 +1045,33 @@ export type UpdateProductRequest = {
     url?: string;
     isPrimary?: boolean;
   }[];
-  /** Special info items (dietary labels, badges, etc.) */
-  specialInfo?: { name: string; icon: string }[];
+  /** Translations of the product name, keyed by menu language */
+  nameTranslations?: TranslationMap;
+  /** Translations of the product description, keyed by menu language */
+  descriptionTranslations?: TranslationMap;
+  /** Declared allergen ids, or null when not yet declared */
+  allergenIds?: string[] | null;
+  /** Declared additive ids, or null when not yet declared */
+  additiveIds?: string[] | null;
+  /** Dietary tag ids */
+  dietaryTagIds?: string[];
+  /** Spiciness, or null when not set */
+  spiceLevel?: SpiceLevel | null;
+  /** Preparation time in minutes, or null when not set */
+  prepMinutes?: number | null;
+  /** Tax class override for this dish, or null to inherit from its category */
+  taxClassId?: string | null;
   /** Whether product is available */
   isAvailable?: boolean;
-  /** Tax rate ID from the shop's taxRates list, or null to clear */
-  taxRateId?: string | null;
   /** Variant groups (single-select per group, e.g. Size) */
   variantGroups?: {
     id: string;
     name: string;
+    nameTranslations?: TranslationMap;
     options: {
       id: string;
       name: string;
+      nameTranslations?: TranslationMap;
       /** Price delta in cents */
       priceDelta: number;
       isAvailable: boolean;
@@ -1073,11 +1081,13 @@ export type UpdateProductRequest = {
   addonGroups?: {
     id: string;
     name: string;
+    nameTranslations?: TranslationMap;
     minSelectable: number;
     maxSelectable: number;
     options: {
       id: string;
       name: string;
+      nameTranslations?: TranslationMap;
       /** Price delta in cents */
       priceDelta: number;
       isAvailable: boolean;
@@ -1191,17 +1201,38 @@ export type OrderItemResponse = {
   selectedAddonOptionNames?: string[] | null;
   lineTotalCents: number;
 };
+export type OrderState = "PLACED" | "ACCEPTED" | "READY" | "OUT_FOR_DELIVERY" | "COMPLETED" | "REJECTED" | "CANCELLED";
+export type OrderDisplayState = OrderState | "IN_PREPARATION";
+export type OrderPaymentMethod = "card" | "cash";
+export type OrderPaymentStatus = "paid" | "refunded" | "partially_refunded" | "cash_due" | "cash_collected" | "refunded_in_cash";
+export type OrderFulfilmentMode = "collection" | "delivery" | "dine_in";
+export type OrderHistoryEntryResponse = {
+  from: OrderState | null;
+  to: OrderState;
+  at: string;
+  actor:
+    | { type: "system" }
+    | { type: "customer" }
+    | { type: "owner" | "staff" | "superadmin"; id: string };
+  reason?: string;
+};
 export type OrderResponse = {
   id: string;
   orderRef: string;
-  status: "pending_payment" | "paid" | "failed" | "cancelled" | "refunded";
+  state: OrderState;
+  displayState: OrderDisplayState;
+  fulfilmentMode: OrderFulfilmentMode;
+  paymentMethod: OrderPaymentMethod;
+  paymentStatus: OrderPaymentStatus;
+  readyAt: string | null;
   items: OrderItemResponse[];
   subtotalCents: number;
   currency: string;
   customerName: string;
   customerEmail: string;
   customerPhone: string;
-  customerNotes?: string | null;
+  customerNotes?: string;
+  history: OrderHistoryEntryResponse[];
   createdAt: string;
 };
 export type OrdersPageResponse = {
@@ -1213,7 +1244,11 @@ export type OrdersPageResponse = {
 export type OrderByPaymentIntentResponse = {
   orderId: string;
   orderRef: string;
-  status: "pending_payment" | "paid" | "failed" | "cancelled" | "refunded";
+  state: OrderState;
+  displayState: OrderDisplayState;
+  fulfilmentMode: OrderFulfilmentMode;
+  paymentStatus: OrderPaymentStatus;
+  readyAt: string | null;
   items: OrderItemResponse[];
   subtotalCents: number;
   currency: string;
@@ -1333,6 +1368,112 @@ export type CreateStripeAccountSessionApiArg = {
 
 export type DisconnectStripeAccountApiArg = { shopId: string };
 
+export type AuditActorType = 'owner' | 'staff' | 'superadmin' | 'system';
+export type AuditChange = {
+  field: string;
+  from: unknown;
+  to: unknown;
+};
+export type AuditEntry = {
+  id: string;
+  shopId: string;
+  timestamp: string;
+  actorType: AuditActorType;
+  actorId: string;
+  action: string;
+  entityType: string;
+  entityId: string;
+  entityName: string;
+  changes?: AuditChange[];
+};
+export type AuditEntriesResponse = {
+  entries: AuditEntry[];
+  total: number;
+  page: number;
+  pageSize: number;
+  actorLabels: Record<string, string>;
+};
+export type GetAuditEntriesApiResponse = AuditEntriesResponse;
+export type GetAuditEntriesApiArg = {
+  /** Shop ID */
+  shopId: string;
+  /** 1-based page number (default: 1) */
+  page?: number;
+  /** Number of entries per page (default: 20) */
+  pageSize?: number;
+};
+
+export type StaffRole = 'manager' | 'staff';
+export type StaffAccountDto = {
+  id: string;
+  username: string;
+  displayName: string | null;
+  role: StaffRole;
+  isActive: boolean;
+  isLocked: boolean;
+  lastLoginAt: string | null;
+  createdAt: string;
+};
+export type ListStaffResponse = {
+  staff: StaffAccountDto[];
+  /** Staff-account limit from the shop's plan, or null when the plan has none, or -1 when unlimited */
+  limit: number | null;
+  activeCount: number;
+};
+export type ListStaffApiResponse = ListStaffResponse;
+export type ListStaffApiArg = { shopId: string };
+
+export type CreateStaffRequest = {
+  username: string;
+  password: string;
+  role: StaffRole;
+  displayName?: string | null;
+};
+export type CreateStaffApiResponse = StaffAccountDto;
+export type CreateStaffApiArg = {
+  shopId: string;
+  createStaffRequest: CreateStaffRequest;
+};
+
+export type UpdateStaffRequest = {
+  role?: StaffRole;
+  displayName?: string | null;
+  isActive?: boolean;
+};
+export type UpdateStaffApiResponse = StaffAccountDto;
+export type UpdateStaffApiArg = {
+  shopId: string;
+  staffId: string;
+  updateStaffRequest: UpdateStaffRequest;
+};
+
+export type ResetStaffPasswordRequest = { password: string };
+export type ResetStaffPasswordApiResponse = StaffAccountDto;
+export type ResetStaffPasswordApiArg = {
+  shopId: string;
+  staffId: string;
+  resetStaffPasswordRequest: ResetStaffPasswordRequest;
+};
+
+export type DeleteStaffApiResponse = { id: string; deleted: true };
+export type DeleteStaffApiArg = { shopId: string; staffId: string };
+
+export type StaffLoginRequest = {
+  shopSlug: string;
+  username: string;
+  password: string;
+};
+export type StaffLoginApiResponse = {
+  token: string;
+  expiresAt: string;
+  shopId: string;
+  shopSlug: string;
+  staffId: string;
+  username: string;
+  role: StaffRole;
+};
+export type StaffLoginApiArg = { staffLoginRequest: StaffLoginRequest };
+
 export const {
   useGetShopsQuery,
   useCreateShopMutation,
@@ -1359,11 +1500,6 @@ export const {
   useStripeWebhookMutation,
   useGetOrdersByShopQuery,
   useGetOrderByPaymentIntentQuery,
-  useAddShopMemberMutation,
-  useRemoveShopMemberMutation,
-  useCreateShopRoleMutation,
-  useUpdateShopRoleMutation,
-  useDeleteShopRoleMutation,
   useRequestShopNameChangeMutation,
   useCancelShopNameChangeMutation,
   useGetVisiblePlansQuery,
@@ -1373,11 +1509,16 @@ export const {
   useCancelShopSubscriptionMutation,
   useResumeShopSubscriptionMutation,
   useReactivateShopMutation,
-  useGetMyInvitationsQuery,
-  useAcceptShopInvitationMutation,
-  useDeclineShopInvitationMutation,
   useGetGoLiveStatusQuery,
   useLazyGetGoLiveStatusQuery,
   useCreateStripeAccountSessionMutation,
   useDisconnectStripeAccountMutation,
+  useGetAuditEntriesQuery,
+  useStaffLoginMutation,
+  useListStaffQuery,
+  useCreateStaffMutation,
+  useUpdateStaffMutation,
+  useResetStaffPasswordMutation,
+  useDeleteStaffMutation,
+  useGetReferenceListsQuery,
 } = injectedRtkApi;

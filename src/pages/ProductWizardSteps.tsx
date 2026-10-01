@@ -1,23 +1,24 @@
 /**
  * Shared step components for the Create / Edit product wizards.
  */
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowRight, ChevronDown } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { MyCard } from '../components/ui/MyCard';
 import { MyButton } from '../components/ui/MyButton';
 import { MyInput, MyTextarea } from '../components/ui/MyInput';
 import { CurrencyInput } from '../components/ui/CurrencyInput';
-import { LucideIconByName, ICON_NAMES, ICON_DEFAULT_LABELS } from '../components/ui/IconPicker';
 import { useCreateCategoryMutation } from '../services/api';
+import type { ReferenceEntry, ReferenceListsResponse, SpiceLevel, TranslationMap } from '../services/api';
+import { effectiveTaxClassId, isFoodInfoDeclared, labelFor, toggleId } from '../features/menu/foodInfo';
+import type { FoodInfo } from '../features/menu/foodInfo';
 
 // ── Shared types ──────────────────────────────────────────────────────────────
 
-export type SpecialInfoItem = { icon: string; name: string };
-export type VariantOption = { id: string; name: string; priceDelta: number; isAvailable: boolean };
-export type VariantGroup  = { id: string; name: string; options: VariantOption[] };
-export type AddonOption   = { id: string; name: string; priceDelta: number; isAvailable: boolean };
-export type AddonGroup    = { id: string; name: string; minSelectable: number; maxSelectable: number; options: AddonOption[] };
+export type VariantOption = { id: string; name: string; nameTranslations?: TranslationMap; priceDelta: number; isAvailable: boolean };
+export type VariantGroup  = { id: string; name: string; nameTranslations?: TranslationMap; options: VariantOption[] };
+export type AddonOption   = { id: string; name: string; nameTranslations?: TranslationMap; priceDelta: number; isAvailable: boolean };
+export type AddonGroup    = { id: string; name: string; nameTranslations?: TranslationMap; minSelectable: number; maxSelectable: number; options: AddonOption[] };
 export type StepNum = 1 | 2 | 3 | 4 | 6;
 
 export interface ScheduleState {
@@ -209,151 +210,183 @@ export function Step1Basics({ form, setForm, imageFile, setImageFile, currencySy
   );
 }
 
-// ── Step 2: Special Info ──────────────────────────────────────────────────────
+// ── Step 3: Food info (allergens, additives, dietary tags, spiciness, prep time) ──
 
-interface Step2Props {
-  specialInfo: SpecialInfoItem[];
-  setSpecialInfo: (items: SpecialInfoItem[]) => void;
+interface StepFoodInfoProps {
+  foodInfo: FoodInfo;
+  setFoodInfo: (f: FoodInfo) => void;
+  refs: ReferenceListsResponse | undefined;
+  showOptional: boolean;
 }
 
-export function Step2SpecialInfo({ specialInfo, setSpecialInfo }: Step2Props) {
-  const [editingIdx, setEditingIdx] = useState<number | null>(null);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [dropdownStyle, setDropdownStyle] = useState<{ top: number; left: number; width: number }>({ top: 0, left: 0, width: 0 });
-  const triggerRef = useRef<HTMLButtonElement>(null);
+export function StepFoodInfo({ foodInfo, setFoodInfo, refs, showOptional }: StepFoodInfoProps) {
+  const { t, i18n } = useTranslation();
 
-  const remaining = ICON_NAMES.filter(n => !specialInfo.find(i => i.icon === n));
+  if (!refs) {
+    return <p className="text-sm text-gray-500">{t('products.refsLoadError')}</p>;
+  }
 
-  const openDropdown = () => {
-    if (triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      setDropdownStyle({ top: rect.bottom + 4, left: rect.left, width: rect.width });
-    }
-    setDropdownOpen(true);
-  };
-
-  const addIcon = (iconName: string) => {
-    if (!iconName) return;
-    const newIdx = specialInfo.length;
-    setSpecialInfo([...specialInfo, { icon: iconName, name: '' }]);
-    setEditingIdx(newIdx);
-    setDropdownOpen(false);
-  };
-
-  const removeIcon = (idx: number) => {
-    setSpecialInfo(specialInfo.filter((_, i) => i !== idx));
-    if (editingIdx === idx) setEditingIdx(null);
-  };
-
-  const updateLabel = (idx: number, label: string) => {
-    setSpecialInfo(specialInfo.map((item, i) => i === idx ? { ...item, name: label } : item));
-  };
+  const chipClass = (pressed: boolean) =>
+    `px-2.5 py-1 rounded-full text-xs border transition-colors ${
+      pressed
+        ? 'bg-gray-900 border-gray-900 text-white'
+        : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
+    }`;
 
   return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-sm font-medium text-gray-700">
-        Special Info <span className="text-gray-400 font-normal text-xs">(optional)</span>
-      </label>
-
-      {specialInfo.length > 0 && (
+    <div className="space-y-4">
+      <div className="flex flex-col gap-1.5">
+        <label className="text-sm font-medium text-gray-700">{t('products.allergens')}</label>
         <div className="flex flex-wrap gap-1.5">
-          {specialInfo.map((item, idx) => (
-            <span key={idx} className="inline-flex items-center gap-1 pl-2 pr-1.5 py-0.5 rounded-full text-xs bg-gray-100 border border-gray-200 text-gray-700">
-              <LucideIconByName name={item.icon} size={11} />
-              {editingIdx === idx ? (
-                <input
-                  autoFocus
-                  type="text"
-                  value={item.name}
-                  onChange={(e) => updateLabel(idx, e.target.value)}
-                  onBlur={() => setEditingIdx(null)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') setEditingIdx(null); }}
-                  className="w-20 bg-transparent outline-none border-b border-gray-400 text-xs"
-                />
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setEditingIdx(idx)}
-                  className="hover:underline decoration-dotted underline-offset-2"
-                  title="Click to edit label"
-                >
-                  {item.name || <span className="text-gray-400 italic">add label</span>}
-                </button>
-              )}
-              <button type="button" onClick={() => removeIcon(idx)} className="text-gray-400 hover:text-gray-700 transition-colors leading-none ml-0.5">×</button>
-            </span>
-          ))}
-        </div>
-      )}
-
-      {remaining.length > 0 && (
-        <div>
-          <button
-            ref={triggerRef}
-            type="button"
-            onClick={openDropdown}
-            className="w-full flex items-center justify-between border border-gray-200 rounded-lg bg-white text-gray-500 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400"
-          >
-            <span>{specialInfo.length === 0 ? 'Select a tag…' : 'Add another tag…'}</span>
-            <ChevronDown size={14} className="text-gray-400" />
-          </button>
-          {dropdownOpen && (
-            <>
-              <div className="fixed inset-0 z-[49]" onClick={() => setDropdownOpen(false)} />
-              <div
-                className="fixed z-50 bg-white border border-gray-200 rounded-lg shadow-md max-h-48 overflow-y-auto"
-                style={{ top: dropdownStyle.top, left: dropdownStyle.left, width: dropdownStyle.width }}
+          {refs.allergens.filter((a) => a.isActive).map((a) => {
+            const pressed = (foodInfo.allergenIds ?? []).includes(a.id);
+            return (
+              <button
+                key={a.id}
+                type="button"
+                aria-pressed={pressed}
+                className={chipClass(pressed)}
+                onClick={() => setFoodInfo({ ...foodInfo, allergenIds: toggleId(foodInfo.allergenIds, a.id) })}
               >
-                {remaining.map((name) => (
-                  <button
-                    key={name}
-                    type="button"
-                    onClick={() => addIcon(name)}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
-                  >
-                    <LucideIconByName name={name} size={14} />
-                    <span>{ICON_DEFAULT_LABELS[name] ?? name}</span>
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
+                {labelFor(a.labels, i18n.language)}
+              </button>
+            );
+          })}
         </div>
+        <label className="flex items-center gap-2 text-xs text-gray-500 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={Array.isArray(foodInfo.allergenIds) && foodInfo.allergenIds.length === 0}
+            onChange={(e) => setFoodInfo({ ...foodInfo, allergenIds: e.target.checked ? [] : null })}
+            className="accent-gray-900"
+          />
+          {t('products.allergensNone')}
+        </label>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <label className="text-sm font-medium text-gray-700">{t('products.additives')}</label>
+        <div className="flex flex-wrap gap-1.5">
+          {refs.additives.filter((a) => a.isActive).map((a) => {
+            const pressed = (foodInfo.additiveIds ?? []).includes(a.id);
+            return (
+              <button
+                key={a.id}
+                type="button"
+                aria-pressed={pressed}
+                className={chipClass(pressed)}
+                onClick={() => setFoodInfo({ ...foodInfo, additiveIds: toggleId(foodInfo.additiveIds, a.id) })}
+              >
+                {a.code} {labelFor(a.labels, i18n.language)}
+              </button>
+            );
+          })}
+        </div>
+        <label className="flex items-center gap-2 text-xs text-gray-500 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={Array.isArray(foodInfo.additiveIds) && foodInfo.additiveIds.length === 0}
+            onChange={(e) => setFoodInfo({ ...foodInfo, additiveIds: e.target.checked ? [] : null })}
+            className="accent-gray-900"
+          />
+          {t('products.additivesNone')}
+        </label>
+      </div>
+
+      {!isFoodInfoDeclared(foodInfo) && (
+        <p className="text-xs text-amber-600">{t('products.foodInfoUndeclaredWarning')}</p>
       )}
 
-      <p className="text-xs text-gray-400">Click a label to rename it.</p>
+      {showOptional && (
+        <>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-gray-700">{t('products.dietaryTags')}</label>
+            <div className="flex flex-wrap gap-1.5">
+              {refs.dietaryTags.map((tag) => {
+                const pressed = foodInfo.dietaryTagIds.includes(tag.id);
+                return (
+                  <button
+                    key={tag.id}
+                    type="button"
+                    aria-pressed={pressed}
+                    className={chipClass(pressed)}
+                    onClick={() =>
+                      setFoodInfo({
+                        ...foodInfo,
+                        dietaryTagIds: pressed
+                          ? foodInfo.dietaryTagIds.filter((id) => id !== tag.id)
+                          : [...foodInfo.dietaryTagIds, tag.id],
+                      })
+                    }
+                  >
+                    {labelFor(tag.labels, i18n.language)}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-gray-700">{t('products.spiceLevel')}</label>
+            <select
+              value={foodInfo.spiceLevel ?? ''}
+              onChange={(e) => setFoodInfo({ ...foodInfo, spiceLevel: (e.target.value || null) as SpiceLevel | null })}
+              className="w-full border border-gray-200 rounded-lg bg-white text-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400"
+            >
+              <option value="">{t('products.spiceNone')}</option>
+              {refs.spiceLevels.map((level) => (
+                <option key={level.id} value={level.id}>
+                  {labelFor(level.labels, i18n.language)}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <MyInput
+            label={t('products.prepMinutes')}
+            type="number"
+            min="1"
+            max="240"
+            value={foodInfo.prepMinutes ?? ''}
+            onChange={(e) =>
+              setFoodInfo({
+                ...foodInfo,
+                prepMinutes: e.target.value === '' ? null : Math.round(Number(e.target.value)),
+              })
+            }
+          />
+        </>
+      )}
     </div>
   );
 }
 
-// ── Step 3: Categories & Tax ──────────────────────────────────────────────────
+// ── Step 2: Categories & Tax ───────────────────────────────────────────────────
 
-interface Step3Props {
+interface Step2CategoriesProps {
   shopId: string;
-  categories: { id: string; name: string }[];
+  categories: { id: string; name: string; taxClassId?: string | null }[];
   selectedCategoryIds: string[];
   setSelectedCategoryIds: (ids: string[]) => void;
-  taxRates: { id: string; label: string }[];
-  selectedTaxRateId: string | null;
-  setSelectedTaxRateId: (id: string | null) => void;
+  taxClasses: ReferenceEntry[];
+  taxClassOverride: string | null;
+  setTaxClassOverride: (id: string | null) => void;
   categoryError: boolean;
-  taxRateError: boolean;
-  hideTaxRate?: boolean;
+  showTaxOverride?: boolean;
 }
 
-export function Step3Categories({
+export function StepCategories({
   shopId,
   categories,
   selectedCategoryIds,
   setSelectedCategoryIds,
-  taxRates,
-  selectedTaxRateId,
-  setSelectedTaxRateId,
+  taxClasses,
+  taxClassOverride,
+  setTaxClassOverride,
   categoryError,
-  taxRateError,
-  hideTaxRate = false,
-}: Step3Props) {
-  const { t } = useTranslation();
+  showTaxOverride = false,
+}: Step2CategoriesProps) {
+  const { t, i18n } = useTranslation();
   const [createCategory, { isLoading: isCreating }] = useCreateCategoryMutation();
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');
@@ -485,28 +518,31 @@ export function Step3Categories({
           )}
         </div>
 
-      {!hideTaxRate && taxRates.length > 0 && (
+      {showTaxOverride && (
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium text-gray-700">
-            {t('products.taxRate')}
+            {t('products.taxClass')}
           </label>
           <select
-            value={selectedTaxRateId ?? ''}
-            onChange={(e) => setSelectedTaxRateId(e.target.value || null)}
+            value={taxClassOverride ?? ''}
+            onChange={(e) => setTaxClassOverride(e.target.value || null)}
             className="w-full border border-gray-200 rounded-lg bg-white text-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400"
           >
             <option value="">
-              {t('products.taxRateNone')}
+              {(() => {
+                const fromCategoryId = effectiveTaxClassId(selectedCategoryIds, categories, null);
+                const fromCategory = taxClasses.find((c) => c.id === fromCategoryId);
+                return fromCategory
+                  ? t('products.taxClassFromCategory', { label: labelFor(fromCategory.labels, i18n.language) })
+                  : t('products.taxClassNoneYet');
+              })()}
             </option>
-            {taxRates.map((rate) => (
-              <option key={rate.id} value={rate.id}>
-                {rate.label}
+            {taxClasses.filter((c) => c.isActive).map((c) => (
+              <option key={c.id} value={c.id}>
+                {labelFor(c.labels, i18n.language)}
               </option>
             ))}
           </select>
-          {taxRateError && (
-            <p className="text-xs text-red-500">{t('products.taxRateRequired')}</p>
-          )}
         </div>
       )}
     </div>
@@ -840,23 +876,40 @@ interface Step6Props {
   existingImageUrl?: string | null;
   selectedCategoryIds: string[];
   categories: { id: string; name: string }[];
-  taxRates: { id: string; label: string }[];
-  selectedTaxRateId: string | null;
   variantGroups: VariantGroup[];
   addonGroups: AddonGroup[];
   currencySymbol: string;
-  specialInfo: SpecialInfoItem[];
+  foodInfo: FoodInfo;
+  refs: ReferenceListsResponse | undefined;
+  effectiveTaxClassLabel: string;
 }
 
 export function Step6Review({
-  form, imageFile, existingImageUrl, selectedCategoryIds, categories, taxRates, selectedTaxRateId,
-  variantGroups, addonGroups, currencySymbol, specialInfo,
+  form, imageFile, existingImageUrl, selectedCategoryIds, categories,
+  variantGroups, addonGroups, currencySymbol, foodInfo, refs, effectiveTaxClassLabel,
 }: Step6Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const selectedCategories = categories.filter(c => selectedCategoryIds.includes(c.id));
-  const taxRate = taxRates.find(r => r.id === selectedTaxRateId);
   const displayImageUrl = imageFile ? URL.createObjectURL(imageFile) : existingImageUrl;
+
+  const declaredLabels = (
+    ids: string[] | null,
+    defs: ReadonlyArray<{ id: string; labels: { de: string; en: string } }>,
+    noneKey: string,
+  ) => {
+    if (ids === null) return <span className="text-gray-400">{t('products.notDeclared')}</span>;
+    if (ids.length === 0) return <span className="text-gray-400">{t(noneKey)}</span>;
+    return (
+      <div className="flex flex-wrap gap-1 justify-end">
+        {defs.filter((d) => ids.includes(d.id)).map((d) => (
+          <span key={d.id} className="text-xs bg-gray-100 rounded-full px-2 py-0.5 text-gray-700">
+            {labelFor(d.labels, i18n.language)}
+          </span>
+        ))}
+      </div>
+    );
+  };
 
   const priceFormatted = (form.price / 100).toLocaleString(navigator.language, {
     minimumFractionDigits: 2,
@@ -896,8 +949,8 @@ export function Step6Review({
             <span className="text-gray-400">{t('products.wizardReviewNone')}</span>
           )}
         </ReviewRow>
-        <ReviewRow label={t('products.taxRate')}>
-          {taxRate ? taxRate.label : <span className="text-gray-400">{t('products.taxRateNone')}</span>}
+        <ReviewRow label={t('products.taxClass')}>
+          {effectiveTaxClassLabel}
         </ReviewRow>
         <ReviewRow label={t('variants.title')}>
           {variantGroups.length > 0
@@ -909,18 +962,12 @@ export function Step6Review({
             ? t('products.wizardReviewAddons', { count: addonGroups.length })
             : <span className="text-gray-400">{t('products.wizardReviewNone')}</span>}
         </ReviewRow>
-        {specialInfo.length > 0 && (
-          <ReviewRow label="Special Info">
-            <div className="flex flex-wrap gap-1.5 justify-end">
-              {specialInfo.map((item, idx) => (
-                <span key={idx} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 border border-gray-200 text-xs text-gray-700">
-                  <LucideIconByName name={item.icon} size={11} />
-                  {item.name || item.icon}
-                </span>
-              ))}
-            </div>
-          </ReviewRow>
-        )}
+        <ReviewRow label={t('products.allergens')}>
+          {declaredLabels(foodInfo.allergenIds, refs?.allergens ?? [], 'products.allergensNone')}
+        </ReviewRow>
+        <ReviewRow label={t('products.additives')}>
+          {declaredLabels(foodInfo.additiveIds, refs?.additives ?? [], 'products.additivesNone')}
+        </ReviewRow>
       </div>
     </div>
   );

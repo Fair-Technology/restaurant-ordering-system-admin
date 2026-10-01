@@ -8,13 +8,17 @@ import { ShopsPage } from '../pages/ShopsPage';
 import { ShopSettingsPage } from '../pages/ShopSettingsPage';
 import { CategoriesPage } from '../pages/CategoriesPage';
 import { EditCategoryPage } from '../pages/EditCategoryPage';
+import { TranslationsPage } from '../pages/TranslationsPage';
 import { ProductsPage } from '../pages/ProductsPage';
-import { EditProductPage } from '../pages/EditProductPage';
 import { OrdersPage } from '../pages/OrdersPage';
 import { SubscriptionPage } from '../pages/SubscriptionPage';
+import { ActivityPage } from '../pages/ActivityPage';
+import { StaffPage } from '../pages/StaffPage';
+import { StaffLoginPage } from '../pages/StaffLoginPage';
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
+  { path: '/:slug/staff', element: <StaffLoginPage /> },
   {
     element: <RequireAuth />,
     children: [
@@ -30,12 +34,14 @@ export const router = createBrowserRouter([
               { index: true, element: <ProductsPage /> },
               { path: 'orders', element: <OrdersPage /> },
               { path: 'categories', element: <CategoriesPage /> },
+              { path: 'translations', element: <TranslationsPage /> },
               { path: 'subscription', element: <SubscriptionPage /> },
               { path: 'settings', element: <ShopSettingsPage /> },
+              { path: 'staff', element: <StaffPage /> },
+              { path: 'activity', element: <ActivityPage /> },
             ],
           },
           { path: '/shops/:shopId/categories/:categoryId/edit', element: <EditCategoryPage /> },
-          { path: '/shops/:shopId/products/:productId', element: <EditProductPage /> },
         ],
       },
     ],
