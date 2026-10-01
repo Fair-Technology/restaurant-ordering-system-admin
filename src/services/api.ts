@@ -684,6 +684,8 @@ export type CreateShopRequest = {
   minOrderAmountCents: number;
   /** Payment policy */
   paymentPolicy: "pay_online" | "pay_in_person";
+  /** Version of the data processing agreement the owner accepted at creation */
+  acceptDpaVersion?: string;
   address: {
     /** Street address */
     street: string;
