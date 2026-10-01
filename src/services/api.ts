@@ -662,6 +662,8 @@ export type ShopResponse = {
     connectAccountId?: string | null;
     connectOnboardingStatus?: 'not_started' | 'pending' | 'complete' | null;
   } | null;
+  /** Payment policy */
+  paymentPolicy?: 'pay_online' | 'pay_in_person';
 };
 export type GetAllShopsResponse = {
   /** Array of shops */
@@ -681,7 +683,7 @@ export type CreateShopRequest = {
   /** Minimum order amount in cents */
   minOrderAmountCents: number;
   /** Payment policy */
-  paymentPolicy: "pay_online";
+  paymentPolicy: "pay_online" | "pay_in_person";
   address: {
     /** Street address */
     street: string;
@@ -774,7 +776,7 @@ export type UpdateShopRequest = {
   /** Message when shop is paused */
   pausedMessage?: string;
   /** Payment policy */
-  paymentPolicy?: "pay_online";
+  paymentPolicy?: "pay_online" | "pay_in_person";
   /** Minimum order amount in cents */
   minOrderAmountCents?: number;
   address?: {

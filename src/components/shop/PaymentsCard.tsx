@@ -2,10 +2,15 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CheckCircle, AlertCircle, Circle } from 'lucide-react';
 import type { ShopResponse } from '../../services/api';
-import { useLazyGetGoLiveStatusQuery, useDisconnectStripeAccountMutation } from '../../services/api';
+import {
+  useLazyGetGoLiveStatusQuery,
+  useDisconnectStripeAccountMutation,
+  useUpdateShopMutation,
+} from '../../services/api';
 import { MyCard } from '../ui/MyCard';
 import { MyButton } from '../ui/MyButton';
 import { StripeOnboardingModal } from './StripeOnboardingModal';
+import { canOfferOnlinePayments, type PaymentPolicy } from '../../features/shops/paymentPolicy';
 
 interface Props {
   shop: ShopResponse;
@@ -17,10 +22,35 @@ export function PaymentsCard({ shop, onRefetch }: Props) {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalPurpose, setModalPurpose] = useState<'onboarding' | 'management'>('onboarding');
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
+  const [policyState, setPolicyState] = useState<PaymentPolicy | null>(null);
+  const [isSavingPolicy, setIsSavingPolicy] = useState(false);
+  const [policyError, setPolicyError] = useState<string | null>(null);
   const [fetchGoLiveStatus] = useLazyGetGoLiveStatusQuery();
   const [disconnectStripe, { isLoading: isDisconnecting }] = useDisconnectStripeAccountMutation();
+  const [updateShop] = useUpdateShopMutation();
 
   const status = shop.stripe?.connectOnboardingStatus ?? null;
+  const onlineAllowed = canOfferOnlinePayments(status);
+  const currentPolicy = policyState ?? shop.paymentPolicy ?? 'pay_in_person';
+
+  const handleSavePolicy = async (policy: PaymentPolicy) => {
+    if (!shop.id || policy === currentPolicy) return;
+    setPolicyState(policy);
+    setIsSavingPolicy(true);
+    setPolicyError(null);
+    try {
+      await updateShop({
+        shopId: shop.id,
+        updateShopRequest: { paymentPolicy: policy },
+      }).unwrap();
+      onRefetch();
+    } catch {
+      setPolicyState(null);
+      setPolicyError(t('shops.paymentsPolicyFailedToSave'));
+    } finally {
+      setIsSavingPolicy(false);
+    }
+  };
 
   const handleClose = async () => {
     setModalOpen(false);
@@ -132,6 +162,46 @@ export function PaymentsCard({ shop, onRefetch }: Props) {
             </div>
           </div>
         )}
+
+        <div className="mt-5 pt-5 border-t border-gray-200">
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">
+            {t('shops.paymentsPolicyTitle')}
+          </p>
+          <div className="space-y-2">
+            {(
+              [
+                { value: 'pay_in_person', label: t('shops.paymentsPolicyInPerson'), disabled: false },
+                { value: 'pay_online', label: t('shops.paymentsPolicyOnline'), disabled: !onlineAllowed },
+              ] as const
+            ).map((option) => {
+              const selected = currentPolicy === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  disabled={option.disabled || isSavingPolicy}
+                  onClick={() => handleSavePolicy(option.value)}
+                  className={`w-full flex items-center gap-2.5 text-left px-3.5 py-2.5 rounded-lg border text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                    selected
+                      ? 'border-gray-900 bg-gray-50 text-gray-900'
+                      : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                  }`}
+                >
+                  {selected ? (
+                    <CheckCircle size={16} className="shrink-0 text-gray-900" />
+                  ) : (
+                    <Circle size={16} className="shrink-0 text-gray-300" />
+                  )}
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+          {!onlineAllowed && (
+            <p className="mt-2 text-xs text-gray-400">{t('shops.paymentsPolicyOnlineHint')}</p>
+          )}
+          {policyError && <p className="mt-2 text-sm text-red-600">{policyError}</p>}
+        </div>
       </MyCard>
 
       {modalOpen && (
