@@ -9,6 +9,7 @@ import {
   useUpdateShopMutation,
 } from '../services/api';
 import type { CreateShopRequest, ShopResponse } from '../services/api';
+import { useGetDpaDocumentQuery } from '../services/legalApi';
 import { MyButton } from '../components/ui/MyButton';
 import { MyInput } from '../components/ui/MyInput';
 import { MySpinner } from '../components/ui/MySpinner';
@@ -59,10 +60,14 @@ const COUNTRY_DEFAULTS: Record<string, { currency: string; timezone: string }> =
 };
 
 function CreateShopModal({ onClose }: { onClose: () => void }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const toast = useToast();
   const navigate = useNavigate();
   const [createShop, { isLoading, isError, error }] = useCreateShopMutation();
+  const { data: dpa, isError: dpaLoadFailed } = useGetDpaDocumentQuery({});
+  const [dpaTicked, setDpaTicked] = useState(false);
+  const [showDpa, setShowDpa] = useState(false);
+  const dpaLang = i18n.language.startsWith('de') ? 'de' : 'en';
 
   const [industryOther, setIndustryOther] = useState('');
   const [form, setForm] = useState<Partial<CreateShopRequest>>({
@@ -99,11 +104,13 @@ function CreateShopModal({ onClose }: { onClose: () => void }) {
       form.industry === 'Other' ? industryOther.trim() : form.industry;
     if (!resolvedIndustry) return;
     if (!form.name || form.name.trim().length < 3) return;
+    if (!dpaTicked || !dpa) return;
     try {
       const shop = await createShop({
         createShopRequest: {
           ...form,
           industry: resolvedIndustry,
+          acceptDpaVersion: dpa.version,
         } as CreateShopRequest,
       }).unwrap();
       toast.success(t('shops.created'));
@@ -192,11 +199,45 @@ function CreateShopModal({ onClose }: { onClose: () => void }) {
                   ))}
                 </select>
               </div>
+
+              <div className="space-y-2">
+                {dpaLoadFailed && <p className="text-sm text-red-600">{t('shops.dpaLoadError')}</p>}
+                <label className="flex items-start gap-2 text-sm text-gray-700">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5"
+                    checked={dpaTicked}
+                    onChange={(e) => setDpaTicked(e.target.checked)}
+                  />
+                  <span>
+                    {t('shops.dpaCheckbox', { version: dpa?.version ?? '' })}{' '}
+                    <button
+                      type="button"
+                      className="underline font-medium"
+                      onClick={() => setShowDpa((v) => !v)}
+                    >
+                      {t('shops.dpaRead')}
+                    </button>
+                  </span>
+                </label>
+                {showDpa && dpa && (
+                  <div className="max-h-64 overflow-y-auto border border-gray-100 rounded-xl p-3 space-y-3 bg-gray-50">
+                    {dpa.sections[dpaLang].map((sec) => (
+                      <div key={sec.heading}>
+                        <h4 className="text-sm font-semibold text-gray-900">{sec.heading}</h4>
+                        {sec.paragraphs.map((p) => (
+                          <p key={p} className="text-xs text-gray-600 mt-1">{p}</p>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Footer */}
             <div className="flex items-center gap-2 px-6 pb-5">
-              <MyButton type="submit" disabled={isLoading} className="flex-1">
+              <MyButton type="submit" disabled={isLoading || !dpaTicked || !dpa} className="flex-1">
                 {isLoading ? t('shops.creating') : t('shops.create')}
               </MyButton>
               <MyButton type="button" variant="secondary" onClick={onClose}>
