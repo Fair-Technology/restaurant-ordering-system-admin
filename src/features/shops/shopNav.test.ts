@@ -23,6 +23,6 @@ describe('shopNavItems', () => {
         'manage_billing',
         'view_audit',
       ]),
-    ).toEqual(['orders', 'products', 'categories', 'translations', 'subscription', 'settings', 'staff', 'activity']);
+    ).toEqual(['orders', 'products', 'categories', 'translations', 'subscription', 'settings', 'legal', 'staff', 'activity']);
   });
 });
