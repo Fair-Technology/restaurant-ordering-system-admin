@@ -71,7 +71,7 @@ function CreateShopModal({ onClose }: { onClose: () => void }) {
     currency: 'AUD',
     timezone: 'Australia/Sydney',
     minOrderAmountCents: 0,
-    paymentPolicy: 'pay_online',
+    paymentPolicy: 'pay_in_person',
     address: { street: '', city: '', state: '', postcode: '', country: 'Australia' },
     openingHours: {
       mon: [{ open: '09:00', close: '17:00' }],
