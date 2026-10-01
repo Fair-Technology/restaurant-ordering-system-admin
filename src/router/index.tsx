@@ -13,6 +13,7 @@ import { ProductsPage } from '../pages/ProductsPage';
 import { OrdersPage } from '../pages/OrdersPage';
 import { SubscriptionPage } from '../pages/SubscriptionPage';
 import { ActivityPage } from '../pages/ActivityPage';
+import { LegalPage } from '../pages/LegalPage';
 import { StaffPage } from '../pages/StaffPage';
 import { StaffLoginPage } from '../pages/StaffLoginPage';
 
@@ -37,6 +38,7 @@ export const router = createBrowserRouter([
               { path: 'translations', element: <TranslationsPage /> },
               { path: 'subscription', element: <SubscriptionPage /> },
               { path: 'settings', element: <ShopSettingsPage /> },
+              { path: 'legal', element: <LegalPage /> },
               { path: 'staff', element: <StaffPage /> },
               { path: 'activity', element: <ActivityPage /> },
             ],
