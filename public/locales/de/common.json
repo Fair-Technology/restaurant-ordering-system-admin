@@ -129,7 +129,7 @@
     "paymentsDisconnectCancel": "Abbrechen",
     "paymentsError": "Zahlungseinrichtung konnte nicht geladen werden.",
     "paymentsPolicyTitle": "Wie Kunden bezahlen",
-    "paymentsPolicyInPerson": "Vor Ort (Barzahlung bei Abholung oder Lieferung)",
+    "paymentsPolicyInPerson": "Vor Ort (Zahlung bei Abholung oder Lieferung)",
     "paymentsPolicyOnline": "Online (Karte)",
     "paymentsPolicyOnlineHint": "Schließen Sie die Stripe-Einrichtung oben ab, um Online-Zahlung zu aktivieren.",
     "paymentsPolicyFailedToSave": "Zahlungsart konnte nicht gespeichert werden.",

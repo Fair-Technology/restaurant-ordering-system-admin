@@ -129,7 +129,7 @@
     "paymentsDisconnectCancel": "Cancel",
     "paymentsError": "Failed to load payment setup.",
     "paymentsPolicyTitle": "How customers pay",
-    "paymentsPolicyInPerson": "In person (cash on collection or delivery)",
+    "paymentsPolicyInPerson": "In person (pay on collection or delivery)",
     "paymentsPolicyOnline": "Online (card)",
     "paymentsPolicyOnlineHint": "Finish setting up Stripe above to turn on online payment.",
     "paymentsPolicyFailedToSave": "Failed to save how customers pay.",
