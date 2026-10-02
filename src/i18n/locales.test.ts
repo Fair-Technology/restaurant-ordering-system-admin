@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import { describe, expect, it } from 'vitest';
 
 import { ORDER_DISPLAY_STATES } from '../features/orders/orderState';
+import { REJECT_REASONS } from '../features/orders/intake';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -39,6 +40,13 @@ describe('locales', () => {
     for (const state of ORDER_DISPLAY_STATES) {
       expect(en).toHaveProperty(`orders.state.${state}`);
       expect(de).toHaveProperty(`orders.state.${state}`);
+    }
+  });
+
+  it('every decline reason is labelled', () => {
+    for (const r of REJECT_REASONS) {
+      expect(en).toHaveProperty(`orders.rejectReason.${r}`);
+      expect(de).toHaveProperty(`orders.rejectReason.${r}`);
     }
   });
 });
