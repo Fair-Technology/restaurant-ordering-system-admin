@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { effectiveTaxClassId, formatRate, isFoodInfoDeclared, labelFor, toggleId } from './foodInfo';
+import { effectiveTaxClassId, formatRate, isFoodInfoDeclared, labelFor, taxClassOptionLabel, toggleId } from './foodInfo';
 
 describe('toggleId', () => {
   it('adds to a null list', () => {
@@ -68,5 +68,34 @@ describe('formatRate', () => {
 
   it('an unset rate is a dash', () => {
     expect(formatRate(null)).toBe('—');
+  });
+});
+
+describe('taxClassOptionLabel', () => {
+  const refs = {
+    taxRatesUniformAcrossModes: true,
+    currentTaxRates: [
+      { taxClassId: 'food', rates: { collection: 700, delivery: 700, dine_in: 700 } },
+      { taxClassId: 'beverage', rates: { collection: 1900, delivery: 1900, dine_in: 1900 } },
+      { taxClassId: 'unset', rates: { collection: null, delivery: null, dine_in: null } },
+    ],
+  };
+
+  it('German food shows 7 %', () => {
+    expect(taxClassOptionLabel('Speisen', 'food', refs, 'de')).toBe('Speisen — 7 %');
+  });
+
+  it('English beverage shows 19%', () => {
+    expect(taxClassOptionLabel('Beverages', 'beverage', refs, 'en')).toBe('Beverages — 19%');
+  });
+
+  it('non-uniform rates show the name only', () => {
+    expect(taxClassOptionLabel('Speisen', 'food', { ...refs, taxRatesUniformAcrossModes: false }, 'de')).toBe('Speisen');
+  });
+
+  it('missing rate shows the name only', () => {
+    expect(taxClassOptionLabel('Other', 'unset', refs, 'en')).toBe('Other');
+    expect(taxClassOptionLabel('Other', 'nope', refs, 'en')).toBe('Other');
+    expect(taxClassOptionLabel('Other', 'food', undefined, 'en')).toBe('Other');
   });
 });
