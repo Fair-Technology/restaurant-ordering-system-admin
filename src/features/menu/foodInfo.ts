@@ -1,4 +1,4 @@
-import type { LocalizedLabel, SpiceLevel } from '../../services/api';
+import type { LocalizedLabel, ReferenceListsResponse, SpiceLevel } from '../../services/api';
 
 export interface FoodInfo {
   allergenIds: string[] | null;
@@ -64,4 +64,19 @@ export function labelFor(labels: LocalizedLabel, language: string): string {
 
 export function formatRate(bp: number | null): string {
   return bp === null ? '—' : `${bp / 100}%`;
+}
+
+/** Tax option name with its current collection rate beside it ("Speisen — 7 %"); the bare name when the rate isn't a single known number. */
+export function taxClassOptionLabel(
+  name: string,
+  taxClassId: string,
+  refs: Pick<ReferenceListsResponse, 'currentTaxRates' | 'taxRatesUniformAcrossModes'> | undefined,
+  language: string,
+): string {
+  if (!refs?.taxRatesUniformAcrossModes) return name;
+  const rate = refs.currentTaxRates.find((r) => r.taxClassId === taxClassId)?.rates.collection;
+  if (typeof rate !== 'number') return name;
+  const de = language.startsWith('de');
+  const percent = new Intl.NumberFormat(de ? 'de-DE' : 'en-GB', { maximumFractionDigits: 2 }).format(rate / 100);
+  return `${name} — ${percent}${de ? ' %' : '%'}`;
 }

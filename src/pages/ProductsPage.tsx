@@ -26,7 +26,7 @@ import {
   StepIndicator, Step1Basics, StepFoodInfo, StepCategories, Step4Customise, Step5Schedule, Step6Review,
 } from './ProductWizardSteps';
 import { useShopReferenceLists } from '../features/menu/useShopReferenceLists';
-import { EMPTY_FOOD_INFO, effectiveTaxClassId, foodInfoFromProduct, labelFor } from '../features/menu/foodInfo';
+import { EMPTY_FOOD_INFO, effectiveTaxClassId, foodInfoFromProduct, labelFor, taxClassOptionLabel } from '../features/menu/foodInfo';
 import type { FoodInfo } from '../features/menu/foodInfo';
 import { countMissingTranslations } from '../features/menu/translations';
 import { isListRefreshing } from '../features/menu/productListStatus';
@@ -573,7 +573,12 @@ function ProductEditView({
   };
   const effectiveTaxClassLabelId = effectiveTaxClassId(selectedCategoryIds, categoriesList, foodInfo.taxClassId);
   const effectiveTaxClassLabel = effectiveTaxClassLabelId
-    ? labelFor((refs?.taxClasses ?? []).find((c) => c.id === effectiveTaxClassLabelId)?.labels ?? { de: '', en: '' }, i18n.language)
+    ? taxClassOptionLabel(
+        labelFor((refs?.taxClasses ?? []).find((c) => c.id === effectiveTaxClassLabelId)?.labels ?? { de: '', en: '' }, i18n.language),
+        effectiveTaxClassLabelId,
+        refs,
+        i18n.language,
+      )
     : t('products.taxClassNoneYet');
 
   if (productLoading || !initialized) {
@@ -633,7 +638,7 @@ function ProductEditView({
             <Step1Basics form={form} setForm={setForm} imageFile={imageFile} setImageFile={setImageFile} currencySymbol={currencySymbol} nameError={nameError} descError={descError} existingImageUrl={existingImageUrl} />
           )}
           {step === 2 && (
-            <StepCategories shopId={shopId} categories={categoriesList} selectedCategoryIds={selectedCategoryIds} setSelectedCategoryIds={setSelectedCategoryIds} taxClasses={refs?.taxClasses ?? []} taxClassOverride={foodInfo.taxClassId} setTaxClassOverride={(id) => setFoodInfo({ ...foodInfo, taxClassId: id })} categoryError={categoryError} showTaxOverride={mode === 'extended'} />
+            <StepCategories shopId={shopId} categories={categoriesList} selectedCategoryIds={selectedCategoryIds} setSelectedCategoryIds={setSelectedCategoryIds} taxClasses={refs?.taxClasses ?? []} taxRefs={refs} taxClassOverride={foodInfo.taxClassId} setTaxClassOverride={(id) => setFoodInfo({ ...foodInfo, taxClassId: id })} categoryError={categoryError} showTaxOverride={mode === 'extended'} />
           )}
           {step === 3 && (
             <StepFoodInfo foodInfo={foodInfo} setFoodInfo={setFoodInfo} refs={refs} showOptional={mode === 'extended'} />
@@ -886,7 +891,12 @@ function AddProductModal({ shopId, onClose }: AddProductModalProps) {
   };
   const effectiveTaxClassLabelId = effectiveTaxClassId(selectedCategoryIds, categoriesList, foodInfo.taxClassId);
   const effectiveTaxClassLabel = effectiveTaxClassLabelId
-    ? labelFor((refs?.taxClasses ?? []).find((c) => c.id === effectiveTaxClassLabelId)?.labels ?? { de: '', en: '' }, i18n.language)
+    ? taxClassOptionLabel(
+        labelFor((refs?.taxClasses ?? []).find((c) => c.id === effectiveTaxClassLabelId)?.labels ?? { de: '', en: '' }, i18n.language),
+        effectiveTaxClassLabelId,
+        refs,
+        i18n.language,
+      )
     : t('products.taxClassNoneYet');
 
   return (
@@ -936,7 +946,7 @@ function AddProductModal({ shopId, onClose }: AddProductModalProps) {
             )}
             <div key={step} className={direction === 'forward' ? 'animate-slide-in-right' : 'animate-slide-in-left'}>
               {step === 1 && <Step1Basics form={form} setForm={setForm} imageFile={imageFile} setImageFile={setImageFile} currencySymbol={currencySymbol} nameError={nameError} descError={descError} />}
-              {step === 2 && <StepCategories shopId={shopId} categories={categoriesList} selectedCategoryIds={selectedCategoryIds} setSelectedCategoryIds={setSelectedCategoryIds} taxClasses={refs?.taxClasses ?? []} taxClassOverride={foodInfo.taxClassId} setTaxClassOverride={(id) => setFoodInfo({ ...foodInfo, taxClassId: id })} categoryError={categoryError} showTaxOverride={mode === 'extended'} />}
+              {step === 2 && <StepCategories shopId={shopId} categories={categoriesList} selectedCategoryIds={selectedCategoryIds} setSelectedCategoryIds={setSelectedCategoryIds} taxClasses={refs?.taxClasses ?? []} taxRefs={refs} taxClassOverride={foodInfo.taxClassId} setTaxClassOverride={(id) => setFoodInfo({ ...foodInfo, taxClassId: id })} categoryError={categoryError} showTaxOverride={mode === 'extended'} />}
               {step === 3 && <StepFoodInfo foodInfo={foodInfo} setFoodInfo={setFoodInfo} refs={refs} showOptional={mode === 'extended'} />}
               {step === 4 && <Step4Customise variantGroups={variantGroups} addVariantGroup={addVariantGroup} removeVariantGroup={removeVariantGroup} updateVariantGroupName={updateVariantGroupName} addVariantOption={addVariantOption} removeVariantOption={removeVariantOption} updateVariantOption={updateVariantOption} addonGroups={addonGroups} addAddonGroup={addAddonGroup} removeAddonGroup={removeAddonGroup} updateAddonGroup={updateAddonGroup} addAddonOption={addAddonOption} removeAddonOption={removeAddonOption} updateAddonOption={updateAddonOption} />}
               {step === 6 && <Step6Review form={form} imageFile={imageFile} selectedCategoryIds={selectedCategoryIds} categories={categoriesList} variantGroups={variantGroups} addonGroups={addonGroups} currencySymbol={currencySymbol} foodInfo={foodInfo} refs={refs} effectiveTaxClassLabel={effectiveTaxClassLabel} />}

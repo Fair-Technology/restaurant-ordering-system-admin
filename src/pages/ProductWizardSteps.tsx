@@ -10,7 +10,7 @@ import { MyInput, MyTextarea } from '../components/ui/MyInput';
 import { CurrencyInput } from '../components/ui/CurrencyInput';
 import { useCreateCategoryMutation } from '../services/api';
 import type { ReferenceEntry, ReferenceListsResponse, SpiceLevel, TranslationMap } from '../services/api';
-import { effectiveTaxClassId, isFoodInfoDeclared, labelFor, toggleId } from '../features/menu/foodInfo';
+import { effectiveTaxClassId, isFoodInfoDeclared, labelFor, taxClassOptionLabel, toggleId } from '../features/menu/foodInfo';
 import type { FoodInfo } from '../features/menu/foodInfo';
 
 // ── Shared types ──────────────────────────────────────────────────────────────
@@ -369,6 +369,7 @@ interface Step2CategoriesProps {
   selectedCategoryIds: string[];
   setSelectedCategoryIds: (ids: string[]) => void;
   taxClasses: ReferenceEntry[];
+  taxRefs?: Pick<ReferenceListsResponse, 'currentTaxRates' | 'taxRatesUniformAcrossModes'>;
   taxClassOverride: string | null;
   setTaxClassOverride: (id: string | null) => void;
   categoryError: boolean;
@@ -381,6 +382,7 @@ export function StepCategories({
   selectedCategoryIds,
   setSelectedCategoryIds,
   taxClasses,
+  taxRefs,
   taxClassOverride,
   setTaxClassOverride,
   categoryError,
@@ -533,13 +535,13 @@ export function StepCategories({
                 const fromCategoryId = effectiveTaxClassId(selectedCategoryIds, categories, null);
                 const fromCategory = taxClasses.find((c) => c.id === fromCategoryId);
                 return fromCategory
-                  ? t('products.taxClassFromCategory', { label: labelFor(fromCategory.labels, i18n.language) })
+                  ? t('products.taxClassFromCategory', { label: taxClassOptionLabel(labelFor(fromCategory.labels, i18n.language), fromCategory.id, taxRefs, i18n.language) })
                   : t('products.taxClassNoneYet');
               })()}
             </option>
             {taxClasses.filter((c) => c.isActive).map((c) => (
               <option key={c.id} value={c.id}>
-                {labelFor(c.labels, i18n.language)}
+                {taxClassOptionLabel(labelFor(c.labels, i18n.language), c.id, taxRefs, i18n.language)}
               </option>
             ))}
           </select>

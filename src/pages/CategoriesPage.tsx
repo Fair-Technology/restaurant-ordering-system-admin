@@ -30,7 +30,7 @@ import { MyInput } from '../components/ui/MyInput';
 import { MySpinner } from '../components/ui/MySpinner';
 import { useToast } from '../contexts/ToastContext';
 import { useShopReferenceLists } from '../features/menu/useShopReferenceLists';
-import { labelFor } from '../features/menu/foodInfo';
+import { labelFor, taxClassOptionLabel } from '../features/menu/foodInfo';
 
 type Category = NonNullable<GetCategoriesByShopApiResponse>[number];
 
@@ -123,7 +123,7 @@ function CreateCategoryModal({
                   >
                     {refs!.taxClasses.filter((c) => c.isActive).map((c) => (
                       <option key={c.id} value={c.id}>
-                        {labelFor(c.labels, i18n.language)}
+                        {taxClassOptionLabel(labelFor(c.labels, i18n.language), c.id, refs, i18n.language)}
                       </option>
                     ))}
                   </select>
@@ -204,7 +204,7 @@ function SortableCategoryItem({ cat, shopId }: SortableCategoryItemProps) {
         <p className="font-medium text-gray-900 truncate">{cat.name}</p>
         {taxClass && (
           <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 flex-shrink-0">
-            {labelFor(taxClass.labels, i18n.language)}
+            {taxClassOptionLabel(labelFor(taxClass.labels, i18n.language), taxClass.id, refs, i18n.language)}
           </span>
         )}
       </div>
