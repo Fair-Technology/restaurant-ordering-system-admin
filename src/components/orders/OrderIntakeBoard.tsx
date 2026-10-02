@@ -1,0 +1,102 @@
+import { useTranslation } from 'react-i18next';
+import { Bell, Volume2, VolumeX, Wifi, WifiOff } from 'lucide-react';
+import { useGetOrderQueueQuery } from '../../services/ordersApi';
+import { connectionState, groupQueue, hasWaitingOrders } from '../../features/orders/intake';
+import { useOrderAlarm } from '../../features/orders/useOrderAlarm';
+import { useWakeLock } from '../../features/orders/useWakeLock';
+import { useNow } from '../../features/orders/useNow';
+import { MySpinner } from '../ui/MySpinner';
+import { MyButton } from '../ui/MyButton';
+import { OrderCard } from './OrderCard';
+import type { IntakeOrder } from '../../services/ordersApi';
+
+interface Props {
+  shopId: string;
+}
+
+const NO_ORDERS: IntakeOrder[] = [];
+
+export function OrderIntakeBoard({ shopId }: Props) {
+  const { t } = useTranslation();
+  const { data, isLoading, isError, fulfilledTimeStamp, refetch } = useGetOrderQueueQuery(
+    { shopId },
+    { pollingInterval: 10000, refetchOnReconnect: true },
+  );
+  const nowMs = useNow(1000);
+  const orders = data?.orders ?? NO_ORDERS;
+  const { soundOn, turnOn } = useOrderAlarm(hasWaitingOrders(orders));
+  const wakeLock = useWakeLock(soundOn);
+  const connection = connectionState({ lastSuccessAt: fulfilledTimeStamp, isError, nowMs });
+
+  if (isLoading) return <MySpinner label={t('orders.queueLoading')} />;
+  if (isError && !data) return <p className="text-red-500">{t('orders.queueLoadError')}</p>;
+
+  const { waiting, inProgress, ready } = groupQueue(orders);
+  const columns = [
+    { key: 'waiting', title: t('orders.columnWaiting'), items: waiting },
+    { key: 'inProgress', title: t('orders.columnInProgress'), items: inProgress },
+    { key: 'ready', title: t('orders.columnReady'), items: ready },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 bg-white border border-gray-200 rounded-2xl px-4 py-3">
+        <span
+          className={`inline-flex items-center gap-2 text-sm font-medium ${
+            connection === 'offline' ? 'text-red-600' : connection === 'connected' ? 'text-green-700' : 'text-gray-500'
+          }`}
+        >
+          {connection === 'offline' ? <WifiOff size={18} /> : <Wifi size={18} />}
+          {t(`orders.${connection}`)}
+        </span>
+        {soundOn ? (
+          <span className="inline-flex items-center gap-2 text-sm text-gray-700">
+            <Volume2 size={18} />
+            {t('orders.soundOn')}
+          </span>
+        ) : (
+          <MyButton size="lg" variant="secondary" onClick={() => void turnOn()} className="min-h-12 gap-2">
+            <VolumeX size={18} />
+            {t('orders.enableSound')}
+          </MyButton>
+        )}
+        {soundOn && (
+          <span className="text-xs text-gray-500">
+            {wakeLock === 'on' ? t('orders.wakeLockOn') : wakeLock === 'unsupported' ? t('orders.wakeLockUnsupported') : null}
+          </span>
+        )}
+      </div>
+
+      {!soundOn && (
+        <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
+          <Bell size={18} />
+          {t('orders.soundOff')}
+        </div>
+      )}
+
+      <div className="grid gap-4 lg:grid-cols-3 items-start">
+        {columns.map((col) => (
+          <section key={col.key} className="space-y-3">
+            <h2 className="text-sm font-semibold text-gray-700">
+              {col.title} ({col.items.length})
+            </h2>
+            {col.items.length === 0 ? (
+              <p className="text-sm text-gray-400">{t('orders.emptyColumn')}</p>
+            ) : (
+              col.items.map((order) => (
+                <OrderCard
+                  key={order.id}
+                  shopId={shopId}
+                  order={order}
+                  nowMs={nowMs}
+                  defaultPrepMinutes={data?.defaultPrepMinutes[order.fulfilmentMode] ?? 20}
+                  onFailed={() => void refetch()}
+                />
+              ))
+            )}
+          </section>
+        ))}
+      </div>
+    </div>
+  );
+}
