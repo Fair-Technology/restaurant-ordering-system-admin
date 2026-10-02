@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { XCircle, X } from 'lucide-react';
 import type { GoLiveStatusResponse } from '../../services/api';
 import { useUpdateShopMutation } from '../../services/api';
+import { goLiveFixLink } from '../../features/shops/goLiveFixLink';
 import { MyButton } from '../ui/MyButton';
 
 // ── Criteria-not-met mode ──────────────────────────────────────────────────
@@ -12,19 +13,6 @@ interface CriteriaProps {
   shopId: string;
   status: GoLiveStatusResponse;
   onClose: () => void;
-}
-
-function fixLink(shopId: string, key: string): string {
-  switch (key) {
-    case 'stripe_connected':
-      return `/shops/${shopId}/settings#payments`;
-    case 'has_products':
-      return `/shops/${shopId}`;
-    case 'has_categories':
-      return `/shops/${shopId}/categories`;
-    default:
-      return `/shops/${shopId}/settings`;
-  }
 }
 
 export function GoLiveCriteriaModal({ shopId, status, onClose }: CriteriaProps) {
@@ -62,7 +50,7 @@ export function GoLiveCriteriaModal({ shopId, status, onClose }: CriteriaProps) 
                 <span className="text-sm text-gray-800">{current.description}</span>
               </div>
               <Link
-                to={fixLink(shopId, current.key)}
+                to={goLiveFixLink(shopId, current.key)}
                 onClick={onClose}
                 className="text-xs font-medium text-blue-600 hover:underline shrink-0"
               >

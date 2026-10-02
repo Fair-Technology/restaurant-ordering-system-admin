@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft, Menu, X,
   Package, ClipboardList, Tag, CreditCard, Settings, Store,
-  Users, History, LogOut, Languages,
+  Users, History, LogOut, Languages, Scale,
   Circle,
 } from 'lucide-react';
 import {
@@ -131,6 +131,15 @@ export function TopNav() {
             <Settings size={16} className="flex-shrink-0" />
             {t('nav.settings')}
           </NavLink>
+          {nav.includes('legal') && (
+            <>
+              {divider}
+              <NavLink to={`/shops/${shopId}/legal`} className={({ isActive }) => navItemClass(isActive)}>
+                <Scale size={16} className="flex-shrink-0" />
+                {t('nav.legal')}
+              </NavLink>
+            </>
+          )}
           {divider}
           <button
             type="button"
