@@ -593,6 +593,8 @@ export type ShopResponse = {
   currency?: string;
   /** Shop timezone */
   timezone?: string;
+  /** Order alert settings (absent until first saved) */
+  orderSettings?: { autoRejectMinutes: number; alertEmail: string | null };
   /** Minimum order amount in cents */
   minOrderAmountCents?: number;
   /** Shop address */
