@@ -51,6 +51,7 @@ export const ordersApi = api.injectEndpoints({
         { type: 'Orders' as const, id: `QUEUE-${shopId}` },
         { type: 'Orders' as const, id: `LIST-${shopId}` },
       ],
+      onQueryStarted: applyActionToQueue,
     }),
     rejectOrder: build.mutation<IntakeOrder, OrderActionArg & { reason: RejectReason; note?: string }>({
       query: ({ shopId, orderId, reason, note }) => ({
@@ -62,6 +63,7 @@ export const ordersApi = api.injectEndpoints({
         { type: 'Orders' as const, id: `QUEUE-${shopId}` },
         { type: 'Orders' as const, id: `LIST-${shopId}` },
       ],
+      onQueryStarted: applyActionToQueue,
     }),
     markOrderReady: build.mutation<IntakeOrder, OrderActionArg>({
       query: ({ shopId, orderId }) => ({
@@ -73,6 +75,7 @@ export const ordersApi = api.injectEndpoints({
         { type: 'Orders' as const, id: `QUEUE-${shopId}` },
         { type: 'Orders' as const, id: `LIST-${shopId}` },
       ],
+      onQueryStarted: applyActionToQueue,
     }),
     completeOrder: build.mutation<IntakeOrder, OrderActionArg>({
       query: ({ shopId, orderId }) => ({
@@ -84,6 +87,7 @@ export const ordersApi = api.injectEndpoints({
         { type: 'Orders' as const, id: `QUEUE-${shopId}` },
         { type: 'Orders' as const, id: `LIST-${shopId}` },
       ],
+      onQueryStarted: applyActionToQueue,
     }),
     updateOrderSettings: build.mutation<OrderSettingsDto, { shopId: string; body: OrderSettingsDto }>({
       query: ({ shopId, body }) => ({
@@ -103,3 +107,28 @@ export const {
   useCompleteOrderMutation,
   useUpdateOrderSettingsMutation,
 } = ordersApi;
+
+const BOARD_STATES = ['PLACED', 'ACCEPTED', 'READY'];
+
+/**
+ * Moves the card on the kitchen board as soon as the server confirms an action, instead of
+ * waiting for the refetch (which can lag a full 10 s poll behind). The refetch still follows.
+ */
+async function applyActionToQueue(
+  { shopId, orderId }: OrderActionArg,
+  { dispatch, queryFulfilled }: { dispatch: (action: unknown) => unknown; queryFulfilled: Promise<{ data: IntakeOrder }> },
+): Promise<void> {
+  try {
+    const { data: updated } = await queryFulfilled;
+    dispatch(
+      ordersApi.util.updateQueryData('getOrderQueue', { shopId }, (draft) => {
+        const i = draft.orders.findIndex((o) => o.id === orderId);
+        if (i === -1) return;
+        if (BOARD_STATES.includes(updated.state)) draft.orders[i] = updated;
+        else draft.orders.splice(i, 1);
+      }),
+    );
+  } catch {
+    // The card's own error toast and refetch handle a failed action
+  }
+}
