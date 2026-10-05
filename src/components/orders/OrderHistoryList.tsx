@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatCents } from '../../utils/money';
-import { useGetOrdersByShopQuery } from '../../services/api';
-import type { OrderResponse } from '../../services/api';
+import { useGetOrdersByShopQuery, useGetShopByIdQuery } from '../../services/api';
+import { useGetOrderDocumentMutation, type IntakeOrder } from '../../services/ordersApi';
+import { canRefund } from '../../features/orders/refunds';
+import { downloadBase64File } from '../../features/files/downloadBase64';
+import { useToast } from '../../contexts/ToastContext';
+import { RefundPanel } from './RefundPanel';
 import { ORDER_STATE_BADGE } from '../../features/orders/orderState';
 import { MyCard } from '../ui/MyCard';
 import { MySpinner } from '../ui/MySpinner';
@@ -20,14 +24,35 @@ function formatDate(iso: string): string {
   });
 }
 
-interface OrderRowProps {
-  order: OrderResponse;
+function paymentLabelKey(order: IntakeOrder): string {
+  const closed = order.state === 'REJECTED' || order.state === 'CANCELLED';
+  if (closed && order.paymentStatus === 'authorized') return 'orders.releasePending';
+  if (closed && order.paymentStatus === 'paid') return 'orders.refundPending';
+  return `orders.payment.${order.paymentStatus}`;
 }
 
-function OrderRow({ order }: OrderRowProps) {
+interface OrderRowProps {
+  shopId: string;
+  order: IntakeOrder;
+  permissions: readonly string[];
+}
+
+function OrderRow({ shopId, order, permissions }: OrderRowProps) {
   const { t, i18n } = useTranslation();
+  const toast = useToast();
+  const [getDocument] = useGetOrderDocumentMutation();
   const formatCurrency = (cents: number, currency: string) => formatCents(cents, currency, i18n.language);
   const [expanded, setExpanded] = useState(false);
+
+  const downloadDocument = async (documentId: string) => {
+    try {
+      const file = await getDocument({ shopId, orderId: order.id, documentId }).unwrap();
+      downloadBase64File(file.fileName, file.contentBase64, file.contentType);
+    } catch {
+      toast.error(t('orders.documentDownloadFailed'));
+    }
+  };
+  const address = order.customerAddress;
 
   return (
     <>
@@ -45,7 +70,7 @@ function OrderRow({ order }: OrderRowProps) {
               {t(`orders.fulfilment.${order.fulfilmentMode}`)}
             </span>
             <span className="text-xs text-gray-500">
-              {t(`orders.payment.${order.paymentStatus}`)}
+              {t(paymentLabelKey(order))}
             </span>
           </div>
           <span className="text-sm font-semibold text-gray-900">
@@ -53,7 +78,8 @@ function OrderRow({ order }: OrderRowProps) {
           </span>
         </div>
         <div className="mt-1 flex flex-col gap-0.5 text-sm text-gray-500">
-          <span>{order.customerName} &middot; {order.customerEmail} &middot; {order.customerPhone}</span>
+          <span>{[order.customerName, order.customerEmail, order.customerPhone].filter(Boolean).join(' · ')}</span>
+          {address && <span>{`${address.street}, ${address.postcode} ${address.city}, ${address.country}`}</span>}
           <span>{formatDate(order.createdAt)}</span>
         </div>
       </div>
@@ -87,6 +113,41 @@ function OrderRow({ order }: OrderRowProps) {
           {order.customerNotes && (
             <p className="mt-2 text-xs text-gray-400 italic">&ldquo;{order.customerNotes}&rdquo;</p>
           )}
+          {order.refunds.map((refund, i) => (
+            <div key={i} className="mt-2 text-xs text-gray-600">
+              <p>
+                {t('orders.refundLine', {
+                  amount: formatCurrency(refund.amountCents, order.currency),
+                  date: formatDate(refund.at),
+                  reason: refund.reason,
+                })}
+              </p>
+              {refund.lines.length > 0 && (
+                <p className="text-gray-500">
+                  {t('orders.refundLineItems', {
+                    items: refund.lines
+                      .map((line) => `${line.quantity} × ${order.items[line.lineIndex]?.productName ?? ''}`)
+                      .join(', '),
+                  })}
+                </p>
+              )}
+            </div>
+          ))}
+          {order.releaseFailure && (
+            <p className="mt-2 text-xs text-red-600">
+              {t('orders.releaseFailed', { message: order.releaseFailure.message })}
+            </p>
+          )}
+          {order.documents.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {order.documents.map((doc) => (
+                <MyButton key={doc.id} variant="secondary" size="sm" onClick={() => downloadDocument(doc.id)}>
+                  {t(`orders.document.${doc.kind}`, { number: doc.number })}
+                </MyButton>
+              ))}
+            </div>
+          )}
+          {canRefund(order, permissions) && <RefundPanel shopId={shopId} order={order} />}
         </div>
       )}
     </>
@@ -100,6 +161,8 @@ interface OrderHistoryListProps {
 export function OrderHistoryList({ shopId }: OrderHistoryListProps) {
   const { t } = useTranslation();
   const [page, setPage] = useState(1);
+  const { data: shop } = useGetShopByIdQuery({ shopId });
+  const permissions = shop?.callerPermissions ?? [];
 
   useEffect(() => {
     setPage(1);
@@ -114,7 +177,8 @@ export function OrderHistoryList({ shopId }: OrderHistoryListProps) {
   if (isLoading) return <MySpinner label={t('orders.loading')} />;
   if (isError) return <p className="text-red-500">{t('orders.loadError')}</p>;
 
-  const orders = data?.orders ?? [];
+  // the history endpoint returns the same extended order as the live queue
+  const orders = (data?.orders ?? []) as IntakeOrder[];
   const totalPages = data ? Math.ceil(data.total / PAGE_SIZE) : 1;
   const showPagination = data ? data.total > PAGE_SIZE : false;
 
@@ -126,7 +190,7 @@ export function OrderHistoryList({ shopId }: OrderHistoryListProps) {
         ) : (
           <div className="divide-y divide-gray-200">
             {orders.map((order) => (
-              <OrderRow key={order.id} order={order} />
+              <OrderRow key={order.id} shopId={shopId} order={order} permissions={permissions} />
             ))}
           </div>
         )}
