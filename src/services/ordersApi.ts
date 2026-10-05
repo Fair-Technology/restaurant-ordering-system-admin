@@ -1,12 +1,29 @@
 import { api } from './api';
 import type { OrderResponse } from './api';
 
-export type RejectReason = 'too_busy' | 'item_unavailable' | 'closing_soon' | 'other' | 'no_response';
+export type RejectReason = 'too_busy' | 'item_unavailable' | 'closing_soon' | 'other' | 'no_response' | 'payment_failed';
 
 export interface TaxBreakdownEntry {
   rateBasisPoints: number;
   grossCents: number;
   taxCents: number;
+}
+
+export interface OrderDocument {
+  id: string;
+  kind: 'invoice' | 'cancellation' | 'correction';
+  number: string;
+}
+
+export interface InvoiceFileDto {
+  fileName: string;
+  contentType: 'application/pdf';
+  contentBase64: string;
+}
+
+export interface OrderRefundLine {
+  lineIndex: number;
+  quantity: number;
 }
 
 export type IntakeOrder = OrderResponse & {
@@ -15,12 +32,20 @@ export type IntakeOrder = OrderResponse & {
   prepMinutes: number | null;
   taxBreakdown: TaxBreakdownEntry[];
   rejectionNote: string | null;
+  customerAddress: { street: string; postcode: string; city: string; country: string } | null;
+  refundedCents: number;
+  // lines is [] for a free-amount refund
+  refunds: Array<{ amountCents: number; reason: string; at: string; lines: OrderRefundLine[] }>;
+  releaseFailure: { at: string; message: string } | null;
+  documents: OrderDocument[];
+  autoAccepted: boolean;
 };
 
 export type FulfilmentModeKey = 'collection' | 'delivery' | 'dine_in';
 
 export interface OrderQueueDto {
   serverTime: string;
+  timezone: string;
   defaultPrepMinutes: Record<FulfilmentModeKey, number>;
   orders: IntakeOrder[];
 }
@@ -28,12 +53,19 @@ export interface OrderQueueDto {
 export interface OrderSettingsDto {
   autoRejectMinutes: number;
   alertEmail: string | null;
+  autoAccept?: boolean;
 }
 
 interface OrderActionArg {
   shopId: string;
   orderId: string;
 }
+
+// Either tick items or give a free amount, never both
+export type RefundRequest = { shopId: string; orderId: string; reason: string } & (
+  | { amountCents: number; items?: never }
+  | { items: OrderRefundLine[]; amountCents?: never }
+);
 
 export const ordersApi = api.injectEndpoints({
   endpoints: (build) => ({
@@ -89,6 +121,23 @@ export const ordersApi = api.injectEndpoints({
       ],
       onQueryStarted: applyActionToQueue,
     }),
+    refundOrder: build.mutation<IntakeOrder, RefundRequest>({
+      query: ({ shopId, orderId, reason, amountCents, items }) => ({
+        url: `/shops/${shopId}/orders/${orderId}/refunds`,
+        method: 'POST',
+        body: items ? { reason, items } : { reason, amountCents },
+      }),
+      invalidatesTags: (_r, _e, { shopId }) => [
+        { type: 'Orders' as const, id: `QUEUE-${shopId}` },
+        { type: 'Orders' as const, id: `LIST-${shopId}` },
+      ],
+      onQueryStarted: applyActionToQueue,
+    }),
+    getOrderDocument: build.mutation<InvoiceFileDto, OrderActionArg & { documentId: string }>({
+      query: ({ shopId, orderId, documentId }) => ({
+        url: `/shops/${shopId}/orders/${orderId}/documents/${documentId}`,
+      }),
+    }),
     updateOrderSettings: build.mutation<OrderSettingsDto, { shopId: string; body: OrderSettingsDto }>({
       query: ({ shopId, body }) => ({
         url: `/shops/${shopId}/order-settings`,
@@ -105,6 +154,8 @@ export const {
   useRejectOrderMutation,
   useMarkOrderReadyMutation,
   useCompleteOrderMutation,
+  useRefundOrderMutation,
+  useGetOrderDocumentMutation,
   useUpdateOrderSettingsMutation,
 } = ordersApi;
 

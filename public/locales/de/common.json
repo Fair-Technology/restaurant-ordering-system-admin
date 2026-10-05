@@ -128,11 +128,6 @@
     "paymentsDisconnectConfirmYes": "Ja, trennen",
     "paymentsDisconnectCancel": "Abbrechen",
     "paymentsError": "Zahlungseinrichtung konnte nicht geladen werden.",
-    "paymentsPolicyTitle": "Wie Kunden bezahlen",
-    "paymentsPolicyInPerson": "Vor Ort (Zahlung bei Abholung oder Lieferung)",
-    "paymentsPolicyOnline": "Online (Karte)",
-    "paymentsPolicyOnlineHint": "Schließen Sie die Stripe-Einrichtung oben ab, um Online-Zahlung zu aktivieren.",
-    "paymentsPolicyFailedToSave": "Zahlungsart konnte nicht gespeichert werden.",
     "goLiveTitle": "Go-Live-Checkliste",
     "goLiveNotReady": "Ihr Shop ist noch nicht bereit, live zu gehen. Bitte schließen Sie die folgenden Punkte ab.",
     "goLiveFix": "Beheben",
@@ -227,7 +222,10 @@
     "orderAlertsEmail": "Zusätzliche Benachrichtigungs-E-Mail (optional)",
     "orderAlertsSave": "Speichern",
     "orderAlertsSaved": "Gespeichert.",
-    "orderAlertsFailed": "Bestellbenachrichtigungen konnten nicht gespeichert werden."
+    "orderAlertsFailed": "Bestellbenachrichtigungen konnten nicht gespeichert werden.",
+    "paymentsOnlineOnly": "Gäste bezahlen beim Bestellen online – mit Karte, Apple Pay oder Google Pay. Der Betrag wird reserviert und erst bei Annahme der Bestellung abgebucht. Ihr Restaurant kann erst live gehen, wenn Stripe verbunden ist.",
+    "orderAlertsAutoAccept": "Bezahlte Bestellungen automatisch annehmen",
+    "orderAlertsAutoAcceptHelp": "Standardmäßig an. Jede Bestellung wird angenommen und abgebucht, sobald der Gast bezahlt hat – fertig in 20 Minuten; sie erscheint unter „In Arbeit“ mit einem kurzen Ton. Ausschalten, um jede Bestellung selbst anzunehmen – ohne Antwort wird sie nach dem Zeitlimit abgelehnt und nichts abgebucht."
   },
   "products": {
     "addProduct": "+ Produkt hinzufügen",
@@ -402,12 +400,12 @@
       "dine_in": "Vor Ort"
     },
     "payment": {
-      "paid": "Bezahlt",
+      "paid": "Online bezahlt",
       "refunded": "Erstattet",
       "partially_refunded": "Teilweise erstattet",
-      "cash_due": "Zahlung bei Abholung offen",
-      "cash_collected": "Bei Abholung bezahlt",
-      "refunded_in_cash": "Bar erstattet"
+      "authorized": "Reserviert (wird bei Annahme abgebucht)",
+      "canceled": "Freigegeben – nicht abgebucht",
+      "not_paid_online": "Nicht online bezahlt (ältere Bestellung)"
     },
     "tabLive": "Live",
     "tabHistory": "Verlauf",
@@ -427,13 +425,12 @@
     "wakeLockUnsupported": "Dieser Browser kann den Bildschirm ausschalten. Stellen Sie die automatische Sperre des Tablets auf „Nie“.",
     "placedAgo": "vor {{minutes}} Min.",
     "autoRejectIn": "Automatische Ablehnung in {{time}}",
-    "cashDue": "Zahlung bei Abholung: {{amount}}",
     "notes": "Küchenwunsch",
     "accept": "Annehmen",
     "acceptReadyIn": "Fertig in {{minutes}} Min.",
     "readyAt": "Fertig um {{time}}",
     "reject": "Ablehnen",
-    "rejectConfirm": "Bestellung {{ref}} ablehnen? Der Kunde wird sofort informiert.",
+    "rejectConfirm": "Bestellung {{ref}} ablehnen? Der Kunde wird sofort informiert und es wird nichts abgebucht.",
     "rejectReason": {
       "too_busy": "Zu viel los",
       "item_unavailable": "Artikel nicht verfügbar",
@@ -443,8 +440,38 @@
     "cancel": "Zurück",
     "markReady": "Fertig",
     "handOver": "Übergeben",
-    "handOverCash": "Übergeben & {{amount}} kassiert",
-    "actionFailed": "Das hat nicht geklappt – die Bestellung hat sich evtl. geändert. Die Liste wurde aktualisiert."
+    "actionFailed": "Das hat nicht geklappt – die Bestellung hat sich evtl. geändert. Die Liste wurde aktualisiert.",
+    "reservedOnline": "Online reserviert: {{amount}}",
+    "paidOnline": "Online bezahlt: {{amount}}",
+    "autoAccepted": "Automatisch angenommen",
+    "releasePending": "Reservierung wird freigegeben",
+    "refundPending": "Erstattung läuft",
+    "releaseFailed": "Freigabe bzw. Erstattung fehlgeschlagen – wir versuchen es alle 15 Minuten erneut. Stripe meldet: {{message}}",
+    "document": {
+      "invoice": "Rechnung {{number}}",
+      "cancellation": "Stornorechnung {{number}}",
+      "correction": "Rechnungskorrektur {{number}}"
+    },
+    "documentDownloadFailed": "Dokument konnte nicht heruntergeladen werden.",
+    "refund": "Erstatten",
+    "refundAmount": "Betrag",
+    "refundReason": "Grund (für Ihre Unterlagen)",
+    "refundConfirmButton": "{{amount}} erstatten",
+    "refundReview": "{{amount}} erstatten...",
+    "refundConfirmBack": "Zurück",
+    "refundConfirm": "{{amount}} für Bestellung {{ref}} erstatten? Das Geld geht zurück auf die Karte des Kunden, eine Rechnungskorrektur wird verschickt. Das kann nicht rückgängig gemacht werden.",
+    "refundInvalidAmount": "Geben Sie einen Betrag bis {{max}} ein.",
+    "refundDone": "{{amount}} erstattet.",
+    "refundCorrectionIssued": "Der Kunde hat eine Rechnungskorrektur per E-Mail erhalten.",
+    "refundFailedToast": "Die Erstattung hat nicht geklappt: {{message}}",
+    "refundLine": "{{amount}} erstattet am {{date}} – {{reason}}",
+    "refundModeItems": "Artikel auswählen",
+    "refundModeAmount": "Betrag eingeben",
+    "refundModeHelp": "Bei ausgewählten Artikeln wird jeder mit seinem eigenen Steuersatz erstattet (ein Getränk mit 19 %). Einen Betrag nutzen Sie für Kulanz ohne bestimmten Artikel.",
+    "refundItemLeft": "{{left}} von {{quantity}} übrig",
+    "refundItemsTotal": "Erstattungsbetrag: {{amount}}",
+    "refundItemsNone": "Wählen Sie mindestens einen Artikel.",
+    "refundLineItems": "Erstattete Artikel: {{items}}"
   },
   "activity": {
     "title": "Aktivität",
@@ -586,6 +613,9 @@
       "other": "Sonstige"
     },
     "impressumMissing": "Es fehlt noch: {{fields}}",
+    "taxNumber": "Steuernummer (für Rechnungen)",
+    "taxNumberHelp": "Ihre Steuernummer. Wird nur auf Rechnungen gedruckt, nie im öffentlichen Impressum angezeigt.",
+    "taxIdMissing": "Rechnungen benötigen eine Steuernummer oder USt-IdNr. Bitte vor dem Livegang eintragen.",
     "impressumSave": "Impressum speichern",
     "termsTitle": "Allgemeine Geschäftsbedingungen (AGB)",
     "withdrawalTitle": "Widerrufsbelehrung",
@@ -628,6 +658,9 @@
     "eraseConfirm": "Die Daten von {{email}} aus allen Bestellungen entfernen? Das ist endgültig.",
     "eraseDone": "Erledigt – {{count}} Bestellungen anonymisiert.",
     "eraseFailed": "Anonymisierung fehlgeschlagen.",
-    "ownerOnly": "Nur der Inhaber kann Daten exportieren oder Löschanfragen bearbeiten."
+    "ownerOnly": "Nur der Inhaber kann Daten exportieren oder Löschanfragen bearbeiten.",
+    "taxNumber": "Steuernummer für Rechnungen",
+    "taxNumberHelp": "Steht nur auf Ihren Rechnungen, nie im öffentlichen Impressum. Rechnungen brauchen diese oder Ihre USt-IdNr.",
+    "taxIdMissing": "Ohne Steuernummer oder USt-IdNr. können keine Rechnungen erstellt werden und das Restaurant kann nicht live gehen."
   }
 }

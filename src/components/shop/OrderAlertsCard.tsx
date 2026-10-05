@@ -17,12 +17,14 @@ export function OrderAlertsCard({ shop, onRefetch }: Props) {
   const { t } = useTranslation();
   const [minutesState, setMinutesState] = useState<string | null>(null);
   const [emailState, setEmailState] = useState<string | null>(null);
+  const [autoAcceptState, setAutoAcceptState] = useState<boolean | null>(null);
   const [message, setMessage] = useState<{ kind: 'saved' | 'failed'; text: string } | null>(null);
   const [updateOrderSettings, { isLoading }] = useUpdateOrderSettingsMutation();
 
   const loaded = shop.orderSettings ?? DEFAULT_SETTINGS;
   const minutes = minutesState ?? String(loaded.autoRejectMinutes);
   const email = emailState ?? loaded.alertEmail ?? '';
+  const autoAccept = autoAcceptState ?? shop.orderSettings?.autoAccept ?? true;
 
   const handleSave = async () => {
     if (!shop.id) return;
@@ -30,10 +32,15 @@ export function OrderAlertsCard({ shop, onRefetch }: Props) {
     try {
       await updateOrderSettings({
         shopId: shop.id,
-        body: { autoRejectMinutes: Number(minutes), alertEmail: email.trim() === '' ? null : email.trim() },
+        body: {
+          autoRejectMinutes: Number(minutes),
+          alertEmail: email.trim() === '' ? null : email.trim(),
+          autoAccept,
+        },
       }).unwrap();
       setMinutesState(null);
       setEmailState(null);
+      setAutoAcceptState(null);
       onRefetch();
       setMessage({ kind: 'saved', text: t('shops.orderAlertsSaved') });
     } catch {
@@ -60,6 +67,18 @@ export function OrderAlertsCard({ shop, onRefetch }: Props) {
         value={email}
         onChange={(e) => setEmailState(e.target.value)}
       />
+      <label className="flex items-start gap-3 text-sm text-gray-800">
+        <input
+          type="checkbox"
+          className="mt-0.5 h-4 w-4"
+          checked={autoAccept}
+          onChange={(e) => setAutoAcceptState(e.target.checked)}
+        />
+        <span>
+          <span className="block font-medium">{t('shops.orderAlertsAutoAccept')}</span>
+          <span className="block text-gray-600">{t('shops.orderAlertsAutoAcceptHelp')}</span>
+        </span>
+      </label>
       {message && (
         <p className={`text-sm ${message.kind === 'saved' ? 'text-green-700' : 'text-red-600'}`}>{message.text}</p>
       )}

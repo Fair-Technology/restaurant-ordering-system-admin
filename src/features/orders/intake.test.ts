@@ -5,6 +5,7 @@ import {
   formatCountdown,
   groupQueue,
   hasWaitingOrders,
+  newlyAutoAcceptedIds,
   prepChoices,
   secondsUntil,
 } from './intake';
@@ -52,5 +53,10 @@ describe('intake helpers', () => {
     expect(connectionState({ lastSuccessAt: 1000, isError: false, nowMs: 31001 })).toBe('offline');
     expect(connectionState({ lastSuccessAt: 1000, isError: true, nowMs: 2000 })).toBe('offline');
     expect(connectionState({ lastSuccessAt: undefined, isError: false, nowMs: 2000 })).toBe('connecting');
+  });
+
+  it('spots orders accepted automatically since the last look', () => {
+    const auto = (id: string, autoAccepted: boolean) => ({ ...order(id, 'ACCEPTED', 'ACCEPTED'), autoAccepted }) as IntakeOrder;
+    expect(newlyAutoAcceptedIds([auto('A', true), auto('B', true), auto('C', false)], new Set(['A']))).toEqual(['B']);
   });
 });

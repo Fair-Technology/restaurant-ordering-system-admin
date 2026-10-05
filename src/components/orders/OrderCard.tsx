@@ -19,16 +19,17 @@ interface Props {
   order: IntakeOrder;
   nowMs: number;
   defaultPrepMinutes: number;
+  timeZone: string;
   onFailed: () => void;
 }
 
 type Panel = 'none' | 'accept' | 'reject';
 
-function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+function formatTime(iso: string, timeZone: string): string {
+  return new Date(iso).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', timeZone });
 }
 
-export function OrderCard({ shopId, order, nowMs, defaultPrepMinutes, onFailed }: Props) {
+export function OrderCard({ shopId, order, nowMs, defaultPrepMinutes, timeZone, onFailed }: Props) {
   const { t, i18n } = useTranslation();
   const toast = useToast();
   const [panel, setPanel] = useState<Panel>('none');
@@ -39,7 +40,6 @@ export function OrderCard({ shopId, order, nowMs, defaultPrepMinutes, onFailed }
   const busy = accepting || rejecting || marking || completing;
 
   const money = (cents: number) => formatCents(cents, order.currency, i18n.language);
-  const cashDue = order.paymentStatus === 'cash_due';
   const countdown = secondsUntil(order.autoRejectAt, nowMs);
   const minutesAgo = Math.max(0, Math.floor((nowMs - Date.parse(order.createdAt)) / 60000));
 
@@ -68,8 +68,17 @@ export function OrderCard({ shopId, order, nowMs, defaultPrepMinutes, onFailed }
           <span className="text-xs text-gray-500">{t(`orders.fulfilment.${order.fulfilmentMode}`)}</span>
         </div>
         <div className="text-sm font-medium text-gray-800">
-          {cashDue ? t('orders.cashDue', { amount: money(order.subtotalCents) }) : money(order.subtotalCents)}
+          {order.paymentStatus === 'authorized'
+            ? t('orders.reservedOnline', { amount: money(order.subtotalCents) })
+            : order.paymentStatus === 'paid'
+              ? t('orders.paidOnline', { amount: money(order.subtotalCents) })
+              : money(order.subtotalCents)}
         </div>
+        {order.autoAccepted && (
+          <span className="inline-block text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+            {t('orders.autoAccepted')}
+          </span>
+        )}
         <div className="flex items-center gap-1 text-xs text-gray-500">
           <Clock size={14} />
           {t('orders.placedAgo', { minutes: minutesAgo })}
@@ -163,7 +172,7 @@ export function OrderCard({ shopId, order, nowMs, defaultPrepMinutes, onFailed }
       {order.state === 'ACCEPTED' && (
         <div className="space-y-2">
           {order.readyAt && (
-            <div className="text-sm font-medium text-gray-800">{t('orders.readyAt', { time: formatTime(order.readyAt) })}</div>
+            <div className="text-sm font-medium text-gray-800">{t('orders.readyAt', { time: formatTime(order.readyAt, timeZone) })}</div>
           )}
           <MyButton
             size="lg"
@@ -185,7 +194,7 @@ export function OrderCard({ shopId, order, nowMs, defaultPrepMinutes, onFailed }
           onClick={() => void run(() => completeOrder({ shopId, orderId: order.id }).unwrap())}
         >
           <PackageCheck size={18} />
-          {cashDue ? t('orders.handOverCash', { amount: money(order.subtotalCents) }) : t('orders.handOver')}
+          {t('orders.handOver')}
         </MyButton>
       )}
     </div>

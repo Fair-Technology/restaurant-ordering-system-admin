@@ -12,4 +12,8 @@ describe('goLiveFixLink', () => {
     expect(goLiveFixLink('s1', 'stripe_connected')).toBe('/shops/s1/settings#payments');
     expect(goLiveFixLink('s1', 'has_categories')).toBe('/shops/s1/categories');
   });
+
+  it('tax number links to the Impressum', () => {
+    expect(goLiveFixLink('s1', 'invoice_tax_id')).toBe('/shops/s1/legal#impressum');
+  });
 });

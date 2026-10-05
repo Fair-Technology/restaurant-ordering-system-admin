@@ -42,3 +42,7 @@ export function connectionState(input: {
   if (input.lastSuccessAt === undefined) return 'connecting';
   return input.nowMs - input.lastSuccessAt > 30000 ? 'offline' : 'connected';
 }
+
+export function newlyAutoAcceptedIds(orders: IntakeOrder[], seen: ReadonlySet<string>): string[] {
+  return orders.filter((o) => o.autoAccepted && !seen.has(o.id)).map((o) => o.id);
+}

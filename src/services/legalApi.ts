@@ -49,6 +49,7 @@ export interface ShopLegalSettingsDto {
   dpa: { currentVersion: string; currentIsDraft: boolean; accepted: DpaAcceptance | null };
   platformIdentityComplete: boolean;
   callerIsOwner: boolean;
+  taxNumber: string;
 }
 
 export interface UpdateShopLegalBody {
@@ -56,6 +57,7 @@ export interface UpdateShopLegalBody {
   terms?: string;
   withdrawal?: string;
   privacyAddition?: string;
+  taxNumber?: string;
 }
 
 export interface LegalSection {
@@ -116,6 +118,7 @@ export interface ExportOrder {
   customerName: string;
   customerEmail: string;
   customerPhone: string;
+  customerAddress?: { street: string; postcode: string; city: string; country: string } | null;
   items: ExportOrderItem[];
 }
 

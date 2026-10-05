@@ -1,7 +1,8 @@
+import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Bell, Volume2, VolumeX, Wifi, WifiOff } from 'lucide-react';
 import { useGetOrderQueueQuery } from '../../services/ordersApi';
-import { connectionState, groupQueue, hasWaitingOrders } from '../../features/orders/intake';
+import { connectionState, groupQueue, hasWaitingOrders, newlyAutoAcceptedIds } from '../../features/orders/intake';
 import { useOrderAlarm } from '../../features/orders/useOrderAlarm';
 import { useWakeLock } from '../../features/orders/useWakeLock';
 import { useNow } from '../../features/orders/useNow';
@@ -24,7 +25,17 @@ export function OrderIntakeBoard({ shopId }: Props) {
   );
   const nowMs = useNow(1000);
   const orders = data?.orders ?? NO_ORDERS;
-  const { soundOn, turnOn } = useOrderAlarm(hasWaitingOrders(orders));
+  const { soundOn, turnOn, chime } = useOrderAlarm(hasWaitingOrders(orders));
+  // Ids of auto-accepted orders already shown; null until the first data arrives, which only seeds it.
+  const seenRef = useRef<Set<string> | null>(null);
+  useEffect(() => {
+    if (!data) return;
+    const fresh = newlyAutoAcceptedIds(data.orders, seenRef.current ?? new Set());
+    const isFirstData = seenRef.current === null;
+    seenRef.current ??= new Set();
+    for (const id of fresh) seenRef.current.add(id);
+    if (!isFirstData && fresh.length > 0) chime();
+  }, [data, chime]);
   const wakeLock = useWakeLock(soundOn);
   const connection = connectionState({ lastSuccessAt: fulfilledTimeStamp, isError, nowMs });
 
@@ -90,6 +101,7 @@ export function OrderIntakeBoard({ shopId }: Props) {
                   order={order}
                   nowMs={nowMs}
                   defaultPrepMinutes={data?.defaultPrepMinutes[order.fulfilmentMode] ?? 20}
+                  timeZone={data?.timezone ?? 'Europe/Berlin'}
                   onFailed={() => void refetch()}
                 />
               ))

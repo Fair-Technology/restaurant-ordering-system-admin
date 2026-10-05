@@ -35,8 +35,24 @@ describe('export CSVs', () => {
       ],
     });
     expect(csv.split('\r\n')[1]).toBe(
-      'AB3-K7P;2026-10-01T10:00:00Z;COMPLETED;collection;cash;cash_collected;EUR;12,50;Anna;a@x.example;1;2× Carbonara',
+      'AB3-K7P;2026-10-01T10:00:00Z;COMPLETED;collection;cash;cash_collected;EUR;12,50;Anna;a@x.example;1;;2× Carbonara',
     );
+  });
+
+  it('orders CSV writes the diner address on one line', () => {
+    const csv = buildOrdersCsv({
+      ...base,
+      orders: [
+        {
+          id: 'o2', orderRef: 'CD4-M8Q', createdAt: '2026-10-01T10:00:00Z', state: 'COMPLETED',
+          fulfilmentMode: 'delivery', payment: { method: 'card', status: 'paid', stripePaymentIntentId: null },
+          currency: 'EUR', subtotalCents: 500, customerName: 'Ben', customerEmail: 'b@x.example', customerPhone: '2',
+          customerAddress: { street: 'Hauptstr. 1', postcode: '10115', city: 'Berlin', country: 'Deutschland' },
+          items: [],
+        },
+      ],
+    });
+    expect(csv.split('\r\n')[1]).toContain(';Hauptstr. 1, 10115 Berlin, Deutschland;');
   });
 
   it('customers CSV', () => {
