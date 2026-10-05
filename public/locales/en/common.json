@@ -128,11 +128,6 @@
     "paymentsDisconnectConfirmYes": "Yes, disconnect",
     "paymentsDisconnectCancel": "Cancel",
     "paymentsError": "Failed to load payment setup.",
-    "paymentsPolicyTitle": "How customers pay",
-    "paymentsPolicyInPerson": "In person (pay on collection or delivery)",
-    "paymentsPolicyOnline": "Online (card)",
-    "paymentsPolicyOnlineHint": "Finish setting up Stripe above to turn on online payment.",
-    "paymentsPolicyFailedToSave": "Failed to save how customers pay.",
     "goLiveTitle": "Go-live checklist",
     "goLiveNotReady": "Your shop is not ready to go live. Please complete the items below.",
     "goLiveFix": "Fix",
@@ -227,7 +222,10 @@
     "orderAlertsEmail": "Extra alert email (optional)",
     "orderAlertsSave": "Save",
     "orderAlertsSaved": "Saved.",
-    "orderAlertsFailed": "Could not save the order alerts."
+    "orderAlertsFailed": "Could not save the order alerts.",
+    "paymentsOnlineOnly": "Customers pay online when they order — by card, Apple Pay or Google Pay. The amount is reserved and only taken when the order is accepted. Your restaurant can only go live once Stripe is connected.",
+    "orderAlertsAutoAccept": "Accept paid orders automatically",
+    "orderAlertsAutoAcceptHelp": "On by default. Each order is accepted and charged the moment the customer has paid, ready in 20 minutes; the board shows it under \"In progress\" with one chime. Switch off to accept each order yourself — an order nobody answers is declined after the time limit and the customer is not charged."
   },
   "products": {
     "addProduct": "+ Add Product",
@@ -402,12 +400,12 @@
       "dine_in": "Dine-in"
     },
     "payment": {
-      "paid": "Paid",
+      "paid": "Paid online",
       "refunded": "Refunded",
       "partially_refunded": "Partly refunded",
-      "cash_due": "Payment due at collection",
-      "cash_collected": "Paid at collection",
-      "refunded_in_cash": "Refunded in cash"
+      "authorized": "Reserved (taken when accepted)",
+      "canceled": "Released — not charged",
+      "not_paid_online": "Not paid online (older order)"
     },
     "tabLive": "Live",
     "tabHistory": "History",
@@ -427,13 +425,12 @@
     "wakeLockUnsupported": "This browser may let the screen sleep. Set the tablet's auto-lock to Never.",
     "placedAgo": "{{minutes}} min ago",
     "autoRejectIn": "Auto-decline in {{time}}",
-    "cashDue": "Pay on collection: {{amount}}",
     "notes": "Kitchen request",
     "accept": "Accept",
     "acceptReadyIn": "Ready in {{minutes}} min",
     "readyAt": "Ready at {{time}}",
     "reject": "Decline",
-    "rejectConfirm": "Decline order {{ref}}? The customer is told straight away.",
+    "rejectConfirm": "Decline order {{ref}}? The customer is told straight away and nothing is charged.",
     "rejectReason": {
       "too_busy": "Too busy",
       "item_unavailable": "Item not available",
@@ -443,8 +440,36 @@
     "cancel": "Back",
     "markReady": "Ready",
     "handOver": "Handed over",
-    "handOverCash": "Handed over & paid {{amount}}",
-    "actionFailed": "That didn't work — the order may have changed. The list has been refreshed."
+    "actionFailed": "That didn't work — the order may have changed. The list has been refreshed.",
+    "reservedOnline": "Reserved online: {{amount}}",
+    "paidOnline": "Paid online: {{amount}}",
+    "autoAccepted": "Accepted automatically",
+    "releasePending": "Releasing the reservation",
+    "refundPending": "Refund in progress",
+    "releaseFailed": "Releasing or refunding the payment failed — we retry every 15 minutes. Stripe said: {{message}}",
+    "document": {
+      "invoice": "Invoice {{number}}",
+      "cancellation": "Cancellation invoice {{number}}",
+      "correction": "Correction invoice {{number}}"
+    },
+    "documentDownloadFailed": "Could not download the document.",
+    "refund": "Refund",
+    "refundAmount": "Amount",
+    "refundReason": "Reason (for your records)",
+    "refundConfirmButton": "Refund {{amount}}",
+    "refundConfirm": "Refund {{amount}} for order {{ref}}? The money goes back to the customer's card and a correction invoice is sent. This can't be undone.",
+    "refundInvalidAmount": "Enter an amount up to {{max}}.",
+    "refundDone": "Refunded {{amount}}.",
+    "refundCorrectionIssued": "The customer has been emailed a correction invoice.",
+    "refundFailedToast": "The refund didn't go through: {{message}}",
+    "refundLine": "{{amount}} refunded on {{date}} — {{reason}}",
+    "refundModeItems": "Choose items",
+    "refundModeAmount": "Enter an amount",
+    "refundModeHelp": "Choosing items refunds each at its own VAT rate (a drink at 19 %). Use an amount for goodwill refunds that aren't tied to an item.",
+    "refundItemLeft": "{{left}} of {{quantity}} left",
+    "refundItemsTotal": "Refund total: {{amount}}",
+    "refundItemsNone": "Choose at least one item.",
+    "refundLineItems": "Refunded items: {{items}}"
   },
   "activity": {
     "title": "Activity",
@@ -628,6 +653,9 @@
     "eraseConfirm": "Remove {{email}}'s details from all their orders? This cannot be undone.",
     "eraseDone": "Done — {{count}} orders anonymised.",
     "eraseFailed": "Could not anonymise the customer.",
-    "ownerOnly": "Only the restaurant owner can export data or handle erasure requests."
+    "ownerOnly": "Only the restaurant owner can export data or handle erasure requests.",
+    "taxNumber": "Tax number (Steuernummer) for invoices",
+    "taxNumberHelp": "Printed on your invoices only, never in the public Impressum. Invoices need either this or your VAT ID.",
+    "taxIdMissing": "Without a tax number or VAT ID, no invoices can be issued and the restaurant can't go live."
   }
 }

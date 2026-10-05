@@ -90,6 +90,7 @@ export function OrderIntakeBoard({ shopId }: Props) {
                   order={order}
                   nowMs={nowMs}
                   defaultPrepMinutes={data?.defaultPrepMinutes[order.fulfilmentMode] ?? 20}
+                  timeZone={data?.timezone ?? 'Europe/Berlin'}
                   onFailed={() => void refetch()}
                 />
               ))
