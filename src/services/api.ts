@@ -594,7 +594,7 @@ export type ShopResponse = {
   /** Shop timezone */
   timezone?: string;
   /** Order alert settings (absent until first saved) */
-  orderSettings?: { autoRejectMinutes: number; alertEmail: string | null };
+  orderSettings?: { autoRejectMinutes: number; alertEmail: string | null; autoAccept?: boolean };
   /** Minimum order amount in cents */
   minOrderAmountCents?: number;
   /** Shop address */
@@ -1209,8 +1209,7 @@ export type OrderItemResponse = {
 };
 export type OrderState = "PLACED" | "ACCEPTED" | "READY" | "OUT_FOR_DELIVERY" | "COMPLETED" | "REJECTED" | "CANCELLED";
 export type OrderDisplayState = OrderState | "IN_PREPARATION";
-export type OrderPaymentMethod = "card" | "cash";
-export type OrderPaymentStatus = "paid" | "refunded" | "partially_refunded" | "cash_due" | "cash_collected" | "refunded_in_cash";
+export type OrderPaymentStatus = "authorized" | "paid" | "partially_refunded" | "refunded" | "canceled" | "not_paid_online";
 export type OrderFulfilmentMode = "collection" | "delivery" | "dine_in";
 export type OrderHistoryEntryResponse = {
   from: OrderState | null;
@@ -1228,7 +1227,6 @@ export type OrderResponse = {
   state: OrderState;
   displayState: OrderDisplayState;
   fulfilmentMode: OrderFulfilmentMode;
-  paymentMethod: OrderPaymentMethod;
   paymentStatus: OrderPaymentStatus;
   readyAt: string | null;
   items: OrderItemResponse[];

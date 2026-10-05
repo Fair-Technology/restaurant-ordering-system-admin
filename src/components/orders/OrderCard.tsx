@@ -39,7 +39,6 @@ export function OrderCard({ shopId, order, nowMs, defaultPrepMinutes, onFailed }
   const busy = accepting || rejecting || marking || completing;
 
   const money = (cents: number) => formatCents(cents, order.currency, i18n.language);
-  const cashDue = order.paymentStatus === 'cash_due';
   const countdown = secondsUntil(order.autoRejectAt, nowMs);
   const minutesAgo = Math.max(0, Math.floor((nowMs - Date.parse(order.createdAt)) / 60000));
 
@@ -68,7 +67,7 @@ export function OrderCard({ shopId, order, nowMs, defaultPrepMinutes, onFailed }
           <span className="text-xs text-gray-500">{t(`orders.fulfilment.${order.fulfilmentMode}`)}</span>
         </div>
         <div className="text-sm font-medium text-gray-800">
-          {cashDue ? t('orders.cashDue', { amount: money(order.subtotalCents) }) : money(order.subtotalCents)}
+          {money(order.subtotalCents)}
         </div>
         <div className="flex items-center gap-1 text-xs text-gray-500">
           <Clock size={14} />
@@ -185,7 +184,7 @@ export function OrderCard({ shopId, order, nowMs, defaultPrepMinutes, onFailed }
           onClick={() => void run(() => completeOrder({ shopId, orderId: order.id }).unwrap())}
         >
           <PackageCheck size={18} />
-          {cashDue ? t('orders.handOverCash', { amount: money(order.subtotalCents) }) : t('orders.handOver')}
+          {t('orders.handOver')}
         </MyButton>
       )}
     </div>
