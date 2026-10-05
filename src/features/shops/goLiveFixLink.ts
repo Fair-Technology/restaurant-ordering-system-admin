@@ -16,6 +16,8 @@ export function goLiveFixLink(shopId: string, key: string): string {
       return `/shops/${shopId}/legal#withdrawal`;
     case 'privacy_notice':
       return `/shops/${shopId}/legal#privacy`;
+    case 'invoice_tax_id':
+      return `/shops/${shopId}/legal#impressum`;
     default:
       return `/shops/${shopId}/settings`;
   }
