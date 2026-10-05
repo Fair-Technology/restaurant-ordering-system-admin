@@ -457,6 +457,8 @@
     "refundAmount": "Amount",
     "refundReason": "Reason (for your records)",
     "refundConfirmButton": "Refund {{amount}}",
+    "refundReview": "Refund {{amount}}...",
+    "refundConfirmBack": "Back",
     "refundConfirm": "Refund {{amount}} for order {{ref}}? The money goes back to the customer's card and a correction invoice is sent. This can't be undone.",
     "refundInvalidAmount": "Enter an amount up to {{max}}.",
     "refundDone": "Refunded {{amount}}.",
@@ -611,6 +613,9 @@
       "other": "Other"
     },
     "impressumMissing": "Still missing: {{fields}}",
+    "taxNumber": "Tax number (for invoices)",
+    "taxNumberHelp": "Your Steuernummer. Printed on invoices only, never shown in the public Impressum.",
+    "taxIdMissing": "Invoices need a tax number or a VAT ID. Enter one before going live.",
     "impressumSave": "Save Impressum",
     "termsTitle": "Terms and conditions",
     "withdrawalTitle": "Withdrawal policy",

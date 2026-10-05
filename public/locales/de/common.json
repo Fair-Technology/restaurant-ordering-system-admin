@@ -457,6 +457,8 @@
     "refundAmount": "Betrag",
     "refundReason": "Grund (für Ihre Unterlagen)",
     "refundConfirmButton": "{{amount}} erstatten",
+    "refundReview": "{{amount}} erstatten...",
+    "refundConfirmBack": "Zurück",
     "refundConfirm": "{{amount}} für Bestellung {{ref}} erstatten? Das Geld geht zurück auf die Karte des Kunden, eine Rechnungskorrektur wird verschickt. Das kann nicht rückgängig gemacht werden.",
     "refundInvalidAmount": "Geben Sie einen Betrag bis {{max}} ein.",
     "refundDone": "{{amount}} erstattet.",
@@ -611,6 +613,9 @@
       "other": "Sonstige"
     },
     "impressumMissing": "Es fehlt noch: {{fields}}",
+    "taxNumber": "Steuernummer (für Rechnungen)",
+    "taxNumberHelp": "Ihre Steuernummer. Wird nur auf Rechnungen gedruckt, nie im öffentlichen Impressum angezeigt.",
+    "taxIdMissing": "Rechnungen benötigen eine Steuernummer oder USt-IdNr. Bitte vor dem Livegang eintragen.",
     "impressumSave": "Impressum speichern",
     "termsTitle": "Allgemeine Geschäftsbedingungen (AGB)",
     "withdrawalTitle": "Widerrufsbelehrung",

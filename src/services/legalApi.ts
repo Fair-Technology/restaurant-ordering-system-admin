@@ -118,6 +118,7 @@ export interface ExportOrder {
   customerName: string;
   customerEmail: string;
   customerPhone: string;
+  customerAddress?: { street: string; postcode: string; city: string; country: string } | null;
   items: ExportOrderItem[];
 }
 

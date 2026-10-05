@@ -31,6 +31,7 @@ export function RefundPanel({ shopId, order }: RefundPanelProps) {
   const [selection, setSelection] = useState<Record<number, number>>({});
   const [amountOverride, setAmountOverride] = useState<string | null>(null);
   const [reason, setReason] = useState('');
+  const [confirmingCents, setConfirmingCents] = useState<number | null>(null);
 
   const max = refundableCents(order);
   const left = remainingQuantities(order);
@@ -44,12 +45,14 @@ export function RefundPanel({ shopId, order }: RefundPanelProps) {
   const canSubmit =
     !isLoading && reason.trim() !== '' && (mode === 'items' ? itemsTotal > 0 && itemsTotal <= max : amountValid);
 
+  // the confirmation step only counts while the total is the one the user was shown
+  const confirming = canSubmit && confirmingCents === total;
+
   const setQuantity = (index: number, quantity: number) =>
     setSelection((prev) => ({ ...prev, [index]: Math.min(Math.max(0, quantity), left[index] ?? 0) }));
 
   const submit = async () => {
     if (!canSubmit) return;
-    if (!window.confirm(t('orders.refundConfirm', { amount: formatMoney(total), ref: order.orderRef }))) return;
     const base = { shopId, orderId: order.id, reason: reason.trim() };
     try {
       await refundOrder(
@@ -62,9 +65,11 @@ export function RefundPanel({ shopId, order }: RefundPanelProps) {
       setSelection({});
       setAmountOverride(null);
       setReason('');
+      setConfirmingCents(null);
     } catch (err) {
       const message = (err as { data?: { error?: string } })?.data?.error ?? '';
       toast.error(t('orders.refundFailedToast', { message }));
+      setConfirmingCents(null);
     }
   };
 
@@ -168,13 +173,31 @@ export function RefundPanel({ shopId, order }: RefundPanelProps) {
 
       <MyInput label={t('orders.refundReason')} value={reason} onChange={(e) => setReason(e.target.value)} />
 
+      {confirming && (
+        <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          {t('orders.refundConfirm', { amount: formatMoney(total), ref: order.orderRef })}
+        </p>
+      )}
       <div className="flex gap-2">
-        <MyButton size="sm" disabled={!canSubmit} onClick={submit}>
-          {t('orders.refundConfirmButton', { amount: formatMoney(total) })}
-        </MyButton>
-        <MyButton variant="ghost" size="sm" onClick={() => setOpen(false)}>
-          {t('orders.cancel')}
-        </MyButton>
+        {confirming ? (
+          <>
+            <MyButton size="sm" disabled={!canSubmit} onClick={submit}>
+              {t('orders.refundConfirmButton', { amount: formatMoney(total) })}
+            </MyButton>
+            <MyButton variant="ghost" size="sm" onClick={() => setConfirmingCents(null)}>
+              {t('orders.refundConfirmBack')}
+            </MyButton>
+          </>
+        ) : (
+          <>
+            <MyButton size="sm" disabled={!canSubmit} onClick={() => setConfirmingCents(total)}>
+              {t('orders.refundReview', { amount: formatMoney(total) })}
+            </MyButton>
+            <MyButton variant="ghost" size="sm" onClick={() => setOpen(false)}>
+              {t('orders.cancel')}
+            </MyButton>
+          </>
+        )}
       </div>
     </div>
   );

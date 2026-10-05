@@ -195,6 +195,7 @@ function ImpressumCard({ shopId, legal, shopAddress }: {
   const toast = useToast();
   const [updateLegal, { isLoading }] = useUpdateShopLegalMutation();
   const [draft, setDraft] = useState<ImpressumFields | null>(null);
+  const [taxDraft, setTaxDraft] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
 
   const loaded: ImpressumFields = legal.impressum ?? {
@@ -204,12 +205,13 @@ function ImpressumCard({ shopId, legal, shopAddress }: {
     phone: '', email: '', registerCourt: '', registerNumber: '', vatId: '', supervisoryAuthority: '',
   };
   const value = draft ?? loaded;
+  const taxNumber = taxDraft ?? legal.taxNumber;
   const set = (key: ImpressumFieldKey, v: string) => setDraft({ ...value, [key]: v });
 
   const handleSave = async () => {
     setServerError(null);
     try {
-      await updateLegal({ shopId, body: { impressum: value } }).unwrap();
+      await updateLegal({ shopId, body: { impressum: value, taxNumber: taxNumber.trim() } }).unwrap();
       toast.success(t('legal.saved'));
     } catch (err) {
       const message = errorMessage(err, t('legal.saveFailed'));
@@ -248,7 +250,19 @@ function ImpressumCard({ shopId, legal, shopAddress }: {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {IMPRESSUM_TEXT_FIELDS.map(fieldInput)}
+          <div className="flex flex-col gap-1">
+            <MyInput
+              label={t('legal.taxNumber')}
+              maxLength={30}
+              value={taxNumber}
+              onChange={(e) => setTaxDraft(e.target.value)}
+            />
+            <p className="text-xs text-gray-500">{t('legal.taxNumberHelp')}</p>
+          </div>
         </div>
+        {value.vatId.trim() === '' && taxNumber.trim() === '' && (
+          <p className="text-sm text-amber-700">{t('legal.taxIdMissing')}</p>
+        )}
         {legal.missingImpressumFields.length > 0 && (
           <p className="text-sm text-amber-700">
             {t('legal.impressumMissing', {
