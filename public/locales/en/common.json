@@ -73,6 +73,14 @@
     "allSystemsOperational": "All systems operational"
   },
   "shops": {
+    "dineInTitle": "Dine in",
+    "dineInHelp": "Let guests order from their table by scanning a QR code. They pay online, exactly like every other order.",
+    "dineInLabel": "Take table orders",
+    "dineInLabelHelp": "Off by default. While off, table QR codes open your normal pickup menu.",
+    "dineInSave": "Save",
+    "dineInSaved": "Saved.",
+    "dineInFailed": "Could not save the dine-in setting.",
+    "dineInTablesLink": "Print table QR codes",
     "title": "Shops",
     "shop": "Shop",
     "addShop": "+ New Shop",

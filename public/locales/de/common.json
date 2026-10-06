@@ -73,6 +73,14 @@
     "allSystemsOperational": "Alle Systeme funktionieren"
   },
   "shops": {
+    "dineInTitle": "Vor Ort",
+    "dineInHelp": "Gäste bestellen direkt vom Tisch, indem sie einen QR-Code scannen. Sie bezahlen online, genau wie bei jeder anderen Bestellung.",
+    "dineInLabel": "Tischbestellungen annehmen",
+    "dineInLabelHelp": "Standardmäßig aus. Solange aus, öffnen Tisch-QR-Codes Ihr normales Abhol-Menü.",
+    "dineInSave": "Speichern",
+    "dineInSaved": "Gespeichert.",
+    "dineInFailed": "Die Einstellung „Vor Ort\" konnte nicht gespeichert werden.",
+    "dineInTablesLink": "Tisch-QR-Codes drucken",
     "title": "Shops",
     "shop": "Shop",
     "addShop": "+ Neuer Shop",
