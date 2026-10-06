@@ -185,6 +185,29 @@ const injectedRtkApi = api.injectEndpoints({
         body: queryArg.setShopLogoRequest,
       }),
     }),
+    generateShopCoverImageUploadUrl: build.mutation<
+      GenerateShopCoverImageUploadUrlApiResponse,
+      GenerateShopCoverImageUploadUrlApiArg
+    >({
+      query: (queryArg) => ({
+        url: `/shops/${queryArg.shopId}/cover-image/upload-url`,
+        method: "POST",
+        body: queryArg.generateShopCoverImageUploadUrlRequest,
+      }),
+    }),
+    setShopCoverImage: build.mutation<SetShopCoverImageApiResponse, SetShopCoverImageApiArg>({
+      query: (queryArg) => ({
+        url: `/shops/${queryArg.shopId}/cover-image`,
+        method: "POST",
+        body: queryArg.setShopCoverImageRequest,
+      }),
+    }),
+    removeShopCoverImage: build.mutation<RemoveShopCoverImageApiResponse, RemoveShopCoverImageApiArg>({
+      query: (queryArg) => ({
+        url: `/shops/${queryArg.shopId}/cover-image`,
+        method: "DELETE",
+      }),
+    }),
     requestShopNameChange: build.mutation<
       { id: string; pendingNameChange: { requestedName: string; requestedSlug: string; requestedBy: string; requestedAt: string } },
       { shopId: string; requestedName: string }
@@ -502,6 +525,21 @@ export type SetShopLogoApiArg = {
   /** Shop ID */
   shopId: string;
   setShopLogoRequest: SetShopLogoRequest;
+};
+export type GenerateShopCoverImageUploadUrlApiResponse =
+  /** status 200 */ GenerateShopCoverImageUploadUrlResponse;
+export type GenerateShopCoverImageUploadUrlApiArg = {
+  shopId: string;
+  generateShopCoverImageUploadUrlRequest: GenerateShopCoverImageUploadUrlRequest;
+};
+export type SetShopCoverImageApiResponse = /** status 200 */ ShopResponse;
+export type SetShopCoverImageApiArg = {
+  shopId: string;
+  setShopCoverImageRequest: SetShopCoverImageRequest;
+};
+export type RemoveShopCoverImageApiResponse = /** status 200 */ ShopResponse;
+export type RemoveShopCoverImageApiArg = {
+  shopId: string;
 };
 export type CreateOrderApiResponse =
   /** status 200 Order created and PaymentIntent initiated */ CheckoutResponse;
@@ -1159,6 +1197,19 @@ export type SetShopLogoRequest = {
   /** Blob URL of the uploaded logo */
   url: string;
 };
+export type GenerateShopCoverImageUploadUrlResponse = {
+  imageId: string;
+  uploadUrl: string;
+  blobUrl: string;
+  expiresAt: string;
+};
+export type GenerateShopCoverImageUploadUrlRequest = {
+  contentType: "image/jpeg" | "image/png" | "image/webp";
+};
+export type SetShopCoverImageRequest = {
+  imageId: string;
+  url: string;
+};
 export type CheckoutResponse = {
   /** Checkout session ID */
   sessionId: string;
@@ -1497,6 +1548,9 @@ export const {
   useAddProductImageMutation,
   useGenerateShopLogoUploadUrlMutation,
   useSetShopLogoMutation,
+  useGenerateShopCoverImageUploadUrlMutation,
+  useSetShopCoverImageMutation,
+  useRemoveShopCoverImageMutation,
   useCreateOrderMutation,
   useStripeWebhookMutation,
   useGetOrdersByShopQuery,
