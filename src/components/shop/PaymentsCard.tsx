@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CheckCircle, AlertCircle, Circle } from 'lucide-react';
 import type { ShopResponse } from '../../services/api';
@@ -9,6 +9,8 @@ import {
 import { MyCard } from '../ui/MyCard';
 import { MyButton } from '../ui/MyButton';
 import { StripeOnboardingModal } from './StripeOnboardingModal';
+
+const PENDING_RECHECK_MS = 30_000;
 
 interface Props {
   shop: ShopResponse;
@@ -25,14 +27,34 @@ export function PaymentsCard({ shop, onRefetch }: Props) {
 
   const status = shop.stripe?.connectOnboardingStatus ?? null;
 
-  const handleClose = async () => {
-    setModalOpen(false);
-    // Sync live Stripe status into the DB before refetching the shop
+  // Sync live Stripe status into the DB before refetching the shop
+  const syncStatus = useCallback(async () => {
     if (shop.id) {
       await fetchGoLiveStatus({ shopId: shop.id });
     }
     onRefetch();
+  }, [shop.id, fetchGoLiveStatus, onRefetch]);
+
+  const handleClose = async () => {
+    setModalOpen(false);
+    await syncStatus();
   };
+
+  // Stripe often finishes verifying after the form is submitted — seconds in test mode, up to days
+  // for real restaurants. While pending, keep checking so a page left open doesn't go on offering
+  // "Continue setup" for an account that is already connected.
+  useEffect(() => {
+    if (status !== 'pending' || modalOpen) return;
+    const interval = window.setInterval(() => void syncStatus(), PENDING_RECHECK_MS);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void syncStatus();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [status, modalOpen, syncStatus]);
 
   const handleDisconnect = async () => {
     if (!shop.id) return;
