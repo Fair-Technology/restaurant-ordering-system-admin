@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { ORDER_DISPLAY_STATES } from '../features/orders/orderState';
 import { REJECT_REASONS } from '../features/orders/intake';
 import { PAYMENT_STATUSES } from '../features/orders/refunds';
+import { COVER_IMAGE_FILE_ERRORS } from '../features/shops/coverImage';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -35,6 +36,13 @@ describe('locales', () => {
     const enKeys = flattenKeys(en).sort();
     const deKeys = flattenKeys(de).sort();
     expect(deKeys).toEqual(enKeys);
+  });
+
+  it('every cover image file error is labelled', () => {
+    for (const e of COVER_IMAGE_FILE_ERRORS) {
+      expect(en).toHaveProperty(`shops.${e}`);
+      expect(de).toHaveProperty(`shops.${e}`);
+    }
   });
 
   it('every order state has a label', () => {

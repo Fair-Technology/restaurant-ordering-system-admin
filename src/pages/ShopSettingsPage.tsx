@@ -6,10 +6,14 @@ import {
   useGetShopByIdQuery,
   useGenerateShopLogoUploadUrlMutation,
   useSetShopLogoMutation,
+  useGenerateShopCoverImageUploadUrlMutation,
+  useSetShopCoverImageMutation,
+  useRemoveShopCoverImageMutation,
   useUpdateShopMutation,
   useRequestShopNameChangeMutation,
   useCancelShopNameChangeMutation,
 } from '../services/api';
+import { checkCoverImageFile, uploadCoverImage } from '../features/shops/coverImage';
 import { MyCard } from '../components/ui/MyCard';
 import { MySpinner } from '../components/ui/MySpinner';
 import { MyButton } from '../components/ui/MyButton';
@@ -61,6 +65,9 @@ export function ShopSettingsPage() {
   }, [shop]);
   const [generateShopLogoUploadUrl] = useGenerateShopLogoUploadUrlMutation();
   const [setShopLogo] = useSetShopLogoMutation();
+  const [generateShopCoverImageUploadUrl] = useGenerateShopCoverImageUploadUrlMutation();
+  const [setShopCoverImage] = useSetShopCoverImageMutation();
+  const [removeShopCoverImage] = useRemoveShopCoverImageMutation();
   const [updateShop] = useUpdateShopMutation();
   const [requestShopNameChange] = useRequestShopNameChangeMutation();
   const [cancelShopNameChange] = useCancelShopNameChangeMutation();
@@ -70,6 +77,11 @@ export function ShopSettingsPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
+  const [isRemovingCover, setIsRemovingCover] = useState(false);
+  const [coverError, setCoverError] = useState<string | null>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
   const qrRef = useRef<HTMLCanvasElement>(null);
 
   const [hoursState, setHoursState] = useState<OpeningHoursState | null>(null);
@@ -368,6 +380,60 @@ export function ShopSettingsPage() {
     }
   };
 
+  const handleCoverUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!coverFile) return;
+    const fileError = checkCoverImageFile(coverFile);
+    if (fileError) {
+      setCoverError(t(`shops.${fileError}`));
+      return;
+    }
+    setIsUploadingCover(true);
+    setCoverError(null);
+    try {
+      await uploadCoverImage(coverFile, {
+        generateUploadUrl: (contentType) =>
+          generateShopCoverImageUploadUrl({
+            shopId: shopId!,
+            generateShopCoverImageUploadUrlRequest: { contentType },
+          }).unwrap(),
+        putBlob: (uploadUrl, file, contentType) =>
+          fetch(uploadUrl, {
+            method: 'PUT',
+            headers: { 'x-ms-blob-type': 'BlockBlob', 'Content-Type': contentType },
+            body: file,
+          }),
+        setCoverImage: (imageId, url) =>
+          setShopCoverImage({
+            shopId: shopId!,
+            setShopCoverImageRequest: { imageId, url },
+          }).unwrap(),
+      });
+      setCoverFile(null);
+      if (coverInputRef.current) coverInputRef.current.value = '';
+      toast.success(t('shops.coverImageSaved'));
+      refetch();
+    } catch {
+      setCoverError(t('shops.failedToUploadCoverImage'));
+    } finally {
+      setIsUploadingCover(false);
+    }
+  };
+
+  const handleCoverRemove = async () => {
+    setIsRemovingCover(true);
+    setCoverError(null);
+    try {
+      await removeShopCoverImage({ shopId: shopId! }).unwrap();
+      toast.success(t('shops.coverImageRemoved'));
+      refetch();
+    } catch {
+      setCoverError(t('shops.failedToRemoveCoverImage'));
+    } finally {
+      setIsRemovingCover(false);
+    }
+  };
+
   const previewSlug = shop.slug;
 
   const shopUrl = `${import.meta.env.VITE_SHOP_BASE_URL ?? 'https://www.example.com'}/shops/${previewSlug}`;
@@ -388,6 +454,8 @@ export function ShopSettingsPage() {
   ];
 
   const currentLogoUrl = shop.branding?.logoUrl;
+  const currentCoverUrl = shop.branding?.heroImageUrl || null;
+  const coverFileError = coverFile ? checkCoverImageFile(coverFile) : null;
 
   return (
     <div className="max-w-lg space-y-4">
@@ -558,6 +626,60 @@ export function ShopSettingsPage() {
           <MyButton type="submit" disabled={!logoFile || isUploading}>
             {isUploading ? t('shops.uploadingLogo') : t('shops.uploadLogo')}
           </MyButton>
+        </form>
+      </MyCard>
+
+      <MyCard className="p-5 space-y-4">
+        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+          {t('shops.coverImage')}
+        </p>
+        <p className="text-sm text-gray-500">{t('shops.coverImageHelp')}</p>
+        {currentCoverUrl ? (
+          <img
+            src={currentCoverUrl}
+            alt={t('shops.coverImage')}
+            className="w-full aspect-[3/1] rounded-xl object-cover border border-gray-200"
+          />
+        ) : (
+          <div className="w-full aspect-[3/1] rounded-xl bg-gray-100 border border-gray-200 flex items-center justify-center px-4 text-center">
+            <span className="text-xs text-gray-400">{t('shops.coverImagePlaceholder')}</span>
+          </div>
+        )}
+        {coverError && <p className="text-sm text-red-600">{coverError}</p>}
+        <form onSubmit={handleCoverUpload} className="space-y-3">
+          <div className="flex flex-col gap-1">
+            <input
+              ref={coverInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={(e) => {
+                const f = e.target.files?.[0] ?? null;
+                setCoverFile(f);
+                const err = f ? checkCoverImageFile(f) : null;
+                setCoverError(err ? t(`shops.${err}`) : null);
+              }}
+              className="block w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer"
+            />
+            {coverFile && <p className="text-xs text-gray-400">{coverFile.name}</p>}
+          </div>
+          <div className="flex gap-2">
+            <MyButton
+              type="submit"
+              disabled={!coverFile || coverFileError !== null || isUploadingCover || isRemovingCover}
+            >
+              {isUploadingCover ? t('shops.uploadingCoverImage') : t('shops.uploadCoverImage')}
+            </MyButton>
+            {currentCoverUrl && (
+              <MyButton
+                type="button"
+                variant="ghost"
+                onClick={handleCoverRemove}
+                disabled={isRemovingCover || isUploadingCover}
+              >
+                {isRemovingCover ? t('shops.removingCoverImage') : t('shops.removeCoverImage')}
+              </MyButton>
+            )}
+          </div>
         </form>
       </MyCard>
 
