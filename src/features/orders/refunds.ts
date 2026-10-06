@@ -10,10 +10,10 @@ export const PAYMENT_STATUSES = [
 const REFUNDABLE_STATES = ['ACCEPTED', 'READY', 'COMPLETED'];
 const REFUNDABLE_PAYMENT_STATUSES = ['paid', 'partially_refunded'];
 
-// '3,50' (de) / '3.50' (en) / '10' -> cents; anything that is not a positive amount with at most two decimals -> null
-export function parseAmountToCents(text: string, language: string): number | null {
-  const separator = language.startsWith('de') ? ',' : '.';
-  const [whole, fraction, ...rest] = text.trim().split(separator);
+// '3,50' / '3.50' / '10' -> cents, whatever the UI language (owners in Germany type a comma even in
+// the English admin); anything that is not a positive amount with at most two decimals -> null
+export function parseAmountToCents(text: string): number | null {
+  const [whole, fraction, ...rest] = text.trim().split(/[.,]/);
   if (rest.length > 0 || !/^\d+$/.test(whole ?? '')) return null;
   if (fraction !== undefined && !/^\d{1,2}$/.test(fraction)) return null;
   const cents = Number(whole) * 100 + Number((fraction ?? '').padEnd(2, '0') || '0');

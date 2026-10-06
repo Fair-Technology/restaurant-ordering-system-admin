@@ -13,11 +13,12 @@ const paid = { state: 'COMPLETED', paymentStatus: 'paid', subtotalCents: 1000, r
 
 describe('refund helpers', () => {
   it('turns a typed amount into cents', () => {
-    expect(parseAmountToCents('3,50', 'de')).toBe(350);
-    expect(parseAmountToCents('3.50', 'en')).toBe(350);
-    expect(parseAmountToCents('10', 'de')).toBe(1000);
-    for (const bad of ['abc', '-1', '3,505', '0', '', '1,2,3']) {
-      expect(parseAmountToCents(bad, 'de')).toBeNull();
+    expect(parseAmountToCents('3,50')).toBe(350);
+    expect(parseAmountToCents('3.50')).toBe(350);
+    expect(parseAmountToCents('10')).toBe(1000);
+    expect(parseAmountToCents('1,5')).toBe(150);
+    for (const bad of ['abc', '-1', '3,505', '0', '', '1,2,3', '1.2,3', '1,000.00']) {
+      expect(parseAmountToCents(bad)).toBeNull();
     }
   });
 

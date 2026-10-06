@@ -37,7 +37,7 @@ export function RefundPanel({ shopId, order }: RefundPanelProps) {
   const left = remainingQuantities(order);
   const defaultAmount = (max / 100).toFixed(2).replace('.', i18n.language.startsWith('de') ? ',' : '.');
   const amountText = amountOverride ?? defaultAmount;
-  const parsedAmount = parseAmountToCents(amountText, i18n.language);
+  const parsedAmount = parseAmountToCents(amountText);
   const amountValid = parsedAmount !== null && parsedAmount <= max;
   const itemsTotal = itemSelectionCents(order, selection);
 
