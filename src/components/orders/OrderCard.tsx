@@ -63,6 +63,11 @@ export function OrderCard({ shopId, order, nowMs, defaultPrepMinutes, timeZone, 
   return (
     <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 space-y-3">
       <div className="space-y-1">
+        {order.table && (
+          <div className="inline-block rounded-lg bg-amber-100 px-3 py-1 text-xl font-bold text-amber-900">
+            {t('orders.table', { label: order.table.label })}
+          </div>
+        )}
         <div className="flex items-baseline justify-between gap-2">
           <span className="text-2xl font-mono font-semibold text-gray-900">{order.orderRef}</span>
           <span className="text-xs text-gray-500">{t(`orders.fulfilment.${order.fulfilmentMode}`)}</span>

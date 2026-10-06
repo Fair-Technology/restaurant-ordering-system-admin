@@ -54,6 +54,7 @@ export interface OrderSettingsDto {
   autoRejectMinutes: number;
   alertEmail: string | null;
   autoAccept?: boolean;
+  dineIn?: boolean;
 }
 
 interface OrderActionArg {

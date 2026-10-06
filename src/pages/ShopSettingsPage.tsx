@@ -22,6 +22,7 @@ import { CurrencyInput } from '../components/ui/CurrencyInput';
 import { useToast } from '../contexts/ToastContext';
 import { PaymentsCard } from '../components/shop/PaymentsCard';
 import { OrderAlertsCard } from '../components/shop/OrderAlertsCard';
+import { DineInCard } from '../components/shop/DineInCard';
 import { accentContrastOnWhite, contrastRatio } from '../utils/contrast';
 import { useShopReferenceLists } from '../features/menu/useShopReferenceLists';
 import { formatRate, labelFor } from '../features/menu/foodInfo';
@@ -773,6 +774,9 @@ export function ShopSettingsPage() {
 
       {/* Order alerts card */}
       <OrderAlertsCard shop={shop} onRefetch={refetch} />
+
+      {/* Dine in card */}
+      <DineInCard shop={shop} onRefetch={refetch} />
 
       {/* Menu languages card */}
       <MyCard className="p-5 space-y-3">

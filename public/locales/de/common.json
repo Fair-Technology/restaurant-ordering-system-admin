@@ -3,6 +3,7 @@
     "title": "Konto"
   },
   "nav": {
+    "tables": "Tische & QR-Codes",
     "adminPanel": "Admin-Bereich",
     "adminDashboard": "Admin-Dashboard",
     "dashboard": "Dashboard",
@@ -73,6 +74,14 @@
     "allSystemsOperational": "Alle Systeme funktionieren"
   },
   "shops": {
+    "dineInTitle": "Vor Ort",
+    "dineInHelp": "Gäste bestellen direkt vom Tisch, indem sie einen QR-Code scannen. Sie bezahlen online, genau wie bei jeder anderen Bestellung.",
+    "dineInLabel": "Tischbestellungen annehmen",
+    "dineInLabelHelp": "Standardmäßig aus. Solange aus, öffnen Tisch-QR-Codes Ihr normales Abhol-Menü.",
+    "dineInSave": "Speichern",
+    "dineInSaved": "Gespeichert.",
+    "dineInFailed": "Die Einstellung „Vor Ort\" konnte nicht gespeichert werden.",
+    "dineInTablesLink": "Tisch-QR-Codes drucken",
     "title": "Shops",
     "shop": "Shop",
     "addShop": "+ Neuer Shop",
@@ -240,6 +249,24 @@
     "orderAlertsAutoAccept": "Bezahlte Bestellungen automatisch annehmen",
     "orderAlertsAutoAcceptHelp": "Standardmäßig an. Jede Bestellung wird angenommen und abgebucht, sobald der Gast bezahlt hat – fertig in 20 Minuten; sie erscheint unter „In Arbeit“ mit einem kurzen Ton. Ausschalten, um jede Bestellung selbst anzunehmen – ohne Antwort wird sie nach dem Zeitlimit abgelehnt und nichts abgebucht."
   },
+  "tables": {
+    "title": "Tische & QR-Codes",
+    "help": "Geben Sie Ihre Tischnummern ein und laden Sie für jeden Tisch eine QR-Code-Karte herunter. Gäste, die die Karte scannen, bestellen direkt an diesen Tisch. Es wird nichts gespeichert – Sie können jederzeit weitere drucken.",
+    "accessDenied": "Sie haben keine Berechtigung, Tischkarten zu drucken.",
+    "dineInOff": "Tischbestellung ist ausgeschaltet – diese Codes öffnen vorerst Ihr normales Abhol-Menü. Ein Inhaber kann „Vor Ort\" in den Einstellungen einschalten.",
+    "goToSettings": "Einstellungen öffnen",
+    "numbersLabel": "Tischnummern",
+    "numbersHint": "Durch Kommas getrennt, z. B. 1, 2, 3, Terrasse 1. Je bis zu 10 Buchstaben, Ziffern, Leerzeichen oder Bindestriche.",
+    "invalid": "Diese sind nicht möglich: {{list}}",
+    "tooMany": "Es werden nur die ersten 100 Tische angezeigt.",
+    "empty": "Geben Sie eine Tischnummer ein, um den QR-Code zu sehen.",
+    "copyLink": "Link kopieren",
+    "linkCopied": "Link kopiert.",
+    "downloadPng": "QR als PNG",
+    "downloadPdf": "Tischkarte (PDF)",
+    "downloadAll": "Alle Tischkarten (PDF)",
+    "downloadFailed": "Der Download hat nicht geklappt. Bitte erneut versuchen."
+  },
   "products": {
     "addProduct": "+ Produkt hinzufügen",
     "newProduct": "Neues Produkt",
@@ -391,6 +418,7 @@
     "removeOption": "Entfernen"
   },
   "orders": {
+    "table": "Tisch {{label}}",
     "loading": "Bestellungen werden geladen...",
     "loadError": "Bestellungen konnten nicht geladen werden.",
     "empty": "Noch keine Bestellungen.",
@@ -424,7 +452,7 @@
     "tabHistory": "Verlauf",
     "columnWaiting": "Neu – wartet auf Sie",
     "columnInProgress": "In Arbeit",
-    "columnReady": "Abholbereit",
+    "columnReady": "Fertig",
     "emptyColumn": "Nichts da",
     "queueLoading": "Live-Bestellungen werden geladen…",
     "queueLoadError": "Live-Bestellungen konnten nicht geladen werden.",
