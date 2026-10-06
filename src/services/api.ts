@@ -632,7 +632,7 @@ export type ShopResponse = {
   /** Shop timezone */
   timezone?: string;
   /** Order alert settings (absent until first saved) */
-  orderSettings?: { autoRejectMinutes: number; alertEmail: string | null; autoAccept?: boolean };
+  orderSettings?: { autoRejectMinutes: number; alertEmail: string | null; autoAccept?: boolean; dineIn?: boolean };
   /** Minimum order amount in cents */
   minOrderAmountCents?: number;
   /** Shop address */
@@ -1275,6 +1275,7 @@ export type OrderResponse = {
   state: OrderState;
   displayState: OrderDisplayState;
   fulfilmentMode: OrderFulfilmentMode;
+  table?: { label: string } | null;
   paymentStatus: OrderPaymentStatus;
   readyAt: string | null;
   items: OrderItemResponse[];
