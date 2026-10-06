@@ -418,6 +418,7 @@
     "removeOption": "Entfernen"
   },
   "orders": {
+    "table": "Tisch {{label}}",
     "loading": "Bestellungen werden geladen...",
     "loadError": "Bestellungen konnten nicht geladen werden.",
     "empty": "Noch keine Bestellungen.",
@@ -451,7 +452,7 @@
     "tabHistory": "Verlauf",
     "columnWaiting": "Neu – wartet auf Sie",
     "columnInProgress": "In Arbeit",
-    "columnReady": "Abholbereit",
+    "columnReady": "Fertig",
     "emptyColumn": "Nichts da",
     "queueLoading": "Live-Bestellungen werden geladen…",
     "queueLoadError": "Live-Bestellungen konnten nicht geladen werden.",

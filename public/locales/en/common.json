@@ -418,6 +418,7 @@
     "removeOption": "Remove"
   },
   "orders": {
+    "table": "Table {{label}}",
     "loading": "Loading orders...",
     "loadError": "Failed to load orders.",
     "empty": "No orders yet.",
@@ -437,7 +438,7 @@
     "fulfilment": {
       "collection": "Collection",
       "delivery": "Delivery",
-      "dine_in": "Dine-in"
+      "dine_in": "Dine in"
     },
     "payment": {
       "paid": "Paid online",
@@ -451,7 +452,7 @@
     "tabHistory": "History",
     "columnWaiting": "New — waiting for you",
     "columnInProgress": "In progress",
-    "columnReady": "Ready for collection",
+    "columnReady": "Ready",
     "emptyColumn": "Nothing here",
     "queueLoading": "Loading live orders…",
     "queueLoadError": "Could not load live orders.",

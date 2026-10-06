@@ -69,6 +69,9 @@ function OrderRow({ shopId, order, permissions }: OrderRowProps) {
             <span className="text-xs text-gray-500">
               {t(`orders.fulfilment.${order.fulfilmentMode}`)}
             </span>
+            {order.table && (
+              <span className="text-xs text-gray-500">{t('orders.table', { label: order.table.label })}</span>
+            )}
             <span className="text-xs text-gray-500">
               {t(paymentLabelKey(order))}
             </span>
