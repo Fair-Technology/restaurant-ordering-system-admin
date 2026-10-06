@@ -3,6 +3,7 @@
     "title": "Account"
   },
   "nav": {
+    "tables": "Tables & QR codes",
     "adminPanel": "Admin Panel",
     "adminDashboard": "Admin Dashboard",
     "dashboard": "Dashboard",
@@ -247,6 +248,24 @@
     "paymentsOnlineOnly": "Customers pay online when they order — by card, Apple Pay or Google Pay. The amount is reserved and only taken when the order is accepted. Your restaurant can only go live once Stripe is connected.",
     "orderAlertsAutoAccept": "Accept paid orders automatically",
     "orderAlertsAutoAcceptHelp": "On by default. Each order is accepted and charged the moment the customer has paid, ready in 20 minutes; the board shows it under \"In progress\" with one chime. Switch off to accept each order yourself — an order nobody answers is declined after the time limit and the customer is not charged."
+  },
+  "tables": {
+    "title": "Tables & QR codes",
+    "help": "Type your table numbers and download a QR code card for each. Guests who scan a card order straight to that table. Nothing is saved — come back any time to print more.",
+    "accessDenied": "You don't have permission to print table cards.",
+    "dineInOff": "Table ordering is switched off, so these codes open your normal pickup menu for now. An owner can switch on \"Dine in\" in Settings.",
+    "goToSettings": "Open Settings",
+    "numbersLabel": "Table numbers",
+    "numbersHint": "Separate with commas, e.g. 1, 2, 3, Terrasse 1. Up to 10 letters, digits, spaces or dashes each.",
+    "invalid": "These can't be used: {{list}}",
+    "tooMany": "Only the first 100 tables are shown.",
+    "empty": "Type a table number to see its QR code.",
+    "copyLink": "Copy link",
+    "linkCopied": "Link copied.",
+    "downloadPng": "QR as PNG",
+    "downloadPdf": "Table card (PDF)",
+    "downloadAll": "All table cards (PDF)",
+    "downloadFailed": "The download didn't work. Please try again."
   },
   "products": {
     "addProduct": "+ Add Product",
