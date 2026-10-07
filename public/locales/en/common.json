@@ -49,11 +49,7 @@
     "resuming": "Resuming…",
     "cancellingSubscription": "Cancelling…",
     "cancelSuccess": "Subscription scheduled for cancellation.",
-    "resumeSuccess": "Cancellation reversed. Your plan will renew as usual.",
-    "deactivatedBanner": "Your shop has been deactivated because your active products exceed the free plan limit. Deactivate products to get back under the limit, then click Reactivate.",
-    "reactivate": "Reactivate Shop",
-    "reactivating": "Reactivating…",
-    "reactivateSuccess": "Shop reactivated successfully."
+    "resumeSuccess": "Cancellation reversed. Your plan will renew as usual."
   },
   "auth": {
     "adminPortal": "Admin Portal",
@@ -546,7 +542,8 @@
     "submit": "Sign in",
     "failed": "Wrong username or password.",
     "locked": "Too many attempts. Try again in 15 minutes or ask the owner to reset your password.",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "seatSuspended": "This login is paused because the plan allows fewer staff logins. Ask the owner."
   },
   "categories": {
     "addCategory": "+ New Category",
@@ -703,5 +700,13 @@
     "taxNumber": "Tax number (Steuernummer) for invoices",
     "taxNumberHelp": "Printed on your invoices only, never in the public Impressum. Invoices need either this or your VAT ID.",
     "taxIdMissing": "Without a tax number or VAT ID, no invoices can be issued and the restaurant can't go live."
+  },
+  "orderLimit": {
+    "bannerWarning": "{{count}} of {{limit}} orders used this month ({{percent}} %). At {{limit}} online ordering pauses until the month ends.",
+    "bannerStop": "Order limit reached: {{count}} of {{limit}} orders this month. Your storefront is not taking online orders.",
+    "upgrade": "Upgrade",
+    "askOwner": "Ask the owner to upgrade.",
+    "usageLine": "{{count}} of {{limit}} orders used this month",
+    "usageUnlimited": "{{count}} orders this month (unlimited)"
   }
 }
