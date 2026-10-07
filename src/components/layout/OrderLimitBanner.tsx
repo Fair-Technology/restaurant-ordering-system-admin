@@ -13,19 +13,46 @@ export function OrderLimitBanner({ shopId, canManageBilling }: OrderLimitBannerP
   const { t } = useTranslation();
   const { data } = useGetOrderLimitQuery({ shopId }, { pollingInterval: 60_000 });
   const banner = limitBannerOf(data);
-  if (!banner) return null;
-
-  const tone = banner.tone === 'stop' ? 'bg-red-50 border-red-200 text-red-800' : 'bg-amber-50 border-amber-200 text-amber-900';
+  const payment = data?.payment;
+  const paymentNotice = payment?.droppedForNonPayment
+    ? { tone: 'bg-red-50 border-red-200 text-red-800', text: t('orderLimit.paymentDropped') }
+    : payment?.inGrace && payment.graceEndsAt
+      ? {
+          tone: 'bg-amber-50 border-amber-200 text-amber-900',
+          text: t('orderLimit.paymentGrace', { date: new Date(payment.graceEndsAt).toLocaleDateString() }),
+        }
+      : null;
+  if (!banner && !paymentNotice) return null;
 
   return (
+    <>
+      {paymentNotice && <BannerRow tone={paymentNotice.tone} text={paymentNotice.text} shopId={shopId} canManageBilling={canManageBilling} />}
+      {banner && (
+        <BannerRow
+          tone={banner.tone === 'stop' ? 'bg-red-50 border-red-200 text-red-800' : 'bg-amber-50 border-amber-200 text-amber-900'}
+          text={t(banner.tone === 'stop' ? 'orderLimit.bannerStop' : 'orderLimit.bannerWarning', {
+            count: banner.count,
+            limit: banner.limit,
+            percent: banner.level,
+          })}
+          shopId={shopId}
+          canManageBilling={canManageBilling}
+        />
+      )}
+    </>
+  );
+}
+
+interface BannerRowProps extends OrderLimitBannerProps {
+  tone: string;
+  text: string;
+}
+
+function BannerRow({ tone, text, shopId, canManageBilling }: BannerRowProps) {
+  const { t } = useTranslation();
+  return (
     <div role="status" className={`mx-4 mt-4 px-4 py-3 rounded-xl border text-sm flex items-center justify-between gap-4 ${tone}`}>
-      <span>
-        {t(banner.tone === 'stop' ? 'orderLimit.bannerStop' : 'orderLimit.bannerWarning', {
-          count: banner.count,
-          limit: banner.limit,
-          percent: banner.level,
-        })}
-      </span>
+      <span>{text}</span>
       {canManageBilling ? (
         <Link
           to={`/shops/${shopId}/subscription`}

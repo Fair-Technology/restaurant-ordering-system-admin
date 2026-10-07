@@ -44,12 +44,19 @@
     "upgrading": "Weiterleitung zum Checkout...",
     "downgrade": "Downgrade",
     "cancelSubscription": "Abonnement kündigen",
-    "cancelScheduled": "Ihr Abonnement wird am {{date}} gekündigt. Danach wechseln Sie zum kostenlosen Tarif.",
+    "cancelScheduled": "Ihr Abonnement wird am {{date}} gekündigt. Danach gilt der kostenlose Tarif.",
     "keepPlan": "Plan behalten",
     "resuming": "Wird fortgesetzt…",
     "cancellingSubscription": "Wird gekündigt…",
     "cancelSuccess": "Abonnement zur Kündigung vorgemerkt.",
-    "resumeSuccess": "Kündigung zurückgezogen. Ihr Plan verlängert sich wie gewohnt."
+    "resumeSuccess": "Kündigung zurückgezogen. Ihr Plan verlängert sich wie gewohnt.",
+    "upgradeApplied": "Ihr neuer Tarif gilt ab sofort.",
+    "downgradeBlocked": "Entfernen Sie zuerst Mitarbeiter-Zugänge: Dieser Tarif erlaubt {{n}}.",
+    "changeScheduled": "Am {{date}} wechseln Sie zu {{plan}}. Bis dahin gilt Ihr aktueller Tarif.",
+    "keepCurrentPlan": "Aktuellen Tarif behalten",
+    "paymentFailed": "Ihre letzte Zahlung ist fehlgeschlagen. Aktualisieren Sie Ihre Karte bis {{date}}, um Ihren Tarif zu behalten.",
+    "updateCard": "Karte aktualisieren",
+    "payNow": "Jetzt bezahlen"
   },
   "auth": {
     "adminPortal": "Admin-Portal",
@@ -707,6 +714,8 @@
     "upgrade": "Upgrade",
     "askOwner": "Bitten Sie den Inhaber um ein Upgrade.",
     "usageLine": "{{count}} von {{limit}} Bestellungen in diesem Monat genutzt",
-    "usageUnlimited": "{{count}} Bestellungen in diesem Monat (unbegrenzt)"
+    "usageUnlimited": "{{count}} Bestellungen in diesem Monat (unbegrenzt)",
+    "paymentGrace": "Zahlung fehlgeschlagen. Ihr Tarif gilt noch bis {{date}}.",
+    "paymentDropped": "Zahlung fehlt weiterhin: Ihr Shop ist im kostenlosen Tarif. Nach der Zahlung ist alles sofort wieder da."
   }
 }
