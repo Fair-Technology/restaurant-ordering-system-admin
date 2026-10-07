@@ -7,7 +7,10 @@ import {
   hasWaitingOrders,
   newlyAutoAcceptedIds,
   prepChoices,
+  pruneSettledAccepts,
   secondsUntil,
+  withoutPendingAccept,
+  withPendingAccepts,
 } from './intake';
 
 const base = {} as IntakeOrder;
@@ -58,5 +61,54 @@ describe('intake helpers', () => {
   it('spots orders accepted automatically since the last look', () => {
     const auto = (id: string, autoAccepted: boolean) => ({ ...order(id, 'ACCEPTED', 'ACCEPTED'), autoAccepted }) as IntakeOrder;
     expect(newlyAutoAcceptedIds([auto('A', true), auto('B', true), auto('C', false)], new Set(['A']))).toEqual(['B']);
+  });
+  it('never offers a ready time over 240 minutes', () => {
+    expect(prepChoices(220)).toEqual([220, 230, 240]);
+    expect(prepChoices(20)).toEqual([20, 30, 40, 50]);
+  });
+
+  it('shows an order being accepted as in progress', () => {
+    const out = withPendingAccepts(
+      [order('P1', 'PLACED', 'PLACED'), order('P2', 'PLACED', 'PLACED')],
+      new Map([['P1', { prepMinutes: 40, atMs: Date.parse('2026-10-05T10:00:00.000Z') }]]),
+    );
+    expect(out[0]).toMatchObject({
+      state: 'ACCEPTED',
+      displayState: 'IN_PREPARATION',
+      prepMinutes: 40,
+      readyAt: '2026-10-05T10:40:00.000Z',
+    });
+    expect(out[1].state).toBe('PLACED');
+    expect(groupQueue(out).inProgress.map((o) => o.id)).toEqual(['P1']);
+    expect(hasWaitingOrders([out[0]])).toBe(false);
+  });
+
+  it('a pending accept on an order no longer waiting is ignored', () => {
+    const out = withPendingAccepts([order('R1', 'REJECTED', 'REJECTED')], new Map([['R1', { prepMinutes: 20, atMs: 0 }]]));
+    expect(out[0].state).toBe('REJECTED');
+  });
+
+  it('forgets accepts the server has settled', () => {
+    const m = new Map([
+      ['P1', { prepMinutes: 20, atMs: 0 }],
+      ['A1', { prepMinutes: 20, atMs: 0 }],
+    ]);
+    const pruned = pruneSettledAccepts(m, [order('P1', 'PLACED', 'PLACED'), order('A1', 'ACCEPTED', 'IN_PREPARATION')], 1_000);
+    expect([...pruned.keys()]).toEqual(['P1']);
+    const k = new Map([['P1', { prepMinutes: 20, atMs: 0 }]]);
+    expect(pruneSettledAccepts(k, [order('P1', 'PLACED', 'PLACED')], 1_000)).toBe(k);
+  });
+
+  it('a pending accept older than a minute is dropped', () => {
+    const m = new Map([['P1', { prepMinutes: 20, atMs: 0 }]]);
+    const waiting = [order('P1', 'PLACED', 'PLACED')];
+    expect(pruneSettledAccepts(m, waiting, 61_000).size).toBe(0);
+    expect(pruneSettledAccepts(m, waiting, 60_000).size).toBe(1);
+  });
+
+  it('a failed accept is removed', () => {
+    const m = new Map([['P1', { prepMinutes: 20, atMs: 0 }]]);
+    expect(withoutPendingAccept(m, 'P1').size).toBe(0);
+    expect(withoutPendingAccept(m, 'X')).toBe(m);
   });
 });

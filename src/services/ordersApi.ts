@@ -43,19 +43,38 @@ export type IntakeOrder = OrderResponse & {
 
 export type FulfilmentModeKey = 'collection' | 'delivery' | 'dine_in';
 
+export type WeekDayKey = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
+export type WeeklyHoursDto = Record<WeekDayKey, { open: string; close: string }[]>;
+
+export interface BusyStateDto {
+  active: boolean;
+  extraMinutes: number;
+}
+
 export interface OrderQueueDto {
   serverTime: string;
   timezone: string;
   defaultPrepMinutes: Record<FulfilmentModeKey, number>;
+  // Absent when talking to a backend from before busy mode
+  busy?: BusyStateDto;
   orders: IntakeOrder[];
 }
 
 export interface OrderSettingsDto {
   autoRejectMinutes: number;
   alertEmail: string | null;
-  autoAccept?: boolean;
-  dineIn?: boolean;
+  autoAccept: boolean;
+  dineIn: boolean;
+  autoAcceptHours: WeeklyHoursDto | null;
+  prepMinutes: Record<FulfilmentModeKey, number>;
+  lastOrdersMinutes: number | null;
+  busyExtraMinutes: number;
 }
+
+// Every field is optional: the server keeps whatever is not sent
+export type UpdateOrderSettingsBody = Partial<Omit<OrderSettingsDto, 'prepMinutes'>> & {
+  prepMinutes?: Partial<Record<FulfilmentModeKey, number>>;
+};
 
 interface OrderActionArg {
   shopId: string;
@@ -139,12 +158,32 @@ export const ordersApi = api.injectEndpoints({
         url: `/shops/${shopId}/orders/${orderId}/documents/${documentId}`,
       }),
     }),
-    updateOrderSettings: build.mutation<OrderSettingsDto, { shopId: string; body: OrderSettingsDto }>({
+    updateOrderSettings: build.mutation<OrderSettingsDto, { shopId: string; body: UpdateOrderSettingsBody }>({
       query: ({ shopId, body }) => ({
         url: `/shops/${shopId}/order-settings`,
         method: 'PUT',
         body,
       }),
+    }),
+    setBusyMode: build.mutation<BusyStateDto, { shopId: string; on: boolean }>({
+      query: ({ shopId, on }) => ({
+        url: `/shops/${shopId}/busy-mode`,
+        method: 'PUT',
+        body: { on },
+      }),
+      invalidatesTags: (_r, _e, { shopId }) => [{ type: 'Orders' as const, id: `QUEUE-${shopId}` }],
+      onQueryStarted: async ({ shopId }, { dispatch, queryFulfilled }) => {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(
+            ordersApi.util.updateQueryData('getOrderQueue', { shopId }, (draft) => {
+              draft.busy = data;
+            }),
+          );
+        } catch {
+          // The button shows the error
+        }
+      },
     }),
   }),
 });
@@ -158,6 +197,7 @@ export const {
   useRefundOrderMutation,
   useGetOrderDocumentMutation,
   useUpdateOrderSettingsMutation,
+  useSetBusyModeMutation,
 } = ordersApi;
 
 const BOARD_STATES = ['PLACED', 'ACCEPTED', 'READY'];

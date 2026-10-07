@@ -23,15 +23,9 @@ export function DineInCard({ shop, onRefetch }: Props) {
     if (!shop.id) return;
     setMessage(null);
     try {
-      // The endpoint saves the whole record, so send the server's current values for the alert fields.
       await updateOrderSettings({
         shopId: shop.id,
-        body: {
-          autoRejectMinutes: shop.orderSettings?.autoRejectMinutes ?? 10,
-          alertEmail: shop.orderSettings?.alertEmail ?? null,
-          autoAccept: shop.orderSettings?.autoAccept ?? true,
-          dineIn,
-        },
+        body: { dineIn },
       }).unwrap();
       setDineInState(null);
       onRefetch();
