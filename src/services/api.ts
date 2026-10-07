@@ -245,6 +245,10 @@ const injectedRtkApi = api.injectEndpoints({
         method: 'POST',
         body: { planId, billingInterval },
       }),
+      invalidatesTags: (_r, _e, { shopId }) => [
+        { type: 'Subscriptions' as const, id: shopId },
+        { type: 'Subscriptions' as const, id: `LIMIT-${shopId}` },
+      ],
     }),
     cancelShopSubscription: build.mutation<CancelShopSubscriptionApiResponse, CancelShopSubscriptionApiArg>({
       query: ({ shopId }) => ({
@@ -1347,6 +1351,12 @@ export type ShopSubscriptionResponse = {
   overriddenBy: string | null;
   overrideReason: string | null;
   overrideExpiresAt: string | null;
+  scheduledChange?: {
+    planId: string;
+    billingInterval: 'monthly' | 'yearly';
+    effectiveAt: string;
+  } | null;
+  paymentFailedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -1359,6 +1369,8 @@ export type GetShopSubscriptionApiResponse = {
     limits: Record<string, number>;
     limitOverrideActive: boolean;
     planOverrideExpired: boolean;
+    graceEndsAt?: string | null;
+    droppedForNonPayment?: boolean;
   };
 };
 export type GetShopSubscriptionApiArg = { shopId: string };
@@ -1368,7 +1380,10 @@ export type GetVisiblePlansApiResponse = { plans: PlanResponse[] };
 export type GetPlanPricingApiResponse = PlanPricingResponse[];
 export type GetPlanPricingApiArg = { planId: string };
 
-export type CreateSubscriptionCheckoutApiResponse = { url: string };
+export type CreateSubscriptionCheckoutApiResponse =
+  | { kind: 'checkout'; url: string }
+  | { kind: 'applied'; planId: string }
+  | { kind: 'scheduled'; planId: string; effectiveAt: string };
 export type CreateSubscriptionCheckoutApiArg = {
   shopId: string;
   planId: string;

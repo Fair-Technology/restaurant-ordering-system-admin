@@ -11,6 +11,7 @@ const status = (over: Partial<OrderLimitStatusDto>): OrderLimitStatusDto => ({
   limit: 30,
   warningLevel: 0,
   limitReached: false,
+  payment: { inGrace: false, graceEndsAt: null, droppedForNonPayment: false },
   ...over,
 });
 
