@@ -44,12 +44,19 @@
     "upgrading": "Redirecting to checkout...",
     "downgrade": "Downgrade",
     "cancelSubscription": "Cancel Subscription",
-    "cancelScheduled": "Your subscription cancels on {{date}}. You'll revert to Free after that.",
+    "cancelScheduled": "Your subscription cancels on {{date}}. You'll move to the free plan after that.",
     "keepPlan": "Keep Plan",
     "resuming": "Resuming…",
     "cancellingSubscription": "Cancelling…",
     "cancelSuccess": "Subscription scheduled for cancellation.",
-    "resumeSuccess": "Cancellation reversed. Your plan will renew as usual."
+    "resumeSuccess": "Cancellation reversed. Your plan will renew as usual.",
+    "upgradeApplied": "Your new plan is active now.",
+    "downgradeBlocked": "Remove staff logins first: this plan allows {{n}}.",
+    "changeScheduled": "You move to {{plan}} on {{date}}. Until then your current plan stays.",
+    "keepCurrentPlan": "Keep current plan",
+    "paymentFailed": "Your last payment failed. Update your card by {{date}} to keep your plan.",
+    "updateCard": "Update card",
+    "payNow": "Pay now"
   },
   "auth": {
     "adminPortal": "Admin Portal",
@@ -707,6 +714,8 @@
     "upgrade": "Upgrade",
     "askOwner": "Ask the owner to upgrade.",
     "usageLine": "{{count}} of {{limit}} orders used this month",
-    "usageUnlimited": "{{count}} orders this month (unlimited)"
+    "usageUnlimited": "{{count}} orders this month (unlimited)",
+    "paymentGrace": "Payment failed. Your plan stays until {{date}}.",
+    "paymentDropped": "Payment still missing: your shop is on the free plan. Pay to restore everything at once."
   }
 }
