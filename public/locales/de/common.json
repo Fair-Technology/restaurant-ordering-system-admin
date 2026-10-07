@@ -49,11 +49,7 @@
     "resuming": "Wird fortgesetzt…",
     "cancellingSubscription": "Wird gekündigt…",
     "cancelSuccess": "Abonnement zur Kündigung vorgemerkt.",
-    "resumeSuccess": "Kündigung zurückgezogen. Ihr Plan verlängert sich wie gewohnt.",
-    "deactivatedBanner": "Ihr Shop wurde deaktiviert, da Ihre aktiven Produkte das Limit des kostenlosen Plans überschreiten. Deaktivieren Sie Produkte, um unter das Limit zu kommen, und klicken Sie dann auf Reaktivieren.",
-    "reactivate": "Shop reaktivieren",
-    "reactivating": "Wird reaktiviert…",
-    "reactivateSuccess": "Shop erfolgreich reaktiviert."
+    "resumeSuccess": "Kündigung zurückgezogen. Ihr Plan verlängert sich wie gewohnt."
   },
   "auth": {
     "adminPortal": "Admin-Portal",
@@ -546,7 +542,8 @@
     "submit": "Anmelden",
     "failed": "Benutzername oder Passwort falsch.",
     "locked": "Zu viele Versuche. Bitte in 15 Minuten erneut versuchen oder den Inhaber bitten, das Passwort zurückzusetzen.",
-    "signOut": "Abmelden"
+    "signOut": "Abmelden",
+    "seatSuspended": "Dieser Zugang ist pausiert, weil der Tarif weniger Mitarbeiter-Zugänge erlaubt. Bitte wenden Sie sich an den Inhaber."
   },
   "categories": {
     "addCategory": "+ Neue Kategorie",
@@ -703,5 +700,13 @@
     "taxNumber": "Steuernummer für Rechnungen",
     "taxNumberHelp": "Steht nur auf Ihren Rechnungen, nie im öffentlichen Impressum. Rechnungen brauchen diese oder Ihre USt-IdNr.",
     "taxIdMissing": "Ohne Steuernummer oder USt-IdNr. können keine Rechnungen erstellt werden und das Restaurant kann nicht live gehen."
+  },
+  "orderLimit": {
+    "bannerWarning": "{{count}} von {{limit}} Bestellungen in diesem Monat genutzt ({{percent}} %). Bei {{limit}} pausieren Online-Bestellungen bis Monatsende.",
+    "bannerStop": "Bestelllimit erreicht: {{count}} von {{limit}} Bestellungen in diesem Monat. Ihr Shop nimmt keine Online-Bestellungen an.",
+    "upgrade": "Upgrade",
+    "askOwner": "Bitten Sie den Inhaber um ein Upgrade.",
+    "usageLine": "{{count}} von {{limit}} Bestellungen in diesem Monat genutzt",
+    "usageUnlimited": "{{count}} Bestellungen in diesem Monat (unbegrenzt)"
   }
 }

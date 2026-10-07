@@ -260,13 +260,6 @@ const injectedRtkApi = api.injectEndpoints({
       }),
       invalidatesTags: (_r, _e, { shopId }) => [{ type: 'Subscriptions' as const, id: shopId }],
     }),
-    reactivateShop: build.mutation<ReactivateShopApiResponse, ReactivateShopApiArg>({
-      query: ({ shopId }) => ({
-        url: `/shops/${shopId}/reactivate`,
-        method: 'POST',
-      }),
-      invalidatesTags: (_r, _e, { shopId }) => [{ type: 'Shops' as const, id: shopId }],
-    }),
     createOrder: build.mutation<CreateOrderApiResponse, CreateOrderApiArg>({
       query: (queryArg) => ({
         url: `/orders`,
@@ -625,8 +618,6 @@ export type ShopResponse = {
   isPaused?: boolean;
   /** Message shown when shop is paused */
   pausedMessage?: string;
-  /** Whether shop is deactivated because active products exceed the free plan limit */
-  isDeactivatedDueToLimits?: boolean;
   /** Shop currency (ISO code) */
   currency?: string;
   /** Shop timezone */
@@ -1363,6 +1354,12 @@ export type ShopSubscriptionResponse = {
 export type GetShopSubscriptionApiResponse = {
   subscription: ShopSubscriptionResponse;
   plan: PlanResponse | null;
+  entitlements?: {
+    planId: string;
+    limits: Record<string, number>;
+    limitOverrideActive: boolean;
+    planOverrideExpired: boolean;
+  };
 };
 export type GetShopSubscriptionApiArg = { shopId: string };
 
@@ -1398,8 +1395,6 @@ export type ResumeShopSubscriptionApiResponse = {
 };
 export type ResumeShopSubscriptionApiArg = { shopId: string };
 
-export type ReactivateShopApiResponse = { id: string; isDeactivatedDueToLimits: boolean };
-export type ReactivateShopApiArg = { shopId: string };
 
 export type GoLiveCriterion = {
   key: string;
@@ -1564,7 +1559,6 @@ export const {
   useCreateSubscriptionCheckoutMutation,
   useCancelShopSubscriptionMutation,
   useResumeShopSubscriptionMutation,
-  useReactivateShopMutation,
   useGetGoLiveStatusQuery,
   useLazyGetGoLiveStatusQuery,
   useCreateStripeAccountSessionMutation,

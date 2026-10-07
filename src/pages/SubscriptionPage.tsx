@@ -12,6 +12,8 @@ import {
   useResumeShopSubscriptionMutation,
 } from '../services/api';
 import type { PlanResponse } from '../services/api';
+import { useGetOrderLimitQuery } from '../services/subscriptionApi';
+import { currentPlanIdOf, isFreePlan } from '../features/subscription/planDisplay';
 import { MySpinner } from '../components/ui/MySpinner';
 
 // Taglines shown beneath each plan name, indexed by sort position
@@ -86,7 +88,7 @@ function PlanCard({
     (p) => p.currency.toUpperCase() === currency.toUpperCase(),
   );
 
-  const isFree = plan.internalKey === 'free';
+  const isFree = isFreePlan(plan);
   const tagline = PLAN_TAGLINES[index] ?? 'The right plan for your business.';
 
   let priceDisplay = '';
@@ -220,6 +222,7 @@ export function SubscriptionPage() {
   const isOwner = (shop?.callerPermissions ?? []).includes('manage_billing');
 
   const subscription = subscriptionData?.subscription;
+  const { data: limit } = useGetOrderLimitQuery({ shopId: shopId! });
 
   async function handleUpgrade(planId: string) {
     if (!shopId) return;
@@ -269,7 +272,8 @@ export function SubscriptionPage() {
   const currency = shop?.currency ?? 'USD';
   const plans = plansData?.plans ?? [];
   const isCancelPending = subscription?.cancelAtPeriodEnd === true;
-  const currentPlan = plans.find((p) => p.id === subscription?.planId);
+  const currentPlanId = currentPlanIdOf(subscriptionData);
+  const currentPlan = plans.find((p) => p.id === currentPlanId);
 
   return (
     <div className="flex flex-col gap-6">
@@ -334,6 +338,14 @@ export function SubscriptionPage() {
         </div>
       )}
 
+      {limit && (
+        <p className="text-sm text-gray-600">
+          {limit.limit === null
+            ? t('orderLimit.usageUnlimited', { count: limit.acceptedOrderCount })
+            : t('orderLimit.usageLine', { count: limit.acceptedOrderCount, limit: limit.limit })}
+        </p>
+      )}
+
       {/* Plan cards */}
       {plans.length > 0 && (
         <div className="flex gap-4 items-stretch">
@@ -343,7 +355,7 @@ export function SubscriptionPage() {
               plan={plan}
               index={index}
               currency={currency}
-              isCurrentPlan={subscription?.planId === plan.id}
+              isCurrentPlan={currentPlanId === plan.id}
               isDowngrade={
                 currentPlan !== undefined &&
                 plan.sortOrder < currentPlan.sortOrder &&

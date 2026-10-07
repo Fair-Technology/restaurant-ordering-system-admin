@@ -36,7 +36,13 @@ export function StaffLoginPage() {
       navigate(`/shops/${result.shopId}/orders`, { replace: true });
     } catch (err) {
       const code = (err as { data?: { error?: string } })?.data?.error;
-      setError(code === 'ACCOUNT_LOCKED' ? t('staffLogin.locked') : t('staffLogin.failed'));
+      setError(
+        code === 'ACCOUNT_LOCKED'
+          ? t('staffLogin.locked')
+          : code === 'SEAT_SUSPENDED'
+            ? t('staffLogin.seatSuspended')
+            : t('staffLogin.failed'),
+      );
     }
   };
 
