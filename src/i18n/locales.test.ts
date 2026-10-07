@@ -7,6 +7,7 @@ import { ORDER_DISPLAY_STATES } from '../features/orders/orderState';
 import { REJECT_REASONS } from '../features/orders/intake';
 import { PAYMENT_STATUSES } from '../features/orders/refunds';
 import { COVER_IMAGE_FILE_ERRORS } from '../features/shops/coverImage';
+import { AUTO_ACCEPT_CHOICES } from '../features/shops/kitchenSettings';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -56,6 +57,13 @@ describe('locales', () => {
     for (const r of REJECT_REASONS) {
       expect(en).toHaveProperty(`orders.rejectReason.${r}`);
       expect(de).toHaveProperty(`orders.rejectReason.${r}`);
+    }
+  });
+
+  it('every auto-accept choice is labelled', () => {
+    for (const c of AUTO_ACCEPT_CHOICES) {
+      expect(en).toHaveProperty(`shops.autoAcceptChoice.${c}`);
+      expect(de).toHaveProperty(`shops.autoAcceptChoice.${c}`);
     }
   });
 
