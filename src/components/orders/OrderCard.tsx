@@ -20,6 +20,9 @@ interface Props {
   nowMs: number;
   defaultPrepMinutes: number;
   timeZone: string;
+  pendingAccept: boolean;
+  onAcceptStart: (orderId: string, prepMinutes: number) => void;
+  onAcceptFailed: (orderId: string) => void;
   onFailed: () => void;
 }
 
@@ -29,7 +32,17 @@ function formatTime(iso: string, timeZone: string): string {
   return new Date(iso).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', timeZone });
 }
 
-export function OrderCard({ shopId, order, nowMs, defaultPrepMinutes, timeZone, onFailed }: Props) {
+export function OrderCard({
+  shopId,
+  order,
+  nowMs,
+  defaultPrepMinutes,
+  timeZone,
+  pendingAccept,
+  onAcceptStart,
+  onAcceptFailed,
+  onFailed,
+}: Props) {
   const { t, i18n } = useTranslation();
   const toast = useToast();
   const [panel, setPanel] = useState<Panel>('none');
@@ -48,6 +61,20 @@ export function OrderCard({ shopId, order, nowMs, defaultPrepMinutes, timeZone, 
       await action();
       setPanel('none');
     } catch {
+      toast.error(t('orders.actionFailed'));
+      onFailed();
+    }
+  };
+
+  // The board shows the card as accepted from the first tap, so this card may be replaced by one in
+  // another column before the server answers. Results therefore go only through the parent callbacks.
+  const accept = async (minutes: number) => {
+    onAcceptStart(order.id, minutes);
+    try {
+      await acceptOrder({ shopId, orderId: order.id, prepMinutes: minutes }).unwrap();
+      setPanel('none');
+    } catch {
+      onAcceptFailed(order.id);
       toast.error(t('orders.actionFailed'));
       onFailed();
     }
@@ -143,7 +170,7 @@ export function OrderCard({ shopId, order, nowMs, defaultPrepMinutes, timeZone, 
                   size="lg"
                   className={touch}
                   disabled={busy}
-                  onClick={() => void run(() => acceptOrder({ shopId, orderId: order.id, prepMinutes: minutes }).unwrap())}
+                  onClick={() => void accept(minutes)}
                 >
                   {t('orders.acceptReadyIn', { minutes })}
                 </MyButton>
@@ -179,10 +206,11 @@ export function OrderCard({ shopId, order, nowMs, defaultPrepMinutes, timeZone, 
           {order.readyAt && (
             <div className="text-sm font-medium text-gray-800">{t('orders.readyAt', { time: formatTime(order.readyAt, timeZone) })}</div>
           )}
+          {pendingAccept && <div className="text-sm text-gray-500">{t('orders.acceptPending')}</div>}
           <MyButton
             size="lg"
             className={`w-full gap-2 ${touch}`}
-            disabled={busy}
+            disabled={busy || pendingAccept}
             onClick={() => void run(() => markReady({ shopId, orderId: order.id }).unwrap())}
           >
             <PackageCheck size={18} />
