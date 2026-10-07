@@ -22,6 +22,8 @@ import { CurrencyInput } from '../components/ui/CurrencyInput';
 import { useToast } from '../contexts/ToastContext';
 import { PaymentsCard } from '../components/shop/PaymentsCard';
 import { OrderAlertsCard } from '../components/shop/OrderAlertsCard';
+import { AutoAcceptCard } from '../components/shop/AutoAcceptCard';
+import { KitchenTimingCard } from '../components/shop/KitchenTimingCard';
 import { DineInCard } from '../components/shop/DineInCard';
 import { accentContrastOnWhite, contrastRatio } from '../utils/contrast';
 import { useShopReferenceLists } from '../features/menu/useShopReferenceLists';
@@ -774,6 +776,12 @@ export function ShopSettingsPage() {
 
       {/* Order alerts card */}
       <OrderAlertsCard shop={shop} onRefetch={refetch} />
+
+      {/* Automatic acceptance card */}
+      <AutoAcceptCard shop={shop} onRefetch={refetch} />
+
+      {/* Kitchen timing card */}
+      <KitchenTimingCard shop={shop} onRefetch={refetch} />
 
       {/* Dine in card */}
       <DineInCard shop={shop} onRefetch={refetch} />
