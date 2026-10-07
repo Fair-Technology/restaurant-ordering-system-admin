@@ -27,8 +27,57 @@ export function formatCountdown(seconds: number): string {
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
 }
 
+export const MAX_READY_MINUTES = 240;
+export const PENDING_ACCEPT_MAX_MS = 60_000;
+
 export function prepChoices(defaultMinutes: number): number[] {
-  return [defaultMinutes, defaultMinutes + 10, defaultMinutes + 20, defaultMinutes + 30];
+  return [defaultMinutes, defaultMinutes + 10, defaultMinutes + 20, defaultMinutes + 30].filter(
+    (m) => m <= MAX_READY_MINUTES,
+  );
+}
+
+export interface PendingAccept {
+  prepMinutes: number;
+  atMs: number;
+}
+
+/** Shows an order staff just accepted as in progress while the server is still taking the payment. */
+export function withPendingAccepts(orders: IntakeOrder[], pending: ReadonlyMap<string, PendingAccept>): IntakeOrder[] {
+  if (pending.size === 0) return orders;
+  return orders.map((o) => {
+    const p = pending.get(o.id);
+    if (!p || o.state !== 'PLACED') return o;
+    return {
+      ...o,
+      state: 'ACCEPTED' as const,
+      displayState: 'IN_PREPARATION' as const,
+      prepMinutes: p.prepMinutes,
+      acceptedAt: new Date(p.atMs).toISOString(),
+      readyAt: new Date(p.atMs + p.prepMinutes * 60_000).toISOString(),
+    };
+  });
+}
+
+/** Keeps only pending accepts still waiting on the server and younger than a minute. Returns the same map when nothing changed. */
+export function pruneSettledAccepts(
+  pending: ReadonlyMap<string, PendingAccept>,
+  orders: IntakeOrder[],
+  nowMs: number,
+): ReadonlyMap<string, PendingAccept> {
+  const waiting = new Set(orders.filter((o) => o.state === 'PLACED').map((o) => o.id));
+  const keep = [...pending].filter(([id, p]) => waiting.has(id) && nowMs - p.atMs <= PENDING_ACCEPT_MAX_MS);
+  return keep.length === pending.size ? pending : new Map(keep);
+}
+
+/** Removes one pending accept (the accept call failed). Returns the same map if the id was absent. */
+export function withoutPendingAccept(
+  pending: ReadonlyMap<string, PendingAccept>,
+  orderId: string,
+): ReadonlyMap<string, PendingAccept> {
+  if (!pending.has(orderId)) return pending;
+  const next = new Map(pending);
+  next.delete(orderId);
+  return next;
 }
 
 export type ConnectionState = 'connecting' | 'connected' | 'offline';
