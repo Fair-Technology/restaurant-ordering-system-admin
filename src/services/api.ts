@@ -627,7 +627,16 @@ export type ShopResponse = {
   /** Shop timezone */
   timezone?: string;
   /** Order alert settings (absent until first saved) */
-  orderSettings?: { autoRejectMinutes: number; alertEmail: string | null; autoAccept?: boolean; dineIn?: boolean };
+  orderSettings?: {
+    autoRejectMinutes: number;
+    alertEmail: string | null;
+    autoAccept?: boolean;
+    dineIn?: boolean;
+    autoAcceptHours?: Record<'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun', { open: string; close: string }[]> | null;
+    prepMinutes?: Partial<Record<'collection' | 'delivery' | 'dine_in', number>>;
+    lastOrdersMinutes?: number | null;
+    busyExtraMinutes?: number;
+  };
   /** Minimum order amount in cents */
   minOrderAmountCents?: number;
   /** Shop address */
