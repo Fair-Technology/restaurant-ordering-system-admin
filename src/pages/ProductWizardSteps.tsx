@@ -10,7 +10,7 @@ import { MyInput, MyTextarea } from '../components/ui/MyInput';
 import { CurrencyInput } from '../components/ui/CurrencyInput';
 import { useCreateCategoryMutation } from '../services/api';
 import type { ReferenceEntry, ReferenceListsResponse, SpiceLevel, TranslationMap } from '../services/api';
-import { effectiveTaxClassId, isFoodInfoDeclared, labelFor, taxClassOptionLabel, toggleId } from '../features/menu/foodInfo';
+import { effectiveTaxClassId, MODE_ORDER, isFoodInfoDeclared, labelFor, taxClassOptionLabel, toggleId, toggleMode } from '../features/menu/foodInfo';
 import type { FoodInfo } from '../features/menu/foodInfo';
 
 // ── Shared types ──────────────────────────────────────────────────────────────
@@ -357,6 +357,22 @@ export function StepFoodInfo({ foodInfo, setFoodInfo, refs, showOptional }: Step
           />
         </>
       )}
+
+      <fieldset className="space-y-2">
+        <legend className="text-sm font-medium text-gray-700">{t('products.notOfferedFor')}</legend>
+        <p className="text-xs text-gray-500">{t('products.notOfferedForHelp')}</p>
+        {MODE_ORDER.map((m) => (
+          <label key={m} className="flex items-center gap-3 text-sm text-gray-800">
+            <input
+              type="checkbox"
+              className="h-4 w-4"
+              checked={foodInfo.unavailableModes.includes(m)}
+              onChange={() => setFoodInfo({ ...foodInfo, unavailableModes: toggleMode(foodInfo.unavailableModes, m) })}
+            />
+            <span>{t(`orders.fulfilment.${m}`)}</span>
+          </label>
+        ))}
+      </fieldset>
     </div>
   );
 }
