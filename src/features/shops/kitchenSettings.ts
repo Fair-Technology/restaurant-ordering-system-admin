@@ -27,6 +27,7 @@ export function autoAcceptBody(choice: AutoAcceptChoice, week: WeeklyHoursDto): 
 
 export interface KitchenTiming {
   collection: number;
+  delivery: number;
   dineIn: number;
   lastOrdersMinutes: number | null;
   busyExtraMinutes: number;
@@ -35,6 +36,7 @@ export interface KitchenTiming {
 export function kitchenTimingOf(s: StoredSettings): KitchenTiming {
   return {
     collection: s?.prepMinutes?.collection ?? 20,
+    delivery: s?.prepMinutes?.delivery ?? 45,
     dineIn: s?.prepMinutes?.dine_in ?? 20,
     lastOrdersMinutes: s?.lastOrdersMinutes ?? null,
     busyExtraMinutes: s?.busyExtraMinutes ?? 20,
@@ -43,7 +45,7 @@ export function kitchenTimingOf(s: StoredSettings): KitchenTiming {
 
 export function kitchenTimingBody(k: KitchenTiming): UpdateOrderSettingsBody {
   return {
-    prepMinutes: { collection: k.collection, dine_in: k.dineIn },
+    prepMinutes: { collection: k.collection, delivery: k.delivery, dine_in: k.dineIn },
     lastOrdersMinutes: k.lastOrdersMinutes,
     busyExtraMinutes: k.busyExtraMinutes,
   };

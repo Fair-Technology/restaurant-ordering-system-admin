@@ -33,7 +33,7 @@ describe('kitchen settings helpers', () => {
   });
 
   it('reads kitchen timing with defaults', () => {
-    expect(kitchenTimingOf(undefined)).toEqual({ collection: 20, dineIn: 20, lastOrdersMinutes: null, busyExtraMinutes: 20 });
+    expect(kitchenTimingOf(undefined)).toEqual({ collection: 20, delivery: 45, dineIn: 20, lastOrdersMinutes: null, busyExtraMinutes: 20 });
     expect(
       kitchenTimingOf({
         autoRejectMinutes: 10,
@@ -42,12 +42,12 @@ describe('kitchen settings helpers', () => {
         lastOrdersMinutes: 0,
         busyExtraMinutes: 30,
       }),
-    ).toEqual({ collection: 25, dineIn: 20, lastOrdersMinutes: 0, busyExtraMinutes: 30 });
+    ).toEqual({ collection: 25, delivery: 45, dineIn: 20, lastOrdersMinutes: 0, busyExtraMinutes: 30 });
   });
 
   it('builds the kitchen timing body', () => {
-    expect(kitchenTimingBody({ collection: 25, dineIn: 30, lastOrdersMinutes: null, busyExtraMinutes: 15 })).toEqual({
-      prepMinutes: { collection: 25, dine_in: 30 },
+    expect(kitchenTimingBody({ collection: 25, delivery: 50, dineIn: 30, lastOrdersMinutes: null, busyExtraMinutes: 15 })).toEqual({
+      prepMinutes: { collection: 25, delivery: 50, dine_in: 30 },
       lastOrdersMinutes: null,
       busyExtraMinutes: 15,
     });

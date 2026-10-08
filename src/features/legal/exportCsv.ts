@@ -11,11 +11,21 @@ export function formatAddress(a: ExportOrder['customerAddress']): string {
   return [a.street, cityLine, a.country].filter(Boolean).join(', ');
 }
 
+export function formatDeliveryAddress(a: ExportOrder['deliveryAddress']): string {
+  return a ? `${a.street}, ${a.postcode} ${a.city}` : '';
+}
+
+function deliveryFeeOf(o: ExportOrder): string {
+  const fee = (o.charges ?? []).filter((c) => c.kind === 'delivery_fee');
+  return fee.length === 0 ? '' : centsToDecimal(fee.reduce((sum, c) => sum + c.grossCents, 0));
+}
+
 export function buildOrdersCsv(e: ShopDataExportDto): string {
   return toCsv(
     [
       'orderRef', 'createdAt', 'state', 'fulfilmentMode', 'paymentMethod', 'paymentStatus',
       'currency', 'subtotal', 'customerName', 'customerEmail', 'customerPhone', 'customerAddress', 'items',
+      'deliveryFee', 'total', 'deliveryAddress',
     ],
     e.orders.map((o) => [
       o.orderRef,
@@ -31,6 +41,9 @@ export function buildOrdersCsv(e: ShopDataExportDto): string {
       o.customerPhone,
       formatAddress(o.customerAddress),
       o.items.map((i) => `${i.quantity}× ${i.productName}`).join(' | '),
+      deliveryFeeOf(o),
+      centsToDecimal(o.totalCents ?? o.subtotalCents),
+      formatDeliveryAddress(o.deliveryAddress),
     ]),
   );
 }

@@ -1,4 +1,4 @@
-import type { LocalizedLabel, ReferenceListsResponse, SpiceLevel } from '../../services/api';
+import type { FulfilmentModeKey, LocalizedLabel, ReferenceListsResponse, SpiceLevel } from '../../services/api';
 
 export interface FoodInfo {
   allergenIds: string[] | null;
@@ -7,6 +7,7 @@ export interface FoodInfo {
   spiceLevel: SpiceLevel | null;
   prepMinutes: number | null;
   taxClassId: string | null;
+  unavailableModes: FulfilmentModeKey[];
 }
 
 export const EMPTY_FOOD_INFO: FoodInfo = {
@@ -16,6 +17,7 @@ export const EMPTY_FOOD_INFO: FoodInfo = {
   spiceLevel: null,
   prepMinutes: null,
   taxClassId: null,
+  unavailableModes: [],
 };
 
 export function foodInfoFromProduct(p: {
@@ -25,6 +27,7 @@ export function foodInfoFromProduct(p: {
   spiceLevel?: SpiceLevel | null;
   prepMinutes?: number | null;
   taxClassId?: string | null;
+  unavailableModes?: FulfilmentModeKey[];
 }): FoodInfo {
   return {
     allergenIds: Array.isArray(p.allergenIds) ? p.allergenIds : null,
@@ -33,7 +36,16 @@ export function foodInfoFromProduct(p: {
     spiceLevel: p.spiceLevel ?? null,
     prepMinutes: p.prepMinutes ?? null,
     taxClassId: p.taxClassId ?? null,
+    unavailableModes: p.unavailableModes ?? [],
   };
+}
+
+export const MODE_ORDER: readonly FulfilmentModeKey[] = ['collection', 'delivery', 'dine_in'];
+
+/** Toggles a way of ordering in the list of modes a dish is hidden for, keeping the fixed order. */
+export function toggleMode(list: readonly FulfilmentModeKey[], mode: FulfilmentModeKey): FulfilmentModeKey[] {
+  const next = list.includes(mode) ? list.filter((m) => m !== mode) : [...list, mode];
+  return MODE_ORDER.filter((m) => next.includes(m));
 }
 
 /** Toggles `id` in `list`. Removing the last remaining id returns to undeclared (`null`), not `[]`. */
