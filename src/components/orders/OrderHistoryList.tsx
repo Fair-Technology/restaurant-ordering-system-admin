@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { formatCents } from '../../utils/money';
 import { useGetOrdersByShopQuery, useGetShopByIdQuery } from '../../services/api';
 import { useGetOrderDocumentMutation, type IntakeOrder } from '../../services/ordersApi';
-import { canRefund } from '../../features/orders/refunds';
+import { canRefund, chargedCents } from '../../features/orders/refunds';
 import { downloadBase64File } from '../../features/files/downloadBase64';
 import { useToast } from '../../contexts/ToastContext';
 import { RefundPanel } from './RefundPanel';
@@ -77,11 +77,17 @@ function OrderRow({ shopId, order, permissions }: OrderRowProps) {
             </span>
           </div>
           <span className="text-sm font-semibold text-gray-900">
-            {formatCurrency(order.subtotalCents, order.currency)}
+            {formatCurrency(chargedCents(order), order.currency)}
           </span>
         </div>
         <div className="mt-1 flex flex-col gap-0.5 text-sm text-gray-500">
           <span>{[order.customerName, order.customerEmail, order.customerPhone].filter(Boolean).join(' · ')}</span>
+          {order.deliveryAddress && (
+            <span>
+              {t('orders.deliverTo')}: {order.deliveryAddress.street}, {order.deliveryAddress.postcode}{' '}
+              {order.deliveryAddress.city}
+            </span>
+          )}
           {address && <span>{`${address.street}, ${address.postcode} ${address.city}, ${address.country}`}</span>}
           <span>{formatDate(order.createdAt)}</span>
         </div>

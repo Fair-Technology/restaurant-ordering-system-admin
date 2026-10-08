@@ -7,7 +7,7 @@ export const PAYMENT_STATUSES = [
   'not_paid_online',
 ] as const;
 
-const REFUNDABLE_STATES = ['ACCEPTED', 'READY', 'COMPLETED'];
+const REFUNDABLE_STATES = ['ACCEPTED', 'READY', 'OUT_FOR_DELIVERY', 'COMPLETED'];
 const REFUNDABLE_PAYMENT_STATUSES = ['paid', 'partially_refunded'];
 
 // '3,50' / '3.50' / '10' -> cents, whatever the UI language (owners in Germany type a comma even in
@@ -20,12 +20,17 @@ export function parseAmountToCents(text: string): number | null {
   return Number.isSafeInteger(cents) && cents > 0 ? cents : null;
 }
 
-export function refundableCents(o: { subtotalCents: number; refundedCents: number }): number {
-  return Math.max(0, o.subtotalCents - o.refundedCents);
+/** What the diner paid: dishes plus delivery fee. Orders from before delivery have no totalCents. */
+export function chargedCents(o: { subtotalCents: number; totalCents?: number }): number {
+  return o.totalCents ?? o.subtotalCents;
+}
+
+export function refundableCents(o: { subtotalCents: number; totalCents?: number; refundedCents: number }): number {
+  return Math.max(0, chargedCents(o) - o.refundedCents);
 }
 
 export function canRefund(
-  o: { state: string; paymentStatus: string; subtotalCents: number; refundedCents: number },
+  o: { state: string; paymentStatus: string; subtotalCents: number; totalCents?: number; refundedCents: number },
   permissions: readonly string[],
 ): boolean {
   return (

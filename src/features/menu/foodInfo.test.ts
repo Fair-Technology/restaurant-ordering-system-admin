@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { effectiveTaxClassId, formatRate, isFoodInfoDeclared, labelFor, taxClassOptionLabel, toggleId } from './foodInfo';
+import { effectiveTaxClassId, formatRate, isFoodInfoDeclared, foodInfoFromProduct, labelFor, taxClassOptionLabel, toggleId, toggleMode } from './foodInfo';
 
 describe('toggleId', () => {
   it('adds to a null list', () => {
@@ -97,5 +97,15 @@ describe('taxClassOptionLabel', () => {
     expect(taxClassOptionLabel('Other', 'unset', refs, 'en')).toBe('Other');
     expect(taxClassOptionLabel('Other', 'nope', refs, 'en')).toBe('Other');
     expect(taxClassOptionLabel('Other', 'food', undefined, 'en')).toBe('Other');
+  });
+});
+
+describe('toggleMode', () => {
+  it('toggles the modes a dish is not offered for', () => {
+    expect(toggleMode([], 'delivery')).toEqual(['delivery']);
+    expect(toggleMode(['delivery'], 'collection')).toEqual(['collection', 'delivery']);
+    expect(toggleMode(['collection', 'delivery'], 'delivery')).toEqual(['collection']);
+    expect(foodInfoFromProduct({}).unavailableModes).toEqual([]);
+    expect(foodInfoFromProduct({ unavailableModes: ['dine_in'] }).unavailableModes).toEqual(['dine_in']);
   });
 });

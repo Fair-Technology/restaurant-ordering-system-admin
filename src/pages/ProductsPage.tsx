@@ -530,6 +530,7 @@ function ProductEditView({
           spiceLevel: foodInfo.spiceLevel,
           prepMinutes: foodInfo.prepMinutes,
           taxClassId: foodInfo.taxClassId,
+          unavailableModes: foodInfo.unavailableModes,
         },
       }).unwrap();
 
@@ -850,6 +851,7 @@ function AddProductModal({ shopId, onClose }: AddProductModalProps) {
           spiceLevel: foodInfo.spiceLevel,
           prepMinutes: foodInfo.prepMinutes,
           taxClassId: foodInfo.taxClassId,
+          unavailableModes: foodInfo.unavailableModes,
         },
       }).unwrap();
 

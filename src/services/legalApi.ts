@@ -115,6 +115,9 @@ export interface ExportOrder {
   payment: { method: string; status: string; stripePaymentIntentId: string | null };
   currency: string;
   subtotalCents: number;
+  totalCents?: number;
+  charges?: { kind: string; grossCents: number }[];
+  deliveryAddress?: { street: string; postcode: string; city: string } | null;
   customerName: string;
   customerEmail: string;
   customerPhone: string;

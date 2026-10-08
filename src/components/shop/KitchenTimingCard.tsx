@@ -17,6 +17,7 @@ const DEFAULT_FIXED_LAST_ORDERS = 20;
 export function KitchenTimingCard({ shop, onRefetch }: Props) {
   const { t } = useTranslation();
   const [collectionState, setCollectionState] = useState<string | null>(null);
+  const [deliveryState, setDeliveryState] = useState<string | null>(null);
   const [dineInState, setDineInState] = useState<string | null>(null);
   const [busyState, setBusyState] = useState<string | null>(null);
   const [fixedState, setFixedState] = useState<boolean | null>(null);
@@ -26,6 +27,7 @@ export function KitchenTimingCard({ shop, onRefetch }: Props) {
 
   const loaded = kitchenTimingOf(shop.orderSettings);
   const collection = collectionState ?? String(loaded.collection);
+  const delivery = deliveryState ?? String(loaded.delivery);
   const dineIn = dineInState ?? String(loaded.dineIn);
   const busy = busyState ?? String(loaded.busyExtraMinutes);
   const fixed = fixedState ?? loaded.lastOrdersMinutes !== null;
@@ -39,12 +41,14 @@ export function KitchenTimingCard({ shop, onRefetch }: Props) {
         shopId: shop.id,
         body: kitchenTimingBody({
           collection: Number(collection),
+          delivery: Number(delivery),
           dineIn: Number(dineIn),
           lastOrdersMinutes: fixed ? Number(lastOrders) : null,
           busyExtraMinutes: Number(busy),
         }),
       }).unwrap();
       setCollectionState(null);
+      setDeliveryState(null);
       setDineInState(null);
       setBusyState(null);
       setFixedState(null);
@@ -68,6 +72,15 @@ export function KitchenTimingCard({ shop, onRefetch }: Props) {
         label={t('shops.kitchenPrepCollection')}
         value={collection}
         onChange={(e) => setCollectionState(e.target.value)}
+      />
+      <MyInput
+        type="number"
+        min={5}
+        max={120}
+        step={1}
+        label={t('shops.kitchenPrepDelivery')}
+        value={delivery}
+        onChange={(e) => setDeliveryState(e.target.value)}
       />
       <MyInput
         type="number"

@@ -35,8 +35,26 @@ describe('export CSVs', () => {
       ],
     });
     expect(csv.split('\r\n')[1]).toBe(
-      'AB3-K7P;2026-10-01T10:00:00Z;COMPLETED;collection;cash;cash_collected;EUR;12,50;Anna;a@x.example;1;;2× Carbonara',
+      'AB3-K7P;2026-10-01T10:00:00Z;COMPLETED;collection;cash;cash_collected;EUR;12,50;Anna;a@x.example;1;;2× Carbonara;;12,50;',
     );
+  });
+
+  it('orders CSV adds the delivery fee, total and address', () => {
+    const csv = buildOrdersCsv({
+      ...base,
+      orders: [
+        {
+          id: 'o3', orderRef: 'EF5-N9R', createdAt: '2026-10-01T10:00:00Z', state: 'COMPLETED',
+          fulfilmentMode: 'delivery', payment: { method: 'card', status: 'paid', stripePaymentIntentId: null },
+          currency: 'EUR', subtotalCents: 1050, totalCents: 1300,
+          charges: [{ kind: 'delivery_fee', grossCents: 250 }],
+          deliveryAddress: { street: 'Teststraße 1', postcode: '10115', city: 'Berlin' },
+          customerName: 'Cy', customerEmail: 'c@x.example', customerPhone: '3',
+          items: [],
+        },
+      ],
+    });
+    expect(csv.split('\r\n')[1]).toMatch(/;2,50;13,00;Teststraße 1, 10115 Berlin$/);
   });
 
   it('orders CSV writes the diner address on one line', () => {

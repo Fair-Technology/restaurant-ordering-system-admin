@@ -2,6 +2,16 @@ import type { IntakeOrder } from '../../services/ordersApi';
 
 export const REJECT_REASONS = ['too_busy', 'item_unavailable', 'closing_soon', 'other'] as const;
 
+export type CardAction = 'markReady' | 'dispatch' | 'handOver' | 'delivered';
+
+/** The kitchen's next button for an order: delivery goes out for delivery instead of ready. */
+export function nextActionFor(o: Pick<IntakeOrder, 'state' | 'fulfilmentMode'>): CardAction | null {
+  if (o.state === 'ACCEPTED') return o.fulfilmentMode === 'delivery' ? 'dispatch' : 'markReady';
+  if (o.state === 'READY') return 'handOver';
+  if (o.state === 'OUT_FOR_DELIVERY') return 'delivered';
+  return null;
+}
+
 export function groupQueue(orders: IntakeOrder[]): {
   waiting: IntakeOrder[];
   inProgress: IntakeOrder[];
@@ -10,7 +20,7 @@ export function groupQueue(orders: IntakeOrder[]): {
   return {
     waiting: orders.filter((o) => o.displayState === 'PLACED'),
     inProgress: orders.filter((o) => o.displayState === 'ACCEPTED' || o.displayState === 'IN_PREPARATION'),
-    ready: orders.filter((o) => o.displayState === 'READY'),
+    ready: orders.filter((o) => o.displayState === 'READY' || o.displayState === 'OUT_FOR_DELIVERY'),
   };
 }
 

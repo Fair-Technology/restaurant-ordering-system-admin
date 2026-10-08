@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   canRefund,
+  chargedCents,
   itemSelectionCents,
   parseAmountToCents,
   refundableCents,
@@ -59,5 +60,16 @@ describe('refund helpers', () => {
       { lineIndex: 1, quantity: 1 },
       { lineIndex: 3, quantity: 2 },
     ]);
+  });
+
+  it('refundable amount includes the delivery fee', () => {
+    expect(refundableCents({ subtotalCents: 1050, totalCents: 1300, refundedCents: 1050 })).toBe(250);
+    expect(
+      canRefund(
+        { state: 'OUT_FOR_DELIVERY', paymentStatus: 'paid', subtotalCents: 1050, totalCents: 1300, refundedCents: 0 },
+        ['refund_orders'],
+      ),
+    ).toBe(true);
+    expect(chargedCents({ subtotalCents: 1050 })).toBe(1050);
   });
 });

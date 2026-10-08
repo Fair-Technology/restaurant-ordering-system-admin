@@ -6,6 +6,7 @@ import {
   groupQueue,
   hasWaitingOrders,
   newlyAutoAcceptedIds,
+  nextActionFor,
   prepChoices,
   pruneSettledAccepts,
   secondsUntil,
@@ -28,6 +29,19 @@ describe('intake helpers', () => {
     expect(g.waiting.map((o) => o.id)).toEqual(['P1', 'P2']);
     expect(g.inProgress.map((o) => o.id)).toEqual(['A1']);
     expect(g.ready.map((o) => o.id)).toEqual(['R1']);
+  });
+
+  it('picks the second button by mode', () => {
+    const o = (state: string, fulfilmentMode: string) => ({ state, fulfilmentMode }) as unknown as IntakeOrder;
+    expect(nextActionFor(o('ACCEPTED', 'collection'))).toBe('markReady');
+    expect(nextActionFor(o('ACCEPTED', 'delivery'))).toBe('dispatch');
+    expect(nextActionFor(o('READY', 'collection'))).toBe('handOver');
+    expect(nextActionFor(o('OUT_FOR_DELIVERY', 'delivery'))).toBe('delivered');
+    expect(nextActionFor(o('PLACED', 'delivery'))).toBeNull();
+  });
+
+  it('orders on their way sit with the ready ones', () => {
+    expect(groupQueue([order('D1', 'OUT_FOR_DELIVERY', 'OUT_FOR_DELIVERY')]).ready.map((o) => o.id)).toEqual(['D1']);
   });
 
   it('knows when orders are waiting', () => {

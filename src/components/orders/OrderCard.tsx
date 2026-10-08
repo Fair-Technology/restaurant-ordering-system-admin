@@ -1,16 +1,18 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Clock, PackageCheck, TriangleAlert } from 'lucide-react';
+import { Clock, PackageCheck, Truck, TriangleAlert } from 'lucide-react';
 import {
   useAcceptOrderMutation,
   useCompleteOrderMutation,
+  useDispatchOrderMutation,
   useMarkOrderReadyMutation,
   useRejectOrderMutation,
   type IntakeOrder,
   type RejectReason,
 } from '../../services/ordersApi';
 import { useToast } from '../../contexts/ToastContext';
-import { REJECT_REASONS, formatCountdown, prepChoices, secondsUntil } from '../../features/orders/intake';
+import { REJECT_REASONS, formatCountdown, nextActionFor, prepChoices, secondsUntil } from '../../features/orders/intake';
+import { chargedCents } from '../../features/orders/refunds';
 import { formatCents } from '../../utils/money';
 import { MyButton } from '../ui/MyButton';
 
@@ -49,8 +51,9 @@ export function OrderCard({
   const [acceptOrder, { isLoading: accepting }] = useAcceptOrderMutation();
   const [rejectOrder, { isLoading: rejecting }] = useRejectOrderMutation();
   const [markReady, { isLoading: marking }] = useMarkOrderReadyMutation();
+  const [dispatchOrder, { isLoading: dispatching }] = useDispatchOrderMutation();
   const [completeOrder, { isLoading: completing }] = useCompleteOrderMutation();
-  const busy = accepting || rejecting || marking || completing;
+  const busy = accepting || rejecting || marking || dispatching || completing;
 
   const money = (cents: number) => formatCents(cents, order.currency, i18n.language);
   const countdown = secondsUntil(order.autoRejectAt, nowMs);
@@ -101,11 +104,16 @@ export function OrderCard({
         </div>
         <div className="text-sm font-medium text-gray-800">
           {order.paymentStatus === 'authorized'
-            ? t('orders.reservedOnline', { amount: money(order.subtotalCents) })
+            ? t('orders.reservedOnline', { amount: money(chargedCents(order)) })
             : order.paymentStatus === 'paid'
-              ? t('orders.paidOnline', { amount: money(order.subtotalCents) })
-              : money(order.subtotalCents)}
+              ? t('orders.paidOnline', { amount: money(chargedCents(order)) })
+              : money(chargedCents(order))}
         </div>
+        {order.fulfilmentMode === 'delivery' && order.deliveryFeeCents != null && (
+          <div className="text-xs text-gray-500">
+            {t('orders.inclDeliveryFee', { amount: money(order.deliveryFeeCents) })}
+          </div>
+        )}
         {order.autoAccepted && (
           <span className="inline-block text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
             {t('orders.autoAccepted')}
@@ -143,6 +151,16 @@ export function OrderCard({
         <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-sm text-amber-900">
           <span className="block text-xs font-semibold">{t('orders.notes')}</span>
           {order.customerNotes}
+        </div>
+      )}
+
+      {order.deliveryAddress && (
+        <div className="bg-sky-50 border border-sky-200 rounded-lg px-3 py-2 text-sm text-sky-900">
+          <span className="block text-xs font-semibold">{t('orders.deliverTo')}</span>
+          {order.deliveryAddress.street}, {order.deliveryAddress.postcode} {order.deliveryAddress.city}
+          <a className="block underline" href={`tel:${order.customerPhone}`}>
+            {order.customerPhone}
+          </a>
         </div>
       )}
 
@@ -204,17 +222,50 @@ export function OrderCard({
       {order.state === 'ACCEPTED' && (
         <div className="space-y-2">
           {order.readyAt && (
-            <div className="text-sm font-medium text-gray-800">{t('orders.readyAt', { time: formatTime(order.readyAt, timeZone) })}</div>
+            <div className="text-sm font-medium text-gray-800">
+              {t(order.fulfilmentMode === 'delivery' ? 'orders.deliverBy' : 'orders.readyAt', {
+                time: formatTime(order.readyAt, timeZone),
+              })}
+            </div>
           )}
           {pendingAccept && <div className="text-sm text-gray-500">{t('orders.acceptPending')}</div>}
+          {nextActionFor(order) === 'dispatch' ? (
+            <MyButton
+              size="lg"
+              className={`w-full gap-2 ${touch}`}
+              disabled={busy || pendingAccept}
+              onClick={() => void run(() => dispatchOrder({ shopId, orderId: order.id }).unwrap())}
+            >
+              <Truck size={18} />
+              {t('orders.dispatch')}
+            </MyButton>
+          ) : (
+            <MyButton
+              size="lg"
+              className={`w-full gap-2 ${touch}`}
+              disabled={busy || pendingAccept}
+              onClick={() => void run(() => markReady({ shopId, orderId: order.id }).unwrap())}
+            >
+              <PackageCheck size={18} />
+              {t('orders.markReady')}
+            </MyButton>
+          )}
+        </div>
+      )}
+
+      {order.state === 'OUT_FOR_DELIVERY' && (
+        <div className="space-y-2">
+          <span className="inline-block text-xs font-medium text-sky-700 bg-sky-50 border border-sky-200 px-2 py-0.5 rounded-full">
+            {t('orders.state.OUT_FOR_DELIVERY')}
+          </span>
           <MyButton
             size="lg"
             className={`w-full gap-2 ${touch}`}
-            disabled={busy || pendingAccept}
-            onClick={() => void run(() => markReady({ shopId, orderId: order.id }).unwrap())}
+            disabled={busy}
+            onClick={() => void run(() => completeOrder({ shopId, orderId: order.id }).unwrap())}
           >
             <PackageCheck size={18} />
-            {t('orders.markReady')}
+            {t('orders.delivered')}
           </MyButton>
         </div>
       )}
