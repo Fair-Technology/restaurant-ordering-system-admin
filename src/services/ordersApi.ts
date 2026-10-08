@@ -26,7 +26,23 @@ export interface OrderRefundLine {
   quantity: number;
 }
 
+export interface DeliveryZoneDto {
+  postcode: string;
+  feeCents: number;
+  minOrderCents: number;
+}
+
+export interface DeliveryAddressDto {
+  street: string;
+  postcode: string;
+  city: string;
+}
+
 export type IntakeOrder = OrderResponse & {
+  // Absent when talking to a backend from before delivery
+  totalCents?: number;
+  deliveryFeeCents?: number | null;
+  deliveryAddress?: DeliveryAddressDto | null;
   autoRejectAt: string | null;
   acceptedAt: string | null;
   prepMinutes: number | null;
@@ -69,6 +85,10 @@ export interface OrderSettingsDto {
   prepMinutes: Record<FulfilmentModeKey, number>;
   lastOrdersMinutes: number | null;
   busyExtraMinutes: number;
+  delivery: boolean;
+  deliveryHours: WeeklyHoursDto | null;
+  deliveryZones: DeliveryZoneDto[];
+  deliveryFeeTaxClassId: string | null;
 }
 
 // Every field is optional: the server keeps whatever is not sent
@@ -120,6 +140,18 @@ export const ordersApi = api.injectEndpoints({
     markOrderReady: build.mutation<IntakeOrder, OrderActionArg>({
       query: ({ shopId, orderId }) => ({
         url: `/shops/${shopId}/orders/${orderId}/ready`,
+        method: 'POST',
+        body: {},
+      }),
+      invalidatesTags: (_r, _e, { shopId }) => [
+        { type: 'Orders' as const, id: `QUEUE-${shopId}` },
+        { type: 'Orders' as const, id: `LIST-${shopId}` },
+      ],
+      onQueryStarted: applyActionToQueue,
+    }),
+    dispatchOrder: build.mutation<IntakeOrder, OrderActionArg>({
+      query: ({ shopId, orderId }) => ({
+        url: `/shops/${shopId}/orders/${orderId}/dispatch`,
         method: 'POST',
         body: {},
       }),
@@ -193,6 +225,7 @@ export const {
   useAcceptOrderMutation,
   useRejectOrderMutation,
   useMarkOrderReadyMutation,
+  useDispatchOrderMutation,
   useCompleteOrderMutation,
   useRefundOrderMutation,
   useGetOrderDocumentMutation,
@@ -200,7 +233,7 @@ export const {
   useSetBusyModeMutation,
 } = ordersApi;
 
-const BOARD_STATES = ['PLACED', 'ACCEPTED', 'READY'];
+const BOARD_STATES = ['PLACED', 'ACCEPTED', 'READY', 'OUT_FOR_DELIVERY'];
 
 /**
  * Moves the card on the kitchen board as soon as the server confirms an action, instead of

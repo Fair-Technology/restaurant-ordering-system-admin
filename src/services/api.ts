@@ -636,6 +636,10 @@ export type ShopResponse = {
     prepMinutes?: Partial<Record<'collection' | 'delivery' | 'dine_in', number>>;
     lastOrdersMinutes?: number | null;
     busyExtraMinutes?: number;
+    delivery?: boolean;
+    deliveryHours?: Record<'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun', { open: string; close: string }[]> | null;
+    deliveryZones?: { postcode: string; feeCents: number; minOrderCents: number }[];
+    deliveryFeeTaxClassId?: string | null;
   };
   /** Minimum order amount in cents */
   minOrderAmountCents?: number;
@@ -961,6 +965,8 @@ export type ProductResponse = {
   spiceLevel?: SpiceLevel | null;
   /** Preparation time in minutes, or null when not set */
   prepMinutes?: number | null;
+  /** Ways of ordering this dish is hidden for (absent = offered everywhere) */
+  unavailableModes?: FulfilmentModeKey[];
   /** Tax class override for this dish, or null to inherit from its category */
   taxClassId?: string | null;
   /** Whether both allergens and additives have been declared */
@@ -1053,6 +1059,8 @@ export type CreateProductRequest = {
   spiceLevel?: SpiceLevel | null;
   /** Preparation time in minutes, or null when not set */
   prepMinutes?: number | null;
+  /** Ways of ordering this dish is hidden for (absent = offered everywhere) */
+  unavailableModes?: FulfilmentModeKey[];
   /** Tax class override for this dish, or null to inherit from its category */
   taxClassId?: string | null;
   /** Whether product is available */
@@ -1104,6 +1112,8 @@ export type UpdateProductRequest = {
   spiceLevel?: SpiceLevel | null;
   /** Preparation time in minutes, or null when not set */
   prepMinutes?: number | null;
+  /** Ways of ordering this dish is hidden for (absent = offered everywhere) */
+  unavailableModes?: FulfilmentModeKey[];
   /** Tax class override for this dish, or null to inherit from its category */
   taxClassId?: string | null;
   /** Whether product is available */
