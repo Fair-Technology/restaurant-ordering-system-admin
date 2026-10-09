@@ -11,7 +11,14 @@ import {
   type RejectReason,
 } from '../../services/ordersApi';
 import { useToast } from '../../contexts/ToastContext';
-import { REJECT_REASONS, formatCountdown, nextActionFor, prepChoices, secondsUntil } from '../../features/orders/intake';
+import {
+  REJECT_REASONS,
+  formatCountdown,
+  nextActionFor,
+  prepChoices,
+  scheduledReadyMs,
+  secondsUntil,
+} from '../../features/orders/intake';
 import { chargedCents } from '../../features/orders/refunds';
 import { formatCents } from '../../utils/money';
 import { MyButton } from '../ui/MyButton';
@@ -93,6 +100,11 @@ export function OrderCard({
   return (
     <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 space-y-3">
       <div className="space-y-1">
+        {order.scheduledFor && (
+          <div className="inline-block rounded-lg bg-violet-100 px-3 py-1 text-sm font-semibold text-violet-900">
+            {t('orders.scheduledFor', { time: formatTime(order.scheduledFor, timeZone) })}
+          </div>
+        )}
         {order.table && (
           <div className="inline-block rounded-lg bg-amber-100 px-3 py-1 text-xl font-bold text-amber-900">
             {t('orders.table', { label: order.table.label })}
@@ -182,17 +194,33 @@ export function OrderCard({
           )}
           {panel === 'accept' && (
             <div className="grid grid-cols-2 gap-2">
-              {prepChoices(defaultPrepMinutes).map((minutes) => (
+              {order.scheduledFor ? (
                 <MyButton
-                  key={minutes}
                   size="lg"
-                  className={touch}
+                  className={`col-span-2 ${touch}`}
                   disabled={busy}
-                  onClick={() => void accept(minutes)}
+                  onClick={() => void accept(defaultPrepMinutes)}
                 >
-                  {t('orders.acceptReadyIn', { minutes })}
+                  {t('orders.acceptScheduled', {
+                    time: formatTime(
+                      new Date(scheduledReadyMs(order.scheduledFor, nowMs, defaultPrepMinutes)).toISOString(),
+                      timeZone,
+                    ),
+                  })}
                 </MyButton>
-              ))}
+              ) : (
+                prepChoices(defaultPrepMinutes).map((minutes) => (
+                  <MyButton
+                    key={minutes}
+                    size="lg"
+                    className={touch}
+                    disabled={busy}
+                    onClick={() => void accept(minutes)}
+                  >
+                    {t('orders.acceptReadyIn', { minutes })}
+                  </MyButton>
+                ))
+              )}
             </div>
           )}
           {panel === 'reject' && (
