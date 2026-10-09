@@ -640,6 +640,7 @@ export type ShopResponse = {
     deliveryHours?: Record<'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun', { open: string; close: string }[]> | null;
     deliveryZones?: { postcode: string; feeCents: number; minOrderCents: number }[];
     deliveryFeeTaxClassId?: string | null;
+    scheduledOrders?: boolean;
   };
   /** Minimum order amount in cents */
   minOrderAmountCents?: number;
