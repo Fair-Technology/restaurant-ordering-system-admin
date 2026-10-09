@@ -88,6 +88,7 @@ function OrderRow({ shopId, order, permissions }: OrderRowProps) {
               {order.deliveryAddress.city}
             </span>
           )}
+          {order.scheduledFor && <span>{t('orders.scheduledFor', { time: formatDate(order.scheduledFor) })}</span>}
           {address && <span>{`${address.street}, ${address.postcode} ${address.city}, ${address.country}`}</span>}
           <span>{formatDate(order.createdAt)}</span>
         </div>
