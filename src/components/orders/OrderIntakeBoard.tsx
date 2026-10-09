@@ -149,6 +149,7 @@ export function OrderIntakeBoard({ shopId }: Props) {
         <UpcomingOrders
           shopId={shopId}
           orders={data.upcoming}
+          capacity={data.capacity ?? null}
           timeZone={data.timezone}
           onFailed={() => void refetch()}
         />

@@ -74,6 +74,11 @@ export interface BusyStateDto {
   extraMinutes: number;
 }
 
+export interface SlotCapacityDto {
+  perSlot: number;
+  taken: Record<string, number>;
+}
+
 export interface OrderQueueDto {
   serverTime: string;
   timezone: string;
@@ -83,6 +88,8 @@ export interface OrderQueueDto {
   orders: IntakeOrder[];
   // Absent when talking to a backend from before scheduled orders
   upcoming?: UpcomingOrder[];
+  // Absent when talking to a backend from before capacity limits; null = no limit
+  capacity?: SlotCapacityDto | null;
 }
 
 export interface OrderSettingsDto {
@@ -99,6 +106,7 @@ export interface OrderSettingsDto {
   deliveryZones: DeliveryZoneDto[];
   deliveryFeeTaxClassId: string | null;
   scheduledOrders: boolean;
+  slotCapacity: number | null;
 }
 
 // Every field is optional: the server keeps whatever is not sent
