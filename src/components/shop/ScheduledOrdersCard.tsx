@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ShopResponse } from '../../services/api';
 import { useUpdateOrderSettingsMutation } from '../../services/ordersApi';
+import { slotCapacityFromInput, slotCapacityInputOf } from '../../features/shops/scheduledSettings';
 import { MyCard } from '../ui/MyCard';
+import { MyInput } from '../ui/MyInput';
 import { MyButton } from '../ui/MyButton';
 
 interface Props {
@@ -13,20 +15,28 @@ interface Props {
 export function ScheduledOrdersCard({ shop, onRefetch }: Props) {
   const { t } = useTranslation();
   const [scheduledState, setScheduledState] = useState<boolean | null>(null);
+  const [capacityState, setCapacityState] = useState<string | null>(null);
   const [message, setMessage] = useState<{ kind: 'saved' | 'failed'; text: string } | null>(null);
   const [updateOrderSettings, { isLoading }] = useUpdateOrderSettingsMutation();
 
   const scheduledOrders = scheduledState ?? shop.orderSettings?.scheduledOrders ?? false;
+  const capacityText = capacityState ?? slotCapacityInputOf(shop.orderSettings);
 
   const handleSave = async () => {
     if (!shop.id) return;
     setMessage(null);
+    const slotCapacity = slotCapacityFromInput(capacityText);
+    if (slotCapacity === 'invalid') {
+      setMessage({ kind: 'failed', text: t('shops.scheduledCapacityError') });
+      return;
+    }
     try {
       await updateOrderSettings({
         shopId: shop.id,
-        body: { scheduledOrders },
+        body: { scheduledOrders, slotCapacity },
       }).unwrap();
       setScheduledState(null);
+      setCapacityState(null);
       onRefetch();
       setMessage({ kind: 'saved', text: t('shops.scheduledSaved') });
     } catch {
@@ -50,6 +60,21 @@ export function ScheduledOrdersCard({ shop, onRefetch }: Props) {
           <span className="block text-gray-600">{t('shops.scheduledLabelHelp')}</span>
         </span>
       </label>
+      {scheduledOrders && (
+        <div className="space-y-1">
+          <MyInput
+            type="number"
+            min={1}
+            max={50}
+            step={1}
+            label={t('shops.scheduledCapacityLabel')}
+            placeholder={t('shops.scheduledCapacityPlaceholder')}
+            value={capacityText}
+            onChange={(e) => setCapacityState(e.target.value)}
+          />
+          <p className="text-xs text-gray-500">{t('shops.scheduledCapacityHelp')}</p>
+        </div>
+      )}
       {message && (
         <p className={`text-sm ${message.kind === 'saved' ? 'text-green-700' : 'text-red-600'}`}>{message.text}</p>
       )}
