@@ -436,6 +436,7 @@
     "spiceNone": "Nicht scharf",
     "prepMinutes": "Zubereitungszeit (Minuten)",
     "notOfferedFor": "Nicht erhältlich bei",
+    "notOfferedForNone": "Bei jeder Bestellart erhältlich",
     "notOfferedForHelp": "Haken Sie eine Bestellart an, um das Gericht dort auszublenden, z. B. Fassbier bei Lieferung.",
     "taxClass": "Steuerklasse",
     "taxClassFromCategory": "Aus der Kategorie ({{label}})",

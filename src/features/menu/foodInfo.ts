@@ -48,6 +48,19 @@ export function toggleMode(list: readonly FulfilmentModeKey[], mode: FulfilmentM
   return MODE_ORDER.filter((m) => next.includes(m));
 }
 
+/** The ways of ordering a dish is hidden for, in the fixed display order. */
+export function unavailableModesInOrder(modes: readonly FulfilmentModeKey[]): FulfilmentModeKey[] {
+  return MODE_ORDER.filter((m) => modes.includes(m));
+}
+
+/** Every day of the week (0 = Sunday), the starting point for a new availability schedule. */
+export const ALL_WEEKDAYS: readonly number[] = [0, 1, 2, 3, 4, 5, 6];
+
+/** Days to start the schedule dialog with: the saved ones, or every day when none are saved, so the buttons match what Save checks. */
+export function initialScheduleDays(saved: readonly number[] | undefined | null): number[] {
+  return saved && saved.length > 0 ? [...saved] : [...ALL_WEEKDAYS];
+}
+
 /** Toggles `id` in `list`. Removing the last remaining id returns to undeclared (`null`), not `[]`. */
 export function toggleId(list: string[] | null, id: string): string[] | null {
   const base = list ?? [];
