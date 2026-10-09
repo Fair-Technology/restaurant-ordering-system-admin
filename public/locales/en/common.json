@@ -489,6 +489,7 @@
     "spiceNone": "Not spicy",
     "prepMinutes": "Preparation time (minutes)",
     "notOfferedFor": "Not offered for",
+    "notOfferedForNone": "Offered for every order type",
     "notOfferedForHelp": "Tick a way of ordering to hide this dish there, e.g. draught beer for delivery.",
     "taxClass": "Tax class",
     "taxClassFromCategory": "From category ({{label}})",

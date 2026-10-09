@@ -26,7 +26,7 @@ import {
   StepIndicator, Step1Basics, StepFoodInfo, StepCategories, Step4Customise, Step5Schedule, Step6Review,
 } from './ProductWizardSteps';
 import { useShopReferenceLists } from '../features/menu/useShopReferenceLists';
-import { EMPTY_FOOD_INFO, effectiveTaxClassId, foodInfoFromProduct, labelFor, taxClassOptionLabel } from '../features/menu/foodInfo';
+import { EMPTY_FOOD_INFO, effectiveTaxClassId, foodInfoFromProduct, initialScheduleDays, labelFor, taxClassOptionLabel } from '../features/menu/foodInfo';
 import type { FoodInfo } from '../features/menu/foodInfo';
 import { countMissingTranslations } from '../features/menu/translations';
 import { isListRefreshing } from '../features/menu/productListStatus';
@@ -1234,7 +1234,7 @@ function ScheduleOfferModal({
     endDate: product.schedule?.endDate ?? '',
     startTime: product.schedule?.startTime ?? '',
     endTime: product.schedule?.endTime ?? '',
-    daysOfWeek: product.schedule?.daysOfWeek ?? [],
+    daysOfWeek: initialScheduleDays(product.schedule?.daysOfWeek),
     offerEnabled: !!(product.schedule?.offerPrice),
     offerPrice: product.schedule?.offerPrice ?? 0,
     offerLabel: product.schedule?.offerLabel ?? '',

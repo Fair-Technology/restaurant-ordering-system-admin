@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { effectiveTaxClassId, formatRate, isFoodInfoDeclared, foodInfoFromProduct, labelFor, taxClassOptionLabel, toggleId, toggleMode } from './foodInfo';
+import { initialScheduleDays, unavailableModesInOrder, effectiveTaxClassId, formatRate, isFoodInfoDeclared, foodInfoFromProduct, labelFor, taxClassOptionLabel, toggleId, toggleMode } from './foodInfo';
 
 describe('toggleId', () => {
   it('adds to a null list', () => {
@@ -107,5 +107,22 @@ describe('toggleMode', () => {
     expect(toggleMode(['collection', 'delivery'], 'delivery')).toEqual(['collection']);
     expect(foodInfoFromProduct({}).unavailableModes).toEqual([]);
     expect(foodInfoFromProduct({ unavailableModes: ['dine_in'] }).unavailableModes).toEqual(['dine_in']);
+  });
+});
+
+describe('initialScheduleDays', () => {
+  it('starts with every day when nothing is saved, so the buttons and Save agree', () => {
+    expect(initialScheduleDays(undefined)).toEqual([0, 1, 2, 3, 4, 5, 6]);
+    expect(initialScheduleDays([])).toEqual([0, 1, 2, 3, 4, 5, 6]);
+  });
+  it('keeps the saved days', () => {
+    expect(initialScheduleDays([1, 2])).toEqual([1, 2]);
+  });
+});
+
+describe('unavailableModesInOrder', () => {
+  it('lists hidden modes in display order', () => {
+    expect(unavailableModesInOrder(['dine_in', 'delivery'])).toEqual(['delivery', 'dine_in']);
+    expect(unavailableModesInOrder([])).toEqual([]);
   });
 });

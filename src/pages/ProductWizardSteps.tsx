@@ -10,7 +10,7 @@ import { MyInput, MyTextarea } from '../components/ui/MyInput';
 import { CurrencyInput } from '../components/ui/CurrencyInput';
 import { useCreateCategoryMutation } from '../services/api';
 import type { ReferenceEntry, ReferenceListsResponse, SpiceLevel, TranslationMap } from '../services/api';
-import { effectiveTaxClassId, MODE_ORDER, isFoodInfoDeclared, labelFor, taxClassOptionLabel, toggleId, toggleMode } from '../features/menu/foodInfo';
+import { effectiveTaxClassId, MODE_ORDER, isFoodInfoDeclared, labelFor, taxClassOptionLabel, toggleId, toggleMode, unavailableModesInOrder } from '../features/menu/foodInfo';
 import type { FoodInfo } from '../features/menu/foodInfo';
 
 // ── Shared types ──────────────────────────────────────────────────────────────
@@ -985,6 +985,11 @@ export function Step6Review({
         </ReviewRow>
         <ReviewRow label={t('products.additives')}>
           {declaredLabels(foodInfo.additiveIds, refs?.additives ?? [], 'products.additivesNone')}
+        </ReviewRow>
+        <ReviewRow label={t('products.notOfferedFor')}>
+          {foodInfo.unavailableModes.length > 0
+            ? unavailableModesInOrder(foodInfo.unavailableModes).map((m) => t(`orders.fulfilment.${m}`)).join(', ')
+            : <span className="text-gray-400">{t('products.notOfferedForNone')}</span>}
         </ReviewRow>
       </div>
     </div>
