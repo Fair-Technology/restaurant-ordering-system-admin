@@ -47,7 +47,8 @@ export function DiscountCodesCard({ shopId, shop, data }: DiscountCodesCardProps
   const [formError, setFormError] = useState<CodeFormError | null>(null);
 
   const currency = shop.currency ?? 'EUR';
-  const today = shopToday(shop.timezone ?? 'Europe/Berlin', Date.now());
+  const [nowMs] = useState(() => Date.now());
+  const today = shopToday(shop.timezone ?? 'Europe/Berlin', nowMs);
   const money = (cents: number) => formatCents(cents, currency, i18n.language);
   const set = (patch: Partial<CodeForm>) => setForm((f) => ({ ...f, ...patch }));
 
