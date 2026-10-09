@@ -6,7 +6,7 @@ import {
   ArrowLeft, Menu, X,
   Package, ClipboardList, Tag, CreditCard, Settings, Store,
   Users, History, LogOut, Languages, Scale,
-  Circle, QrCode, Percent,
+  Circle, QrCode, Percent, ChartColumn, LayoutDashboard,
 } from 'lucide-react';
 import {
   useGetShopByIdQuery,
@@ -67,6 +67,15 @@ export function TopNav() {
           <NavLink to={`/shops/${shopId}/orders`} className={({ isActive }) => navItemClass(isActive)}>
             <ClipboardList size={16} className="flex-shrink-0" />
             {t('nav.orders')}
+          </NavLink>
+        </>
+      )}
+      {nav.includes('reports') && (
+        <>
+          {divider}
+          <NavLink to={`/shops/${shopId}/reports`} className={({ isActive }) => navItemClass(isActive)}>
+            <ChartColumn size={16} className="flex-shrink-0" />
+            {t('nav.reports')}
           </NavLink>
         </>
       )}
@@ -191,10 +200,16 @@ export function TopNav() {
       )}
     </>
   ) : (
-    <NavLink to="/shops" className={({ isActive }) => navItemClass(isActive)}>
-      <Store size={16} className="flex-shrink-0" />
-      {t('nav.myShops')}
-    </NavLink>
+    <>
+      <NavLink to="/" end className={({ isActive }) => navItemClass(isActive)}>
+        <LayoutDashboard size={16} className="flex-shrink-0" />
+        {t('nav.overview')}
+      </NavLink>
+      <NavLink to="/shops" className={({ isActive }) => navItemClass(isActive)}>
+        <Store size={16} className="flex-shrink-0" />
+        {t('nav.myShops')}
+      </NavLink>
+    </>
   );
 
   // ── User row (shared) ─────────────────────────────────────────────────────

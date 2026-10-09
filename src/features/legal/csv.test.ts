@@ -16,4 +16,14 @@ describe('toCsv', () => {
   it('starts with a BOM and uses CRLF', () => {
     expect(toCsv(['a', 'b'], [])).toBe('﻿a;b\r\n');
   });
+
+  it('lets plain numbers through when asked', () => {
+    expect(toCsv(['a'], [['-5'], ['=SUM(A1)'], ['-1,50'], ['-2+3']], { plainNumbers: true })).toBe(
+      "﻿a\r\n-5\r\n'=SUM(A1)\r\n-1,50\r\n'-2+3\r\n",
+    );
+  });
+
+  it('phone numbers are never prefixed', () => {
+    expect(toCsv(['a'], [['+49 151 1234567'], ['+cmd|x']])).toBe("﻿a\r\n+49 151 1234567\r\n'+cmd|x\r\n");
+  });
 });

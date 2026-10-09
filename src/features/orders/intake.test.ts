@@ -6,6 +6,7 @@ import {
   groupQueue,
   hasWaitingOrders,
   newlyAutoAcceptedIds,
+  visibleColumns,
   nextActionFor,
   prepChoices,
   pruneSettledAccepts,
@@ -166,5 +167,11 @@ describe('intake helpers', () => {
     expect(slotLoadOf({ perSlot: 2, taken: { [X]: 3 } }, X)).toEqual({ taken: 3, perSlot: 2, full: true });
     expect(slotLoadOf({ perSlot: 2, taken: {} }, X)).toEqual({ taken: 0, perSlot: 2, full: false });
     expect(slotLoadOf({ perSlot: 2, taken: {} }, null)).toBeNull();
+  });
+
+  it('the phone view shows one column', () => {
+    const cols = [{ key: 'waiting' }, { key: 'inProgress' }, { key: 'ready' }];
+    expect(visibleColumns(cols, 'board', 'ready')).toEqual(cols);
+    expect(visibleColumns(cols, 'phone', 'ready')).toEqual([{ key: 'ready' }]);
   });
 });

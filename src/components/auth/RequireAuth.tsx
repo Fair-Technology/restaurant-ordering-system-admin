@@ -2,6 +2,7 @@ import { useIsAuthenticated, useMsal } from '@azure/msal-react';
 import { InteractionStatus } from '@azure/msal-browser';
 import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { RETURN_TO_KEY, staffRedirectFor } from '../../features/auth/redirects';
 import { readStaffSession } from '../../features/staff/staffSession';
 
 export function RequireAuth() {
@@ -14,11 +15,8 @@ export function RequireAuth() {
 
   const staff = readStaffSession();
   if (staff) {
-    return pathname.startsWith(`/shops/${staff.shopId}`) ? (
-      <Outlet />
-    ) : (
-      <Navigate to={`/shops/${staff.shopId}/orders`} replace />
-    );
+    const target = staffRedirectFor(pathname, staff.shopId);
+    return target ? <Navigate to={target} replace /> : <Outlet />;
   }
 
   if (inProgress !== InteractionStatus.None) {
@@ -26,6 +24,11 @@ export function RequireAuth() {
   }
 
   if (!isAuthenticated) {
+    try {
+      sessionStorage.setItem(RETURN_TO_KEY, pathname);
+    } catch {
+      /* private mode: lose the return path */
+    }
     return <Navigate to="/login" replace />;
   }
 

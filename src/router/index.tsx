@@ -13,6 +13,9 @@ import { TablesPage } from '../pages/TablesPage';
 import { PromotionsPage } from '../pages/PromotionsPage';
 import { ProductsPage } from '../pages/ProductsPage';
 import { OrdersPage } from '../pages/OrdersPage';
+import { ReportsPage } from '../pages/ReportsPage';
+import { PhoneHomePage } from '../pages/PhoneHomePage';
+import { PhoneOrdersPage } from '../pages/PhoneOrdersPage';
 import { SubscriptionPage } from '../pages/SubscriptionPage';
 import { ActivityPage } from '../pages/ActivityPage';
 import { LegalPage } from '../pages/LegalPage';
@@ -25,6 +28,8 @@ export const router = createBrowserRouter([
   {
     element: <RequireAuth />,
     children: [
+      { path: '/phone', element: <PhoneHomePage /> },
+      { path: '/shops/:shopId/phone', element: <PhoneOrdersPage /> },
       {
         element: <Layout />,
         children: [
@@ -36,6 +41,7 @@ export const router = createBrowserRouter([
             children: [
               { index: true, element: <ProductsPage /> },
               { path: 'orders', element: <OrdersPage /> },
+              { path: 'reports', element: <ReportsPage /> },
               { path: 'categories', element: <CategoriesPage /> },
               { path: 'translations', element: <TranslationsPage /> },
               { path: 'tables', element: <TablesPage /> },
