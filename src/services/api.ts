@@ -641,6 +641,7 @@ export type ShopResponse = {
     deliveryZones?: { postcode: string; feeCents: number; minOrderCents: number }[];
     deliveryFeeTaxClassId?: string | null;
     scheduledOrders?: boolean;
+    slotCapacity?: number | null;
   };
   /** Minimum order amount in cents */
   minOrderAmountCents?: number;

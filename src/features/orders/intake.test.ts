@@ -11,6 +11,7 @@ import {
   pruneSettledAccepts,
   scheduledReadyMs,
   secondsUntil,
+  slotLoadOf,
   upcomingByDay,
   withoutPendingAccept,
   withPendingAccepts,
@@ -154,5 +155,16 @@ describe('intake helpers', () => {
       ['2026-10-06', ['o6', 'o5']],
     ]);
     expect(upcomingByDay([], 'Europe/Berlin')).toEqual([]);
+  });
+
+  it('says how full a booked time is', () => {
+    const X = '2026-10-05T16:00:00.000Z';
+    expect(slotLoadOf(null, X)).toBeNull();
+    expect(slotLoadOf(undefined, X)).toBeNull();
+    expect(slotLoadOf({ perSlot: 2, taken: { [X]: 1 } }, X)).toEqual({ taken: 1, perSlot: 2, full: false });
+    expect(slotLoadOf({ perSlot: 2, taken: { [X]: 2 } }, X)).toEqual({ taken: 2, perSlot: 2, full: true });
+    expect(slotLoadOf({ perSlot: 2, taken: { [X]: 3 } }, X)).toEqual({ taken: 3, perSlot: 2, full: true });
+    expect(slotLoadOf({ perSlot: 2, taken: {} }, X)).toEqual({ taken: 0, perSlot: 2, full: false });
+    expect(slotLoadOf({ perSlot: 2, taken: {} }, null)).toBeNull();
   });
 });

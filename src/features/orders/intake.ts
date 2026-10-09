@@ -1,4 +1,4 @@
-import type { IntakeOrder, UpcomingOrder } from '../../services/ordersApi';
+import type { IntakeOrder, SlotCapacityDto, UpcomingOrder } from '../../services/ordersApi';
 
 export const REJECT_REASONS = ['too_busy', 'item_unavailable', 'closing_soon', 'other'] as const;
 
@@ -72,6 +72,19 @@ export function upcomingByDay(orders: readonly UpcomingOrder[], timeZone: string
     else out.push({ day, orders: [o] });
   }
   return out;
+}
+
+export interface SlotLoad {
+  taken: number;
+  perSlot: number;
+  full: boolean;
+}
+
+/** How full a booked time is, or null when the restaurant has no limit. */
+export function slotLoadOf(capacity: SlotCapacityDto | null | undefined, scheduledFor: string | null | undefined): SlotLoad | null {
+  if (!capacity || !scheduledFor) return null;
+  const taken = capacity.taken[scheduledFor] ?? 0;
+  return { taken, perSlot: capacity.perSlot, full: taken >= capacity.perSlot };
 }
 
 export interface PendingAccept {
