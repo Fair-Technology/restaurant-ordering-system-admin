@@ -6,6 +6,7 @@ import {
   groupQueue,
   hasWaitingOrders,
   newlyAutoAcceptedIds,
+  visibleColumns,
   nextActionFor,
   prepChoices,
   pruneSettledAccepts,
@@ -154,5 +155,11 @@ describe('intake helpers', () => {
       ['2026-10-06', ['o6', 'o5']],
     ]);
     expect(upcomingByDay([], 'Europe/Berlin')).toEqual([]);
+  });
+
+  it('the phone view shows one column', () => {
+    const cols = [{ key: 'waiting' }, { key: 'inProgress' }, { key: 'ready' }];
+    expect(visibleColumns(cols, 'board', 'ready')).toEqual(cols);
+    expect(visibleColumns(cols, 'phone', 'ready')).toEqual([{ key: 'ready' }]);
   });
 });

@@ -25,4 +25,8 @@ describe('shopNavItems', () => {
       ]),
     ).toEqual(['orders', 'products', 'categories', 'translations', 'tables', 'promotions', 'subscription', 'settings', 'legal', 'staff', 'activity']);
   });
+
+  it('reports for anyone with view_reports', () => {
+    expect(shopNavItems(['view_orders', 'view_reports'])).toEqual(['orders', 'reports']);
+  });
 });

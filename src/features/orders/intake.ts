@@ -135,3 +135,12 @@ export function connectionState(input: {
 export function newlyAutoAcceptedIds(orders: IntakeOrder[], seen: ReadonlySet<string>): string[] {
   return orders.filter((o) => o.autoAccepted && !seen.has(o.id)).map((o) => o.id);
 }
+
+export const PHONE_TABS = ['waiting', 'inProgress', 'ready'] as const;
+export type PhoneTab = (typeof PHONE_TABS)[number];
+export type BoardVariant = 'board' | 'phone';
+
+/** The board shows every column; the phone view only the chosen tab's. */
+export function visibleColumns<T extends { key: string }>(columns: T[], variant: BoardVariant, tab: PhoneTab): T[] {
+  return variant === 'board' ? columns : columns.filter((c) => c.key === tab);
+}
