@@ -12,7 +12,11 @@
       "/*.ico",
       "/*.txt",
       "/*.woff",
-      "/*.woff2"
+      "/*.woff2",
+      "/*.webmanifest"
     ]
+  },
+  "mimeTypes": {
+    ".webmanifest": "application/manifest+json"
   }
 }
