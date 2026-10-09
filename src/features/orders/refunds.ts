@@ -90,3 +90,26 @@ export function selectionToItems(
     .filter((line) => line.quantity > 0)
     .sort((a, b) => a.lineIndex - b.lineIndex);
 }
+
+// Lines that belong to one combo share a comboInstanceId. A combo is refunded whole, so these lines move together.
+export function comboLineGroup(items: ReadonlyArray<{ comboInstanceId?: string }>, index: number): number[] {
+  const id = items[index]?.comboInstanceId;
+  if (!id) return [index];
+  return items.flatMap((item, i) => (item.comboInstanceId === id ? [i] : []));
+}
+
+// Sets the ticked quantity of a line; for a combo line the same quantity goes to every line of that combo,
+// capped by the line with the least left.
+export function setLineQuantity(
+  items: ReadonlyArray<{ comboInstanceId?: string }>,
+  left: readonly number[],
+  selection: Readonly<Record<number, number>>,
+  index: number,
+  quantity: number,
+): Record<number, number> {
+  const group = comboLineGroup(items, index);
+  const cap = Math.min(...group.map((i) => left[i] ?? 0));
+  const next = { ...selection };
+  for (const i of group) next[i] = Math.min(Math.max(0, quantity), cap);
+  return next;
+}

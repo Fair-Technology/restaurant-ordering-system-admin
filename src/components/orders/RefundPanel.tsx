@@ -4,11 +4,13 @@ import { formatCents } from '../../utils/money';
 import { useRefundOrderMutation, type IntakeOrder } from '../../services/ordersApi';
 import { useToast } from '../../contexts/ToastContext';
 import {
+  comboLineGroup,
   itemSelectionCents,
   parseAmountToCents,
   refundableCents,
   remainingQuantities,
   selectionToItems,
+  setLineQuantity,
 } from '../../features/orders/refunds';
 import { MyButton } from '../ui/MyButton';
 import { MyInput } from '../ui/MyInput';
@@ -48,8 +50,12 @@ export function RefundPanel({ shopId, order }: RefundPanelProps) {
   // the confirmation step only counts while the total is the one the user was shown
   const confirming = canSubmit && confirmingCents === total;
 
+  // a combo is refunded as a whole: its lines are ticked and unticked together
   const setQuantity = (index: number, quantity: number) =>
-    setSelection((prev) => ({ ...prev, [index]: Math.min(Math.max(0, quantity), left[index] ?? 0) }));
+    setSelection((prev) => setLineQuantity(order.items, left, prev, index, quantity));
+  const hasCombo = order.items.some((item) => item.comboInstanceId);
+  const availableFor = (index: number) =>
+    Math.min(...comboLineGroup(order.items, index).map((i) => left[i] ?? 0));
 
   const submit = async () => {
     if (!canSubmit) return;
@@ -110,10 +116,11 @@ export function RefundPanel({ shopId, order }: RefundPanelProps) {
 
       {mode === 'items' ? (
         <div className="space-y-2">
+          {hasCombo && <p className="text-xs text-gray-500">{t('orders.refundComboNote')}</p>}
           <div className="divide-y divide-gray-200 rounded-lg border border-gray-200">
             {order.items.map((item, i) => {
               const quantity = selection[i] ?? 0;
-              const available = left[i] ?? 0;
+              const available = availableFor(i);
               return (
                 <div key={i} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
                   <div className="flex flex-col gap-0.5">
