@@ -35,7 +35,7 @@ describe('export CSVs', () => {
       ],
     });
     expect(csv.split('\r\n')[1]).toBe(
-      'AB3-K7P;2026-10-01T10:00:00Z;COMPLETED;collection;cash;cash_collected;EUR;12,50;Anna;a@x.example;1;;2× Carbonara;;12,50;',
+      'AB3-K7P;2026-10-01T10:00:00Z;COMPLETED;collection;cash;cash_collected;EUR;12,50;Anna;a@x.example;1;;2× Carbonara;;12,50;;;',
     );
   });
 
@@ -54,7 +54,25 @@ describe('export CSVs', () => {
         },
       ],
     });
-    expect(csv.split('\r\n')[1]).toMatch(/;2,50;13,00;Teststraße 1, 10115 Berlin$/);
+    expect(csv.split('\r\n')[1]).toMatch(/;2,50;13,00;Teststraße 1, 10115 Berlin;;$/);
+  });
+
+  it('orders CSV lists the discount', () => {
+    const csv = buildOrdersCsv({
+      ...base,
+      orders: [
+        {
+          id: 'o3', orderRef: 'CD5-M2N', createdAt: '2026-10-01T10:00:00Z', state: 'COMPLETED',
+          fulfilmentMode: 'collection',
+          payment: { method: 'cash', status: 'cash_collected', stripePaymentIntentId: null },
+          currency: 'EUR', subtotalCents: 1400, totalCents: 1260,
+          discount: { code: 'WELCOME10', cents: 140 },
+          customerName: 'Di', customerEmail: 'd@x.example', customerPhone: '4',
+          items: [],
+        },
+      ],
+    });
+    expect(csv.split('\r\n')[1]).toMatch(/;WELCOME10;1,40$/);
   });
 
   it('orders CSV writes the diner address on one line', () => {

@@ -117,6 +117,7 @@ export interface ExportOrder {
   subtotalCents: number;
   totalCents?: number;
   charges?: { kind: string; grossCents: number }[];
+  discount?: { code: string; cents: number } | null;
   deliveryAddress?: { street: string; postcode: string; city: string } | null;
   customerName: string;
   customerEmail: string;

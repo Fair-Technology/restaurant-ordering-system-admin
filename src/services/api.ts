@@ -1269,6 +1269,8 @@ export type OrderItemResponse = {
   selectedAddonOptionIds?: string[] | null;
   selectedAddonOptionNames?: string[] | null;
   lineTotalCents: number;
+  /** This line's share of the order discount; absent on a backend from before discounts */
+  discountCents?: number;
 };
 export type OrderState = "PLACED" | "ACCEPTED" | "READY" | "OUT_FOR_DELIVERY" | "COMPLETED" | "REJECTED" | "CANCELLED";
 export type OrderDisplayState = OrderState | "IN_PREPARATION";

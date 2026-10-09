@@ -4,6 +4,7 @@ export type ShopNavKey =
   | 'categories'
   | 'translations'
   | 'tables'
+  | 'promotions'
   | 'subscription'
   | 'settings'
   | 'legal'
@@ -16,6 +17,7 @@ const RULES: Array<[ShopNavKey, string]> = [
   ['categories', 'manage_menu'],
   ['translations', 'manage_menu'],
   ['tables', 'manage_menu'],
+  ['promotions', 'manage_shop'],
   ['subscription', 'manage_billing'],
   ['settings', 'manage_shop'],
   ['legal', 'manage_shop'],

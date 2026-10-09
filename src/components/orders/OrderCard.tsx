@@ -126,6 +126,11 @@ export function OrderCard({
             {t('orders.inclDeliveryFee', { amount: money(order.deliveryFeeCents) })}
           </div>
         )}
+        {order.discount && (
+          <div className="text-xs text-gray-500">
+            {t('orders.inclDiscount', { code: order.discount.code, amount: money(order.discount.cents) })}
+          </div>
+        )}
         {order.autoAccepted && (
           <span className="inline-block text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
             {t('orders.autoAccepted')}

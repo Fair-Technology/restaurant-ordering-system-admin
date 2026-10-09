@@ -25,7 +25,7 @@ export function buildOrdersCsv(e: ShopDataExportDto): string {
     [
       'orderRef', 'createdAt', 'state', 'fulfilmentMode', 'paymentMethod', 'paymentStatus',
       'currency', 'subtotal', 'customerName', 'customerEmail', 'customerPhone', 'customerAddress', 'items',
-      'deliveryFee', 'total', 'deliveryAddress',
+      'deliveryFee', 'total', 'deliveryAddress', 'discountCode', 'discount',
     ],
     e.orders.map((o) => [
       o.orderRef,
@@ -44,6 +44,8 @@ export function buildOrdersCsv(e: ShopDataExportDto): string {
       deliveryFeeOf(o),
       centsToDecimal(o.totalCents ?? o.subtotalCents),
       formatDeliveryAddress(o.deliveryAddress),
+      o.discount?.code ?? '',
+      o.discount ? centsToDecimal(o.discount.cents) : '',
     ]),
   );
 }

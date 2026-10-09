@@ -104,6 +104,9 @@ export function RefundPanel({ shopId, order }: RefundPanelProps) {
         </MyButton>
       </div>
       <p className="text-xs text-gray-500">{t('orders.refundModeHelp')}</p>
+      {order.discount && (
+        <p className="text-xs text-gray-500">{t('orders.refundDiscountHint', { code: order.discount.code })}</p>
+      )}
 
       {mode === 'items' ? (
         <div className="space-y-2">

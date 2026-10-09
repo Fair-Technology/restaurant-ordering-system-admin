@@ -57,6 +57,9 @@ export type IntakeOrder = OrderResponse & {
   autoAccepted: boolean;
   // Absent on a backend from before scheduled orders; null for as soon as possible
   scheduledFor?: string | null;
+  // Absent on a backend from before discounts
+  discount?: { kind: 'code' | 'voucher'; code: string; cents: number } | null;
+  loyaltyVoucherSent?: boolean;
 };
 
 export type UpcomingOrder = IntakeOrder & { outsideHours: boolean };

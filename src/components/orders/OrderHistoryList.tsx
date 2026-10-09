@@ -120,6 +120,17 @@ function OrderRow({ shopId, order, permissions }: OrderRowProps) {
               </div>
             ))}
           </div>
+          {order.discount && (
+            <p className="mt-2 text-xs text-gray-600">
+              {t('orders.discountLine', {
+                code: order.discount.code,
+                amount: formatCurrency(order.discount.cents, order.currency),
+              })}
+            </p>
+          )}
+          {order.loyaltyVoucherSent && (
+            <p className="mt-1 text-xs text-gray-600">{t('orders.loyaltyVoucherSent')}</p>
+          )}
           {order.customerNotes && (
             <p className="mt-2 text-xs text-gray-400 italic">&ldquo;{order.customerNotes}&rdquo;</p>
           )}
