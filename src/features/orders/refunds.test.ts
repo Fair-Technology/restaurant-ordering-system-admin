@@ -3,11 +3,13 @@ import { describe, expect, it } from 'vitest';
 import {
   canRefund,
   chargedCents,
+  comboLineGroup,
   itemSelectionCents,
   parseAmountToCents,
   refundableCents,
   remainingQuantities,
   selectionToItems,
+  setLineQuantity,
 } from './refunds';
 
 const paid = { state: 'COMPLETED', paymentStatus: 'paid', subtotalCents: 1000, refundedCents: 0 };
@@ -81,5 +83,33 @@ describe('refund helpers', () => {
       ),
     ).toBe(true);
     expect(chargedCents({ subtotalCents: 1050 })).toBe(1050);
+  });
+});
+
+describe('combo lines in the refund panel', () => {
+  const items = [
+    { combo: { line: 0 } },
+    { combo: { line: 0 } },
+    {},
+    { combo: { line: 3 } },
+  ];
+
+  it('a combo line finds the other lines of its combo', () => {
+    expect(comboLineGroup(items, 0)).toEqual([0, 1]);
+    expect(comboLineGroup(items, 1)).toEqual([0, 1]);
+    expect(comboLineGroup(items, 2)).toEqual([2]);
+    expect(comboLineGroup(items, 3)).toEqual([3]);
+  });
+
+  it('ticking one line of a combo ticks all of them, and unticking clears all', () => {
+    const left = [2, 2, 1, 2];
+    const ticked = setLineQuantity(items, left, {}, 1, 1);
+    expect(ticked).toEqual({ 0: 1, 1: 1 });
+    expect(setLineQuantity(items, left, ticked, 0, 0)).toEqual({ 0: 0, 1: 0 });
+    expect(setLineQuantity(items, left, ticked, 2, 1)).toEqual({ 0: 1, 1: 1, 2: 1 });
+  });
+
+  it('is capped by the combo line with the least left', () => {
+    expect(setLineQuantity(items, [2, 1, 1, 2], {}, 0, 2)).toEqual({ 0: 1, 1: 1 });
   });
 });

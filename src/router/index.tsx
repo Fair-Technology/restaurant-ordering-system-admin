@@ -12,6 +12,7 @@ import { TranslationsPage } from '../pages/TranslationsPage';
 import { TablesPage } from '../pages/TablesPage';
 import { PromotionsPage } from '../pages/PromotionsPage';
 import { ProductsPage } from '../pages/ProductsPage';
+import { CombosPage } from '../pages/CombosPage';
 import { OrdersPage } from '../pages/OrdersPage';
 import { ReportsPage } from '../pages/ReportsPage';
 import { PhoneHomePage } from '../pages/PhoneHomePage';
@@ -40,6 +41,7 @@ export const router = createBrowserRouter([
             element: <ShopLayout />,
             children: [
               { index: true, element: <ProductsPage /> },
+              { path: 'combos', element: <CombosPage /> },
               { path: 'orders', element: <OrdersPage /> },
               { path: 'reports', element: <ReportsPage /> },
               { path: 'categories', element: <CategoriesPage /> },

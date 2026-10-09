@@ -2,6 +2,7 @@ export type ShopNavKey =
   | 'orders'
   | 'reports'
   | 'products'
+  | 'combos'
   | 'categories'
   | 'translations'
   | 'tables'
@@ -16,6 +17,7 @@ const RULES: Array<[ShopNavKey, string]> = [
   ['orders', 'view_orders'],
   ['reports', 'view_reports'],
   ['products', 'manage_menu'],
+  ['combos', 'manage_menu'],
   ['categories', 'manage_menu'],
   ['translations', 'manage_menu'],
   ['tables', 'manage_menu'],
