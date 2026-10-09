@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { IntakeOrder } from '../../services/ordersApi';
+import type { IntakeOrder, UpcomingOrder } from '../../services/ordersApi';
 import {
   connectionState,
   formatCountdown,
@@ -9,7 +9,9 @@ import {
   nextActionFor,
   prepChoices,
   pruneSettledAccepts,
+  scheduledReadyMs,
   secondsUntil,
+  upcomingByDay,
   withoutPendingAccept,
   withPendingAccepts,
 } from './intake';
@@ -124,5 +126,33 @@ describe('intake helpers', () => {
     const m = new Map([['P1', { prepMinutes: 20, atMs: 0 }]]);
     expect(withoutPendingAccept(m, 'P1').size).toBe(0);
     expect(withoutPendingAccept(m, 'X')).toBe(m);
+  });
+
+  it('keeps the booked time when a scheduled order is accepted early', () => {
+    const slot = '2026-10-05T16:00:00.000Z';
+    expect(scheduledReadyMs(slot, Date.parse('2026-10-05T15:42:00Z'), 20)).toBe(Date.parse(slot));
+    expect(scheduledReadyMs(slot, Date.parse('2026-10-05T16:10:00Z'), 20)).toBe(Date.parse('2026-10-05T16:30:00.000Z'));
+  });
+
+  it('an accepted scheduled order shows its booked time at once', () => {
+    const out = withPendingAccepts(
+      [{ ...order('S1', 'PLACED', 'PLACED'), scheduledFor: '2026-10-05T16:00:00.000Z' } as IntakeOrder],
+      new Map([['S1', { prepMinutes: 20, atMs: Date.parse('2026-10-05T15:42:00.000Z') }]]),
+    );
+    expect(out[0].readyAt).toBe('2026-10-05T16:00:00.000Z');
+  });
+
+  it("groups upcoming orders by the restaurant's day", () => {
+    const u = (id: string, at: string) => ({ ...base, id, scheduledFor: at, outsideHours: false }) as unknown as UpcomingOrder;
+    expect(
+      upcomingByDay(
+        [u('o5', '2026-10-06T16:00:00.000Z'), u('o4', '2026-10-05T16:00:00.000Z'), u('o6', '2026-10-05T22:30:00.000Z')],
+        'Europe/Berlin',
+      ).map((d) => [d.day, d.orders.map((o) => o.id)]),
+    ).toEqual([
+      ['2026-10-05', ['o4']],
+      ['2026-10-06', ['o6', 'o5']],
+    ]);
+    expect(upcomingByDay([], 'Europe/Berlin')).toEqual([]);
   });
 });
