@@ -53,7 +53,7 @@ export function RefundPanel({ shopId, order }: RefundPanelProps) {
   // a combo is refunded as a whole: its lines are ticked and unticked together
   const setQuantity = (index: number, quantity: number) =>
     setSelection((prev) => setLineQuantity(order.items, left, prev, index, quantity));
-  const hasCombo = order.items.some((item) => item.comboInstanceId);
+  const hasCombo = order.items.some((item) => item.combo);
   const availableFor = (index: number) =>
     Math.min(...comboLineGroup(order.items, index).map((i) => left[i] ?? 0));
 

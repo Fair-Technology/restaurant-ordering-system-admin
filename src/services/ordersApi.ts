@@ -39,8 +39,8 @@ export interface DeliveryAddressDto {
 }
 
 export type IntakeOrder = Omit<OrderResponse, 'items'> & {
-  // Lines sharing a comboInstanceId are the dishes of one combo; absent on dish lines and on an older backend
-  items: Array<OrderResponse['items'][number] & { comboInstanceId?: string }>;
+  // Lines sharing combo.line are the dishes of one combo; absent/null on dish lines and on an older backend
+  items: Array<OrderResponse['items'][number] & { combo?: { line: number; productId: string; name: string } | null }>;
   // Absent when talking to a backend from before delivery
   totalCents?: number;
   deliveryFeeCents?: number | null;

@@ -88,10 +88,10 @@ describe('refund helpers', () => {
 
 describe('combo lines in the refund panel', () => {
   const items = [
-    { comboInstanceId: 'c1' },
-    { comboInstanceId: 'c1' },
+    { combo: { line: 0 } },
+    { combo: { line: 0 } },
     {},
-    { comboInstanceId: 'c2' },
+    { combo: { line: 3 } },
   ];
 
   it('a combo line finds the other lines of its combo', () => {
