@@ -6,7 +6,7 @@ import {
   ArrowLeft, Menu, X,
   Package, ClipboardList, Tag, CreditCard, Settings, Store,
   Users, History, LogOut, Languages, Scale,
-  Circle, QrCode,
+  Circle, QrCode, Percent,
 } from 'lucide-react';
 import {
   useGetShopByIdQuery,
@@ -103,6 +103,15 @@ export function TopNav() {
           <NavLink to={`/shops/${shopId}/tables`} className={({ isActive }) => navItemClass(isActive)}>
             <QrCode size={16} className="flex-shrink-0" />
             {t('nav.tables')}
+          </NavLink>
+        </>
+      )}
+      {nav.includes('promotions') && (
+        <>
+          {divider}
+          <NavLink to={`/shops/${shopId}/promotions`} className={({ isActive }) => navItemClass(isActive)}>
+            <Percent size={16} className="flex-shrink-0" />
+            {t('nav.promotions')}
           </NavLink>
         </>
       )}
