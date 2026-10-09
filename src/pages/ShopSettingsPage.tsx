@@ -25,6 +25,7 @@ import { OrderAlertsCard } from '../components/shop/OrderAlertsCard';
 import { AutoAcceptCard } from '../components/shop/AutoAcceptCard';
 import { KitchenTimingCard } from '../components/shop/KitchenTimingCard';
 import { DeliveryCard } from '../components/shop/DeliveryCard';
+import { ScheduledOrdersCard } from '../components/shop/ScheduledOrdersCard';
 import { DineInCard } from '../components/shop/DineInCard';
 import { accentContrastOnWhite, contrastRatio } from '../utils/contrast';
 import { useShopReferenceLists } from '../features/menu/useShopReferenceLists';
@@ -789,6 +790,9 @@ export function ShopSettingsPage() {
 
       {/* Dine in card */}
       <DineInCard shop={shop} onRefetch={refetch} />
+
+      {/* Orders for later card */}
+      <ScheduledOrdersCard shop={shop} onRefetch={refetch} />
 
       {/* Menu languages card */}
       <MyCard className="p-5 space-y-3">
