@@ -6,7 +6,7 @@ import {
   ArrowLeft, Menu, X,
   Package, ClipboardList, Tag, CreditCard, Settings, Store,
   Users, History, LogOut, Languages, Scale,
-  Circle, QrCode, Percent,
+  Circle, QrCode, Percent, Layers,
 } from 'lucide-react';
 import {
   useGetShopByIdQuery,
@@ -76,6 +76,15 @@ export function TopNav() {
           <NavLink to={`/shops/${shopId}`} end className={({ isActive }) => navItemClass(isActive)}>
             <Package size={16} className="flex-shrink-0" />
             {t('nav.products')}
+          </NavLink>
+        </>
+      )}
+      {nav.includes('combos') && (
+        <>
+          {divider}
+          <NavLink to={`/shops/${shopId}/combos`} className={({ isActive }) => navItemClass(isActive)}>
+            <Layers size={16} className="flex-shrink-0" />
+            {t('nav.combos')}
           </NavLink>
         </>
       )}
