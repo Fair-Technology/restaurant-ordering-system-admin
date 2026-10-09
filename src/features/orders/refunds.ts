@@ -55,14 +55,31 @@ export function remainingQuantities(o: {
   return left.map((n) => Math.max(0, n));
 }
 
+// What the diner paid for the ticked units. A discounted line refunds its paid share, with the same
+// rounding as the server (what is paid for k units is floor(paid * k / quantity)).
 export function itemSelectionCents(
-  o: { items: ReadonlyArray<{ unitPriceCents: number }> },
+  o: {
+    items: ReadonlyArray<{ unitPriceCents: number; quantity?: number; lineTotalCents?: number; discountCents?: number }>;
+    refunds?: ReadonlyArray<{ lines: ReadonlyArray<{ lineIndex: number; quantity: number }> }>;
+  },
   selection: Readonly<Record<number, number>>,
 ): number {
-  return Object.entries(selection).reduce(
-    (sum, [index, quantity]) => sum + (o.items[Number(index)]?.unitPriceCents ?? 0) * quantity,
-    0,
-  );
+  const already = (index: number) =>
+    (o.refunds ?? []).reduce(
+      (sum, r) => sum + r.lines.filter((l) => l.lineIndex === index).reduce((t, l) => t + l.quantity, 0),
+      0,
+    );
+  return Object.entries(selection).reduce((sum, [key, count]) => {
+    const index = Number(key);
+    const item = o.items[index];
+    if (!item) return sum;
+    const quantity = item.quantity;
+    if (!item.discountCents || !quantity) return sum + item.unitPriceCents * count;
+    const paid = (item.lineTotalCents ?? item.unitPriceCents * quantity) - item.discountCents;
+    const paidFor = (units: number) => Math.floor((paid * units) / quantity);
+    const from = already(index);
+    return sum + paidFor(from + count) - paidFor(from);
+  }, 0);
 }
 
 export function selectionToItems(

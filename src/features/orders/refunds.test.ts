@@ -55,6 +55,16 @@ describe('refund helpers', () => {
     expect(itemSelectionCents(order, {})).toBe(0);
   });
 
+  it('a discounted line refunds what was paid for it', () => {
+    const items = [
+      { unitPriceCents: 1050, quantity: 1, lineTotalCents: 1050, discountCents: 250 },
+      { unitPriceCents: 350, quantity: 2, lineTotalCents: 700, discountCents: 133 },
+    ];
+    expect(itemSelectionCents({ items, refunds: [] }, { 1: 1 })).toBe(283);
+    expect(itemSelectionCents({ items, refunds: [{ lines: [{ lineIndex: 1, quantity: 1 }] }] }, { 1: 1 })).toBe(284);
+    expect(itemSelectionCents({ items, refunds: [] }, { 0: 1, 1: 2 })).toBe(1367);
+  });
+
   it('turns the selection into request items', () => {
     expect(selectionToItems({ 1: 1, 0: 0, 3: 2 })).toEqual([
       { lineIndex: 1, quantity: 1 },
