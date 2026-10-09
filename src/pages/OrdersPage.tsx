@@ -1,4 +1,5 @@
-import { useParams, useSearchParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Smartphone } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { OrderHistoryList } from '../components/orders/OrderHistoryList';
 import { OrderIntakeBoard } from '../components/orders/OrderIntakeBoard';
@@ -27,6 +28,13 @@ export function OrdersPage() {
         >
           {t('orders.tabHistory')}
         </button>
+        <Link
+          to={`/shops/${shopId}/phone`}
+          className="ml-auto inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900"
+        >
+          <Smartphone size={16} />
+          {t('orders.phoneView')}
+        </Link>
       </div>
       {tab === 'live' ? <OrderIntakeBoard shopId={shopId!} /> : <OrderHistoryList shopId={shopId!} />}
     </div>

@@ -7,10 +7,14 @@ import {
   groupQueue,
   hasWaitingOrders,
   newlyAutoAcceptedIds,
+  PHONE_TABS,
   pruneSettledAccepts,
+  visibleColumns,
   withoutPendingAccept,
   withPendingAccepts,
+  type BoardVariant,
   type PendingAccept,
+  type PhoneTab,
 } from '../../features/orders/intake';
 import { useOrderAlarm } from '../../features/orders/useOrderAlarm';
 import { useWakeLock } from '../../features/orders/useWakeLock';
@@ -24,12 +28,14 @@ import type { IntakeOrder } from '../../services/ordersApi';
 
 interface Props {
   shopId: string;
+  variant?: BoardVariant;
 }
 
 const NO_ORDERS: IntakeOrder[] = [];
 
-export function OrderIntakeBoard({ shopId }: Props) {
+export function OrderIntakeBoard({ shopId, variant = 'board' }: Props) {
   const { t } = useTranslation();
+  const [tab, setTab] = useState<PhoneTab>('waiting');
   const { data, isLoading, isError, fulfilledTimeStamp, refetch } = useGetOrderQueueQuery(
     { shopId },
     { pollingInterval: 10000, refetchOnReconnect: true },
@@ -117,8 +123,28 @@ export function OrderIntakeBoard({ shopId }: Props) {
         </div>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-3 items-start">
-        {columns.map((col) => (
+      {variant === 'phone' && (
+        <div className="flex gap-2">
+          {PHONE_TABS.map((key) => {
+            const col = columns.find((c) => c.key === key)!;
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setTab(key)}
+                className={`flex-1 min-h-12 px-2 text-sm font-medium rounded-xl border transition-colors ${
+                  tab === key ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-200'
+                }`}
+              >
+                {col.title} ({col.items.length})
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      <div className={variant === 'phone' ? 'grid gap-4 items-start' : 'grid gap-4 lg:grid-cols-3 items-start'}>
+        {visibleColumns(columns, variant, tab).map((col) => (
           <section key={col.key} className="space-y-3">
             <h2 className="text-sm font-semibold text-gray-700">
               {col.title} ({col.items.length})

@@ -2,6 +2,7 @@ import { useMsal, useIsAuthenticated } from '@azure/msal-react';
 import { InteractionStatus } from '@azure/msal-browser';
 import { Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { afterLoginPath, RETURN_TO_KEY } from '../features/auth/redirects';
 import { loginRequest } from '../config/msalConfig';
 import { MyCard } from '../components/ui/MyCard';
 import { MyButton } from '../components/ui/MyButton';
@@ -12,7 +13,14 @@ export function LoginPage() {
   const { t } = useTranslation();
 
   if (isAuthenticated) {
-    return <Navigate to="/" replace />;
+    const stored = (() => {
+      try {
+        return sessionStorage.getItem(RETURN_TO_KEY);
+      } catch {
+        return null;
+      }
+    })();
+    return <Navigate to={afterLoginPath(stored)} replace />;
   }
 
   return (
