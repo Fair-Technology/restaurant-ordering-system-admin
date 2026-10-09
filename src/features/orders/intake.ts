@@ -1,4 +1,4 @@
-import type { IntakeOrder } from '../../services/ordersApi';
+import type { IntakeOrder, UpcomingOrder } from '../../services/ordersApi';
 
 export const REJECT_REASONS = ['too_busy', 'item_unavailable', 'closing_soon', 'other'] as const;
 
@@ -46,6 +46,34 @@ export function prepChoices(defaultMinutes: number): number[] {
   );
 }
 
+/** Same rule as the server's readyAtFor: the booked time if still ahead, else now + prep. */
+export function scheduledReadyMs(scheduledFor: string, atMs: number, prepMinutes: number): number {
+  const slot = Date.parse(scheduledFor);
+  return atMs < slot ? slot : atMs + prepMinutes * 60_000;
+}
+
+export interface UpcomingDay {
+  /** 'YYYY-MM-DD' in the restaurant's zone */
+  day: string;
+  orders: UpcomingOrder[];
+}
+
+/** Booked orders sorted by time and grouped by the restaurant's calendar day. */
+export function upcomingByDay(orders: readonly UpcomingOrder[], timeZone: string): UpcomingDay[] {
+  const fmt = new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' });
+  const sorted = [...orders]
+    .filter((o) => o.scheduledFor)
+    .sort((a, b) => Date.parse(a.scheduledFor!) - Date.parse(b.scheduledFor!));
+  const out: UpcomingDay[] = [];
+  for (const o of sorted) {
+    const day = fmt.format(new Date(o.scheduledFor!));
+    const last = out[out.length - 1];
+    if (last && last.day === day) last.orders.push(o);
+    else out.push({ day, orders: [o] });
+  }
+  return out;
+}
+
 export interface PendingAccept {
   prepMinutes: number;
   atMs: number;
@@ -63,7 +91,9 @@ export function withPendingAccepts(orders: IntakeOrder[], pending: ReadonlyMap<s
       displayState: 'IN_PREPARATION' as const,
       prepMinutes: p.prepMinutes,
       acceptedAt: new Date(p.atMs).toISOString(),
-      readyAt: new Date(p.atMs + p.prepMinutes * 60_000).toISOString(),
+      readyAt: new Date(
+        o.scheduledFor ? scheduledReadyMs(o.scheduledFor, p.atMs, p.prepMinutes) : p.atMs + p.prepMinutes * 60_000,
+      ).toISOString(),
     };
   });
 }

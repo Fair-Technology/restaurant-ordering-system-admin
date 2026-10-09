@@ -55,7 +55,11 @@ export type IntakeOrder = OrderResponse & {
   releaseFailure: { at: string; message: string } | null;
   documents: OrderDocument[];
   autoAccepted: boolean;
+  // Absent on a backend from before scheduled orders; null for as soon as possible
+  scheduledFor?: string | null;
 };
+
+export type UpcomingOrder = IntakeOrder & { outsideHours: boolean };
 
 export type FulfilmentModeKey = 'collection' | 'delivery' | 'dine_in';
 
@@ -74,6 +78,8 @@ export interface OrderQueueDto {
   // Absent when talking to a backend from before busy mode
   busy?: BusyStateDto;
   orders: IntakeOrder[];
+  // Absent when talking to a backend from before scheduled orders
+  upcoming?: UpcomingOrder[];
 }
 
 export interface OrderSettingsDto {
@@ -89,6 +95,7 @@ export interface OrderSettingsDto {
   deliveryHours: WeeklyHoursDto | null;
   deliveryZones: DeliveryZoneDto[];
   deliveryFeeTaxClassId: string | null;
+  scheduledOrders: boolean;
 }
 
 // Every field is optional: the server keeps whatever is not sent
@@ -248,7 +255,11 @@ async function applyActionToQueue(
     dispatch(
       ordersApi.util.updateQueryData('getOrderQueue', { shopId }, (draft) => {
         const i = draft.orders.findIndex((o) => o.id === orderId);
-        if (i === -1) return;
+        if (i === -1) {
+          const u = draft.upcoming?.findIndex((o) => o.id === orderId) ?? -1;
+          if (u !== -1) draft.upcoming!.splice(u, 1);
+          return;
+        }
         if (BOARD_STATES.includes(updated.state)) draft.orders[i] = updated;
         else draft.orders.splice(i, 1);
       }),

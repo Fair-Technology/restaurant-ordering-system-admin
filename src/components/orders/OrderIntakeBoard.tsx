@@ -18,6 +18,7 @@ import { useNow } from '../../features/orders/useNow';
 import { MySpinner } from '../ui/MySpinner';
 import { MyButton } from '../ui/MyButton';
 import { OrderCard } from './OrderCard';
+import { UpcomingOrders } from './UpcomingOrders';
 import { BusyModeButton } from './BusyModeButton';
 import type { IntakeOrder } from '../../services/ordersApi';
 
@@ -143,6 +144,15 @@ export function OrderIntakeBoard({ shopId }: Props) {
           </section>
         ))}
       </div>
+
+      {data?.upcoming !== undefined && (
+        <UpcomingOrders
+          shopId={shopId}
+          orders={data.upcoming}
+          timeZone={data.timezone}
+          onFailed={() => void refetch()}
+        />
+      )}
     </div>
   );
 }
