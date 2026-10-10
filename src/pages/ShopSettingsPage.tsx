@@ -33,6 +33,7 @@ import { accentContrastOnWhite, contrastRatio } from '../utils/contrast';
 import { useShopReferenceLists } from '../features/menu/useShopReferenceLists';
 import { formatRate, labelFor } from '../features/menu/foodInfo';
 import type { MenuLanguage } from '../services/api';
+import { menuLanguagesOf } from '../features/menu/translations';
 
 const MENU_LANGUAGES: MenuLanguage[] = ['de', 'en'];
 
@@ -170,8 +171,8 @@ export function ShopSettingsPage() {
     country: shop.address?.country ?? '',
   };
 
-  const originalLanguage: MenuLanguage = shop.menuLanguages?.[0] ?? 'de';
-  const currentLanguages = languagesState ?? shop.menuLanguages ?? [originalLanguage];
+  const originalLanguage: MenuLanguage = menuLanguagesOf(shop)[0];
+  const currentLanguages = languagesState ?? menuLanguagesOf(shop);
 
   const handleSaveLanguages = async () => {
     setIsSavingLanguages(true);

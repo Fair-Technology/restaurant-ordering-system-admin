@@ -14,7 +14,7 @@ import { MyButton } from '../components/ui/MyButton';
 import { MyInput, MyTextarea } from '../components/ui/MyInput';
 import { MySpinner } from '../components/ui/MySpinner';
 import { useToast } from '../contexts/ToastContext';
-import { countMissingTranslations } from '../features/menu/translations';
+import { countMissingTranslations, menuLanguagesOf } from '../features/menu/translations';
 
 // Loose shape covering both variantGroups and addonGroups entries (addon-only fields optional).
 interface ProductGroup {
@@ -56,7 +56,7 @@ export function TranslationsPage() {
   if (isLoading) return <MySpinner label={t('translations.loading')} />;
   if (isError || !shop) return <p className="text-red-500">{t('translations.loadError')}</p>;
 
-  const languages: MenuLanguage[] = shop.menuLanguages?.length ? shop.menuLanguages : ['de'];
+  const languages: MenuLanguage[] = menuLanguagesOf(shop);
   const extra = languages.slice(1);
 
   if (extra.length === 0) {
