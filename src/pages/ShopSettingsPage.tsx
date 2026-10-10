@@ -14,6 +14,8 @@ import {
   useCancelShopNameChangeMutation,
 } from '../services/api';
 import { checkCoverImageFile, uploadCoverImage } from '../features/shops/coverImage';
+import { MySwitch } from '../components/ui/MySwitch';
+import { bannerShownOf, brandingWithBanner } from '../features/shops/bannerSwitch';
 import { MyCard } from '../components/ui/MyCard';
 import { MySpinner } from '../components/ui/MySpinner';
 import { MyButton } from '../components/ui/MyButton';
@@ -86,6 +88,7 @@ export function ShopSettingsPage() {
   const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [isRemovingCover, setIsRemovingCover] = useState(false);
   const [coverError, setCoverError] = useState<string | null>(null);
+  const [isSavingBanner, setIsSavingBanner] = useState(false);
   const coverInputRef = useRef<HTMLInputElement>(null);
   const qrRef = useRef<HTMLCanvasElement>(null);
 
@@ -270,8 +273,7 @@ export function ShopSettingsPage() {
         shopId: shopId!,
         updateShopRequest: {
           branding: {
-            logoUrl: shop.branding?.logoUrl ?? undefined,
-            heroImageUrl: shop.branding?.heroImageUrl ?? undefined,
+            ...brandingWithBanner(shop.branding, bannerShownOf(shop.branding)),
             accentColor: currentAccent,
           },
         },
@@ -385,6 +387,23 @@ export function ShopSettingsPage() {
     }
   };
 
+  const handleBannerSwitch = async (show: boolean) => {
+    setIsSavingBanner(true);
+    setCoverError(null);
+    try {
+      await updateShop({
+        shopId: shopId!,
+        updateShopRequest: { branding: brandingWithBanner(shop.branding, show) },
+      }).unwrap();
+      toast.success(t(show ? 'shops.bannerShownSaved' : 'shops.bannerHiddenSaved'));
+      refetch();
+    } catch {
+      setCoverError(t('shops.bannerFailedToSave'));
+    } finally {
+      setIsSavingBanner(false);
+    }
+  };
+
   const handleCoverUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!coverFile) return;
@@ -460,6 +479,7 @@ export function ShopSettingsPage() {
 
   const currentLogoUrl = shop.branding?.logoUrl;
   const currentCoverUrl = shop.branding?.heroImageUrl || null;
+  const bannerShown = bannerShownOf(shop.branding);
   const coverFileError = coverFile ? checkCoverImageFile(coverFile) : null;
 
   return (
@@ -638,18 +658,40 @@ export function ShopSettingsPage() {
         <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
           {t('shops.coverImage')}
         </p>
-        <p className="text-sm text-gray-500">{t('shops.coverImageHelp')}</p>
-        {currentCoverUrl ? (
-          <img
-            src={currentCoverUrl}
-            alt={t('shops.coverImage')}
-            className="w-full aspect-[3/1] rounded-xl object-cover border border-gray-200"
+        <div className="flex items-start gap-3 text-sm text-gray-800">
+          <MySwitch
+            checked={bannerShown}
+            disabled={isSavingBanner}
+            onChange={handleBannerSwitch}
+            labelledBy="banner-switch-label"
+            describedBy="banner-switch-help"
           />
-        ) : (
-          <div className="w-full aspect-[3/1] rounded-xl bg-gray-100 border border-gray-200 flex items-center justify-center px-4 text-center">
-            <span className="text-xs text-gray-400">{t('shops.coverImagePlaceholder')}</span>
-          </div>
-        )}
+          <span>
+            <span id="banner-switch-label" className="block font-medium">{t('shops.bannerShowLabel')}</span>
+            <span id="banner-switch-help" className="block text-gray-600">{t('shops.bannerShowHelp')}</span>
+          </span>
+        </div>
+        <p className="text-sm text-gray-500">{t('shops.coverImageHelp')}</p>
+        <div className="relative">
+          {currentCoverUrl ? (
+            <img
+              src={currentCoverUrl}
+              alt={t('shops.coverImage')}
+              className={`w-full aspect-[3/1] rounded-xl object-cover border border-gray-200 ${bannerShown ? '' : 'opacity-40 grayscale'}`}
+            />
+          ) : (
+            <div className="w-full aspect-[3/1] rounded-xl bg-gray-100 border border-gray-200 flex items-center justify-center px-4 text-center">
+              <span className="text-xs text-gray-400">{t('shops.coverImagePlaceholder')}</span>
+            </div>
+          )}
+          {!bannerShown && (
+            <span className="absolute inset-0 flex items-center justify-center">
+              <span className="rounded-full bg-gray-900/80 px-3 py-1 text-xs font-medium text-white">
+                {t('shops.bannerHiddenNote')}
+              </span>
+            </span>
+          )}
+        </div>
         {coverError && <p className="text-sm text-red-600">{coverError}</p>}
         <form onSubmit={handleCoverUpload} className="space-y-3">
           <div className="flex flex-col gap-1">

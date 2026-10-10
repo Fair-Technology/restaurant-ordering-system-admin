@@ -606,6 +606,8 @@ export type ShopBranding = {
   heroImageUrl?: string | null;
   /** Accent color (hex), used for buttons and highlights on the storefront */
   accentColor?: string | null;
+  /** Whether the shop page shows its banner (cover image). Missing means true. The uploaded picture is kept while false. */
+  showHero?: boolean;
 } | null;
 export type ShopResponse = {
   /** Shop ID */
