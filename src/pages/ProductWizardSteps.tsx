@@ -9,9 +9,11 @@ import { MyButton } from '../components/ui/MyButton';
 import { MyInput, MyTextarea } from '../components/ui/MyInput';
 import { CurrencyInput } from '../components/ui/CurrencyInput';
 import { useCreateCategoryMutation } from '../services/api';
-import type { ReferenceEntry, ReferenceListsResponse, SpiceLevel, TranslationMap } from '../services/api';
+import type { MenuLanguage, ReferenceEntry, ReferenceListsResponse, SpiceLevel, TranslationMap } from '../services/api';
 import { effectiveTaxClassId, MODE_ORDER, isFoodInfoDeclared, labelFor, taxClassOptionLabel, toggleId, toggleMode, unavailableModesInOrder } from '../features/menu/foodInfo';
 import type { FoodInfo } from '../features/menu/foodInfo';
+import { TranslationsSection } from '../components/menu/TranslationsSection';
+import type { TranslationRow } from '../components/menu/TranslationsSection';
 
 // ── Shared types ──────────────────────────────────────────────────────────────
 
@@ -112,9 +114,17 @@ interface Step1Props {
   nameError: boolean;
   descError: boolean;
   existingImageUrl?: string | null;
+  /** Present only when the shop has a second menu language. */
+  translation?: {
+    language: MenuLanguage;
+    name: string;
+    description: string;
+    setName: (v: string) => void;
+    setDescription: (v: string) => void;
+  };
 }
 
-export function Step1Basics({ form, setForm, imageFile, setImageFile, currencySymbol, nameError, descError, existingImageUrl }: Step1Props) {
+export function Step1Basics({ form, setForm, imageFile, setImageFile, currencySymbol, nameError, descError, existingImageUrl, translation }: Step1Props) {
   const { t } = useTranslation();
   return (
     <div className="space-y-4">
@@ -142,6 +152,15 @@ export function Step1Basics({ form, setForm, imageFile, setImageFile, currencySy
           <p className="mt-1 text-xs text-red-500">{t('products.description')} is required.</p>
         )}
       </div>
+      {translation && (
+        <TranslationsSection
+          language={translation.language}
+          rows={[
+            { id: 'name', original: form.name, value: translation.name, onChange: translation.setName },
+            { id: 'description', original: form.description, value: translation.description, onChange: translation.setDescription, multiline: true },
+          ]}
+        />
+      )}
       <CurrencyInput
         label={t('products.price', { symbol: currencySymbol })}
         valueCents={form.price}
@@ -584,6 +603,12 @@ interface Step4Props {
   addAddonOption: (groupId: string) => void;
   removeAddonOption: (groupId: string, optionId: string) => void;
   updateAddonOption: (groupId: string, optionId: string, patch: Partial<AddonOption>) => void;
+  /** Present only when the shop has a second menu language. */
+  translation?: {
+    language: MenuLanguage;
+    setGroup: (kind: 'variant' | 'addon', groupId: string, value: string) => void;
+    setOption: (kind: 'variant' | 'addon', groupId: string, optionId: string, value: string) => void;
+  };
 }
 
 export function Step4Customise({
@@ -591,8 +616,27 @@ export function Step4Customise({
   addVariantOption, removeVariantOption, updateVariantOption,
   addonGroups, addAddonGroup, removeAddonGroup, updateAddonGroup,
   addAddonOption, removeAddonOption, updateAddonOption,
+  translation,
 }: Step4Props) {
   const { t } = useTranslation();
+  const translationRows: TranslationRow[] = translation
+    ? ([['variant', variantGroups], ['addon', addonGroups]] as const).flatMap(([kind, groups]) =>
+        groups.flatMap((g) => [
+          {
+            id: `${kind}-${g.id}`,
+            original: g.name,
+            value: g.nameTranslations?.[translation.language] ?? '',
+            onChange: (v: string) => translation.setGroup(kind, g.id, v),
+          },
+          ...g.options.map((o) => ({
+            id: `${kind}-${g.id}-${o.id}`,
+            original: o.name,
+            value: o.nameTranslations?.[translation.language] ?? '',
+            onChange: (v: string) => translation.setOption(kind, g.id, o.id, v),
+          })),
+        ]),
+      )
+    : [];
   return (
     <div className="space-y-4">
       {/* Variant Groups */}
@@ -736,6 +780,8 @@ export function Step4Customise({
           </div>
         ))}
       </MyCard>
+
+      {translation && <TranslationsSection language={translation.language} rows={translationRows} />}
     </div>
   );
 }

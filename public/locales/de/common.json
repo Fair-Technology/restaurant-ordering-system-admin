@@ -23,7 +23,6 @@
     "shopOffline": "Shop Offline",
     "staff": "Mitarbeiter",
     "activity": "Aktivität",
-    "translations": "Übersetzungen",
     "legal": "Rechtliches"
   },
   "subscription": {
@@ -252,6 +251,8 @@
     "menuLanguagesSaving": "Speichern…",
     "menuLanguagesSaved": "Sprachen gespeichert.",
     "menuLanguagesFailed": "Sprachen konnten nicht gespeichert werden.",
+    "menuLanguage": "Menüsprache",
+    "menuLanguageHelp": "In dieser Sprache schreiben Sie Ihre Speisekarte. Sie kann später nicht geändert werden.",
     "languageName": {
       "de": "Deutsch",
       "en": "Englisch"
@@ -548,9 +549,7 @@
     "taxClassNoneYet": "Noch keine Steuerklasse",
     "notOnMenu": "Nicht auf der Karte – Allergene angeben",
     "notDeclared": "Nicht angegeben",
-    "refsLoadError": "Allergen- und Steuerlisten konnten nicht geladen werden.",
-    "translationsBanner": "Bei {{count}} Texten fehlt eine Übersetzung.",
-    "translationsBannerLink": "Jetzt übersetzen"
+    "refsLoadError": "Allergen- und Steuerlisten konnten nicht geladen werden."
   },
   "variants": {
     "title": "Varianten",
@@ -771,22 +770,9 @@
     "deleted": "Kategorie gelöscht.",
     "reordered": "Kategoriereihenfolge gespeichert."
   },
-  "translations": {
-    "title": "Übersetzungen",
-    "subtitle": "Karte übersetzen – {{language}}. Leere Felder zeigen den Originaltext.",
-    "missing": "{{count}} fehlen",
-    "noExtraLanguage": "Fügen Sie in den Einstellungen eine zweite Menüsprache hinzu, um Ihre Karte zu übersetzen.",
-    "goToSettings": "Einstellungen öffnen",
-    "categoriesHeading": "Kategorien",
-    "dishesHeading": "Gerichte",
-    "original": "Original",
-    "save": "Speichern",
-    "saving": "Speichern…",
-    "saved": "Übersetzung gespeichert.",
-    "failed": "Übersetzung konnte nicht gespeichert werden.",
-    "loading": "Übersetzungen werden geladen…",
-    "loadError": "Ihre Karte konnte nicht geladen werden.",
-    "empty": "Ihre Karte enthält noch keine Gerichte."
+  "translationFields": {
+    "title": "Übersetzungen (optional)",
+    "hint": "Tragen Sie neben jedem Text die {{language}}-Fassung ein. Ein leeres Feld zeigt das Original."
   },
   "legal": {
     "title": "Rechtliches & Daten",

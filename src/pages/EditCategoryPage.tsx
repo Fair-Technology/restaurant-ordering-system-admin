@@ -11,6 +11,9 @@ import { Breadcrumb } from '../components/ui/Breadcrumb';
 import { useToast } from '../contexts/ToastContext';
 import { useShopReferenceLists } from '../features/menu/useShopReferenceLists';
 import { labelFor } from '../features/menu/foodInfo';
+import { menuLanguagesOf } from '../features/menu/translations';
+import { TranslationsSection } from '../components/menu/TranslationsSection';
+import type { TranslationMap } from '../services/api';
 
 export function EditCategoryPage() {
   const { shopId, categoryId } = useParams<{ shopId: string; categoryId: string }>();
@@ -32,6 +35,7 @@ export function EditCategoryPage() {
   const [name, setName] = useState('');
   const [icon, setIcon] = useState<string | null>(null);
   const [taxClassId, setTaxClassId] = useState('');
+  const [nameTranslations, setNameTranslations] = useState<TranslationMap>({});
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleteConfirmName, setDeleteConfirmName] = useState('');
 
@@ -40,8 +44,11 @@ export function EditCategoryPage() {
       setName(category.name ?? '');
       setIcon(category.icon ?? null);
       setTaxClassId(category.taxClassId ?? '');
+      setNameTranslations(category.nameTranslations ?? {});
     }
   }, [category]);
+
+  const extraLanguage = shop ? menuLanguagesOf(shop)[1] : undefined;
 
   if (isLoading) return <MySpinner label={t('categories.loadingCategory')} />;
   if (isError || !category) return <p className="text-red-500">{t('categories.failedToLoad')}</p>;
@@ -54,6 +61,7 @@ export function EditCategoryPage() {
         categoryId: categoryId!,
         updateCategoryRequest: {
           name,
+          ...(extraLanguage ? { nameTranslations } : {}),
           icon: icon ?? undefined,
           ...(taxClassId ? { taxClassId } : {}),
         },
@@ -107,6 +115,17 @@ export function EditCategoryPage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
+          {extraLanguage && (
+            <TranslationsSection
+              language={extraLanguage}
+              rows={[{
+                id: 'name',
+                original: name,
+                value: nameTranslations[extraLanguage] ?? '',
+                onChange: (v) => setNameTranslations((m) => ({ ...m, [extraLanguage]: v })),
+              }]}
+            />
+          )}
           {(refs?.taxClasses.length ?? 0) > 0 && (
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium text-gray-700">{t('categories.taxClass')}</label>
