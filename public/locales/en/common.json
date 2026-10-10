@@ -23,7 +23,6 @@
     "shopOffline": "Shop Offline",
     "staff": "Staff",
     "activity": "Activity",
-    "translations": "Translations",
     "legal": "Legal"
   },
   "subscription": {
@@ -252,6 +251,8 @@
     "menuLanguagesSaving": "Saving…",
     "menuLanguagesSaved": "Languages saved.",
     "menuLanguagesFailed": "Could not save languages.",
+    "menuLanguage": "Menu language",
+    "menuLanguageHelp": "This is the language you write your menu in. It can't be changed later.",
     "languageName": {
       "de": "German",
       "en": "English"
@@ -548,9 +549,7 @@
     "taxClassNoneYet": "No tax class yet",
     "notOnMenu": "Not on menu — declare allergens",
     "notDeclared": "Not declared",
-    "refsLoadError": "Could not load allergen and tax lists.",
-    "translationsBanner": "{{count}} texts are missing a translation.",
-    "translationsBannerLink": "Translate now"
+    "refsLoadError": "Could not load allergen and tax lists."
   },
   "variants": {
     "title": "Variants",
@@ -771,22 +770,9 @@
     "deleted": "Category deleted.",
     "reordered": "Category order saved."
   },
-  "translations": {
-    "title": "Translations",
-    "subtitle": "Translate your menu into {{language}}. Leave a field empty to show the original.",
-    "missing": "{{count}} missing",
-    "noExtraLanguage": "Add a second menu language in Settings to translate your menu.",
-    "goToSettings": "Open settings",
-    "categoriesHeading": "Categories",
-    "dishesHeading": "Dishes",
-    "original": "Original",
-    "save": "Save",
-    "saving": "Saving…",
-    "saved": "Translation saved.",
-    "failed": "Could not save the translation.",
-    "loading": "Loading translations…",
-    "loadError": "Could not load your menu.",
-    "empty": "Your menu has no dishes yet."
+  "translationFields": {
+    "title": "Translations (optional)",
+    "hint": "Type the {{language}} version next to each text. Leave a box empty to show the original."
   },
   "legal": {
     "title": "Legal & data",

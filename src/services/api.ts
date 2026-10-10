@@ -736,6 +736,8 @@ export type CreateShopRequest = {
   /** Payment policy */
   /** Version of the data processing agreement the owner accepted at creation */
   acceptDpaVersion?: string;
+  /** The shop's original menu language, chosen at creation and locked afterwards. Absent: the country decides. */
+  menuLanguage?: MenuLanguage;
   address: {
     /** Street address */
     street: string;

@@ -8,7 +8,8 @@ import {
   useCreateShopMutation,
   useUpdateShopMutation,
 } from '../services/api';
-import type { CreateShopRequest, ShopResponse } from '../services/api';
+import type { CreateShopRequest, MenuLanguage, ShopResponse } from '../services/api';
+import { defaultMenuLanguageForUiLanguage } from '../features/menu/translations';
 import { useGetDpaDocumentQuery } from '../services/legalApi';
 import { MyButton } from '../components/ui/MyButton';
 import { MyInput } from '../components/ui/MyInput';
@@ -73,6 +74,7 @@ function CreateShopModal({ onClose }: { onClose: () => void }) {
   const [form, setForm] = useState<Partial<CreateShopRequest>>({
     name: '',
     countryCode: 'AU',
+    menuLanguage: defaultMenuLanguageForUiLanguage(i18n.language),
     currency: 'AUD',
     timezone: 'Australia/Sydney',
     minOrderAmountCents: 0,
@@ -197,6 +199,20 @@ function CreateShopModal({ onClose }: { onClose: () => void }) {
                     <option key={c.code} value={c.code}>{c.label}</option>
                   ))}
                 </select>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="shop-menu-language" className="text-sm font-medium text-gray-700">{t('shops.menuLanguage')}</label>
+                <select
+                  id="shop-menu-language"
+                  value={form.menuLanguage ?? 'en'}
+                  onChange={(e) => setForm((f) => ({ ...f, menuLanguage: e.target.value as MenuLanguage }))}
+                  className="w-full border border-gray-200 rounded-lg bg-white text-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400"
+                >
+                  <option value="de">{t('shops.languageName.de')}</option>
+                  <option value="en">{t('shops.languageName.en')}</option>
+                </select>
+                <p className="text-xs text-gray-400">{t('shops.menuLanguageHelp')}</p>
               </div>
 
               <div className="space-y-2">

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import type { ProductResponse } from '../services/api';
+import type { MenuLanguage, ProductResponse, TranslationMap } from '../services/api';
 import {
   useGetProductsByShopQuery,
   useGetProductByIdQuery,
@@ -28,7 +28,7 @@ import {
 import { useShopReferenceLists } from '../features/menu/useShopReferenceLists';
 import { EMPTY_FOOD_INFO, effectiveTaxClassId, foodInfoFromProduct, initialScheduleDays, labelFor, taxClassOptionLabel } from '../features/menu/foodInfo';
 import type { FoodInfo } from '../features/menu/foodInfo';
-import { countMissingTranslations } from '../features/menu/translations';
+import { menuLanguagesOf } from '../features/menu/translations';
 import { isListRefreshing } from '../features/menu/productListStatus';
 import { wizardBackAction, wizardStepSequence } from '../features/menu/wizardSteps';
 
@@ -402,11 +402,15 @@ function ProductEditView({
   const [generateUploadUrl] = useGenerateUploadUrlMutation();
   const [addProductImage] = useAddProductImageMutation();
   const { refs } = useShopReferenceLists(shopId);
+  const { data: shop } = useGetShopByIdQuery({ shopId });
+  const extraLanguage = shop ? menuLanguagesOf(shop)[1] : undefined;
 
   const [mode, setMode] = useState<'simple' | 'extended'>('simple');
   const [step, setStep] = useState<StepNum>(1);
   const [direction, setDirection] = useState<'forward' | 'back'>('forward');
   const [initialized, setInitialized] = useState(false);
+  const [nameTranslations, setNameTranslations] = useState<TranslationMap>({});
+  const [descriptionTranslations, setDescriptionTranslations] = useState<TranslationMap>({});
 
   const stepSequence = wizardStepSequence(mode);
   const isFirstStep = step === stepSequence[0];
@@ -431,6 +435,8 @@ function ProductEditView({
         description: product.description ?? '',
         price: product.price ?? 0,
       });
+      setNameTranslations(product.nameTranslations ?? {});
+      setDescriptionTranslations(product.descriptionTranslations ?? {});
       setSelectedCategoryIds(product.categories?.map((c) => c.id!).filter(Boolean) ?? []);
       setFoodInfo(foodInfoFromProduct(product));
       setVariantGroups(
@@ -483,6 +489,23 @@ function ProductEditView({
   const removeAddonOption = (groupId: string, optionId: string) => setAddonGroups((gs) => gs.map((g) => g.id === groupId ? { ...g, options: g.options.filter((o) => o.id !== optionId) } : g));
   const updateAddonOption = (groupId: string, optionId: string, patch: Partial<AddonOption>) => setAddonGroups((gs) => gs.map((g) => g.id === groupId ? { ...g, options: g.options.map((o) => o.id === optionId ? { ...o, ...patch } : o) } : g));
 
+  // Translation helpers (only reachable when the shop has a second menu language)
+  const withTranslation = (map: TranslationMap | undefined, lang: MenuLanguage, value: string): TranslationMap => ({ ...(map ?? {}), [lang]: value });
+  const setGroupTranslation = (kind: 'variant' | 'addon', groupId: string, value: string) => {
+    if (!extraLanguage) return;
+    const apply = <G extends { id: string; nameTranslations?: TranslationMap }>(gs: G[]) =>
+      gs.map((g) => g.id === groupId ? { ...g, nameTranslations: withTranslation(g.nameTranslations, extraLanguage, value) } : g);
+    if (kind === 'variant') setVariantGroups(apply); else setAddonGroups(apply);
+  };
+  const setOptionTranslation = (kind: 'variant' | 'addon', groupId: string, optionId: string, value: string) => {
+    if (!extraLanguage) return;
+    const apply = <G extends { id: string; options: { id: string; nameTranslations?: TranslationMap }[] }>(gs: G[]) =>
+      gs.map((g) => g.id === groupId
+        ? { ...g, options: g.options.map((o) => o.id === optionId ? { ...o, nameTranslations: withTranslation(o.nameTranslations, extraLanguage, value) } : o) }
+        : g);
+    if (kind === 'variant') setVariantGroups(apply); else setAddonGroups(apply);
+  };
+
   function validateStep(s: StepNum): boolean {
     if (s === 1) {
       const ne = form.name.trim() === '';
@@ -520,6 +543,7 @@ function ProductEditView({
           shopId,
           name: form.name,
           description: form.description,
+          ...(extraLanguage ? { nameTranslations, descriptionTranslations } : {}),
           price: form.price,
           categoryIds: selectedCategoryIds,
           variantGroups,
@@ -636,7 +660,8 @@ function ProductEditView({
         )}
         <div key={step} className={direction === 'forward' ? 'animate-slide-in-right' : 'animate-slide-in-left'}>
           {step === 1 && (
-            <Step1Basics form={form} setForm={setForm} imageFile={imageFile} setImageFile={setImageFile} currencySymbol={currencySymbol} nameError={nameError} descError={descError} existingImageUrl={existingImageUrl} />
+            <Step1Basics form={form} setForm={setForm} imageFile={imageFile} setImageFile={setImageFile} currencySymbol={currencySymbol} nameError={nameError} descError={descError} existingImageUrl={existingImageUrl}
+              translation={extraLanguage ? { language: extraLanguage, name: nameTranslations[extraLanguage] ?? '', description: descriptionTranslations[extraLanguage] ?? '', setName: (v) => setNameTranslations((m) => withTranslation(m, extraLanguage, v)), setDescription: (v) => setDescriptionTranslations((m) => withTranslation(m, extraLanguage, v)) } : undefined} />
           )}
           {step === 2 && (
             <StepCategories shopId={shopId} categories={categoriesList} selectedCategoryIds={selectedCategoryIds} setSelectedCategoryIds={setSelectedCategoryIds} taxClasses={refs?.taxClasses ?? []} taxRefs={refs} taxClassOverride={foodInfo.taxClassId} setTaxClassOverride={(id) => setFoodInfo({ ...foodInfo, taxClassId: id })} categoryError={categoryError} showTaxOverride={mode === 'extended'} />
@@ -645,7 +670,8 @@ function ProductEditView({
             <StepFoodInfo foodInfo={foodInfo} setFoodInfo={setFoodInfo} refs={refs} showOptional={mode === 'extended'} />
           )}
           {step === 4 && (
-            <Step4Customise variantGroups={variantGroups} addVariantGroup={addVariantGroup} removeVariantGroup={removeVariantGroup} updateVariantGroupName={updateVariantGroupName} addVariantOption={addVariantOption} removeVariantOption={removeVariantOption} updateVariantOption={updateVariantOption} addonGroups={addonGroups} addAddonGroup={addAddonGroup} removeAddonGroup={removeAddonGroup} updateAddonGroup={updateAddonGroup} addAddonOption={addAddonOption} removeAddonOption={removeAddonOption} updateAddonOption={updateAddonOption} />
+            <Step4Customise variantGroups={variantGroups} addVariantGroup={addVariantGroup} removeVariantGroup={removeVariantGroup} updateVariantGroupName={updateVariantGroupName} addVariantOption={addVariantOption} removeVariantOption={removeVariantOption} updateVariantOption={updateVariantOption} addonGroups={addonGroups} addAddonGroup={addAddonGroup} removeAddonGroup={removeAddonGroup} updateAddonGroup={updateAddonGroup} addAddonOption={addAddonOption} removeAddonOption={removeAddonOption} updateAddonOption={updateAddonOption}
+              translation={extraLanguage ? { language: extraLanguage, setGroup: setGroupTranslation, setOption: setOptionTranslation } : undefined} />
           )}
           {step === 6 && (
             <Step6Review form={form} imageFile={imageFile} existingImageUrl={existingImageUrl} selectedCategoryIds={selectedCategoryIds} categories={categoriesList} variantGroups={variantGroups} addonGroups={addonGroups} currencySymbol={currencySymbol} foodInfo={foodInfo} refs={refs} effectiveTaxClassLabel={effectiveTaxClassLabel} />
@@ -1535,7 +1561,6 @@ export function ProductsPage() {
   const { data: products, isLoading, isFetching, isError } = useGetProductsByShopQuery({ shopId: shopId! });
   const isRefreshing = isListRefreshing({ isLoading, isFetching });
   const { data: shop } = useGetShopByIdQuery({ shopId: shopId! });
-  const { data: categories } = useGetCategoriesByShopQuery({ shopId: shopId! });
   const currencySymbol = shop?.currency ? getCurrencySymbol(shop.currency) : '$';
 
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
@@ -1588,27 +1613,9 @@ export function ProductsPage() {
   );
   const isEmpty = !products?.length;
 
-  const extraLanguage = (shop?.menuLanguages?.length ?? 1) > 1 ? shop!.menuLanguages![1] : null;
-  const missingTranslations = extraLanguage
-    ? countMissingTranslations(products ?? [], categories ?? [], extraLanguage)
-    : 0;
-
   return (
     <>
       <div className="space-y-6">
-        {extraLanguage && missingTranslations > 0 && (
-          <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5">
-            <p className="text-sm text-amber-800">
-              {t('products.translationsBanner', { count: missingTranslations })}
-            </p>
-            <Link
-              to={`/shops/${shopId}/translations`}
-              className="text-sm font-medium text-amber-900 underline underline-offset-2 flex-shrink-0"
-            >
-              {t('products.translationsBannerLink')}
-            </Link>
-          </div>
-        )}
         <div className="flex items-center justify-between gap-3">
           {/* The list refetch after a save takes a moment; without this the
               old rows read as a save that didn't take. */}

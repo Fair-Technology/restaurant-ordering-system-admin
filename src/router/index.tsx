@@ -8,7 +8,6 @@ import { ShopsPage } from '../pages/ShopsPage';
 import { ShopSettingsPage } from '../pages/ShopSettingsPage';
 import { CategoriesPage } from '../pages/CategoriesPage';
 import { EditCategoryPage } from '../pages/EditCategoryPage';
-import { TranslationsPage } from '../pages/TranslationsPage';
 import { TablesPage } from '../pages/TablesPage';
 import { PromotionsPage } from '../pages/PromotionsPage';
 import { ProductsPage } from '../pages/ProductsPage';
@@ -45,7 +44,6 @@ export const router = createBrowserRouter([
               { path: 'orders', element: <OrdersPage /> },
               { path: 'reports', element: <ReportsPage /> },
               { path: 'categories', element: <CategoriesPage /> },
-              { path: 'translations', element: <TranslationsPage /> },
               { path: 'tables', element: <TablesPage /> },
               { path: 'promotions', element: <PromotionsPage /> },
               { path: 'subscription', element: <SubscriptionPage /> },

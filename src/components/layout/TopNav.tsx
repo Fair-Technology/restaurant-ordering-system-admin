@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft, Menu, X,
   Package, ClipboardList, Tag, CreditCard, Settings, Store,
-  Users, History, LogOut, Languages, Scale,
+  Users, History, LogOut, Scale,
   Circle, QrCode, Percent, ChartColumn, LayoutDashboard, Layers,
 } from 'lucide-react';
 import {
@@ -103,15 +103,6 @@ export function TopNav() {
           <NavLink to={`/shops/${shopId}/categories`} className={({ isActive }) => navItemClass(isActive)}>
             <Tag size={16} className="flex-shrink-0" />
             {t('nav.categories')}
-          </NavLink>
-        </>
-      )}
-      {nav.includes('translations') && (currentShop?.menuLanguages?.length ?? 1) > 1 && (
-        <>
-          {divider}
-          <NavLink to={`/shops/${shopId}/translations`} className={({ isActive }) => navItemClass(isActive)}>
-            <Languages size={16} className="flex-shrink-0" />
-            {t('nav.translations')}
           </NavLink>
         </>
       )}
