@@ -127,7 +127,7 @@
     "logoOptional": "(optional)",
     "failedToUploadLogo": "Failed to upload logo.",
     "coverImage": "Cover Image",
-    "coverImageHelp": "Shown as a wide banner at the top of your shop page. Use a landscape photo at least 1600 × 530 pixels (about 3:1). Phones show only the middle, so keep the important part centred. JPG, PNG or WebP, up to 10 MB.",
+    "coverImageHelp": "Shown as a banner at the top of your shop page. The whole picture is always shown, never cut off; the banner takes the picture's shape, and any space left over is filled with a soft blurred copy. A landscape picture (about 2:1 to 3:1, at least 1600 pixels wide) looks best. JPG, PNG or WebP, up to 10 MB.",
     "coverImagePlaceholder": "No cover image set — your shop shows a default photo",
     "uploadCoverImage": "Upload Cover Image",
     "uploadingCoverImage": "Uploading...",
