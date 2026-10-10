@@ -21,12 +21,15 @@ import { ActivityPage } from '../pages/ActivityPage';
 import { LegalPage } from '../pages/LegalPage';
 import { StaffPage } from '../pages/StaffPage';
 import { StaffLoginPage } from '../pages/StaffLoginPage';
+import { NotFoundPage } from '../pages/NotFoundPage';
+import { RouteErrorPage } from '../pages/RouteErrorPage';
 
 export const router = createBrowserRouter([
-  { path: '/login', element: <LoginPage /> },
+  { path: '/login', element: <LoginPage />, errorElement: <RouteErrorPage /> },
   { path: '/:slug/staff', element: <StaffLoginPage /> },
   {
     element: <RequireAuth />,
+    errorElement: <RouteErrorPage />,
     children: [
       { path: '/phone', element: <PhoneHomePage /> },
       { path: '/shops/:shopId/phone', element: <PhoneOrdersPage /> },
@@ -51,9 +54,11 @@ export const router = createBrowserRouter([
               { path: 'legal', element: <LegalPage /> },
               { path: 'staff', element: <StaffPage /> },
               { path: 'activity', element: <ActivityPage /> },
+              { path: '*', element: <NotFoundPage /> },
             ],
           },
           { path: '/shops/:shopId/categories/:categoryId/edit', element: <EditCategoryPage /> },
+          { path: '*', element: <NotFoundPage /> },
         ],
       },
     ],
