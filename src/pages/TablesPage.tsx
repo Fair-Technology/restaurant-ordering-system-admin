@@ -11,6 +11,7 @@ import { useToast } from '../contexts/ToastContext';
 import { downloadBase64File } from '../features/files/downloadBase64';
 import { PNG_DATA_URL_PREFIX, parseTableNumbers, qrPngDataUrl, tableUrl } from '../features/tables/tableLinks';
 import { buildTableCardsPdf } from '../features/tables/tableCards';
+import { menuLanguagesOf } from '../features/menu/translations';
 
 export function TablesPage() {
   const { shopId } = useParams<{ shopId: string }>();
@@ -35,7 +36,7 @@ export function TablesPage() {
 
   const parsed = parseTableNumbers(input);
   const base = import.meta.env.VITE_SHOP_BASE_URL ?? 'https://www.example.com';
-  const cardLang: 'de' | 'en' = shop.menuLanguages?.[0] === 'en' ? 'en' : 'de';
+  const cardLang: 'de' | 'en' = menuLanguagesOf(shop)[0];
   const slug = shop.slug ?? '';
   const shopName = shop.name ?? '';
 

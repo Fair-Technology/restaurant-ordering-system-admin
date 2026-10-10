@@ -47,3 +47,11 @@ export function countMissingTranslations(
 
   return count;
 }
+
+const ORIGINAL_LANGUAGE_COUNTRIES = ['DE', 'AT', 'CH'];
+
+/** The shop's menu languages, original first. Mirrors the backend: with none saved, the country decides (DE/AT/CH → German, else English). */
+export function menuLanguagesOf(shop: { menuLanguages?: MenuLanguage[]; countryCode?: string }): MenuLanguage[] {
+  if (shop.menuLanguages?.length) return shop.menuLanguages;
+  return [ORIGINAL_LANGUAGE_COUNTRIES.includes((shop.countryCode ?? '').toUpperCase()) ? 'de' : 'en'];
+}
