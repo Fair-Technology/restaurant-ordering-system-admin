@@ -953,5 +953,13 @@
   "phone": {
     "pickRestaurant": "Welches Restaurant?",
     "noRestaurant": "Sie haben noch kein Restaurant."
+  },
+  "notFound": {
+    "title": "Seite nicht gefunden",
+    "description": "Diese Seite existiert nicht oder wurde verschoben.",
+    "backToShop": "Zurück zur Shop-Übersicht",
+    "backToShops": "Zurück zu den Shops",
+    "errorTitle": "Etwas ist schiefgelaufen",
+    "errorDescription": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut."
   }
 }
