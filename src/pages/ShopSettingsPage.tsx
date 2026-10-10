@@ -14,6 +14,7 @@ import {
   useCancelShopNameChangeMutation,
 } from '../services/api';
 import { checkCoverImageFile, uploadCoverImage } from '../features/shops/coverImage';
+import { MySwitch } from '../components/ui/MySwitch';
 import { bannerShownOf, brandingWithBanner } from '../features/shops/bannerSwitch';
 import { MyCard } from '../components/ui/MyCard';
 import { MySpinner } from '../components/ui/MySpinner';
@@ -657,19 +658,19 @@ export function ShopSettingsPage() {
         <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
           {t('shops.coverImage')}
         </p>
-        <label className="flex items-start gap-3 text-sm text-gray-800">
-          <input
-            type="checkbox"
-            className="mt-0.5 h-4 w-4"
+        <div className="flex items-start gap-3 text-sm text-gray-800">
+          <MySwitch
             checked={bannerShown}
             disabled={isSavingBanner}
-            onChange={(e) => handleBannerSwitch(e.target.checked)}
+            onChange={handleBannerSwitch}
+            labelledBy="banner-switch-label"
+            describedBy="banner-switch-help"
           />
           <span>
-            <span className="block font-medium">{t('shops.bannerShowLabel')}</span>
-            <span className="block text-gray-600">{t('shops.bannerShowHelp')}</span>
+            <span id="banner-switch-label" className="block font-medium">{t('shops.bannerShowLabel')}</span>
+            <span id="banner-switch-help" className="block text-gray-600">{t('shops.bannerShowHelp')}</span>
           </span>
-        </label>
+        </div>
         <p className="text-sm text-gray-500">{t('shops.coverImageHelp')}</p>
         <div className="relative">
           {currentCoverUrl ? (
