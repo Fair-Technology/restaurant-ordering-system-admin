@@ -127,7 +127,7 @@
     "logoOptional": "(optional)",
     "failedToUploadLogo": "Logo konnte nicht hochgeladen werden.",
     "coverImage": "Titelbild",
-    "coverImageHelp": "Wird als breites Banner oben auf Ihrer Shop-Seite angezeigt. Verwenden Sie ein Foto im Querformat mit mindestens 1600 × 530 Pixeln (etwa 3:1). Auf Smartphones ist nur die Mitte zu sehen – platzieren Sie das Wichtigste daher mittig. JPG, PNG oder WebP, bis 10 MB.",
+    "coverImageHelp": "Wird als Banner oben auf Ihrer Shop-Seite angezeigt. Das Bild wird immer vollständig gezeigt und nie abgeschnitten; das Banner passt sich der Form des Bildes an, freier Platz wird mit einer weichgezeichneten Kopie gefüllt. Am besten wirkt ein Bild im Querformat (etwa 2:1 bis 3:1, mindestens 1600 Pixel breit). JPG, PNG oder WebP, bis 10 MB.",
     "coverImagePlaceholder": "Kein Titelbild gesetzt – Ihr Shop zeigt ein Standardfoto",
     "uploadCoverImage": "Titelbild hochladen",
     "uploadingCoverImage": "Wird hochgeladen...",
