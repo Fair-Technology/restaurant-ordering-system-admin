@@ -605,7 +605,7 @@ export function ShopSettingsPage() {
             <img
               src={currentLogoUrl}
               alt="Shop logo"
-              className="w-24 h-24 rounded-xl object-cover border border-gray-200"
+              className="h-24 w-auto max-w-96 rounded-xl object-contain border border-gray-200"
             />
           ) : (
             <div className="w-24 h-24 rounded-xl bg-gray-100 border border-gray-200 flex items-center justify-center">
