@@ -86,16 +86,26 @@ export function ImageCropDialog({ file, rule, title, hint, safeAreaLabel, tooSma
 
   // Decode the picked file once; the same element is later drawn onto the output canvas.
   useEffect(() => {
+    // A cleaned-up run (StrictMode runs effects twice in dev) revokes its URL before the
+    // image has loaded; its late onerror must not mark the current file as unreadable.
+    let cancelled = false;
     const objectUrl = URL.createObjectURL(file);
     const img = new Image();
+    setLoadFailed(false);
     img.onload = () => {
+      if (cancelled) return;
       imageRef.current = img;
       setUrl(objectUrl);
       setSize({ width: img.naturalWidth, height: img.naturalHeight });
     };
-    img.onerror = () => setLoadFailed(true);
+    img.onerror = () => {
+      if (!cancelled) setLoadFailed(true);
+    };
     img.src = objectUrl;
-    return () => URL.revokeObjectURL(objectUrl);
+    return () => {
+      cancelled = true;
+      URL.revokeObjectURL(objectUrl);
+    };
   }, [file]);
 
   // Focus the dialog on open, give focus back to what opened it on close.
