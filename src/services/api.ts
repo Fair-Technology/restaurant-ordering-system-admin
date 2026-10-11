@@ -20,6 +20,7 @@ const injectedRtkApi = api.injectEndpoints({
     }),
     getShopById: build.query<GetShopByIdApiResponse, GetShopByIdApiArg>({
       query: (queryArg) => ({ url: `/shops/${queryArg.shopId}` }),
+      providesTags: (_result, _error, arg) => [{ type: 'Shops' as const, id: arg.shopId }],
     }),
     updateShop: build.mutation<UpdateShopApiResponse, UpdateShopApiArg>({
       query: (queryArg) => ({
@@ -27,6 +28,11 @@ const injectedRtkApi = api.injectEndpoints({
         method: "PATCH",
         body: queryArg.updateShopRequest,
       }),
+      // The sidebar's Online/Offline and Pause buttons read the shop; refresh it (and the shop list) after a save
+      invalidatesTags: (_result, _error, arg) => [
+        { type: 'Shops' as const, id: arg.shopId },
+        { type: 'Shops' as const, id: 'LIST' },
+      ],
     }),
     deleteShop: build.mutation<DeleteShopApiResponse, DeleteShopApiArg>({
       query: (queryArg) => ({
@@ -626,6 +632,14 @@ export type ShopResponse = {
   isPaused?: boolean;
   /** Message shown when shop is paused */
   pausedMessage?: string;
+  /** Owner pauses new orders; the menu stays visible */
+  ordersPaused?: boolean;
+  /** Message shown while orders are paused (max 280) */
+  ordersPausedMessage?: string;
+  /** isPaused or offlineBySuperadmin: show no menu */
+  isOffline?: boolean;
+  /** Platform took the shop offline; owner cannot bring it online */
+  offlineBySuperadmin?: boolean;
   /** Shop currency (ISO code) */
   currency?: string;
   /** Shop timezone */
@@ -831,6 +845,10 @@ export type UpdateShopRequest = {
   isPaused?: boolean;
   /** Message when shop is paused */
   pausedMessage?: string;
+  /** Owner pauses new orders; the menu stays visible */
+  ordersPaused?: boolean;
+  /** Message shown while orders are paused (max 280) */
+  ordersPausedMessage?: string;
   /** Payment policy */
   /** Minimum order amount in cents */
   minOrderAmountCents?: number;
