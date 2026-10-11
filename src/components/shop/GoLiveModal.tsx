@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { XCircle, X } from 'lucide-react';
@@ -79,15 +78,14 @@ interface PauseProps {
 
 export function PauseShopModal({ shopId, onClose, onSuccess }: PauseProps) {
   const { t } = useTranslation();
-  const [message, setMessage] = useState('');
   const [updateShop, { isLoading, error }] = useUpdateShopMutation();
 
+  // Offline: the storefront shows no menu and a notice that can't be closed, so there is no message to ask for
   const handleConfirm = async () => {
-    if (!message.trim()) return;
     try {
       await updateShop({
         shopId,
-        updateShopRequest: { isPaused: true, pausedMessage: message.trim() },
+        updateShopRequest: { isPaused: true },
       }).unwrap();
       onSuccess();
     } catch {
@@ -110,18 +108,7 @@ export function PauseShopModal({ shopId, onClose, onSuccess }: PauseProps) {
           </button>
         </div>
         <div className="px-6 py-4 space-y-3">
-          <label className="block">
-            <span className="text-sm font-medium text-gray-700 mb-1.5 block">
-              {t('shops.pauseMessageLabel')}
-            </span>
-            <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder={t('shops.pauseMessagePlaceholder')}
-              rows={3}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400"
-            />
-          </label>
+          <p className="text-sm text-gray-600">{t('shops.offlineConfirmText')}</p>
           {error && (
             <p className="text-xs text-red-500">{t('common.genericError')}</p>
           )}
@@ -134,7 +121,7 @@ export function PauseShopModal({ shopId, onClose, onSuccess }: PauseProps) {
             variant="danger"
             size="sm"
             onClick={handleConfirm}
-            disabled={!message.trim() || isLoading}
+            disabled={isLoading}
           >
             {isLoading ? t('shops.pausePausing') : t('shops.pauseConfirm')}
           </MyButton>

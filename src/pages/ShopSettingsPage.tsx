@@ -18,7 +18,6 @@ import { COVER_IMAGE_RULE, isWrongSizeError } from '../features/images/imageRule
 import { ImageCropDialog } from '../components/ui/ImageCropDialog';
 import { MySwitch } from '../components/ui/MySwitch';
 import { bannerShownOf, brandingWithBanner } from '../features/shops/bannerSwitch';
-import { ORDERS_PAUSED_MESSAGE_MAX, cleanOrdersPausedMessage } from '../features/shops/shopStatus';
 import { MyCard } from '../components/ui/MyCard';
 import { MySpinner } from '../components/ui/MySpinner';
 import { MyButton } from '../components/ui/MyButton';
@@ -32,6 +31,7 @@ import { KitchenTimingCard } from '../components/shop/KitchenTimingCard';
 import { DeliveryCard } from '../components/shop/DeliveryCard';
 import { ScheduledOrdersCard } from '../components/shop/ScheduledOrdersCard';
 import { DeleteShopCard } from '../components/shop/DeleteShopCard';
+import { ShopStatusCard } from '../components/shop/ShopStatusCard';
 import { DineInCard } from '../components/shop/DineInCard';
 import { accentContrastOnWhite, contrastRatio } from '../utils/contrast';
 import { useShopReferenceLists } from '../features/menu/useShopReferenceLists';
@@ -101,13 +101,6 @@ export function ShopSettingsPage() {
   const [isSavingHours, setIsSavingHours] = useState(false);
   const [hoursError, setHoursError] = useState<string | null>(null);
 
-  const [statusState, setStatusState] = useState<{
-    ordersPaused: boolean;
-    ordersPausedMessage: string;
-  } | null>(null);
-  const [isSavingStatus, setIsSavingStatus] = useState(false);
-  const [statusError, setStatusError] = useState<string | null>(null);
-
   const [accentState, setAccentState] = useState<string | null>(null);
   const [isSavingColors, setIsSavingColors] = useState(false);
   const [colorsError, setColorsError] = useState<string | null>(null);
@@ -151,11 +144,6 @@ export function ShopSettingsPage() {
   }
 
   const currentHours = hoursState ?? buildInitialHours(shop.openingHours as Record<string, unknown> | undefined);
-
-  const currentStatus = statusState ?? {
-    ordersPaused: shop.ordersPaused ?? false,
-    ordersPausedMessage: shop.ordersPausedMessage ?? '',
-  };
 
   const currentAccent = accentState ?? shop.branding?.accentColor ?? '#C2410C';
   const accentCheck = accentContrastOnWhite(currentAccent);
@@ -247,26 +235,6 @@ export function ShopSettingsPage() {
       setHoursError(t('shops.ohFailedToSave'));
     } finally {
       setIsSavingHours(false);
-    }
-  };
-
-  const handleSaveStatus = async () => {
-    setIsSavingStatus(true);
-    setStatusError(null);
-    try {
-      await updateShop({
-        shopId: shopId!,
-        updateShopRequest: {
-          ordersPaused: currentStatus.ordersPaused,
-          ordersPausedMessage: cleanOrdersPausedMessage(currentStatus.ordersPausedMessage),
-        },
-      }).unwrap();
-      toast.success(t('shops.statusSaved'));
-      refetch();
-    } catch {
-      setStatusError(t('shops.statusFailedToSave'));
-    } finally {
-      setIsSavingStatus(false);
     }
   };
 
@@ -945,48 +913,7 @@ export function ShopSettingsPage() {
         )}
       </MyCard>
 
-      <MyCard className="p-5 space-y-4">
-        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-          {t('shops.statusTitle')}
-        </p>
-        <p className="text-sm text-gray-500">{t('shops.statusPauseHelp')}</p>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600">{t('shops.statusPaused')}</span>
-            <div className="flex gap-1.5">
-              <MyButton
-                variant={currentStatus.ordersPaused ? 'primary' : 'ghost'}
-                onClick={() => setStatusState({ ...currentStatus, ordersPaused: true })}
-              >
-                {t('shops.statusYes')}
-              </MyButton>
-              <MyButton
-                variant={!currentStatus.ordersPaused ? 'primary' : 'ghost'}
-                onClick={() => setStatusState({ ...currentStatus, ordersPaused: false })}
-              >
-                {t('shops.statusNo')}
-              </MyButton>
-            </div>
-          </div>
-          {currentStatus.ordersPaused && (
-            <div className="space-y-1.5">
-              <span className="text-sm text-gray-600">{t('shops.statusPauseMessage')}</span>
-              <MyInput
-                maxLength={ORDERS_PAUSED_MESSAGE_MAX}
-                value={currentStatus.ordersPausedMessage}
-                placeholder={t('shops.statusPauseMessagePlaceholder')}
-                onChange={(e) => setStatusState({ ...currentStatus, ordersPausedMessage: e.target.value })}
-              />
-            </div>
-          )}
-        </div>
-        {statusError && <p className="text-sm text-red-600">{statusError}</p>}
-        <div className="border-t border-gray-200 pt-4">
-          <MyButton onClick={handleSaveStatus} disabled={isSavingStatus}>
-            {isSavingStatus ? t('shops.statusSaving') : t('shops.statusSave')}
-          </MyButton>
-        </div>
-      </MyCard>
+      <ShopStatusCard shop={shop} onRefetch={refetch} />
 
       <MyCard className="p-5">
         <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">

@@ -205,13 +205,13 @@
     "goLiveFix": "Beheben",
     "goLiveClose": "Schließen",
     "goLiveRemaining": "verbleibend",
-    "pauseTitle": "Shop pausieren",
+    "pauseTitle": "Shop offline nehmen?",
     "pauseMessageLabel": "Pausennachricht",
     "pauseMessagePlaceholder": "z.B. Wir haben heute geschlossen",
-    "pauseConfirm": "Pause bestätigen",
+    "pauseConfirm": "Offline nehmen",
     "pausePausing": "Pausieren…",
     "statusTitle": "Bestellungen pausieren",
-    "statusPauseHelp": "Gäste sehen weiterhin Ihre Speisekarte, können aber nicht bestellen. Nutzen Sie das bei Überlastung der Küche oder Personalmangel. Um den Shop komplett auszublenden, nutzen Sie den Online/Offline-Button im Menü.",
+    "statusPauseHelp": "Gäste sehen weiterhin Ihre Speisekarte, können aber nicht bestellen. Für Überlastung der Küche oder Personalmangel.",
     "statusAcceptingOrders": "Bestellungen annehmen",
     "statusPaused": "Neue Bestellungen pausieren",
     "statusPauseMessage": "Hinweis für Gäste (optional)",
@@ -341,7 +341,12 @@
     "kitchenBusyMinutes": "Hochbetrieb verlängert um (Minuten)",
     "kitchenSave": "Speichern",
     "kitchenSaved": "Gespeichert.",
-    "kitchenFailed": "Zubereitungszeiten konnten nicht gespeichert werden."
+    "kitchenFailed": "Zubereitungszeiten konnten nicht gespeichert werden.",
+    "offlineConfirmText": "Gäste sehen keine Speisekarte, nur den Hinweis, dass das Restaurant offline ist. Sie können es jederzeit wieder einschalten.",
+    "shopStatusTitle": "Shop-Status",
+    "statusOnline": "Shop online",
+    "statusOnlineHelp": "Ausgeschaltet zeigt die Shop-Seite keine Speisekarte, nur den Hinweis, dass das Restaurant offline ist. Für Urlaub oder vor dem Start.",
+    "statusSaveMessage": "Hinweis speichern"
   },
   "tables": {
     "title": "Tische & QR-Codes",
@@ -888,9 +893,9 @@
       "other": "Sonstige"
     },
     "impressumMissing": "Es fehlt noch: {{fields}}",
-    "taxNumber": "Steuernummer (für Rechnungen)",
-    "taxNumberHelp": "Ihre Steuernummer. Wird nur auf Rechnungen gedruckt, nie im öffentlichen Impressum angezeigt.",
-    "taxIdMissing": "Rechnungen benötigen eine Steuernummer oder USt-IdNr. Bitte vor dem Livegang eintragen.",
+    "taxNumber": "Steuernummer für Rechnungen",
+    "taxNumberHelp": "Steht nur auf Ihren Rechnungen, nie im öffentlichen Impressum. Rechnungen brauchen diese oder Ihre USt-IdNr.",
+    "taxIdMissing": "Ohne Steuernummer oder USt-IdNr. können keine Rechnungen erstellt werden und das Restaurant kann nicht live gehen.",
     "impressumSave": "Impressum speichern",
     "termsTitle": "Allgemeine Geschäftsbedingungen (AGB)",
     "withdrawalTitle": "Widerrufsbelehrung",
@@ -933,10 +938,7 @@
     "eraseConfirm": "Die Daten von {{email}} aus allen Bestellungen entfernen? Das ist endgültig.",
     "eraseDone": "Erledigt – {{count}} Bestellungen anonymisiert.",
     "eraseFailed": "Anonymisierung fehlgeschlagen.",
-    "ownerOnly": "Nur der Inhaber kann Daten exportieren oder Löschanfragen bearbeiten.",
-    "taxNumber": "Steuernummer für Rechnungen",
-    "taxNumberHelp": "Steht nur auf Ihren Rechnungen, nie im öffentlichen Impressum. Rechnungen brauchen diese oder Ihre USt-IdNr.",
-    "taxIdMissing": "Ohne Steuernummer oder USt-IdNr. können keine Rechnungen erstellt werden und das Restaurant kann nicht live gehen."
+    "ownerOnly": "Nur der Inhaber kann Daten exportieren oder Löschanfragen bearbeiten."
   },
   "orderLimit": {
     "bannerWarning": "{{count}} von {{limit}} Bestellungen in diesem Monat genutzt ({{percent}} %). Bei {{limit}} pausieren Online-Bestellungen bis Monatsende.",
@@ -1024,5 +1026,9 @@
     "backToShops": "Zurück zu den Shops",
     "errorTitle": "Etwas ist schiefgelaufen",
     "errorDescription": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut."
+  },
+  "common": {
+    "cancel": "Abbrechen",
+    "genericError": "Etwas ist schiefgelaufen. Bitte erneut versuchen."
   }
 }
