@@ -128,7 +128,9 @@ export function ComboEditor({ shop, shopId, combo, products, categories, onDone 
     }
     let uploadStage = false;
     try {
-      await updateCombo({ shopId, comboId: combo.id, body }).unwrap();
+      // The photo goes first and the combo save last: the save is what reloads the combo list, so the
+      // list then already carries the new photo (saved the other way round it showed "no photo" until a reload).
+      let photoReplaceIncomplete = false;
       if (imageFile) {
         setUploading(true);
         uploadStage = true;
@@ -143,13 +145,12 @@ export function ComboEditor({ shop, shopId, combo, products, categories, onDone 
           },
         });
         setUploading(false);
-        if (replaced.status === 'old-kept') {
-          toast.error(t('combos.photoReplaceIncomplete'));
-          onDone();
-          return;
-        }
+        uploadStage = false;
+        photoReplaceIncomplete = replaced.status === 'old-kept';
       }
-      toast.success(t('combos.saved'));
+      await updateCombo({ shopId, comboId: combo.id, body }).unwrap();
+      if (photoReplaceIncomplete) toast.error(t('combos.photoReplaceIncomplete'));
+      else toast.success(t('combos.saved'));
       onDone();
     } catch (err) {
       setUploading(false);
