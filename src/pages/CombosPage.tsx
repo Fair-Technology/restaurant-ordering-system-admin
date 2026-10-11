@@ -10,7 +10,7 @@ import {
 import { useGetCombosQuery, useUpdateComboMutation, type ComboBody, type ComboDto } from '../services/combosApi';
 import { useToast } from '../contexts/ToastContext';
 import { formatCents } from '../utils/money';
-import { comboFormToBody, formFromCombo } from '../features/combos/combos';
+import { comboFormToBody, comboPhotoUrl, formFromCombo } from '../features/combos/combos';
 import { ComboEditor } from '../components/combos/ComboEditor';
 import { MyButton } from '../components/ui/MyButton';
 import { MyCard } from '../components/ui/MyCard';
@@ -109,6 +109,13 @@ export function CombosPage() {
           combos.data.map((c) => (
             <div key={c.id}>
               <div className="border-b py-2 flex flex-wrap items-center gap-x-3 text-sm">
+                {comboPhotoUrl(c) ? (
+                  <img src={comboPhotoUrl(c)!} alt="" className="w-10 h-10 rounded-lg object-cover border border-gray-200" />
+                ) : (
+                  <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs text-amber-800">
+                    {t('combos.noPhoto')}
+                  </span>
+                )}
                 <span className="font-bold text-gray-900">{c.name}</span>
                 <span>{money(c.priceCents)}</span>
                 <span className="text-gray-600">
