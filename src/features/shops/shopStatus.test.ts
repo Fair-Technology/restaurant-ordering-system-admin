@@ -3,7 +3,7 @@ import {
   canGoOnline,
   canToggleOrdersPause,
   isOfflineBySuperadminError,
-  ordersPausedMessageOrUndefined,
+  cleanOrdersPausedMessage,
   shopLiveState,
 } from './shopStatus';
 
@@ -48,9 +48,9 @@ describe('isOfflineBySuperadminError', () => {
   });
 });
 
-describe('ordersPausedMessageOrUndefined', () => {
+describe('cleanOrdersPausedMessage', () => {
   it('trims and drops empty', () => {
-    expect(ordersPausedMessageOrUndefined('  busy  ')).toBe('busy');
-    expect(ordersPausedMessageOrUndefined('   ')).toBeUndefined();
+    expect(cleanOrdersPausedMessage('  busy  ')).toBe('busy');
+    expect(cleanOrdersPausedMessage('   ')).toBe('');
   });
 });

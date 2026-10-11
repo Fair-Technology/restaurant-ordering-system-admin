@@ -20,6 +20,7 @@ const injectedRtkApi = api.injectEndpoints({
     }),
     getShopById: build.query<GetShopByIdApiResponse, GetShopByIdApiArg>({
       query: (queryArg) => ({ url: `/shops/${queryArg.shopId}` }),
+      providesTags: (_result, _error, arg) => [{ type: 'Shops' as const, id: arg.shopId }],
     }),
     updateShop: build.mutation<UpdateShopApiResponse, UpdateShopApiArg>({
       query: (queryArg) => ({
@@ -27,6 +28,11 @@ const injectedRtkApi = api.injectEndpoints({
         method: "PATCH",
         body: queryArg.updateShopRequest,
       }),
+      // The sidebar's Online/Offline and Pause buttons read the shop; refresh it (and the shop list) after a save
+      invalidatesTags: (_result, _error, arg) => [
+        { type: 'Shops' as const, id: arg.shopId },
+        { type: 'Shops' as const, id: 'LIST' },
+      ],
     }),
     deleteShop: build.mutation<DeleteShopApiResponse, DeleteShopApiArg>({
       query: (queryArg) => ({

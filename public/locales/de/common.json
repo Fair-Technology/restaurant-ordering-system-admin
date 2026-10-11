@@ -1003,7 +1003,7 @@
     "goToShops": "Zu Meine Shops",
     "combined": "Alle Restaurants heute: {{amount}} · {{count}} Bestellungen",
     "truncated": "Die ersten 25 Restaurants werden angezeigt.",
-    "paused": "Pausiert",
+    "paused": "Offline",
     "todayTakings": "Einnahmen heute",
     "todayOrders": "Bestellungen heute",
     "waiting": "{{count}} warten",

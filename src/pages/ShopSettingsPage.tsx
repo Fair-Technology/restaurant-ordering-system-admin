@@ -18,7 +18,7 @@ import { COVER_IMAGE_RULE, isWrongSizeError } from '../features/images/imageRule
 import { ImageCropDialog } from '../components/ui/ImageCropDialog';
 import { MySwitch } from '../components/ui/MySwitch';
 import { bannerShownOf, brandingWithBanner } from '../features/shops/bannerSwitch';
-import { ORDERS_PAUSED_MESSAGE_MAX, ordersPausedMessageOrUndefined } from '../features/shops/shopStatus';
+import { ORDERS_PAUSED_MESSAGE_MAX, cleanOrdersPausedMessage } from '../features/shops/shopStatus';
 import { MyCard } from '../components/ui/MyCard';
 import { MySpinner } from '../components/ui/MySpinner';
 import { MyButton } from '../components/ui/MyButton';
@@ -258,7 +258,7 @@ export function ShopSettingsPage() {
         shopId: shopId!,
         updateShopRequest: {
           ordersPaused: currentStatus.ordersPaused,
-          ordersPausedMessage: ordersPausedMessageOrUndefined(currentStatus.ordersPausedMessage),
+          ordersPausedMessage: cleanOrdersPausedMessage(currentStatus.ordersPausedMessage),
         },
       }).unwrap();
       toast.success(t('shops.statusSaved'));

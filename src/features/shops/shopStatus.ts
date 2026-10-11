@@ -33,8 +33,7 @@ export function isOfflineBySuperadminError(error: unknown): boolean {
   return status === 409 && code === 'SHOP_OFFLINE_BY_SUPERADMIN';
 }
 
-/** Trims the message; empty means "no message" (the backend caps it at 280). */
-export function ordersPausedMessageOrUndefined(message: string): string | undefined {
-  const trimmed = message.trim();
-  return trimmed ? trimmed : undefined;
+/** Trims the message. An empty one is sent as "" so the server clears a stored message (left out, it keeps the old one); the backend caps it at 280. */
+export function cleanOrdersPausedMessage(message: string): string {
+  return message.trim();
 }
