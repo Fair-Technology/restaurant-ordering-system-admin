@@ -18,6 +18,7 @@ import { COVER_IMAGE_RULE, isWrongSizeError } from '../features/images/imageRule
 import { ImageCropDialog } from '../components/ui/ImageCropDialog';
 import { MySwitch } from '../components/ui/MySwitch';
 import { bannerShownOf, brandingWithBanner } from '../features/shops/bannerSwitch';
+import { ORDERS_PAUSED_MESSAGE_MAX, ordersPausedMessageOrUndefined } from '../features/shops/shopStatus';
 import { MyCard } from '../components/ui/MyCard';
 import { MySpinner } from '../components/ui/MySpinner';
 import { MyButton } from '../components/ui/MyButton';
@@ -101,8 +102,8 @@ export function ShopSettingsPage() {
   const [hoursError, setHoursError] = useState<string | null>(null);
 
   const [statusState, setStatusState] = useState<{
-    isPaused: boolean;
-    pausedMessage: string;
+    ordersPaused: boolean;
+    ordersPausedMessage: string;
   } | null>(null);
   const [isSavingStatus, setIsSavingStatus] = useState(false);
   const [statusError, setStatusError] = useState<string | null>(null);
@@ -152,8 +153,8 @@ export function ShopSettingsPage() {
   const currentHours = hoursState ?? buildInitialHours(shop.openingHours as Record<string, unknown> | undefined);
 
   const currentStatus = statusState ?? {
-    isPaused: shop.isPaused ?? false,
-    pausedMessage: shop.pausedMessage ?? '',
+    ordersPaused: shop.ordersPaused ?? false,
+    ordersPausedMessage: shop.ordersPausedMessage ?? '',
   };
 
   const currentAccent = accentState ?? shop.branding?.accentColor ?? '#C2410C';
@@ -256,8 +257,8 @@ export function ShopSettingsPage() {
       await updateShop({
         shopId: shopId!,
         updateShopRequest: {
-          isPaused: currentStatus.isPaused,
-          pausedMessage: currentStatus.pausedMessage || undefined,
+          ordersPaused: currentStatus.ordersPaused,
+          ordersPausedMessage: ordersPausedMessageOrUndefined(currentStatus.ordersPausedMessage),
         },
       }).unwrap();
       toast.success(t('shops.statusSaved'));
@@ -948,31 +949,33 @@ export function ShopSettingsPage() {
         <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
           {t('shops.statusTitle')}
         </p>
+        <p className="text-sm text-gray-500">{t('shops.statusPauseHelp')}</p>
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-600">{t('shops.statusPaused')}</span>
             <div className="flex gap-1.5">
               <MyButton
-                variant={currentStatus.isPaused ? 'primary' : 'ghost'}
-                onClick={() => setStatusState({ ...currentStatus, isPaused: true })}
+                variant={currentStatus.ordersPaused ? 'primary' : 'ghost'}
+                onClick={() => setStatusState({ ...currentStatus, ordersPaused: true })}
               >
                 {t('shops.statusYes')}
               </MyButton>
               <MyButton
-                variant={!currentStatus.isPaused ? 'primary' : 'ghost'}
-                onClick={() => setStatusState({ ...currentStatus, isPaused: false })}
+                variant={!currentStatus.ordersPaused ? 'primary' : 'ghost'}
+                onClick={() => setStatusState({ ...currentStatus, ordersPaused: false })}
               >
                 {t('shops.statusNo')}
               </MyButton>
             </div>
           </div>
-          {currentStatus.isPaused && (
+          {currentStatus.ordersPaused && (
             <div className="space-y-1.5">
               <span className="text-sm text-gray-600">{t('shops.statusPauseMessage')}</span>
               <MyInput
-                value={currentStatus.pausedMessage}
+                maxLength={ORDERS_PAUSED_MESSAGE_MAX}
+                value={currentStatus.ordersPausedMessage}
                 placeholder={t('shops.statusPauseMessagePlaceholder')}
-                onChange={(e) => setStatusState({ ...currentStatus, pausedMessage: e.target.value })}
+                onChange={(e) => setStatusState({ ...currentStatus, ordersPausedMessage: e.target.value })}
               />
             </div>
           )}

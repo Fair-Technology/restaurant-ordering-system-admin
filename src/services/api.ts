@@ -626,6 +626,14 @@ export type ShopResponse = {
   isPaused?: boolean;
   /** Message shown when shop is paused */
   pausedMessage?: string;
+  /** Owner pauses new orders; the menu stays visible */
+  ordersPaused?: boolean;
+  /** Message shown while orders are paused (max 280) */
+  ordersPausedMessage?: string;
+  /** isPaused or offlineBySuperadmin: show no menu */
+  isOffline?: boolean;
+  /** Platform took the shop offline; owner cannot bring it online */
+  offlineBySuperadmin?: boolean;
   /** Shop currency (ISO code) */
   currency?: string;
   /** Shop timezone */
@@ -831,6 +839,10 @@ export type UpdateShopRequest = {
   isPaused?: boolean;
   /** Message when shop is paused */
   pausedMessage?: string;
+  /** Owner pauses new orders; the menu stays visible */
+  ordersPaused?: boolean;
+  /** Message shown while orders are paused (max 280) */
+  ordersPausedMessage?: string;
   /** Payment policy */
   /** Minimum order amount in cents */
   minOrderAmountCents?: number;

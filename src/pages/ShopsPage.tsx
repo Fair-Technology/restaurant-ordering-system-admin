@@ -290,7 +290,7 @@ function ShopAvailabilityToggle({ shop }: { shop: ShopResponse }) {
   return (
     <button
       onClick={handleClick}
-      disabled={isLoading}
+      disabled={isLoading || shop.offlineBySuperadmin === true}
       title={isOn ? 'Shop is live — click to pause' : 'Shop is paused — click to go live'}
       className="flex-shrink-0 focus:outline-none disabled:opacity-50"
     >
