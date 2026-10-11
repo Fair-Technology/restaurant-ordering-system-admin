@@ -24,6 +24,7 @@ import {
   StepIndicator, Step1Basics, StepFoodInfo, StepCategories, Step4Customise, Step5Schedule, Step6Review,
 } from './ProductWizardSteps';
 import { useUploadProductImage } from '../features/menu/useUploadProductImage';
+import { createDishWithPhoto, dishPhotoMissing, isPhotoRequiredError, replaceDishPhoto } from '../features/menu/productImage';
 import { isWrongSizeError } from '../features/images/imageRules';
 import { useShopReferenceLists } from '../features/menu/useShopReferenceLists';
 import { EMPTY_FOOD_INFO, effectiveTaxClassId, foodInfoFromProduct, initialScheduleDays, labelFor, taxClassOptionLabel } from '../features/menu/foodInfo';
@@ -423,6 +424,7 @@ function ProductEditView({
 
   const [form, setForm] = useState({ name: '', description: '', price: 0 });
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [photoTried, setPhotoTried] = useState(false);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [foodInfo, setFoodInfo] = useState<FoodInfo>(EMPTY_FOOD_INFO);
   const [variantGroups, setVariantGroups] = useState<VariantGroup[]>([]);
@@ -514,8 +516,9 @@ function ProductEditView({
     if (s === 1) {
       const ne = form.name.trim() === '';
       const de = form.description.trim() === '';
-      setNameError(ne); setDescError(de);
-      return !ne && !de;
+      const pe = dishPhotoMissing(imageFile, existingImageUrl);
+      setNameError(ne); setDescError(de); setPhotoTried(true);
+      return !ne && !de && !pe;
     }
     if (s === 2) {
       const hasNoCategory = selectedCategoryIds.length === 0;
@@ -540,6 +543,13 @@ function ProductEditView({
   function jumpTo(n: StepNum) { setDirection(n < step ? 'back' : 'forward'); setStep(n); }
 
   const handleSubmit = async () => {
+    // A dish always keeps a photo: older dishes without one must get one before any change is saved.
+    if (dishPhotoMissing(imageFile, existingImageUrl)) {
+      setPhotoTried(true);
+      setDirection('back');
+      setStep(1);
+      return;
+    }
     let uploadStage = false;
     try {
       await updateProduct({
@@ -566,8 +576,22 @@ function ProductEditView({
       if (imageFile) {
         setIsUploading(true);
         uploadStage = true;
-        await uploadProductImage(shopId, productId, imageFile);
+        const replaced = await replaceDishPhoto({
+          hadPhoto: (product?.images?.length ?? 0) > 0,
+          upload: () => uploadProductImage(shopId, productId, imageFile),
+          keepOnly: async (image) => {
+            await updateProduct({
+              productId,
+              updateProductRequest: { shopId, images: [{ id: image.id, url: image.url }] },
+            }).unwrap();
+          },
+        });
         setIsUploading(false);
+        if (replaced.status === 'old-kept') {
+          toast.error(t('products.photoReplaceIncomplete'));
+          onSaved();
+          return;
+        }
       }
 
       toast.success(t('products.saved'));
@@ -575,6 +599,7 @@ function ProductEditView({
     } catch (err) {
       setIsUploading(false);
       if (uploadStage) toast.error(t(isWrongSizeError(err) ? 'products.productImageWrongSize' : 'products.failedToUploadImage'));
+      else if (isPhotoRequiredError(err)) toast.error(t('products.photoRequired'));
     }
   };
 
@@ -659,7 +684,7 @@ function ProductEditView({
         )}
         <div key={step} className={direction === 'forward' ? 'animate-slide-in-right' : 'animate-slide-in-left'}>
           {step === 1 && (
-            <Step1Basics form={form} setForm={setForm} imageFile={imageFile} setImageFile={setImageFile} currencySymbol={currencySymbol} nameError={nameError} descError={descError} existingImageUrl={existingImageUrl}
+            <Step1Basics form={form} setForm={setForm} imageFile={imageFile} setImageFile={setImageFile} currencySymbol={currencySymbol} nameError={nameError} descError={descError} existingImageUrl={existingImageUrl} photoError={photoTried && dishPhotoMissing(imageFile, existingImageUrl)}
               translation={translatingLanguage ? { language: translatingLanguage, name: nameTranslations[translatingLanguage] ?? '', description: descriptionTranslations[translatingLanguage] ?? '', setName: (v) => setNameTranslations((m) => withTranslation(m, translatingLanguage, v)), setDescription: (v) => setDescriptionTranslations((m) => withTranslation(m, translatingLanguage, v)) } : undefined} />
           )}
           {step === 2 && translatingLanguage && (
@@ -812,11 +837,14 @@ function AddProductModal({ shopId, onClose }: AddProductModalProps) {
 
   const [form, setForm] = useState({ name: '', description: '', price: 0 });
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [photoTried, setPhotoTried] = useState(false);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [foodInfo, setFoodInfo] = useState<FoodInfo>(EMPTY_FOOD_INFO);
   const [variantGroups, setVariantGroups] = useState<VariantGroup[]>([]);
   const [addonGroups, setAddonGroups] = useState<AddonGroup[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  // Set when the dish was created but its photo upload failed: the next attempt only retries the photo.
+  const [createdProductId, setCreatedProductId] = useState<string | null>(null);
 
   const [nameError, setNameError] = useState(false);
   const [descError, setDescError] = useState(false);
@@ -842,8 +870,9 @@ function AddProductModal({ shopId, onClose }: AddProductModalProps) {
     if (s === 1) {
       const ne = form.name.trim() === '';
       const de = form.description.trim() === '';
-      setNameError(ne); setDescError(de);
-      return !ne && !de;
+      const pe = dishPhotoMissing(imageFile, null);
+      setNameError(ne); setDescError(de); setPhotoTried(true);
+      return !ne && !de && !pe;
     }
     if (s === 2) {
       const hasNoCategory = selectedCategoryIds.length === 0;
@@ -868,44 +897,60 @@ function AddProductModal({ shopId, onClose }: AddProductModalProps) {
   function jumpTo(n: StepNum) { setDirection(n < step ? 'back' : 'forward'); setStep(n); }
 
   const handleSubmit = async () => {
-    let uploadStage = false;
+    if (dishPhotoMissing(imageFile, null) || !imageFile) {
+      setPhotoTried(true);
+      setDirection('back');
+      setStep(1);
+      return;
+    }
     try {
-      const product = await createProduct({
-        createProductRequest: {
-          shopId,
-          name: form.name,
-          description: form.description,
-          price: form.price,
-          categoryIds: selectedCategoryIds,
-          variantGroups: variantGroups.length > 0 ? variantGroups : undefined,
-          addonGroups: addonGroups.length > 0 ? addonGroups : undefined,
-          allergenIds: foodInfo.allergenIds,
-          additiveIds: foodInfo.additiveIds,
-          dietaryTagIds: foodInfo.dietaryTagIds,
-          spiceLevel: foodInfo.spiceLevel,
-          prepMinutes: foodInfo.prepMinutes,
-          taxClassId: foodInfo.taxClassId,
-          unavailableModes: foodInfo.unavailableModes,
+      const result = await createDishWithPhoto({
+        existingProductId: createdProductId,
+        createDish: async () => {
+          const product = await createProduct({
+            createProductRequest: {
+              shopId,
+              name: form.name,
+              description: form.description,
+              price: form.price,
+              categoryIds: selectedCategoryIds,
+              variantGroups: variantGroups.length > 0 ? variantGroups : undefined,
+              addonGroups: addonGroups.length > 0 ? addonGroups : undefined,
+              allergenIds: foodInfo.allergenIds,
+              additiveIds: foodInfo.additiveIds,
+              dietaryTagIds: foodInfo.dietaryTagIds,
+              spiceLevel: foodInfo.spiceLevel,
+              prepMinutes: foodInfo.prepMinutes,
+              taxClassId: foodInfo.taxClassId,
+              unavailableModes: foodInfo.unavailableModes,
+            },
+          }).unwrap();
+          return product.id!;
         },
-      }).unwrap();
-
-      if (imageFile) {
-        setIsUploading(true);
-        uploadStage = true;
-        await uploadProductImage(shopId, product.id!, imageFile);
-        setIsUploading(false);
+        uploadPhoto: async (productId) => {
+          setIsUploading(true);
+          try {
+            await uploadProductImage(shopId, productId, imageFile);
+          } finally {
+            setIsUploading(false);
+          }
+        },
+      });
+      if (result.status === 'photo-failed') {
+        // The dish exists but has no photo: keep the window open, say so, and let the owner retry just the upload.
+        setCreatedProductId(result.productId);
+        toast.error(t(isWrongSizeError(result.error) ? 'products.productImageWrongSize' : 'products.failedToUploadImage'));
+        return;
       }
-
       toast.success(t('products.created'));
       onClose();
-    } catch (err) {
-      setIsUploading(false);
-      if (uploadStage) toast.error(t(isWrongSizeError(err) ? 'products.productImageWrongSize' : 'products.failedToUploadImage'));
+    } catch {
+      // createProduct failed: nothing was created; the existing isError banner explains.
     }
   };
 
   const isBusy = isLoading || isUploading;
-  const submitLabel = isLoading ? t('products.creating') : isUploading ? t('products.uploadingImage') : t('products.create');
+  const submitLabel = isLoading ? t('products.creating') : isUploading ? t('products.uploadingImage') : createdProductId ? t('products.retryPhotoUpload') : t('products.create');
   const stepSubtitles: Record<StepNum, string> = {
     1: t('products.wizardStep1Subtitle'),
     2: t('products.wizardStep2Subtitle'),
@@ -961,6 +1006,11 @@ function AddProductModal({ shopId, onClose }: AddProductModalProps) {
 
           {/* Step content */}
           <div className="flex-1 overflow-y-auto px-6 py-4">
+            {createdProductId && (
+              <div role="alert" className="mb-4 p-3 rounded-xl bg-amber-50 border border-amber-200">
+                <p className="text-sm text-amber-800">{t('products.createdWithoutPhoto')}</p>
+              </div>
+            )}
             {isError && (
               <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200">
                 <p className="text-sm text-red-600">
@@ -969,7 +1019,7 @@ function AddProductModal({ shopId, onClose }: AddProductModalProps) {
               </div>
             )}
             <div key={step} className={direction === 'forward' ? 'animate-slide-in-right' : 'animate-slide-in-left'}>
-              {step === 1 && <Step1Basics form={form} setForm={setForm} imageFile={imageFile} setImageFile={setImageFile} currencySymbol={currencySymbol} nameError={nameError} descError={descError} />}
+              {step === 1 && <Step1Basics form={form} setForm={setForm} imageFile={imageFile} setImageFile={setImageFile} currencySymbol={currencySymbol} nameError={nameError} descError={descError} photoError={photoTried && dishPhotoMissing(imageFile, null)} />}
               {step === 2 && <StepCategories shopId={shopId} categories={categoriesList} selectedCategoryIds={selectedCategoryIds} setSelectedCategoryIds={setSelectedCategoryIds} taxClasses={refs?.taxClasses ?? []} taxRefs={refs} taxClassOverride={foodInfo.taxClassId} setTaxClassOverride={(id) => setFoodInfo({ ...foodInfo, taxClassId: id })} categoryError={categoryError} showTaxOverride={mode === 'extended'} />}
               {step === 3 && <StepFoodInfo foodInfo={foodInfo} setFoodInfo={setFoodInfo} refs={refs} showOptional={mode === 'extended'} />}
               {step === 4 && <Step4Customise variantGroups={variantGroups} addVariantGroup={addVariantGroup} removeVariantGroup={removeVariantGroup} updateVariantGroupName={updateVariantGroupName} addVariantOption={addVariantOption} removeVariantOption={removeVariantOption} updateVariantOption={updateVariantOption} addonGroups={addonGroups} addAddonGroup={addAddonGroup} removeAddonGroup={removeAddonGroup} updateAddonGroup={updateAddonGroup} addAddonOption={addAddonOption} removeAddonOption={removeAddonOption} updateAddonOption={updateAddonOption} />}

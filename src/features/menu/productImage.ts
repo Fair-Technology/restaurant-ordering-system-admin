@@ -16,8 +16,13 @@ export interface ProductImageUploadDeps {
   addProductImage: (imageId: string, url: string) => Promise<unknown>;
 }
 
+export interface UploadedProductImage {
+  id: string;
+  url: string;
+}
+
 /** The one dish-photo upload: SAS URL, PUT the blob, register it with the dish. Used by create and edit. */
-export async function uploadProductImage(file: Blob, fileName: string, deps: ProductImageUploadDeps): Promise<void> {
+export async function uploadProductImage(file: Blob, fileName: string, deps: ProductImageUploadDeps): Promise<UploadedProductImage> {
   const fileError = checkProductImageFile(file);
   if (fileError) throw new Error(fileError);
   const contentType = file.type.toLowerCase() as ImageContentType;
@@ -25,6 +30,7 @@ export async function uploadProductImage(file: Blob, fileName: string, deps: Pro
   const res = await deps.putBlob(uploadUrl, file, contentType);
   if (!res.ok) throw new Error(`Product image upload failed with status ${res.status}`);
   await deps.addProductImage(imageId, blobUrl);
+  return { id: imageId, url: blobUrl };
 }
 
 /** PUT to Azure Blob Storage with the headers it requires. */
@@ -34,4 +40,70 @@ export function putBlobToStorage(uploadUrl: string, file: Blob, contentType: Ima
     headers: { 'x-ms-blob-type': 'BlockBlob', 'Content-Type': contentType },
     body: file,
   });
+}
+
+/** A dish needs a photo: either one it already has, or a freshly cropped one waiting to be uploaded. */
+export function dishPhotoMissing(pickedFile: Blob | null, existingImageUrl: string | null | undefined): boolean {
+  return !pickedFile && !existingImageUrl;
+}
+
+export const PRODUCT_IMAGE_REQUIRED_CODE = 'PRODUCT_IMAGE_REQUIRED';
+
+/** True when a failed API call (RTK Query error) was the server refusing to leave a dish without a photo. */
+export function isPhotoRequiredError(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) return false;
+  const { data } = error as { data?: unknown };
+  if (typeof data !== 'object' || data === null) return false;
+  return (data as { code?: unknown }).code === PRODUCT_IMAGE_REQUIRED_CODE;
+}
+
+export interface CreateDishWithPhotoArgs {
+  /** Set when an earlier attempt already created the dish but its photo upload failed: then only the photo is retried. */
+  existingProductId: string | null;
+  createDish: () => Promise<string>;
+  uploadPhoto: (productId: string) => Promise<void>;
+}
+
+export type CreateDishWithPhotoResult =
+  | { status: 'done'; productId: string }
+  | { status: 'photo-failed'; productId: string; error: unknown };
+
+/**
+ * Create the dish (unless it already exists), then upload its photo. A dish can only get its photo after it exists,
+ * so a failed upload leaves a photo-less dish: the result carries its id so the caller can retry just the photo
+ * instead of creating a duplicate. A failed create throws (no dish exists yet).
+ */
+export async function createDishWithPhoto(args: CreateDishWithPhotoArgs): Promise<CreateDishWithPhotoResult> {
+  const productId = args.existingProductId ?? (await args.createDish());
+  try {
+    await args.uploadPhoto(productId);
+    return { status: 'done', productId };
+  } catch (error) {
+    return { status: 'photo-failed', productId, error };
+  }
+}
+
+export type ReplaceDishPhotoResult =
+  | { status: 'replaced' | 'added'; image: UploadedProductImage }
+  | { status: 'old-kept'; image: UploadedProductImage; error: unknown };
+
+/**
+ * Replace a dish's photo: add the new one first, then shrink the dish's photo list to just the new one. The server
+ * refuses to leave a dish with no photo, so this order (never remove-then-add) is the only one that works.
+ * A failed upload throws and changes nothing. If the add worked but the shrink failed, the dish already has the new
+ * photo (old ones remain), so that is reported rather than thrown.
+ */
+export async function replaceDishPhoto(args: {
+  hadPhoto: boolean;
+  upload: () => Promise<UploadedProductImage>;
+  keepOnly: (image: UploadedProductImage) => Promise<void>;
+}): Promise<ReplaceDishPhotoResult> {
+  const image = await args.upload();
+  if (!args.hadPhoto) return { status: 'added', image };
+  try {
+    await args.keepOnly(image);
+    return { status: 'replaced', image };
+  } catch (error) {
+    return { status: 'old-kept', image, error };
+  }
 }
