@@ -13,6 +13,9 @@ import type { MenuLanguage, ReferenceEntry, ReferenceListsResponse, SpiceLevel, 
 import { hasOriginalText } from '../features/menu/translations';
 import { effectiveTaxClassId, MODE_ORDER, isFoodInfoDeclared, labelFor, taxClassOptionLabel, toggleId, toggleMode, unavailableModesInOrder } from '../features/menu/foodInfo';
 import type { FoodInfo } from '../features/menu/foodInfo';
+import { ImageCropDialog } from '../components/ui/ImageCropDialog';
+import { DISH_IMAGE_RULE } from '../features/images/imageRules';
+import { checkProductImageFile } from '../features/menu/productImage';
 import { TranslationField } from '../components/menu/LanguageTabs';
 
 // ── Shared types ──────────────────────────────────────────────────────────────
@@ -126,6 +129,8 @@ interface Step1Props {
 
 export function Step1Basics({ form, setForm, imageFile, setImageFile, currencySymbol, nameError, descError, existingImageUrl, translation }: Step1Props) {
   const { t } = useTranslation();
+  const [pendingImage, setPendingImage] = useState<File | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
   if (translation) {
     const nothing = form.name.trim() === '' && form.description.trim() === '';
     return (
@@ -222,9 +227,37 @@ export function Step1Basics({ form, setForm, imageFile, setImageFile, currencySy
         <input
           type="file"
           accept="image/jpeg,image/png,image/webp"
-          onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
+          aria-label={t('products.image')}
+          onChange={(e) => {
+            const picked = e.target.files?.[0] ?? null;
+            const err = picked ? checkProductImageFile(picked) : null;
+            setImageError(err ? t(`products.${err}`) : null);
+            setPendingImage(picked && !err ? picked : null);
+            e.target.value = '';
+          }}
           className="block w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer"
         />
+        {imageError && <p role="alert" className="text-sm text-red-600">{imageError}</p>}
+        {pendingImage && (
+          <ImageCropDialog
+            file={pendingImage}
+            rule={DISH_IMAGE_RULE}
+            title={t('products.imageCropTitle')}
+            hint={t('products.imageCropHint')}
+            safeAreaLabel={t('products.imageVisibleInList')}
+            tooSmallMessage={t('products.productImageTooSmall')}
+            previews={[
+              { label: t('products.imagePreviewCard'), aspect: 4 / 3 },
+              { label: t('products.imagePreviewPhoneList'), aspect: 1 },
+            ]}
+            onCancel={() => setPendingImage(null)}
+            onConfirm={(blob) => {
+              const baseName = pendingImage.name.replace(/\.[^.]+$/, '') || 'dish';
+              setImageFile(new File([blob], `${baseName}.jpg`, { type: blob.type || DISH_IMAGE_RULE.outputMime }));
+              setPendingImage(null);
+            }}
+          />
+        )}
       </div>
     </div>
   );

@@ -14,6 +14,8 @@ import {
   useCancelShopNameChangeMutation,
 } from '../services/api';
 import { checkCoverImageFile, uploadCoverImage } from '../features/shops/coverImage';
+import { COVER_IMAGE_RULE, isWrongSizeError } from '../features/images/imageRules';
+import { ImageCropDialog } from '../components/ui/ImageCropDialog';
 import { MySwitch } from '../components/ui/MySwitch';
 import { bannerShownOf, brandingWithBanner } from '../features/shops/bannerSwitch';
 import { MyCard } from '../components/ui/MyCard';
@@ -406,18 +408,16 @@ export function ShopSettingsPage() {
     }
   };
 
-  const handleCoverUpload = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!coverFile) return;
-    const fileError = checkCoverImageFile(coverFile);
-    if (fileError) {
-      setCoverError(t(`shops.${fileError}`));
-      return;
-    }
+  const closeCoverDialog = () => {
+    setCoverFile(null);
+    if (coverInputRef.current) coverInputRef.current.value = '';
+  };
+
+  const handleCoverUpload = async (cropped: Blob) => {
     setIsUploadingCover(true);
     setCoverError(null);
     try {
-      await uploadCoverImage(coverFile, {
+      await uploadCoverImage(cropped, {
         generateUploadUrl: (contentType) =>
           generateShopCoverImageUploadUrl({
             shopId: shopId!,
@@ -439,8 +439,9 @@ export function ShopSettingsPage() {
       if (coverInputRef.current) coverInputRef.current.value = '';
       toast.success(t('shops.coverImageSaved'));
       refetch();
-    } catch {
-      setCoverError(t('shops.failedToUploadCoverImage'));
+    } catch (err) {
+      setCoverError(t(isWrongSizeError(err) ? 'shops.coverImageWrongSize' : 'shops.failedToUploadCoverImage'));
+      closeCoverDialog();
     } finally {
       setIsUploadingCover(false);
     }
@@ -482,7 +483,6 @@ export function ShopSettingsPage() {
   const currentLogoUrl = shop.branding?.logoUrl;
   const currentCoverUrl = shop.branding?.heroImageUrl || null;
   const bannerShown = bannerShownOf(shop.branding);
-  const coverFileError = coverFile ? checkCoverImageFile(coverFile) : null;
 
   return (
     <div className="max-w-lg space-y-4">
@@ -695,41 +695,52 @@ export function ShopSettingsPage() {
           )}
         </div>
         {coverError && <p className="text-sm text-red-600">{coverError}</p>}
-        <form onSubmit={handleCoverUpload} className="space-y-3">
+        <div className="space-y-3">
           <div className="flex flex-col gap-1">
             <input
               ref={coverInputRef}
               type="file"
               accept="image/jpeg,image/png,image/webp"
+              aria-label={t('shops.uploadCoverImage')}
               onChange={(e) => {
                 const f = e.target.files?.[0] ?? null;
-                setCoverFile(f);
                 const err = f ? checkCoverImageFile(f) : null;
                 setCoverError(err ? t(`shops.${err}`) : null);
+                setCoverFile(f && !err ? f : null);
+                if (err && coverInputRef.current) coverInputRef.current.value = '';
               }}
+              disabled={isUploadingCover || isRemovingCover}
               className="block w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer"
             />
-            {coverFile && <p className="text-xs text-gray-400">{coverFile.name}</p>}
           </div>
-          <div className="flex gap-2">
+          {currentCoverUrl && (
             <MyButton
-              type="submit"
-              disabled={!coverFile || coverFileError !== null || isUploadingCover || isRemovingCover}
+              type="button"
+              variant="ghost"
+              onClick={handleCoverRemove}
+              disabled={isRemovingCover || isUploadingCover}
             >
-              {isUploadingCover ? t('shops.uploadingCoverImage') : t('shops.uploadCoverImage')}
+              {isRemovingCover ? t('shops.removingCoverImage') : t('shops.removeCoverImage')}
             </MyButton>
-            {currentCoverUrl && (
-              <MyButton
-                type="button"
-                variant="ghost"
-                onClick={handleCoverRemove}
-                disabled={isRemovingCover || isUploadingCover}
-              >
-                {isRemovingCover ? t('shops.removingCoverImage') : t('shops.removeCoverImage')}
-              </MyButton>
-            )}
-          </div>
-        </form>
+          )}
+        </div>
+        {coverFile && (
+          <ImageCropDialog
+            file={coverFile}
+            rule={COVER_IMAGE_RULE}
+            title={t('shops.coverCropTitle')}
+            hint={t('shops.coverCropHint')}
+            safeAreaLabel={t('shops.coverVisibleOnPhones')}
+            tooSmallMessage={t('shops.coverImageTooSmall')}
+            previews={[
+              { label: t('shops.coverPreviewDesktop'), aspect: 3 },
+              { label: t('shops.coverPreviewPhone'), aspect: 2 },
+            ]}
+            busy={isUploadingCover}
+            onCancel={closeCoverDialog}
+            onConfirm={handleCoverUpload}
+          />
+        )}
       </MyCard>
 
       <MyCard className="p-5 space-y-4">

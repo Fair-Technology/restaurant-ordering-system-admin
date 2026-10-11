@@ -31,6 +31,7 @@
     "qrcode.react": "^4.2.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
+    "react-easy-crop": "^6.2.4",
     "react-i18next": "^16.6.6",
     "react-redux": "^9.3.0",
     "react-router-dom": "^7.18.4",
