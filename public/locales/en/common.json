@@ -205,13 +205,13 @@
     "goLiveFix": "Fix",
     "goLiveClose": "Close",
     "goLiveRemaining": "remaining",
-    "pauseTitle": "Pause shop",
+    "pauseTitle": "Take the shop offline?",
     "pauseMessageLabel": "Pause message",
     "pauseMessagePlaceholder": "e.g. We're closed for today",
-    "pauseConfirm": "Confirm Pause",
+    "pauseConfirm": "Take offline",
     "pausePausing": "Pausing…",
     "statusTitle": "Pause orders",
-    "statusPauseHelp": "Diners can still see your menu but cannot place orders. Use it when the kitchen is overloaded or short-staffed. To hide the shop completely, use the Online/Offline button in the menu.",
+    "statusPauseHelp": "Diners still see your menu but cannot order. Use it when the kitchen is overloaded or short-staffed.",
     "statusAcceptingOrders": "Accepting Orders",
     "statusPaused": "Pause new orders",
     "statusPauseMessage": "Message for diners (optional)",
@@ -341,7 +341,12 @@
     "kitchenBusyMinutes": "Busy mode adds (minutes)",
     "kitchenSave": "Save",
     "kitchenSaved": "Saved.",
-    "kitchenFailed": "Could not save the kitchen timing."
+    "kitchenFailed": "Could not save the kitchen timing.",
+    "offlineConfirmText": "Diners will see no menu, only a notice that the restaurant is offline. You can switch it back on at any time.",
+    "shopStatusTitle": "Shop status",
+    "statusOnline": "Shop online",
+    "statusOnlineHelp": "Switched off, the shop page shows no menu, only a notice that the restaurant is offline. Use it for holidays or before you launch.",
+    "statusSaveMessage": "Save message"
   },
   "tables": {
     "title": "Tables & QR codes",
@@ -888,9 +893,9 @@
       "other": "Other"
     },
     "impressumMissing": "Still missing: {{fields}}",
-    "taxNumber": "Tax number (for invoices)",
-    "taxNumberHelp": "Your Steuernummer. Printed on invoices only, never shown in the public Impressum.",
-    "taxIdMissing": "Invoices need a tax number or a VAT ID. Enter one before going live.",
+    "taxNumber": "Tax number (Steuernummer) for invoices",
+    "taxNumberHelp": "Printed on your invoices only, never in the public Impressum. Invoices need either this or your VAT ID.",
+    "taxIdMissing": "Without a tax number or VAT ID, no invoices can be issued and the restaurant can't go live.",
     "impressumSave": "Save Impressum",
     "termsTitle": "Terms and conditions",
     "withdrawalTitle": "Withdrawal policy",
@@ -933,10 +938,7 @@
     "eraseConfirm": "Remove {{email}}'s details from all their orders? This cannot be undone.",
     "eraseDone": "Done — {{count}} orders anonymised.",
     "eraseFailed": "Could not anonymise the customer.",
-    "ownerOnly": "Only the restaurant owner can export data or handle erasure requests.",
-    "taxNumber": "Tax number (Steuernummer) for invoices",
-    "taxNumberHelp": "Printed on your invoices only, never in the public Impressum. Invoices need either this or your VAT ID.",
-    "taxIdMissing": "Without a tax number or VAT ID, no invoices can be issued and the restaurant can't go live."
+    "ownerOnly": "Only the restaurant owner can export data or handle erasure requests."
   },
   "orderLimit": {
     "bannerWarning": "{{count}} of {{limit}} orders used this month ({{percent}} %). At {{limit}} online ordering pauses until the month ends.",
@@ -1024,5 +1026,9 @@
     "backToShops": "Back to shops",
     "errorTitle": "Something went wrong",
     "errorDescription": "An unexpected error occurred. Please try again."
+  },
+  "common": {
+    "cancel": "Cancel",
+    "genericError": "Something went wrong. Please try again."
   }
 }

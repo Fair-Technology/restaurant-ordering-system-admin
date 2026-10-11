@@ -6,24 +6,12 @@ import {
   ArrowLeft, Menu, X,
   Package, ClipboardList, Tag, CreditCard, Settings, Store,
   Users, History, LogOut, Scale,
-  Circle, Pause, Play, QrCode, Percent, ChartColumn, LayoutDashboard, Layers,
+  QrCode, Percent, ChartColumn, LayoutDashboard, Layers,
 } from 'lucide-react';
-import {
-  useGetShopByIdQuery,
-  useLazyGetGoLiveStatusQuery,
-  useUpdateShopMutation,
-} from '../../services/api';
+import { useGetShopByIdQuery } from '../../services/api';
 import { shopNavItems } from '../../features/shops/shopNav';
 import { clearStaffSession, readStaffSession } from '../../features/staff/staffSession';
-import {
-  canGoOnline,
-  canToggleOrdersPause,
-  isOfflineBySuperadminError,
-  shopLiveState,
-} from '../../features/shops/shopStatus';
-import { useToast } from '../../contexts/ToastContext';
 import { AccountSettingsModal } from './AccountSettingsModal';
-import { GoLiveCriteriaModal, PauseShopModal } from '../shop/GoLiveModal';
 
 export function TopNav() {
   const { shopId } = useParams<{ shopId?: string }>();
@@ -35,11 +23,6 @@ export function TopNav() {
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
-  const [goLiveModal, setGoLiveModal] = useState<'criteria' | 'pause' | null>(null);
-  const [fetchGoLiveStatus, { data: goLiveStatus, isFetching: goLiveChecking }] =
-    useLazyGetGoLiveStatusQuery();
-  const [updateShop, { isLoading: goingOnline }] = useUpdateShopMutation();
-  const toast = useToast();
 
   const { data: currentShop } = useGetShopByIdQuery(
     { shopId: shopId! },
@@ -47,19 +30,6 @@ export function TopNav() {
   );
 
   const perms = currentShop?.callerPermissions ?? [];
-  const liveState = shopLiveState(currentShop);
-  const takenOfflineByPlatform = currentShop?.offlineBySuperadmin === true;
-
-  const toggleOrdersPause = async () => {
-    try {
-      await updateShop({
-        shopId: shopId!,
-        updateShopRequest: { ordersPaused: !currentShop?.ordersPaused },
-      }).unwrap();
-    } catch {
-      toast.error(t('shops.statusFailedToSave'));
-    }
-  };
   const nav = shopNavItems(perms);
 
   // Close drawer on navigation
@@ -187,68 +157,6 @@ export function TopNav() {
                 {t('nav.legal')}
               </NavLink>
             </>
-          )}
-          {divider}
-          <button
-            type="button"
-            disabled={goLiveChecking || goingOnline || !canGoOnline(currentShop)}
-            onClick={async () => {
-              if (currentShop?.isPaused === false && !takenOfflineByPlatform) {
-                setGoLiveModal('pause');
-              } else {
-                const result = await fetchGoLiveStatus({ shopId: shopId! }).unwrap();
-                if (result.allMet) {
-                  try {
-                    await updateShop({
-                      shopId: shopId!,
-                      updateShopRequest: { isPaused: false },
-                    }).unwrap();
-                  } catch (err) {
-                    toast.error(
-                      isOfflineBySuperadminError(err)
-                        ? t('nav.offlineBySuperadminToast')
-                        : t('shops.statusFailedToSave'),
-                    );
-                  }
-                } else {
-                  setGoLiveModal('criteria');
-                }
-              }
-            }}
-            className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors w-full
-              disabled:opacity-50
-              text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-          >
-            <Circle
-              size={10}
-              className={`shrink-0 fill-current ${liveState === 'offline' ? 'text-red-400' : 'text-emerald-500'}`}
-            />
-            {liveState === 'offline' ? t('nav.shopOffline') : t('nav.shopOnline')}
-          </button>
-          {takenOfflineByPlatform && (
-            <p className="px-3 pb-2 text-xs text-red-600">{t('nav.offlineBySuperadmin')}</p>
-          )}
-          {canToggleOrdersPause(currentShop) && (
-            <button
-              type="button"
-              onClick={toggleOrdersPause}
-              disabled={goingOnline}
-              className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors w-full disabled:opacity-50 ${
-                liveState === 'ordersPaused'
-                  ? 'bg-amber-100 text-amber-800 hover:bg-amber-200'
-                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-              }`}
-            >
-              {liveState === 'ordersPaused' ? (
-                <Play size={14} className="shrink-0" />
-              ) : (
-                <Pause size={14} className="shrink-0" />
-              )}
-              {liveState === 'ordersPaused' ? t('nav.resumeOrders') : t('nav.pauseOrders')}
-            </button>
-          )}
-          {liveState === 'ordersPaused' && (
-            <p className="px-3 pt-1 text-xs font-medium text-amber-700">{t('nav.ordersPausedBadge')}</p>
           )}
         </>
       )}
@@ -437,21 +345,6 @@ export function TopNav() {
         <AccountSettingsModal user={user} onClose={() => setAccountOpen(false)} />
       )}
 
-      {/* ── Go-live modals ───────────────────────────────────────────────── */}
-      {goLiveModal === 'criteria' && goLiveStatus && shopId && (
-        <GoLiveCriteriaModal
-          shopId={shopId}
-          status={goLiveStatus}
-          onClose={() => setGoLiveModal(null)}
-        />
-      )}
-      {goLiveModal === 'pause' && shopId && (
-        <PauseShopModal
-          shopId={shopId}
-          onClose={() => setGoLiveModal(null)}
-          onSuccess={() => setGoLiveModal(null)}
-        />
-      )}
     </>
   );
 }
