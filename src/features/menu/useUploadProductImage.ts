@@ -1,8 +1,8 @@
 import { useGenerateUploadUrlMutation, useAddProductImageMutation } from '../../services/api';
-import { putBlobToStorage, uploadProductImage } from './productImage';
+import { putBlobToStorage, uploadProductImage, type UploadedProductImage } from './productImage';
 
 /** Returns the one function both the create and the edit dish wizard use to upload a (cropped) dish photo. */
-export function useUploadProductImage(): (shopId: string, productId: string, file: File) => Promise<void> {
+export function useUploadProductImage(): (shopId: string, productId: string, file: File) => Promise<UploadedProductImage> {
   const [generateUploadUrl] = useGenerateUploadUrlMutation();
   const [addProductImage] = useAddProductImageMutation();
   return (shopId, productId, file) =>

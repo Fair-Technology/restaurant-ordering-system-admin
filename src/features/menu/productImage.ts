@@ -16,8 +16,13 @@ export interface ProductImageUploadDeps {
   addProductImage: (imageId: string, url: string) => Promise<unknown>;
 }
 
+export interface UploadedProductImage {
+  id: string;
+  url: string;
+}
+
 /** The one dish-photo upload: SAS URL, PUT the blob, register it with the dish. Used by create and edit. */
-export async function uploadProductImage(file: Blob, fileName: string, deps: ProductImageUploadDeps): Promise<void> {
+export async function uploadProductImage(file: Blob, fileName: string, deps: ProductImageUploadDeps): Promise<UploadedProductImage> {
   const fileError = checkProductImageFile(file);
   if (fileError) throw new Error(fileError);
   const contentType = file.type.toLowerCase() as ImageContentType;
@@ -25,6 +30,7 @@ export async function uploadProductImage(file: Blob, fileName: string, deps: Pro
   const res = await deps.putBlob(uploadUrl, file, contentType);
   if (!res.ok) throw new Error(`Product image upload failed with status ${res.status}`);
   await deps.addProductImage(imageId, blobUrl);
+  return { id: imageId, url: blobUrl };
 }
 
 /** PUT to Azure Blob Storage with the headers it requires. */
@@ -74,5 +80,30 @@ export async function createDishWithPhoto(args: CreateDishWithPhotoArgs): Promis
     return { status: 'done', productId };
   } catch (error) {
     return { status: 'photo-failed', productId, error };
+  }
+}
+
+export type ReplaceDishPhotoResult =
+  | { status: 'replaced' | 'added'; image: UploadedProductImage }
+  | { status: 'old-kept'; image: UploadedProductImage; error: unknown };
+
+/**
+ * Replace a dish's photo: add the new one first, then shrink the dish's photo list to just the new one. The server
+ * refuses to leave a dish with no photo, so this order (never remove-then-add) is the only one that works.
+ * A failed upload throws and changes nothing. If the add worked but the shrink failed, the dish already has the new
+ * photo (old ones remain), so that is reported rather than thrown.
+ */
+export async function replaceDishPhoto(args: {
+  hadPhoto: boolean;
+  upload: () => Promise<UploadedProductImage>;
+  keepOnly: (image: UploadedProductImage) => Promise<void>;
+}): Promise<ReplaceDishPhotoResult> {
+  const image = await args.upload();
+  if (!args.hadPhoto) return { status: 'added', image };
+  try {
+    await args.keepOnly(image);
+    return { status: 'replaced', image };
+  } catch (error) {
+    return { status: 'old-kept', image, error };
   }
 }

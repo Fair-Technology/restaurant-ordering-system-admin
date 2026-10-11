@@ -24,7 +24,7 @@ import {
   StepIndicator, Step1Basics, StepFoodInfo, StepCategories, Step4Customise, Step5Schedule, Step6Review,
 } from './ProductWizardSteps';
 import { useUploadProductImage } from '../features/menu/useUploadProductImage';
-import { createDishWithPhoto, dishPhotoMissing, isPhotoRequiredError } from '../features/menu/productImage';
+import { createDishWithPhoto, dishPhotoMissing, isPhotoRequiredError, replaceDishPhoto } from '../features/menu/productImage';
 import { isWrongSizeError } from '../features/images/imageRules';
 import { useShopReferenceLists } from '../features/menu/useShopReferenceLists';
 import { EMPTY_FOOD_INFO, effectiveTaxClassId, foodInfoFromProduct, initialScheduleDays, labelFor, taxClassOptionLabel } from '../features/menu/foodInfo';
@@ -576,8 +576,22 @@ function ProductEditView({
       if (imageFile) {
         setIsUploading(true);
         uploadStage = true;
-        await uploadProductImage(shopId, productId, imageFile);
+        const replaced = await replaceDishPhoto({
+          hadPhoto: (product?.images?.length ?? 0) > 0,
+          upload: () => uploadProductImage(shopId, productId, imageFile),
+          keepOnly: async (image) => {
+            await updateProduct({
+              productId,
+              updateProductRequest: { shopId, images: [{ id: image.id, url: image.url }] },
+            }).unwrap();
+          },
+        });
         setIsUploading(false);
+        if (replaced.status === 'old-kept') {
+          toast.error(t('products.photoReplaceIncomplete'));
+          onSaved();
+          return;
+        }
       }
 
       toast.success(t('products.saved'));

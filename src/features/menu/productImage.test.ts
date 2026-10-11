@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { checkProductImageFile, createDishWithPhoto, dishPhotoMissing, isPhotoRequiredError, uploadProductImage } from './productImage';
+import { checkProductImageFile, createDishWithPhoto, dishPhotoMissing, isPhotoRequiredError, replaceDishPhoto, uploadProductImage } from './productImage';
 
 const jpeg = (size = 5) => new Blob([new Uint8Array(size)], { type: 'image/jpeg' });
 
@@ -110,5 +110,39 @@ describe('createDishWithPhoto', () => {
       createDishWithPhoto({ existingProductId: null, createDish: vi.fn().mockRejectedValue(new Error('no')), uploadPhoto }),
     ).rejects.toThrow('no');
     expect(uploadPhoto).not.toHaveBeenCalled();
+  });
+});
+
+describe('replaceDishPhoto', () => {
+  const img = { id: 'new', url: 'https://b/new.jpg' };
+
+  it('adds the new photo first, then shrinks the list to just the new one', async () => {
+    const calls: string[] = [];
+    const result = await replaceDishPhoto({
+      hadPhoto: true,
+      upload: async () => { calls.push('upload'); return img; },
+      keepOnly: async (i) => { calls.push(`keepOnly:${i.id}`); },
+    });
+    expect(calls).toEqual(['upload', 'keepOnly:new']);
+    expect(result).toEqual({ status: 'replaced', image: img });
+  });
+
+  it('only adds when the dish had no photo', async () => {
+    const keepOnly = vi.fn();
+    const result = await replaceDishPhoto({ hadPhoto: false, upload: async () => img, keepOnly });
+    expect(keepOnly).not.toHaveBeenCalled();
+    expect(result.status).toBe('added');
+  });
+
+  it('reports old-kept (not a throw) when the shrink fails after a successful add', async () => {
+    const boom = new Error('patch failed');
+    const result = await replaceDishPhoto({ hadPhoto: true, upload: async () => img, keepOnly: async () => { throw boom; } });
+    expect(result).toEqual({ status: 'old-kept', image: img, error: boom });
+  });
+
+  it('throws and removes nothing when the upload itself fails', async () => {
+    const keepOnly = vi.fn();
+    await expect(replaceDishPhoto({ hadPhoto: true, upload: async () => { throw new Error('up'); }, keepOnly })).rejects.toThrow('up');
+    expect(keepOnly).not.toHaveBeenCalled();
   });
 });

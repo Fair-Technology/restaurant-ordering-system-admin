@@ -475,6 +475,7 @@
     "categories": "Kategorien",
     "image": "Produktbild",
     "imageRequiredNote": "(erforderlich)",
+    "photoReplaceIncomplete": "Ihre Änderungen wurden gespeichert und das neue Foto hinzugefügt, das alte Foto konnte aber nicht entfernt werden und wird eventuell noch angezeigt. Öffnen Sie das Gericht erneut und speichern Sie das Foto noch einmal.",
     "photoRequired": "Bitte ein Foto hinzufügen",
     "createdWithoutPhoto": "Das Gericht wurde angelegt, das Foto konnte aber nicht hochgeladen werden – es hat noch kein Foto. Klicken Sie erneut auf die Schaltfläche, um den Upload zu wiederholen. Wenn Sie das Fenster schließen, bleibt das Gericht ohne Foto: Öffnen Sie es über „Bearbeiten“ und fügen Sie ein Foto hinzu (ein Foto ist erforderlich).",
     "retryPhotoUpload": "Foto-Upload wiederholen",
