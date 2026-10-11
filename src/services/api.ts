@@ -16,6 +16,7 @@ const injectedRtkApi = api.injectEndpoints({
     }),
     getMyShops: build.query<GetMyShopsApiResponse, GetMyShopsApiArg>({
       query: () => ({ url: `/shops/me` }),
+      providesTags: [{ type: 'Shops' as const, id: 'LIST' }],
     }),
     getShopById: build.query<GetShopByIdApiResponse, GetShopByIdApiArg>({
       query: (queryArg) => ({ url: `/shops/${queryArg.shopId}` }),
@@ -32,6 +33,7 @@ const injectedRtkApi = api.injectEndpoints({
         url: `/shops/${queryArg.shopId}`,
         method: "DELETE",
       }),
+      invalidatesTags: [{ type: 'Shops' as const, id: 'LIST' }],
     }),
     getCategoriesByShop: build.query<
       GetCategoriesByShopApiResponse,

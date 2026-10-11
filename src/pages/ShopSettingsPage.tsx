@@ -28,6 +28,7 @@ import { AutoAcceptCard } from '../components/shop/AutoAcceptCard';
 import { KitchenTimingCard } from '../components/shop/KitchenTimingCard';
 import { DeliveryCard } from '../components/shop/DeliveryCard';
 import { ScheduledOrdersCard } from '../components/shop/ScheduledOrdersCard';
+import { DeleteShopCard } from '../components/shop/DeleteShopCard';
 import { DineInCard } from '../components/shop/DineInCard';
 import { accentContrastOnWhite, contrastRatio } from '../utils/contrast';
 import { useShopReferenceLists } from '../features/menu/useShopReferenceLists';
@@ -1046,6 +1047,8 @@ export function ShopSettingsPage() {
           </MyButton>
         </div>
       </MyCard>
+
+      <DeleteShopCard shopId={shop.id ?? shopId!} shopName={shop.name ?? ''} callerRole={shop.callerRole} />
 
       <MyCard className="p-4">
         <p className="text-xs text-gray-400 mb-2 uppercase tracking-wide">Debug</p>

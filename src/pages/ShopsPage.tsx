@@ -9,6 +9,7 @@ import {
   useUpdateShopMutation,
 } from '../services/api';
 import type { CreateShopRequest, MenuLanguage, ShopResponse } from '../services/api';
+import { visibleShops } from '../features/shops/deleteShop';
 import { defaultMenuLanguageForUiLanguage } from '../features/menu/translations';
 import { useGetDpaDocumentQuery } from '../services/legalApi';
 import { MyButton } from '../components/ui/MyButton';
@@ -345,12 +346,12 @@ export function ShopsPage() {
       <div className="space-y-5">
         <h1 className="text-2xl font-semibold text-gray-900">{t('shops.title')}</h1>
 
-        {data?.shops.length === 0 && (
+        {visibleShops(data?.shops ?? []).length === 0 && (
           <p className="text-gray-400 text-sm">{t('shops.empty')}</p>
         )}
 
         <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-3">
-          {data?.shops.map((shop) => (
+          {visibleShops(data?.shops ?? []).map((shop) => (
             <Link
               key={shop.id}
               to={`/shops/${shop.id}`}
