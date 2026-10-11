@@ -28,7 +28,8 @@ import {
 import { useShopReferenceLists } from '../features/menu/useShopReferenceLists';
 import { EMPTY_FOOD_INFO, effectiveTaxClassId, foodInfoFromProduct, initialScheduleDays, labelFor, taxClassOptionLabel } from '../features/menu/foodInfo';
 import type { FoodInfo } from '../features/menu/foodInfo';
-import { menuLanguagesOf } from '../features/menu/translations';
+import { menuLanguagesOf, resolveActiveLanguage, withTranslation } from '../features/menu/translations';
+import { LanguageTabs } from '../components/menu/LanguageTabs';
 import { isListRefreshing } from '../features/menu/productListStatus';
 import { wizardBackAction, wizardStepSequence } from '../features/menu/wizardSteps';
 
@@ -403,7 +404,12 @@ function ProductEditView({
   const [addProductImage] = useAddProductImageMutation();
   const { refs } = useShopReferenceLists(shopId);
   const { data: shop } = useGetShopByIdQuery({ shopId });
-  const extraLanguage = shop ? menuLanguagesOf(shop)[1] : undefined;
+  const languages = shop ? menuLanguagesOf(shop) : [];
+  const [pickedLanguage, setPickedLanguage] = useState<MenuLanguage | undefined>();
+  const activeLanguage = resolveActiveLanguage(languages, pickedLanguage);
+  const extraLanguage = languages[1];
+  // Set only while the other-language tab is open; the step fields then edit that language's text.
+  const translatingLanguage = extraLanguage !== undefined && activeLanguage === extraLanguage ? extraLanguage : undefined;
 
   const [mode, setMode] = useState<'simple' | 'extended'>('simple');
   const [step, setStep] = useState<StepNum>(1);
@@ -490,7 +496,6 @@ function ProductEditView({
   const updateAddonOption = (groupId: string, optionId: string, patch: Partial<AddonOption>) => setAddonGroups((gs) => gs.map((g) => g.id === groupId ? { ...g, options: g.options.map((o) => o.id === optionId ? { ...o, ...patch } : o) } : g));
 
   // Translation helpers (only reachable when the shop has a second menu language)
-  const withTranslation = (map: TranslationMap | undefined, lang: MenuLanguage, value: string): TranslationMap => ({ ...(map ?? {}), [lang]: value });
   const setGroupTranslation = (kind: 'variant' | 'addon', groupId: string, value: string) => {
     if (!extraLanguage) return;
     const apply = <G extends { id: string; nameTranslations?: TranslationMap }>(gs: G[]) =>
@@ -646,6 +651,13 @@ function ProductEditView({
         </div>
       </div>
 
+      {/* Language tabs (only when the shop has a second menu language); the pick sticks across steps */}
+      {extraLanguage && activeLanguage && (
+        <div className="px-6 pt-3 flex-shrink-0">
+          <LanguageTabs languages={languages} active={activeLanguage} onChange={setPickedLanguage} />
+        </div>
+      )}
+
       {/* Step indicator */}
       <div className="px-6 pt-4 flex-shrink-0">
         <StepIndicator currentStep={step} onJump={jumpTo} stepSequence={stepSequence} />
@@ -661,19 +673,28 @@ function ProductEditView({
         <div key={step} className={direction === 'forward' ? 'animate-slide-in-right' : 'animate-slide-in-left'}>
           {step === 1 && (
             <Step1Basics form={form} setForm={setForm} imageFile={imageFile} setImageFile={setImageFile} currencySymbol={currencySymbol} nameError={nameError} descError={descError} existingImageUrl={existingImageUrl}
-              translation={extraLanguage ? { language: extraLanguage, name: nameTranslations[extraLanguage] ?? '', description: descriptionTranslations[extraLanguage] ?? '', setName: (v) => setNameTranslations((m) => withTranslation(m, extraLanguage, v)), setDescription: (v) => setDescriptionTranslations((m) => withTranslation(m, extraLanguage, v)) } : undefined} />
+              translation={translatingLanguage ? { language: translatingLanguage, name: nameTranslations[translatingLanguage] ?? '', description: descriptionTranslations[translatingLanguage] ?? '', setName: (v) => setNameTranslations((m) => withTranslation(m, translatingLanguage, v)), setDescription: (v) => setDescriptionTranslations((m) => withTranslation(m, translatingLanguage, v)) } : undefined} />
           )}
-          {step === 2 && (
+          {step === 2 && translatingLanguage && (
+            <p className="text-sm text-gray-400">{t('translationFields.nothingToTranslate')}</p>
+          )}
+          {step === 2 && !translatingLanguage && (
             <StepCategories shopId={shopId} categories={categoriesList} selectedCategoryIds={selectedCategoryIds} setSelectedCategoryIds={setSelectedCategoryIds} taxClasses={refs?.taxClasses ?? []} taxRefs={refs} taxClassOverride={foodInfo.taxClassId} setTaxClassOverride={(id) => setFoodInfo({ ...foodInfo, taxClassId: id })} categoryError={categoryError} showTaxOverride={mode === 'extended'} />
           )}
-          {step === 3 && (
+          {step === 3 && translatingLanguage && (
+            <p className="text-sm text-gray-400">{t('translationFields.nothingToTranslate')}</p>
+          )}
+          {step === 3 && !translatingLanguage && (
             <StepFoodInfo foodInfo={foodInfo} setFoodInfo={setFoodInfo} refs={refs} showOptional={mode === 'extended'} />
           )}
           {step === 4 && (
             <Step4Customise variantGroups={variantGroups} addVariantGroup={addVariantGroup} removeVariantGroup={removeVariantGroup} updateVariantGroupName={updateVariantGroupName} addVariantOption={addVariantOption} removeVariantOption={removeVariantOption} updateVariantOption={updateVariantOption} addonGroups={addonGroups} addAddonGroup={addAddonGroup} removeAddonGroup={removeAddonGroup} updateAddonGroup={updateAddonGroup} addAddonOption={addAddonOption} removeAddonOption={removeAddonOption} updateAddonOption={updateAddonOption}
-              translation={extraLanguage ? { language: extraLanguage, setGroup: setGroupTranslation, setOption: setOptionTranslation } : undefined} />
+              translation={translatingLanguage ? { language: translatingLanguage, setGroup: setGroupTranslation, setOption: setOptionTranslation } : undefined} />
           )}
-          {step === 6 && (
+          {step === 6 && translatingLanguage && (
+            <p className="text-sm text-gray-400">{t('translationFields.nothingToTranslate')}</p>
+          )}
+          {step === 6 && !translatingLanguage && (
             <Step6Review form={form} imageFile={imageFile} existingImageUrl={existingImageUrl} selectedCategoryIds={selectedCategoryIds} categories={categoriesList} variantGroups={variantGroups} addonGroups={addonGroups} currencySymbol={currencySymbol} foodInfo={foodInfo} refs={refs} effectiveTaxClassLabel={effectiveTaxClassLabel} />
           )}
         </div>

@@ -10,10 +10,10 @@ import { MyInput, MyTextarea } from '../components/ui/MyInput';
 import { CurrencyInput } from '../components/ui/CurrencyInput';
 import { useCreateCategoryMutation } from '../services/api';
 import type { MenuLanguage, ReferenceEntry, ReferenceListsResponse, SpiceLevel, TranslationMap } from '../services/api';
+import { hasOriginalText } from '../features/menu/translations';
 import { effectiveTaxClassId, MODE_ORDER, isFoodInfoDeclared, labelFor, taxClassOptionLabel, toggleId, toggleMode, unavailableModesInOrder } from '../features/menu/foodInfo';
 import type { FoodInfo } from '../features/menu/foodInfo';
-import { TranslationsSection } from '../components/menu/TranslationsSection';
-import type { TranslationRow } from '../components/menu/TranslationsSection';
+import { TranslationField } from '../components/menu/LanguageTabs';
 
 // ── Shared types ──────────────────────────────────────────────────────────────
 
@@ -114,7 +114,7 @@ interface Step1Props {
   nameError: boolean;
   descError: boolean;
   existingImageUrl?: string | null;
-  /** Present only when the shop has a second menu language. */
+  /** Present only while the translation tab is active: the fields then edit this language's text. */
   translation?: {
     language: MenuLanguage;
     name: string;
@@ -126,6 +126,16 @@ interface Step1Props {
 
 export function Step1Basics({ form, setForm, imageFile, setImageFile, currencySymbol, nameError, descError, existingImageUrl, translation }: Step1Props) {
   const { t } = useTranslation();
+  if (translation) {
+    const nothing = form.name.trim() === '' && form.description.trim() === '';
+    return (
+      <div className="space-y-4">
+        <TranslationField label={t('products.name')} original={form.name} value={translation.name} onChange={translation.setName} />
+        <TranslationField label={t('products.description')} original={form.description} value={translation.description} onChange={translation.setDescription} multiline />
+        {nothing && <p className="text-sm text-gray-400">{t('translationFields.nothingToTranslate')}</p>}
+      </div>
+    );
+  }
   return (
     <div className="space-y-4">
       <div>
@@ -152,15 +162,6 @@ export function Step1Basics({ form, setForm, imageFile, setImageFile, currencySy
           <p className="mt-1 text-xs text-red-500">{t('products.description')} is required.</p>
         )}
       </div>
-      {translation && (
-        <TranslationsSection
-          language={translation.language}
-          rows={[
-            { id: 'name', original: form.name, value: translation.name, onChange: translation.setName },
-            { id: 'description', original: form.description, value: translation.description, onChange: translation.setDescription, multiline: true },
-          ]}
-        />
-      )}
       <CurrencyInput
         label={t('products.price', { symbol: currencySymbol })}
         valueCents={form.price}
@@ -603,7 +604,7 @@ interface Step4Props {
   addAddonOption: (groupId: string) => void;
   removeAddonOption: (groupId: string, optionId: string) => void;
   updateAddonOption: (groupId: string, optionId: string, patch: Partial<AddonOption>) => void;
-  /** Present only when the shop has a second menu language. */
+  /** Present only while the translation tab is active: the fields then edit this language's text. */
   translation?: {
     language: MenuLanguage;
     setGroup: (kind: 'variant' | 'addon', groupId: string, value: string) => void;
@@ -619,24 +620,44 @@ export function Step4Customise({
   translation,
 }: Step4Props) {
   const { t } = useTranslation();
-  const translationRows: TranslationRow[] = translation
-    ? ([['variant', variantGroups], ['addon', addonGroups]] as const).flatMap(([kind, groups]) =>
-        groups.flatMap((g) => [
-          {
-            id: `${kind}-${g.id}`,
-            original: g.name,
-            value: g.nameTranslations?.[translation.language] ?? '',
-            onChange: (v: string) => translation.setGroup(kind, g.id, v),
-          },
-          ...g.options.map((o) => ({
-            id: `${kind}-${g.id}-${o.id}`,
-            original: o.name,
-            value: o.nameTranslations?.[translation.language] ?? '',
-            onChange: (v: string) => translation.setOption(kind, g.id, o.id, v),
-          })),
-        ]),
-      )
-    : [];
+  if (translation) {
+    const { language } = translation;
+    const kinds = [['variant', variantGroups], ['addon', addonGroups]] as const;
+    const shown = kinds.flatMap(([kind, groups]) => groups.map((g) => ({ kind, g }))).filter(({ g }) => hasOriginalText(g.name) || g.options.some((o) => hasOriginalText(o.name)));
+    if (shown.length === 0) return <p className="text-sm text-gray-400">{t('translationFields.nothingToTranslate')}</p>;
+    return (
+      <div className="space-y-4">
+        {kinds.map(([kind, groups]) => {
+          const visible = groups.filter((g) => hasOriginalText(g.name) || g.options.some((o) => hasOriginalText(o.name)));
+          if (visible.length === 0) return null;
+          return (
+            <MyCard key={kind} className="p-4 space-y-3">
+              <span className="text-sm font-medium text-gray-700">{t(kind === 'variant' ? 'variants.title' : 'addons.title')}</span>
+              {visible.map((group) => (
+                <div key={group.id} className="border border-gray-200 rounded-xl p-3 space-y-3">
+                  <TranslationField
+                    original={group.name}
+                    value={group.nameTranslations?.[language] ?? ''}
+                    onChange={(v) => translation.setGroup(kind, group.id, v)}
+                  />
+                  <div className="space-y-2">
+                    {group.options.map((option) => (
+                      <TranslationField
+                        key={option.id}
+                        original={option.name}
+                        value={option.nameTranslations?.[language] ?? ''}
+                        onChange={(v) => translation.setOption(kind, group.id, option.id, v)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </MyCard>
+          );
+        })}
+      </div>
+    );
+  }
   return (
     <div className="space-y-4">
       {/* Variant Groups */}
@@ -781,7 +802,6 @@ export function Step4Customise({
         ))}
       </MyCard>
 
-      {translation && <TranslationsSection language={translation.language} rows={translationRows} />}
     </div>
   );
 }

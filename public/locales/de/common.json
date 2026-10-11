@@ -771,8 +771,9 @@
     "reordered": "Kategoriereihenfolge gespeichert."
   },
   "translationFields": {
-    "title": "Übersetzungen (optional)",
-    "hint": "Tragen Sie neben jedem Text die {{language}}-Fassung ein. Ein leeres Feld zeigt das Original."
+    "original": "Original: {{text}}",
+    "originalTab": "{{language}} (Original)",
+    "nothingToTranslate": "In diesem Schritt gibt es nichts zu übersetzen."
   },
   "legal": {
     "title": "Rechtliches & Daten",
