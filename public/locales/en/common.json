@@ -771,8 +771,9 @@
     "reordered": "Category order saved."
   },
   "translationFields": {
-    "title": "Translations (optional)",
-    "hint": "Type the {{language}} version next to each text. Leave a box empty to show the original."
+    "original": "Original: {{text}}",
+    "originalTab": "{{language}} (original)",
+    "nothingToTranslate": "Nothing to translate on this step."
   },
   "legal": {
     "title": "Legal & data",

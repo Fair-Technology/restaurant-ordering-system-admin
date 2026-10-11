@@ -11,9 +11,9 @@ import { Breadcrumb } from '../components/ui/Breadcrumb';
 import { useToast } from '../contexts/ToastContext';
 import { useShopReferenceLists } from '../features/menu/useShopReferenceLists';
 import { labelFor } from '../features/menu/foodInfo';
-import { menuLanguagesOf } from '../features/menu/translations';
-import { TranslationsSection } from '../components/menu/TranslationsSection';
-import type { TranslationMap } from '../services/api';
+import { menuLanguagesOf, resolveActiveLanguage, withTranslation } from '../features/menu/translations';
+import { LanguageTabs, TranslationField } from '../components/menu/LanguageTabs';
+import type { MenuLanguage, TranslationMap } from '../services/api';
 
 export function EditCategoryPage() {
   const { shopId, categoryId } = useParams<{ shopId: string; categoryId: string }>();
@@ -48,7 +48,11 @@ export function EditCategoryPage() {
     }
   }, [category]);
 
-  const extraLanguage = shop ? menuLanguagesOf(shop)[1] : undefined;
+  const [pickedLanguage, setPickedLanguage] = useState<MenuLanguage | undefined>();
+  const languages = shop ? menuLanguagesOf(shop) : [];
+  const extraLanguage = languages[1];
+  const activeLanguage = resolveActiveLanguage(languages, pickedLanguage);
+  const translating = extraLanguage !== undefined && activeLanguage === extraLanguage;
 
   if (isLoading) return <MySpinner label={t('categories.loadingCategory')} />;
   if (isError || !category) return <p className="text-red-500">{t('categories.failedToLoad')}</p>;
@@ -107,26 +111,27 @@ export function EditCategoryPage() {
 
       <MyCard className="p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
-          <MyInput
-            label={t('categories.name')}
-            type="text"
-            required
-            placeholder={t('categories.namePlaceholder')}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          {extraLanguage && (
-            <TranslationsSection
-              language={extraLanguage}
-              rows={[{
-                id: 'name',
-                original: name,
-                value: nameTranslations[extraLanguage] ?? '',
-                onChange: (v) => setNameTranslations((m) => ({ ...m, [extraLanguage]: v })),
-              }]}
+          {extraLanguage && activeLanguage && (
+            <LanguageTabs languages={languages} active={activeLanguage} onChange={setPickedLanguage} />
+          )}
+          {translating ? (
+            <TranslationField
+              label={t('categories.name')}
+              original={name}
+              value={nameTranslations[extraLanguage] ?? ''}
+              onChange={(v) => setNameTranslations((m) => withTranslation(m, extraLanguage, v))}
+            />
+          ) : (
+            <MyInput
+              label={t('categories.name')}
+              type="text"
+              required
+              placeholder={t('categories.namePlaceholder')}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
             />
           )}
-          {(refs?.taxClasses.length ?? 0) > 0 && (
+          {!translating && (refs?.taxClasses.length ?? 0) > 0 && (
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium text-gray-700">{t('categories.taxClass')}</label>
               <select
