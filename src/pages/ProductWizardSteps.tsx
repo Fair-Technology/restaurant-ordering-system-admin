@@ -117,6 +117,8 @@ interface Step1Props {
   nameError: boolean;
   descError: boolean;
   existingImageUrl?: string | null;
+  /** True after a failed attempt to leave step 1 without a photo: shows the required-photo message. */
+  photoError?: boolean;
   /** Present only while the translation tab is active: the fields then edit this language's text. */
   translation?: {
     language: MenuLanguage;
@@ -127,7 +129,7 @@ interface Step1Props {
   };
 }
 
-export function Step1Basics({ form, setForm, imageFile, setImageFile, currencySymbol, nameError, descError, existingImageUrl, translation }: Step1Props) {
+export function Step1Basics({ form, setForm, imageFile, setImageFile, currencySymbol, nameError, descError, existingImageUrl, photoError, translation }: Step1Props) {
   const { t } = useTranslation();
   const [pendingImage, setPendingImage] = useState<File | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
@@ -175,7 +177,7 @@ export function Step1Basics({ form, setForm, imageFile, setImageFile, currencySy
       <div className="flex flex-col gap-1.5">
         <p className="text-sm font-medium text-gray-700">
           {t('products.image')}{' '}
-          <span className="text-gray-300 font-normal">{t('products.imageOptionalNote')}</span>
+          <span className="text-gray-400 font-normal">{t('products.imageRequiredNote')}</span>
         </p>
         {/* Image preview */}
         {existingImageUrl && imageFile ? (
@@ -228,6 +230,7 @@ export function Step1Basics({ form, setForm, imageFile, setImageFile, currencySy
           type="file"
           accept="image/jpeg,image/png,image/webp"
           aria-label={t('products.image')}
+          aria-required="true"
           onChange={(e) => {
             const picked = e.target.files?.[0] ?? null;
             const err = picked ? checkProductImageFile(picked) : null;
@@ -238,6 +241,7 @@ export function Step1Basics({ form, setForm, imageFile, setImageFile, currencySy
           className="block w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer"
         />
         {imageError && <p role="alert" className="text-sm text-red-600">{imageError}</p>}
+        {photoError && !imageError && <p role="alert" className="text-sm text-red-600">{t('products.photoRequired')}</p>}
         {pendingImage && (
           <ImageCropDialog
             file={pendingImage}
