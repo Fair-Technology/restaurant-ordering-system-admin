@@ -10,8 +10,6 @@ import {
   useCreateProductMutation,
   useUpdateProductMutation,
   useDeleteProductMutation,
-  useGenerateUploadUrlMutation,
-  useAddProductImageMutation,
 } from '../services/api';
 import { MyCard } from '../components/ui/MyCard';
 import { MyButton } from '../components/ui/MyButton';
@@ -25,6 +23,8 @@ import {
   type StepNum, type ScheduleState,
   StepIndicator, Step1Basics, StepFoodInfo, StepCategories, Step4Customise, Step5Schedule, Step6Review,
 } from './ProductWizardSteps';
+import { useUploadProductImage } from '../features/menu/useUploadProductImage';
+import { isWrongSizeError } from '../features/images/imageRules';
 import { useShopReferenceLists } from '../features/menu/useShopReferenceLists';
 import { EMPTY_FOOD_INFO, effectiveTaxClassId, foodInfoFromProduct, initialScheduleDays, labelFor, taxClassOptionLabel } from '../features/menu/foodInfo';
 import type { FoodInfo } from '../features/menu/foodInfo';
@@ -400,8 +400,7 @@ function ProductEditView({
     { refetchOnMountOrArgChange: true },
   );
   const [updateProduct, { isLoading: isUpdating, isError: isUpdateError }] = useUpdateProductMutation();
-  const [generateUploadUrl] = useGenerateUploadUrlMutation();
-  const [addProductImage] = useAddProductImageMutation();
+  const uploadProductImage = useUploadProductImage();
   const { refs } = useShopReferenceLists(shopId);
   const { data: shop } = useGetShopByIdQuery({ shopId });
   const languages = shop ? menuLanguagesOf(shop) : [];
@@ -541,6 +540,7 @@ function ProductEditView({
   function jumpTo(n: StepNum) { setDirection(n < step ? 'back' : 'forward'); setStep(n); }
 
   const handleSubmit = async () => {
+    let uploadStage = false;
     try {
       await updateProduct({
         productId,
@@ -565,29 +565,16 @@ function ProductEditView({
 
       if (imageFile) {
         setIsUploading(true);
-        const contentType = imageFile.type as 'image/jpeg' | 'image/png' | 'image/webp';
-        const uploadData = await generateUploadUrl({
-          shopId,
-          productId,
-          generateImageUploadUrlRequest: { contentType, fileName: imageFile.name },
-        }).unwrap();
-        await fetch(uploadData.uploadUrl, {
-          method: 'PUT',
-          headers: { 'x-ms-blob-type': 'BlockBlob', 'Content-Type': contentType },
-          body: imageFile,
-        });
-        await addProductImage({
-          shopId,
-          productId,
-          addProductImageRequest: { imageId: uploadData.imageId, url: uploadData.blobUrl },
-        }).unwrap();
+        uploadStage = true;
+        await uploadProductImage(shopId, productId, imageFile);
         setIsUploading(false);
       }
 
       toast.success(t('products.saved'));
       onSaved();
-    } catch {
+    } catch (err) {
       setIsUploading(false);
+      if (uploadStage) toast.error(t(isWrongSizeError(err) ? 'products.productImageWrongSize' : 'products.failedToUploadImage'));
     }
   };
 
@@ -808,8 +795,7 @@ function AddProductModal({ shopId, onClose }: AddProductModalProps) {
   const currencySymbol = shop?.currency ? getCurrencySymbol(shop.currency) : '$';
   const { data: categories } = useGetCategoriesByShopQuery({ shopId });
   const [createProduct, { isLoading, isError, error }] = useCreateProductMutation();
-  const [generateUploadUrl] = useGenerateUploadUrlMutation();
-  const [addProductImage] = useAddProductImageMutation();
+  const uploadProductImage = useUploadProductImage();
   const { refs } = useShopReferenceLists(shopId);
 
   const categoriesList = (categories ?? []).filter(
@@ -882,6 +868,7 @@ function AddProductModal({ shopId, onClose }: AddProductModalProps) {
   function jumpTo(n: StepNum) { setDirection(n < step ? 'back' : 'forward'); setStep(n); }
 
   const handleSubmit = async () => {
+    let uploadStage = false;
     try {
       const product = await createProduct({
         createProductRequest: {
@@ -904,28 +891,16 @@ function AddProductModal({ shopId, onClose }: AddProductModalProps) {
 
       if (imageFile) {
         setIsUploading(true);
-        const contentType = imageFile.type as 'image/jpeg' | 'image/png' | 'image/webp';
-        const uploadData = await generateUploadUrl({
-          shopId,
-          productId: product.id!,
-          generateImageUploadUrlRequest: { contentType, fileName: imageFile.name },
-        }).unwrap();
-        await fetch(uploadData.uploadUrl, {
-          method: 'PUT',
-          headers: { 'x-ms-blob-type': 'BlockBlob', 'Content-Type': contentType },
-          body: imageFile,
-        });
-        await addProductImage({
-          shopId,
-          productId: product.id!,
-          addProductImageRequest: { imageId: uploadData.imageId, url: uploadData.blobUrl },
-        }).unwrap();
+        uploadStage = true;
+        await uploadProductImage(shopId, product.id!, imageFile);
+        setIsUploading(false);
       }
 
       toast.success(t('products.created'));
       onClose();
-    } catch {
+    } catch (err) {
       setIsUploading(false);
+      if (uploadStage) toast.error(t(isWrongSizeError(err) ? 'products.productImageWrongSize' : 'products.failedToUploadImage'));
     }
   };
 

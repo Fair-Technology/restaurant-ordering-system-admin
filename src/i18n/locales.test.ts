@@ -7,6 +7,7 @@ import { ORDER_DISPLAY_STATES } from '../features/orders/orderState';
 import { REJECT_REASONS } from '../features/orders/intake';
 import { PAYMENT_STATUSES } from '../features/orders/refunds';
 import { COVER_IMAGE_FILE_ERRORS } from '../features/shops/coverImage';
+import { PRODUCT_IMAGE_FILE_ERRORS } from '../features/menu/productImage';
 import { AUTO_ACCEPT_CHOICES } from '../features/shops/kitchenSettings';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -43,6 +44,17 @@ describe('locales', () => {
     for (const e of COVER_IMAGE_FILE_ERRORS) {
       expect(en).toHaveProperty(`shops.${e}`);
       expect(de).toHaveProperty(`shops.${e}`);
+    }
+  });
+
+  it('every dish photo error is labelled, and the crop dialog has its texts', () => {
+    for (const e of PRODUCT_IMAGE_FILE_ERRORS) {
+      expect(en).toHaveProperty(`products.${e}`);
+      expect(de).toHaveProperty(`products.${e}`);
+    }
+    for (const k of ['save', 'cancel', 'zoomIn', 'zoomOut', 'cropperLabel', 'loadFailed']) {
+      expect(en).toHaveProperty(`imageCrop.${k}`);
+      expect(de).toHaveProperty(`imageCrop.${k}`);
     }
   });
 
