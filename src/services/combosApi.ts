@@ -1,15 +1,28 @@
 import { api } from './api';
+import type { TranslationMap } from './api';
+
+export interface ComboImageDto {
+  id: string;
+  url: string;
+  alt?: string | null;
+  sortOrder?: number | null;
+  createdAt?: string;
+}
 
 export interface ComboGroupDto {
   id: string;
   name: string;
+  nameTranslations: TranslationMap;
   productIds: string[];
 }
 
 export interface ComboDto {
   id: string;
   name: string;
+  nameTranslations: TranslationMap;
   description: string;
+  descriptionTranslations: TranslationMap;
+  images: ComboImageDto[];
   priceCents: number;
   categoryId: string | null;
   isAvailable: boolean;
@@ -21,12 +34,14 @@ export interface ComboDto {
 
 export interface ComboBody {
   name: string;
+  nameTranslations: TranslationMap;
   description: string;
+  descriptionTranslations: TranslationMap;
   priceCents: number;
   categoryId: string;
   bmfDrinkShare: boolean;
   isAvailable: boolean;
-  groups: Array<{ id?: string; name: string; productIds: string[] }>;
+  groups: Array<{ id?: string; name: string; nameTranslations: TranslationMap; productIds: string[] }>;
 }
 
 // Combos are product records on the server, so they share the shop's product list tag: deleting a combo

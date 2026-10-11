@@ -391,8 +391,16 @@
       "name": "Enter a name of up to 120 characters.",
       "price": "Enter a price from €0.01 to €1,000.",
       "category": "Choose a category.",
-      "groups": "Each choice needs a name and at least one dish (1–5 choices)."
-    }
+      "groups": "Each choice needs a name and at least one dish (1–5 choices).",
+      "translation": "Translations are too long (name 120, description 2000, choice name 60 characters)."
+    },
+    "photoRequired": "Please add a photo",
+    "createdWithoutPhoto": "The combo was created, but its photo could not be uploaded, so it has no photo yet. Press the button again to retry the upload. If you close this window the combo stays without a photo: open it with Edit and add one (a photo is required).",
+    "retryPhotoUpload": "Retry photo upload",
+    "photoReplaceIncomplete": "Your changes were saved and the new photo was added, but the old photo could not be removed, so it may still show. Open the combo again and save the photo once more.",
+    "photoUploadFailed": "The combo was saved, but its photo could not be uploaded.",
+    "noPhoto": "no photo",
+    "groupNameTranslated": "Name of choice {{number}}"
   },
   "promotions": {
     "accessDenied": "Only people who manage the restaurant can change discounts.",

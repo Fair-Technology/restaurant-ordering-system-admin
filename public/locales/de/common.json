@@ -391,8 +391,16 @@
       "name": "Bitte einen Namen mit bis zu 120 Zeichen eingeben.",
       "price": "Bitte einen Preis von 0,01 € bis 1.000 € eingeben.",
       "category": "Bitte eine Kategorie wählen.",
-      "groups": "Jede Auswahl braucht einen Namen und mindestens ein Gericht (1–5 Auswahlen)."
-    }
+      "groups": "Jede Auswahl braucht einen Namen und mindestens ein Gericht (1–5 Auswahlen).",
+      "translation": "Übersetzungen sind zu lang (Name 120, Beschreibung 2000, Name einer Auswahl 60 Zeichen)."
+    },
+    "photoRequired": "Bitte ein Foto hinzufügen",
+    "createdWithoutPhoto": "Das Menü wurde angelegt, das Foto konnte aber nicht hochgeladen werden – es hat noch kein Foto. Klicken Sie erneut auf die Schaltfläche, um den Upload zu wiederholen. Wenn Sie das Fenster schließen, bleibt das Menü ohne Foto: Öffnen Sie es über „Bearbeiten“ und fügen Sie ein Foto hinzu (ein Foto ist erforderlich).",
+    "retryPhotoUpload": "Foto-Upload wiederholen",
+    "photoReplaceIncomplete": "Ihre Änderungen wurden gespeichert und das neue Foto hinzugefügt, das alte Foto konnte aber nicht entfernt werden und wird eventuell noch angezeigt. Öffnen Sie das Menü erneut und speichern Sie das Foto noch einmal.",
+    "photoUploadFailed": "Das Menü wurde gespeichert, das Foto konnte aber nicht hochgeladen werden.",
+    "noPhoto": "kein Foto",
+    "groupNameTranslated": "Name der Auswahl {{number}}"
   },
   "promotions": {
     "accessDenied": "Nur wer das Restaurant verwaltet, kann Rabatte ändern.",
