@@ -565,7 +565,7 @@
     "modeSimple": "Simple",
     "modeExtended": "Advanced",
     "wizardStep1Subtitle": "Name, describe, and price your product.",
-    "wizardStep2Subtitle": "Assign categories. The tax class comes from the category.",
+    "wizardStep2Subtitle": "Assign categories and check the dish's tax class.",
     "wizardStep3Subtitle": "Allergens and additives are required before the dish appears on your menu.",
     "wizardStep4Subtitle": "Add variants or addons — or skip.",
     "wizardStep5Subtitle": "Restrict availability to a window — or skip.",
