@@ -8,7 +8,7 @@ export function MyCard({ children, className = '', id }: MyCardProps) {
   return (
     <div
       id={id}
-      className={`bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden ${className}`}
+      className={`bg-white border border-line rounded-2xl overflow-hidden ${className}`}
     >
       {children}
     </div>

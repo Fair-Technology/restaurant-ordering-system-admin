@@ -28,7 +28,21 @@
     "offlineBySuperadminToast": "Die Plattform hat diesen Shop offline genommen. Bitte den Support kontaktieren.",
     "staff": "Mitarbeiter",
     "activity": "Aktivität",
-    "legal": "Rechtliches"
+    "legal": "Rechtliches",
+    "dishes": "Gerichte",
+    "group": {
+      "service": "Service",
+      "menu": "Speisekarte",
+      "shop": "Shop",
+      "business": "Geschäft"
+    },
+    "acceptingOrders": "Nimmt Bestellungen an",
+    "offlineShort": "Offline – Gäste sehen den Shop nicht",
+    "switchShop": "Shop wechseln",
+    "allShops": "Alle Shops",
+    "openMenu": "Menü öffnen",
+    "closeMenu": "Menü schließen",
+    "waitingOrders": "{{count}} neue Bestellungen"
   },
   "subscription": {
     "currentPlan": "Aktueller Plan",
@@ -763,7 +777,65 @@
     "inclDiscount": "inkl. Rabatt {{code}} −{{amount}}",
     "discountLine": "Rabatt {{code}}: −{{amount}}",
     "loyaltyVoucherSent": "Treuegutschein an den Gast gemailt.",
-    "refundDiscountHint": "Diese Bestellung hatte den Code {{code}}: angehakte Artikel werden zu dem Betrag erstattet, den der Gast nach Rabatt bezahlt hat."
+    "refundDiscountHint": "Diese Bestellung hatte den Code {{code}}: angehakte Artikel werden zu dem Betrag erstattet, den der Gast nach Rabatt bezahlt hat.",
+    "served": "Serviert",
+    "live": {
+      "openCount_one": "{{count}} offen",
+      "openCount_other": "{{count}} offen",
+      "connection": {
+        "connected": "Verbunden",
+        "connecting": "Verbinde…",
+        "offline": "Offline"
+      },
+      "soundOff": "Ton aus",
+      "busy": "Hochbetrieb",
+      "busyOn": "Hochbetrieb · +{{minutes}} Min.",
+      "search": "Bestellung suchen",
+      "searchPlaceholder": "Nr. oder Name suchen",
+      "filters": "Bestellungen filtern",
+      "filter": {
+        "open": "Offen",
+        "new": "Neu",
+        "work": "In Arbeit",
+        "ready": "Fertig",
+        "upcoming": "Vorbestellungen",
+        "history": "Verlauf"
+      },
+      "groupNew": "Neu",
+      "groupNewHint": "bitte annehmen",
+      "groupWork": "In Arbeit",
+      "groupWorkHint": "nach Fälligkeit sortiert",
+      "groupReady": "Fertig & unterwegs",
+      "emptyNew": "Keine neuen Bestellungen – Sie hören einen Ton, sobald eine kommt.",
+      "emptyWork": "Gerade nichts in Arbeit.",
+      "emptyReady": "Nichts wartet auf Abholung.",
+      "noMatch": "Keine Bestellung passt zu Ihrer Suche.",
+      "historyHint": "neueste zuerst",
+      "rejectIn": "Ablehnung in {{time}}",
+      "readyIn": "Fertig in {{minutes}} Min.",
+      "deliverIn": "Lieferung in {{minutes}} Min.",
+      "late": "{{minutes}} Min. überfällig",
+      "waitingFor": "wartet · {{minutes}} Min.",
+      "outFor": "unterwegs · {{minutes}} Min.",
+      "at": "um {{time}}",
+      "detail": "Bestellung",
+      "detailHint": "Tippen Sie links auf eine Bestellung",
+      "nothingSelected": "Wählen Sie links eine Bestellung, um sie hier zu sehen.",
+      "closeDetail": "Bestellung schließen",
+      "scheduledFor": "Vorbestellung für {{time}}",
+      "autoRejectIn": "Automatische Ablehnung in",
+      "guest": "Gast",
+      "payment": "Zahlung",
+      "discount": "Rabatt",
+      "deliveryFee": "Liefergebühr",
+      "total": "Summe",
+      "readyInLabel": "Fertig in",
+      "minutes": "{{minutes}} Min.",
+      "acceptReadyIn": "Annehmen · fertig in {{minutes}} Min.",
+      "rejectWhy": "Warum lehnen Sie ab?",
+      "rejectOrder": "Bestellung ablehnen",
+      "callGuest": "Gast anrufen"
+    }
   },
   "activity": {
     "title": "Aktivität",
@@ -1054,5 +1126,55 @@
   "common": {
     "cancel": "Abbrechen",
     "genericError": "Etwas ist schiefgelaufen. Bitte erneut versuchen."
+  },
+  "dishes": {
+    "add": "Gericht hinzufügen",
+    "import": "Importieren",
+    "search": "Gerichte durchsuchen",
+    "filter": {
+      "all": "Alle",
+      "onMenu": "Auf der Karte",
+      "off": "Nicht verfügbar",
+      "incomplete": "Unvollständig"
+    },
+    "photo": "Foto",
+    "missingPhoto": "Foto fehlt",
+    "optionGroups_one": "{{count}} Gruppe",
+    "optionGroups_other": "{{count}} Gruppen",
+    "availableFor": "{{name}} auf der Karte",
+    "noMatch": "Keine Gerichte passen zu diesem Filter.",
+    "preview": {
+      "title": "Live-Vorschau",
+      "subtitle": "So sehen Gäste Ihren Shop",
+      "device": "Gerät",
+      "phone": "Handy",
+      "desktop": "Desktop",
+      "view": "Ansicht",
+      "menu": "Speisekarte",
+      "dishOpen": "Gericht geöffnet",
+      "hint": "Klicken Sie ein Gericht an, um es zu bearbeiten",
+      "openShop": "Shop öffnen",
+      "notConfigured": "Die Vorschau ist nicht verfügbar, weil die Adresse des Shops nicht eingerichtet ist."
+    },
+    "editor": {
+      "basics": "Grundlagen",
+      "categories": "Kategorien",
+      "foodInfo": "Lebensmittelinfos",
+      "options": "Optionen & Extras",
+      "availability": "Verfügbarkeit",
+      "onMenu": "Auf der Karte",
+      "onMenuHelp": "Gäste können dieses Gericht jetzt bestellen.",
+      "scheduleSet": "Zeitplan aktiv",
+      "scheduleNone": "Kein Zeitplan – immer verfügbar, solange der Shop geöffnet ist",
+      "scheduleSetUp": "Zeitplan festlegen",
+      "deleteHint": "Das Gericht wird von der Karte entfernt. Bestehende Bestellungen bleiben erhalten.",
+      "unsaved": "Ungespeicherte Änderungen",
+      "allSaved": "Alle Änderungen gespeichert",
+      "discard": "Verwerfen",
+      "save": "Speichern",
+      "nameRequired": "Bitte geben Sie einen Namen ein.",
+      "descriptionRequired": "Bitte geben Sie eine Beschreibung ein.",
+      "descriptionHint": "{{count}} / {{max}} Zeichen"
+    }
   }
 }

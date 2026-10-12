@@ -1,71 +1,25 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Bell, Volume2, VolumeX, Wifi, WifiOff } from 'lucide-react';
-import { useGetOrderQueueQuery } from '../../services/ordersApi';
-import {
-  connectionState,
-  groupQueue,
-  hasWaitingOrders,
-  newlyAutoAcceptedIds,
-  PHONE_TABS,
-  pruneSettledAccepts,
-  visibleColumns,
-  withoutPendingAccept,
-  withPendingAccepts,
-  type BoardVariant,
-  type PendingAccept,
-  type PhoneTab,
-} from '../../features/orders/intake';
-import { useOrderAlarm } from '../../features/orders/useOrderAlarm';
-import { useWakeLock } from '../../features/orders/useWakeLock';
-import { useNow } from '../../features/orders/useNow';
+import { groupQueue, PHONE_TABS, visibleColumns, type BoardVariant, type PhoneTab } from '../../features/orders/intake';
+import { useLiveQueue } from '../../features/orders/useLiveQueue';
 import { MySpinner } from '../ui/MySpinner';
 import { MyButton } from '../ui/MyButton';
 import { OrderCard } from './OrderCard';
 import { UpcomingOrders } from './UpcomingOrders';
 import { BusyModeButton } from './BusyModeButton';
-import type { IntakeOrder } from '../../services/ordersApi';
 
 interface Props {
   shopId: string;
   variant?: BoardVariant;
 }
 
-const NO_ORDERS: IntakeOrder[] = [];
-
 export function OrderIntakeBoard({ shopId, variant = 'board' }: Props) {
   const { t } = useTranslation();
   const [tab, setTab] = useState<PhoneTab>('waiting');
-  const { data, isLoading, isError, fulfilledTimeStamp, refetch } = useGetOrderQueueQuery(
-    { shopId },
-    { pollingInterval: 10000, refetchOnReconnect: true },
-  );
-  const nowMs = useNow(1000);
-  // Orders staff just accepted, shown as in progress while the server is still taking the payment
-  const [pending, setPending] = useState<ReadonlyMap<string, PendingAccept>>(() => new Map());
-  const livePending = useMemo(
-    () => (data ? pruneSettledAccepts(pending, data.orders, Date.parse(data.serverTime)) : pending),
-    [data, pending],
-  );
-  const orders = useMemo(() => withPendingAccepts(data?.orders ?? NO_ORDERS, livePending), [data, livePending]);
-  const startAccept = useCallback(
-    (id: string, prepMinutes: number) => setPending((m) => new Map(m).set(id, { prepMinutes, atMs: Date.now() })),
-    [],
-  );
-  const failAccept = useCallback((id: string) => setPending((m) => withoutPendingAccept(m, id)), []);
-  const { soundOn, turnOn, chime } = useOrderAlarm(hasWaitingOrders(orders));
-  // Ids of auto-accepted orders already shown; null until the first data arrives, which only seeds it.
-  const seenRef = useRef<Set<string> | null>(null);
-  useEffect(() => {
-    if (!data) return;
-    const fresh = newlyAutoAcceptedIds(data.orders, seenRef.current ?? new Set());
-    const isFirstData = seenRef.current === null;
-    seenRef.current ??= new Set();
-    for (const id of fresh) seenRef.current.add(id);
-    if (!isFirstData && fresh.length > 0) chime();
-  }, [data, chime]);
-  const wakeLock = useWakeLock(soundOn);
-  const connection = connectionState({ lastSuccessAt: fulfilledTimeStamp, isError, nowMs });
+  const {
+    data, orders, isLoading, isError, refetch, nowMs, startAccept, failAccept, isPendingAccept, soundOn, turnOn, wakeLock, connection,
+  } = useLiveQueue(shopId);
 
   if (isLoading) return <MySpinner label={t('orders.queueLoading')} />;
   if (isError && !data) return <p className="text-red-500">{t('orders.queueLoadError')}</p>;
@@ -160,7 +114,7 @@ export function OrderIntakeBoard({ shopId, variant = 'board' }: Props) {
                   nowMs={nowMs}
                   defaultPrepMinutes={data?.defaultPrepMinutes[order.fulfilmentMode] ?? 20}
                   timeZone={data?.timezone ?? 'Europe/Berlin'}
-                  pendingAccept={livePending.has(order.id) && order.state === 'ACCEPTED'}
+                  pendingAccept={isPendingAccept(order)}
                   onAcceptStart={startAccept}
                   onAcceptFailed={failAccept}
                   onFailed={() => void refetch()}

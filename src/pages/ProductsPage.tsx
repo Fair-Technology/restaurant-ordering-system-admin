@@ -1,38 +1,36 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import type { MenuLanguage, ProductResponse, TranslationMap } from '../services/api';
+import type { MenuLanguage, ProductResponse } from '../services/api';
 import {
   useGetProductsByShopQuery,
-  useGetProductByIdQuery,
   useGetCategoriesByShopQuery,
   useGetShopByIdQuery,
   useCreateProductMutation,
   useUpdateProductMutation,
-  useDeleteProductMutation,
 } from '../services/api';
-import { MyCard } from '../components/ui/MyCard';
 import { MyButton } from '../components/ui/MyButton';
 import { MySpinner } from '../components/ui/MySpinner';
-import { CurrencyInput } from '../components/ui/CurrencyInput';
 import { getCurrencySymbol } from '../utils/currency';
-import { Calendar, Pencil, Trash2, X } from 'lucide-react';
+import { formatCents } from '../utils/money';
+import { Plus, Search, X } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 import {
   type VariantGroup, type VariantOption, type AddonGroup, type AddonOption,
-  type StepNum, type ScheduleState,
-  StepIndicator, Step1Basics, StepFoodInfo, StepCategories, Step4Customise, Step5Schedule, Step6Review,
+  type StepNum,
+  StepIndicator, Step1Basics, StepFoodInfo, StepCategories, Step4Customise, Step6Review,
 } from './ProductWizardSteps';
 import { useUploadProductImage } from '../features/menu/useUploadProductImage';
-import { createDishWithPhoto, dishPhotoMissing, isPhotoRequiredError, replaceDishPhoto } from '../features/menu/productImage';
+import { createDishWithPhoto, dishPhotoMissing } from '../features/menu/productImage';
 import { isWrongSizeError } from '../features/images/imageRules';
 import { useShopReferenceLists } from '../features/menu/useShopReferenceLists';
-import { EMPTY_FOOD_INFO, effectiveTaxClassId, foodInfoFromProduct, initialScheduleDays, labelFor, taxClassOptionLabel } from '../features/menu/foodInfo';
+import { EMPTY_FOOD_INFO, effectiveTaxClassId, labelFor, taxClassOptionLabel } from '../features/menu/foodInfo';
 import type { FoodInfo } from '../features/menu/foodInfo';
-import { menuLanguagesOf, resolveActiveLanguage, withTranslation } from '../features/menu/translations';
-import { LanguageTabs } from '../components/menu/LanguageTabs';
 import { isListRefreshing } from '../features/menu/productListStatus';
 import { wizardBackAction, wizardStepSequence } from '../features/menu/wizardSteps';
+import type { PreviewDish } from '../features/menu/previewBridge';
+import { DishEditor } from '../components/menu/DishEditor';
+import { LivePreview } from '../components/menu/LivePreview';
 
 // ── Bulk import types ──────────────────────────────────────────────────────────
 
@@ -43,769 +41,6 @@ type ImportRow = {
   image_url: string | null;
 };
 type ImportStep = 'upload' | 'preview' | 'importing' | 'done';
-
-// ── Product detail view (read-only) ───────────────────────────────────────────
-
-function ProductDetailView({
-  product,
-  currencySymbol,
-  shopId,
-  onEdit,
-  onDeleted,
-  onClose,
-}: {
-  product: ProductResponse;
-  currencySymbol: string;
-  shopId: string;
-  onEdit: () => void;
-  onDeleted: () => void;
-  onClose: () => void;
-}) {
-  const { t, i18n } = useTranslation();
-  const toast = useToast();
-  const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation();
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const { refs } = useShopReferenceLists(shopId);
-  const imageUrl = product.images?.length ? product.images[product.images.length - 1].url : undefined;
-  const allergens = (refs?.allergens ?? []).filter((a) => (product.allergenIds ?? []).includes(a.id));
-  const additives = (refs?.additives ?? []).filter((a) => (product.additiveIds ?? []).includes(a.id));
-  const dietaryTags = (refs?.dietaryTags ?? []).filter((tag) => (product.dietaryTagIds ?? []).includes(tag.id));
-
-  const handleDelete = async () => {
-    try {
-      await deleteProduct({ productId: product.id!, shopId }).unwrap();
-      toast.success(t('products.deleted'));
-      onDeleted();
-    } catch {
-      toast.error(t('products.failedToDelete'));
-    }
-  };
-
-  return (
-    <>
-      {/* Header */}
-      <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-200 flex-shrink-0">
-        <div>
-          <h2 className="text-base font-semibold text-gray-900">{t('products.detailTitle')}</h2>
-          <p className="text-xs text-gray-400 mt-0.5">{t('products.detailSubtitle')}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={onEdit}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
-            title={t('products.edit')}
-          >
-            <Pencil size={16} />
-          </button>
-          <button
-            onClick={() => setConfirmDelete(true)}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-            title={t('products.delete')}
-          >
-            <Trash2 size={16} />
-          </button>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
-          >
-            <X size={16} />
-          </button>
-        </div>
-      </div>
-
-      {/* Delete confirmation strip */}
-      {confirmDelete && (
-        <div className="px-6 py-2.5 bg-red-50 border-b border-red-100 flex items-center gap-3 flex-shrink-0">
-          <span className="flex-1 text-sm text-red-700">{t('products.deleteWarning')}</span>
-          <button
-            disabled={isDeleting}
-            onClick={handleDelete}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-600 text-white hover:bg-red-700 disabled:opacity-40 transition-colors"
-          >
-            {isDeleting ? '…' : t('products.confirmDelete')}
-          </button>
-          <button
-            onClick={() => setConfirmDelete(false)}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium text-gray-600 border border-gray-200 hover:bg-gray-50 transition-colors"
-          >
-            {t('products.cancel')}
-          </button>
-        </div>
-      )}
-
-      {/* Body */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-5">
-        {/* Image + name/price row */}
-        <div className="flex gap-4">
-          <div className="w-24 h-24 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
-            {imageUrl ? (
-              <img src={imageUrl} alt={product.name} className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <span className="text-gray-300 font-bold text-3xl">
-                  {product.name?.charAt(0).toUpperCase()}
-                </span>
-              </div>
-            )}
-          </div>
-          <div className="flex-1 min-w-0 space-y-1.5 pt-1">
-            <div className="flex items-center gap-1.5">
-              <p className="text-base font-semibold text-gray-900 leading-tight">{product.name}</p>
-              {product.schedule && <Calendar className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />}
-            </div>
-            <p className="text-sm font-medium text-gray-700">
-              {currencySymbol}{((product.price ?? 0) / 100).toFixed(2)}
-            </p>
-            <span
-              className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border font-medium ${
-                product.isAvailable !== false
-                  ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                  : 'bg-gray-100 border-gray-200 text-gray-400'
-              }`}
-            >
-              <span className={`w-1.5 h-1.5 rounded-full ${product.isAvailable !== false ? 'bg-emerald-500' : 'bg-gray-300'}`} />
-              {product.isAvailable !== false ? t('products.available') : t('products.unavailable')}
-            </span>
-          </div>
-        </div>
-
-        {/* Description */}
-        <div>
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-            {t('products.detailDescription')}
-          </p>
-          <p className="text-sm text-gray-600 leading-relaxed">
-            {product.description || <span className="text-gray-300 italic">{t('products.noDescription')}</span>}
-          </p>
-        </div>
-
-        {/* Schedule & Special Price */}
-        {product.schedule && (
-          <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-              {t('products.scheduleModalTitle')}
-            </p>
-            <div className="rounded-xl border border-gray-200 overflow-hidden divide-y divide-gray-100">
-              {/* Date range */}
-              <div className="flex items-center justify-between px-3 py-2">
-                <span className="text-xs text-gray-500">{t('products.scheduleStartDate')}</span>
-                <span className="text-xs font-medium text-gray-800">{product.schedule.startDate}</span>
-              </div>
-              <div className="flex items-center justify-between px-3 py-2">
-                <span className="text-xs text-gray-500">{t('products.scheduleEndDate')}</span>
-                <span className="text-xs font-medium text-gray-800">
-                  {product.schedule.endDate ?? t('products.scheduleNoEndDate')}
-                </span>
-              </div>
-              {/* Time window */}
-              {(product.schedule.startTime || product.schedule.endTime) && (
-                <div className="flex items-center justify-between px-3 py-2">
-                  <span className="text-xs text-gray-500">{t('products.scheduleStartTime')} / {t('products.scheduleEndTime')}</span>
-                  <span className="text-xs font-medium text-gray-800">
-                    {product.schedule.startTime ?? '00:00'} – {product.schedule.endTime ?? '23:59'}
-                  </span>
-                </div>
-              )}
-              {/* Days of week */}
-              {(product.schedule.daysOfWeek?.length ?? 0) > 0 && (
-                <div className="flex items-center justify-between px-3 py-2">
-                  <span className="text-xs text-gray-500">{t('products.scheduleDaysOfWeek')}</span>
-                  <span className="text-xs font-medium text-gray-800">
-                    {product.schedule.daysOfWeek!
-                      .map((d) => t(`products.schedule${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d]}`))
-                      .join(', ')}
-                  </span>
-                </div>
-              )}
-              {/* Special price */}
-              {product.schedule.offerPrice != null && (
-                <div className="flex items-center justify-between px-3 py-2 bg-emerald-50">
-                  <span className="text-xs text-emerald-700 font-medium">
-                    {product.schedule.offerLabel || t('products.offerBadge')}
-                  </span>
-                  <span className="text-xs font-semibold text-emerald-700">
-                    {currencySymbol}{(product.schedule.offerPrice / 100).toFixed(2)}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Categories */}
-        {(product.categories?.length ?? 0) > 0 && (
-          <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-              {t('products.detailCategories')}
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {product.categories!.map((c) => (
-                <span
-                  key={c.id}
-                  className="text-xs px-2.5 py-0.5 rounded-full bg-gray-100 border border-gray-200 text-gray-600"
-                >
-                  {c.name}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Allergens */}
-        <div>
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-            {t('products.allergens')}
-          </p>
-          {product.allergenIds === undefined || product.allergenIds === null ? (
-            <p className="text-sm text-gray-400">{t('products.notDeclared')}</p>
-          ) : allergens.length === 0 ? (
-            <p className="text-sm text-gray-400">{t('products.allergensNone')}</p>
-          ) : (
-            <div className="flex flex-wrap gap-1.5">
-              {allergens.map((a) => (
-                <span key={a.id} className="text-xs px-2.5 py-0.5 rounded-full bg-gray-100 border border-gray-200 text-gray-700">
-                  {labelFor(a.labels, i18n.language)}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Additives */}
-        <div>
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-            {t('products.additives')}
-          </p>
-          {product.additiveIds === undefined || product.additiveIds === null ? (
-            <p className="text-sm text-gray-400">{t('products.notDeclared')}</p>
-          ) : additives.length === 0 ? (
-            <p className="text-sm text-gray-400">{t('products.additivesNone')}</p>
-          ) : (
-            <div className="flex flex-wrap gap-1.5">
-              {additives.map((a) => (
-                <span key={a.id} className="text-xs px-2.5 py-0.5 rounded-full bg-gray-100 border border-gray-200 text-gray-700">
-                  {a.code} {labelFor(a.labels, i18n.language)}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Dietary tags */}
-        {dietaryTags.length > 0 && (
-          <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-              {t('products.dietaryTags')}
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {dietaryTags.map((tag) => (
-                <span key={tag.id} className="text-xs px-2.5 py-0.5 rounded-full bg-gray-100 border border-gray-200 text-gray-700">
-                  {labelFor(tag.labels, i18n.language)}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Variant groups */}
-        {(product.variantGroups?.length ?? 0) > 0 && (
-          <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-              {t('variants.title')}
-            </p>
-            <div className="space-y-3">
-              {product.variantGroups!.map((group, gi) => (
-                <div key={group.id ?? gi} className="rounded-xl border border-gray-200 overflow-hidden">
-                  <div className="px-3 py-2 bg-gray-50 border-b border-gray-200">
-                    <p className="text-xs font-semibold text-gray-700">{group.name}</p>
-                  </div>
-                  <div className="divide-y divide-gray-100">
-                    {(group.options ?? []).map((opt, oi) => (
-                      <div key={opt.id ?? oi} className="flex items-center justify-between px-3 py-2">
-                        <div className="flex items-center gap-2">
-                          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${opt.isAvailable !== false ? 'bg-emerald-400' : 'bg-gray-300'}`} />
-                          <span className="text-sm text-gray-700">{opt.name}</span>
-                        </div>
-                        <span className="text-xs text-gray-500 flex-shrink-0">
-                          {`+${currencySymbol}${((opt.priceDelta ?? 0) / 100).toFixed(2)}`}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Addon groups */}
-        {(product.addonGroups?.length ?? 0) > 0 && (
-          <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-              {t('addons.title')}
-            </p>
-            <div className="space-y-3">
-              {product.addonGroups!.map((group, gi) => (
-                <div key={group.id ?? gi} className="rounded-xl border border-gray-200 overflow-hidden">
-                  <div className="px-3 py-2 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-                    <p className="text-xs font-semibold text-gray-700">{group.name}</p>
-                    <span className="text-xs text-gray-400">
-                      {t('addons.min')} {group.minSelectable ?? 0} · {t('addons.max')} {group.maxSelectable ?? 1}
-                    </span>
-                  </div>
-                  <div className="divide-y divide-gray-100">
-                    {(group.options ?? []).map((opt, oi) => (
-                      <div key={opt.id ?? oi} className="flex items-center justify-between px-3 py-2">
-                        <div className="flex items-center gap-2">
-                          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${opt.isAvailable !== false ? 'bg-emerald-400' : 'bg-gray-300'}`} />
-                          <span className="text-sm text-gray-700">{opt.name}</span>
-                        </div>
-                        <span className="text-xs text-gray-500 flex-shrink-0">
-                          {`+${currencySymbol}${((opt.priceDelta ?? 0) / 100).toFixed(2)}`}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </>
-  );
-}
-
-// ── Edit wizard view (inside the same modal) ──────────────────────────────────
-
-function ProductEditView({
-  productId,
-  shopId,
-  currencySymbol,
-  categoriesList,
-  onSaved,
-  onBack,
-}: {
-  productId: string;
-  shopId: string;
-  currencySymbol: string;
-  categoriesList: { id: string; name: string; taxClassId?: string | null }[];
-  onSaved: () => void;
-  onBack: () => void;
-}) {
-  const { t, i18n } = useTranslation();
-  const toast = useToast();
-
-  const { data: product, isLoading: productLoading } = useGetProductByIdQuery(
-    { productId, shopId },
-    { refetchOnMountOrArgChange: true },
-  );
-  const [updateProduct, { isLoading: isUpdating, isError: isUpdateError }] = useUpdateProductMutation();
-  const uploadProductImage = useUploadProductImage();
-  const { refs } = useShopReferenceLists(shopId);
-  const { data: shop } = useGetShopByIdQuery({ shopId });
-  const languages = shop ? menuLanguagesOf(shop) : [];
-  const [pickedLanguage, setPickedLanguage] = useState<MenuLanguage | undefined>();
-  const activeLanguage = resolveActiveLanguage(languages, pickedLanguage);
-  const extraLanguage = languages[1];
-  // Set only while the other-language tab is open; the step fields then edit that language's text.
-  const translatingLanguage = extraLanguage !== undefined && activeLanguage === extraLanguage ? extraLanguage : undefined;
-
-  const [mode, setMode] = useState<'simple' | 'extended'>('simple');
-  const [step, setStep] = useState<StepNum>(1);
-  const [direction, setDirection] = useState<'forward' | 'back'>('forward');
-  const [initialized, setInitialized] = useState(false);
-  const [nameTranslations, setNameTranslations] = useState<TranslationMap>({});
-  const [descriptionTranslations, setDescriptionTranslations] = useState<TranslationMap>({});
-
-  const stepSequence = wizardStepSequence(mode);
-  const isFirstStep = step === stepSequence[0];
-  const isLastStep = step === stepSequence[stepSequence.length - 1];
-
-  const [form, setForm] = useState({ name: '', description: '', price: 0 });
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [photoTried, setPhotoTried] = useState(false);
-  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
-  const [foodInfo, setFoodInfo] = useState<FoodInfo>(EMPTY_FOOD_INFO);
-  const [variantGroups, setVariantGroups] = useState<VariantGroup[]>([]);
-  const [addonGroups, setAddonGroups] = useState<AddonGroup[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
-
-  const [nameError, setNameError] = useState(false);
-  const [descError, setDescError] = useState(false);
-  const [categoryError, setCategoryError] = useState(false);
-
-  useEffect(() => {
-    if (product && !initialized) {
-      setForm({
-        name: product.name ?? '',
-        description: product.description ?? '',
-        price: product.price ?? 0,
-      });
-      setNameTranslations(product.nameTranslations ?? {});
-      setDescriptionTranslations(product.descriptionTranslations ?? {});
-      setSelectedCategoryIds(product.categories?.map((c) => c.id!).filter(Boolean) ?? []);
-      setFoodInfo(foodInfoFromProduct(product));
-      setVariantGroups(
-        (product.variantGroups ?? []).map((g) => ({
-          id: g.id ?? crypto.randomUUID(),
-          name: g.name ?? '',
-          nameTranslations: g.nameTranslations ?? {},
-          options: (g.options ?? []).map((o) => ({
-            id: o.id ?? crypto.randomUUID(),
-            name: o.name ?? '',
-            nameTranslations: o.nameTranslations ?? {},
-            priceDelta: o.priceDelta ?? 0,
-            isAvailable: o.isAvailable ?? true,
-          })),
-        })),
-      );
-      setAddonGroups(
-        (product.addonGroups ?? []).map((g) => ({
-          id: g.id ?? crypto.randomUUID(),
-          name: g.name ?? '',
-          nameTranslations: g.nameTranslations ?? {},
-          minSelectable: g.minSelectable ?? 0,
-          maxSelectable: g.maxSelectable ?? 1,
-          options: (g.options ?? []).map((o) => ({
-            id: o.id ?? crypto.randomUUID(),
-            name: o.name ?? '',
-            nameTranslations: o.nameTranslations ?? {},
-            priceDelta: o.priceDelta ?? 0,
-            isAvailable: o.isAvailable ?? true,
-          })),
-        })),
-      );
-      setInitialized(true);
-    }
-  }, [product, initialized]);
-
-  // Variant helpers
-  const addVariantGroup = () => setVariantGroups((gs) => [...gs, { id: crypto.randomUUID(), name: '', options: [] }]);
-  const removeVariantGroup = (id: string) => setVariantGroups((gs) => gs.filter((g) => g.id !== id));
-  const updateVariantGroupName = (id: string, name: string) => setVariantGroups((gs) => gs.map((g) => g.id === id ? { ...g, name } : g));
-  const addVariantOption = (groupId: string) => setVariantGroups((gs) => gs.map((g) => g.id === groupId ? { ...g, options: [...g.options, { id: crypto.randomUUID(), name: '', priceDelta: 0, isAvailable: true }] } : g));
-  const removeVariantOption = (groupId: string, optionId: string) => setVariantGroups((gs) => gs.map((g) => g.id === groupId ? { ...g, options: g.options.filter((o) => o.id !== optionId) } : g));
-  const updateVariantOption = (groupId: string, optionId: string, patch: Partial<VariantOption>) => setVariantGroups((gs) => gs.map((g) => g.id === groupId ? { ...g, options: g.options.map((o) => o.id === optionId ? { ...o, ...patch } : o) } : g));
-
-  // Addon helpers
-  const addAddonGroup = () => setAddonGroups((gs) => [...gs, { id: crypto.randomUUID(), name: '', minSelectable: 0, maxSelectable: 1, options: [] }]);
-  const removeAddonGroup = (id: string) => setAddonGroups((gs) => gs.filter((g) => g.id !== id));
-  const updateAddonGroup = (id: string, patch: Partial<AddonGroup>) => setAddonGroups((gs) => gs.map((g) => g.id === id ? { ...g, ...patch } : g));
-  const addAddonOption = (groupId: string) => setAddonGroups((gs) => gs.map((g) => g.id === groupId ? { ...g, options: [...g.options, { id: crypto.randomUUID(), name: '', priceDelta: 0, isAvailable: true }] } : g));
-  const removeAddonOption = (groupId: string, optionId: string) => setAddonGroups((gs) => gs.map((g) => g.id === groupId ? { ...g, options: g.options.filter((o) => o.id !== optionId) } : g));
-  const updateAddonOption = (groupId: string, optionId: string, patch: Partial<AddonOption>) => setAddonGroups((gs) => gs.map((g) => g.id === groupId ? { ...g, options: g.options.map((o) => o.id === optionId ? { ...o, ...patch } : o) } : g));
-
-  // Translation helpers (only reachable when the shop has a second menu language)
-  const setGroupTranslation = (kind: 'variant' | 'addon', groupId: string, value: string) => {
-    if (!extraLanguage) return;
-    const apply = <G extends { id: string; nameTranslations?: TranslationMap }>(gs: G[]) =>
-      gs.map((g) => g.id === groupId ? { ...g, nameTranslations: withTranslation(g.nameTranslations, extraLanguage, value) } : g);
-    if (kind === 'variant') setVariantGroups(apply); else setAddonGroups(apply);
-  };
-  const setOptionTranslation = (kind: 'variant' | 'addon', groupId: string, optionId: string, value: string) => {
-    if (!extraLanguage) return;
-    const apply = <G extends { id: string; options: { id: string; nameTranslations?: TranslationMap }[] }>(gs: G[]) =>
-      gs.map((g) => g.id === groupId
-        ? { ...g, options: g.options.map((o) => o.id === optionId ? { ...o, nameTranslations: withTranslation(o.nameTranslations, extraLanguage, value) } : o) }
-        : g);
-    if (kind === 'variant') setVariantGroups(apply); else setAddonGroups(apply);
-  };
-
-  function validateStep(s: StepNum): boolean {
-    if (s === 1) {
-      const ne = form.name.trim() === '';
-      const de = form.description.trim() === '';
-      const pe = dishPhotoMissing(imageFile, existingImageUrl);
-      setNameError(ne); setDescError(de); setPhotoTried(true);
-      return !ne && !de && !pe;
-    }
-    if (s === 2) {
-      const hasNoCategory = selectedCategoryIds.length === 0;
-      setCategoryError(hasNoCategory);
-      return !hasNoCategory;
-    }
-    return true;
-  }
-
-  function goNext() {
-    if (!validateStep(step)) return;
-    const idx = stepSequence.indexOf(step);
-    setDirection('forward');
-    setStep(stepSequence[idx + 1]);
-  }
-  function goBack() {
-    const back = wizardBackAction(stepSequence, step);
-    if (back.kind === 'exit') { onBack(); return; }
-    setDirection('back');
-    setStep(back.step);
-  }
-  function jumpTo(n: StepNum) { setDirection(n < step ? 'back' : 'forward'); setStep(n); }
-
-  const handleSubmit = async () => {
-    // A dish always keeps a photo: older dishes without one must get one before any change is saved.
-    if (dishPhotoMissing(imageFile, existingImageUrl)) {
-      setPhotoTried(true);
-      setDirection('back');
-      setStep(1);
-      return;
-    }
-    let uploadStage = false;
-    try {
-      await updateProduct({
-        productId,
-        updateProductRequest: {
-          shopId,
-          name: form.name,
-          description: form.description,
-          ...(extraLanguage ? { nameTranslations, descriptionTranslations } : {}),
-          price: form.price,
-          categoryIds: selectedCategoryIds,
-          variantGroups,
-          addonGroups,
-          allergenIds: foodInfo.allergenIds,
-          additiveIds: foodInfo.additiveIds,
-          dietaryTagIds: foodInfo.dietaryTagIds,
-          spiceLevel: foodInfo.spiceLevel,
-          prepMinutes: foodInfo.prepMinutes,
-          // The dish owns its class: the one picked by hand, else its category's suggestion
-          taxClassId: effectiveTaxClassId(selectedCategoryIds, categoriesList, foodInfo.taxClassId),
-          unavailableModes: foodInfo.unavailableModes,
-        },
-      }).unwrap();
-
-      if (imageFile) {
-        setIsUploading(true);
-        uploadStage = true;
-        const replaced = await replaceDishPhoto({
-          hadPhoto: (product?.images?.length ?? 0) > 0,
-          upload: () => uploadProductImage(shopId, productId, imageFile),
-          keepOnly: async (image) => {
-            await updateProduct({
-              productId,
-              updateProductRequest: { shopId, images: [{ id: image.id, url: image.url }] },
-            }).unwrap();
-          },
-        });
-        setIsUploading(false);
-        if (replaced.status === 'old-kept') {
-          toast.error(t('products.photoReplaceIncomplete'));
-          onSaved();
-          return;
-        }
-      }
-
-      toast.success(t('products.saved'));
-      onSaved();
-    } catch (err) {
-      setIsUploading(false);
-      if (uploadStage) toast.error(t(isWrongSizeError(err) ? 'products.productImageWrongSize' : 'products.failedToUploadImage'));
-      else if (isPhotoRequiredError(err)) toast.error(t('products.photoRequired'));
-    }
-  };
-
-  const existingImageUrl = product?.images?.find((img) => img.isPrimary)?.url ?? product?.images?.[0]?.url ?? null;
-  const isBusy = isUpdating || isUploading;
-  const submitLabel = isUpdating ? t('products.saving') : isUploading ? t('products.uploadingImage') : t('products.saveChanges');
-  const stepSubtitles: Record<StepNum, string> = {
-    1: t('products.wizardStep1Subtitle'),
-    2: t('products.wizardStep2Subtitle'),
-    3: t('products.wizardStep3Subtitle'),
-    4: t('products.wizardStep4Subtitle'),
-    6: t('products.wizardStep6Subtitle'),
-  };
-  const effectiveTaxClassLabelId = effectiveTaxClassId(selectedCategoryIds, categoriesList, foodInfo.taxClassId);
-  const effectiveTaxClassLabel = effectiveTaxClassLabelId
-    ? taxClassOptionLabel(
-        labelFor((refs?.taxClasses ?? []).find((c) => c.id === effectiveTaxClassLabelId)?.labels ?? { de: '', en: '' }, i18n.language),
-        effectiveTaxClassLabelId,
-        refs,
-        i18n.language,
-      )
-    : t('products.taxClassNoneYet');
-
-  if (productLoading || !initialized) {
-    return (
-      <div className="flex-1 flex items-center justify-center p-10">
-        <MySpinner label={t('products.loadingProduct')} />
-      </div>
-    );
-  }
-
-  return (
-    <>
-      {/* Header */}
-      <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-gray-200 flex-shrink-0">
-        <div>
-          <h2 className="text-base font-semibold text-gray-900">{t('products.editTitle')}</h2>
-          <p className="text-xs text-gray-400 mt-0.5">{stepSubtitles[step]}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex gap-1">
-            {(['simple', 'extended'] as const).map((m) => (
-              <button
-                key={m}
-                onClick={() => { setMode(m); setStep(1); setDirection('forward'); }}
-                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
-                  mode === m ? 'bg-gray-900 text-white' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                {t(m === 'simple' ? 'products.modeSimple' : 'products.modeExtended')}
-              </button>
-            ))}
-          </div>
-          <button
-            onClick={onBack}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
-            title="Back to details"
-          >
-            <X size={16} />
-          </button>
-        </div>
-      </div>
-
-      {/* Language tabs (only when the shop has a second menu language); the pick sticks across steps */}
-      {extraLanguage && activeLanguage && (
-        <div className="px-6 pt-3 flex-shrink-0">
-          <LanguageTabs languages={languages} active={activeLanguage} onChange={setPickedLanguage} />
-        </div>
-      )}
-
-      {/* Step indicator */}
-      <div className="px-6 pt-4 flex-shrink-0">
-        <StepIndicator currentStep={step} onJump={jumpTo} stepSequence={stepSequence} />
-      </div>
-
-      {/* Step content */}
-      <div className="flex-1 overflow-y-auto px-6 py-4">
-        {isUpdateError && (
-          <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200">
-            <p className="text-sm text-red-600">{t('products.failedToUpdate')}</p>
-          </div>
-        )}
-        <div key={step} className={direction === 'forward' ? 'animate-slide-in-right' : 'animate-slide-in-left'}>
-          {step === 1 && (
-            <Step1Basics form={form} setForm={setForm} imageFile={imageFile} setImageFile={setImageFile} currencySymbol={currencySymbol} nameError={nameError} descError={descError} existingImageUrl={existingImageUrl} photoError={photoTried && dishPhotoMissing(imageFile, existingImageUrl)}
-              translation={translatingLanguage ? { language: translatingLanguage, name: nameTranslations[translatingLanguage] ?? '', description: descriptionTranslations[translatingLanguage] ?? '', setName: (v) => setNameTranslations((m) => withTranslation(m, translatingLanguage, v)), setDescription: (v) => setDescriptionTranslations((m) => withTranslation(m, translatingLanguage, v)) } : undefined} />
-          )}
-          {step === 2 && translatingLanguage && (
-            <p className="text-sm text-gray-400">{t('translationFields.nothingToTranslate')}</p>
-          )}
-          {step === 2 && !translatingLanguage && (
-            <StepCategories shopId={shopId} categories={categoriesList} selectedCategoryIds={selectedCategoryIds} setSelectedCategoryIds={setSelectedCategoryIds} taxClasses={refs?.taxClasses ?? []} taxRefs={refs} taxClassOverride={foodInfo.taxClassId} setTaxClassOverride={(id) => setFoodInfo({ ...foodInfo, taxClassId: id })} categoryError={categoryError} />
-          )}
-          {step === 3 && translatingLanguage && (
-            <p className="text-sm text-gray-400">{t('translationFields.nothingToTranslate')}</p>
-          )}
-          {step === 3 && !translatingLanguage && (
-            <StepFoodInfo foodInfo={foodInfo} setFoodInfo={setFoodInfo} refs={refs} showOptional={mode === 'extended'} />
-          )}
-          {step === 4 && (
-            <Step4Customise variantGroups={variantGroups} addVariantGroup={addVariantGroup} removeVariantGroup={removeVariantGroup} updateVariantGroupName={updateVariantGroupName} addVariantOption={addVariantOption} removeVariantOption={removeVariantOption} updateVariantOption={updateVariantOption} addonGroups={addonGroups} addAddonGroup={addAddonGroup} removeAddonGroup={removeAddonGroup} updateAddonGroup={updateAddonGroup} addAddonOption={addAddonOption} removeAddonOption={removeAddonOption} updateAddonOption={updateAddonOption}
-              translation={translatingLanguage ? { language: translatingLanguage, setGroup: setGroupTranslation, setOption: setOptionTranslation } : undefined} />
-          )}
-          {step === 6 && translatingLanguage && (
-            <p className="text-sm text-gray-400">{t('translationFields.nothingToTranslate')}</p>
-          )}
-          {step === 6 && !translatingLanguage && (
-            <Step6Review form={form} imageFile={imageFile} existingImageUrl={existingImageUrl} selectedCategoryIds={selectedCategoryIds} categories={categoriesList} variantGroups={variantGroups} addonGroups={addonGroups} currencySymbol={currencySymbol} foodInfo={foodInfo} refs={refs} effectiveTaxClassLabel={effectiveTaxClassLabel} />
-          )}
-        </div>
-      </div>
-
-      {/* Footer navigation */}
-      <div className="flex items-center gap-2 px-6 py-4 border-t border-gray-200 flex-shrink-0">
-        {isFirstStep && (
-          <>
-            <MyButton type="button" variant="secondary" onClick={onBack}>← {t('products.cancel')}</MyButton>
-            <div className="flex-1" />
-            <MyButton type="button" onClick={goNext}>{t('products.wizardNext')} →</MyButton>
-          </>
-        )}
-        {!isFirstStep && !isLastStep && (
-          <>
-            <MyButton type="button" variant="secondary" onClick={goBack}>← {t('products.wizardBack')}</MyButton>
-            <div className="flex-1" />
-            {(step === 3 || (mode === 'extended' && step === 4)) && (
-              <MyButton type="button" variant="ghost" onClick={goNext}>{t('products.wizardSkip')}</MyButton>
-            )}
-            <MyButton type="button" onClick={goNext}>{t('products.wizardNext')} →</MyButton>
-          </>
-        )}
-        {isLastStep && (
-          <>
-            <MyButton type="button" variant="secondary" onClick={goBack}>← {t('products.wizardBack')}</MyButton>
-            <div className="flex-1" />
-            <MyButton type="button" disabled={isBusy} onClick={handleSubmit}>{submitLabel}</MyButton>
-          </>
-        )}
-      </div>
-    </>
-  );
-}
-
-// ── Combined product modal (view → edit) ──────────────────────────────────────
-
-function ProductModal({
-  productId,
-  shopId,
-  onClose,
-  onDeleted,
-}: {
-  productId: string;
-  shopId: string;
-  onClose: () => void;
-  onDeleted: () => void;
-}) {
-  const { t } = useTranslation();
-  const { data: shop } = useGetShopByIdQuery({ shopId });
-  const { data: categories } = useGetCategoriesByShopQuery({ shopId });
-  const { data: fullProduct, isLoading: productLoading } = useGetProductByIdQuery(
-    { productId, shopId },
-    { refetchOnMountOrArgChange: true },
-  );
-
-  const [mode, setMode] = useState<'view' | 'edit'>('view');
-
-  const currencySymbol = shop?.currency ? getCurrencySymbol(shop.currency) : '$';
-  const categoriesList = (categories ?? []).filter(
-    (c): c is { id: string; name: string; taxClassId?: string | null } => !!c.id && !!c.name,
-  );
-
-  return (
-    <>
-      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40" />
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col">
-          {productLoading || !fullProduct ? (
-            <div className="flex-1 flex items-center justify-center p-10">
-              <MySpinner label={t('products.loadingProduct')} />
-            </div>
-          ) : mode === 'view' ? (
-            <ProductDetailView
-              product={fullProduct}
-              currencySymbol={currencySymbol}
-              shopId={shopId}
-              onEdit={() => setMode('edit')}
-              onDeleted={onDeleted}
-              onClose={onClose}
-            />
-          ) : (
-            <ProductEditView
-              productId={productId}
-              shopId={shopId}
-              currencySymbol={currencySymbol}
-              categoriesList={categoriesList}
-              onSaved={onClose}
-              onBack={() => setMode('view')}
-            />
-          )}
-        </div>
-      </div>
-    </>
-  );
-}
-
 // ── Add Product Modal (5-step wizard) ─────────────────────────────────────────
 
 interface AddProductModalProps {
@@ -1283,470 +518,328 @@ function BulkImportModal({ shopId, onClose }: { shopId: string; onClose: () => v
   );
 }
 
-// ── Schedule + Offer modal ─────────────────────────────────────────────────────
+// ── Dish list ──────────────────────────────────────────────────────────────────
 
-function ScheduleOfferModal({
-  product,
-  currencySymbol,
-  onClose,
-}: {
-  product: ProductResponse;
-  currencySymbol: string;
-  onClose: () => void;
-}) {
-  const { t } = useTranslation();
-  const toast = useToast();
-  const [updateProduct, { isLoading: isSaving }] = useUpdateProductMutation();
+type DishFilter = 'all' | 'onMenu' | 'off' | 'incomplete';
 
-  const [scheduleEnabled, setScheduleEnabled] = useState(!!product.schedule);
-  const [timeWindowEnabled, setTimeWindowEnabled] = useState(
-    !!(product.schedule?.startTime || product.schedule?.endTime),
-  );
-  const [noEndDate, setNoEndDate] = useState(!product.schedule?.endDate);
-  const [schedule, setSchedule] = useState<ScheduleState>({
-    startDate: product.schedule?.startDate ?? '',
-    endDate: product.schedule?.endDate ?? '',
-    startTime: product.schedule?.startTime ?? '',
-    endTime: product.schedule?.endTime ?? '',
-    daysOfWeek: initialScheduleDays(product.schedule?.daysOfWeek),
-    offerEnabled: !!(product.schedule?.offerPrice),
-    offerPrice: product.schedule?.offerPrice ?? 0,
-    offerLabel: product.schedule?.offerLabel ?? '',
-  });
-  const [scheduleError, setScheduleError] = useState<string | null>(null);
-  const [offerError, setOfferError] = useState<string | null>(null);
-
-  const validate = () => {
-    let valid = true;
-    if (scheduleEnabled) {
-      const endDateInvalid = !noEndDate && schedule.endDate && schedule.endDate < schedule.startDate;
-      const endTimeInvalid = timeWindowEnabled && schedule.startTime && schedule.endTime && schedule.endTime <= schedule.startTime;
-      if (schedule.daysOfWeek.length === 0) {
-        setScheduleError(t('products.scheduleDaysRequired'));
-        valid = false;
-      } else if (endDateInvalid || endTimeInvalid) {
-        setScheduleError(t('products.scheduleInvalid'));
-        valid = false;
-      } else setScheduleError(null);
-    } else {
-      setScheduleError(null);
-    }
-    if (scheduleEnabled && schedule.offerEnabled) {
-      if (schedule.offerPrice <= 0) { setOfferError(t('products.offerPriceRequired')); valid = false; }
-      else if (schedule.offerPrice >= (product.price ?? 0)) { setOfferError(t('products.offerPriceMustBeLess')); valid = false; }
-      else setOfferError(null);
-    } else {
-      setOfferError(null);
-    }
-    return valid;
-  };
-
-  const handleSave = async () => {
-    if (!validate()) return;
-    const schedulePayload = scheduleEnabled ? {
-      startDate: schedule.startDate,
-      endDate: noEndDate ? null : (schedule.endDate || null),
-      startTime: timeWindowEnabled ? (schedule.startTime || null) : null,
-      endTime: timeWindowEnabled ? (schedule.endTime || null) : null,
-      daysOfWeek: schedule.daysOfWeek,
-      offerPrice: schedule.offerEnabled ? schedule.offerPrice : null,
-      offerLabel: schedule.offerEnabled ? (schedule.offerLabel || null) : null,
-    } : null;
-    try {
-      await updateProduct({
-        productId: product.id!,
-        updateProductRequest: { shopId: product.shopId!, schedule: schedulePayload },
-      }).unwrap();
-      toast.success(t('products.saved'));
-      onClose();
-    } catch {
-      // error shown via toast by RTK middleware
-    }
-  };
-
-  return (
-    <>
-      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40" onClick={onClose} />
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
-          {/* Header */}
-          <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-gray-200">
-            <div>
-              <h2 className="text-base font-semibold text-gray-900">{t('products.scheduleModalTitle')}</h2>
-              <p className="text-xs text-gray-400 mt-0.5">{product.name}</p>
-            </div>
-            <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
-              <X size={16} />
-            </button>
-          </div>
-
-          {/* Content */}
-          <div className="flex-1 overflow-y-auto px-6 py-4">
-            <p className="text-xs text-gray-400 mb-4">{t('products.scheduleModalSubtitle')}</p>
-            <Step5Schedule
-              scheduleEnabled={scheduleEnabled}
-              setScheduleEnabled={setScheduleEnabled}
-              timeWindowEnabled={timeWindowEnabled}
-              setTimeWindowEnabled={setTimeWindowEnabled}
-              noEndDate={noEndDate}
-              setNoEndDate={setNoEndDate}
-              schedule={schedule}
-              setSchedule={setSchedule}
-              scheduleError={scheduleError}
-            />
-
-            {/* Special Price section */}
-            {scheduleEnabled && (
-              <div className="mt-4 border border-gray-200 rounded-xl p-4 space-y-3">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={schedule.offerEnabled}
-                    onChange={(e) => setSchedule((s) => ({ ...s, offerEnabled: e.target.checked }))}
-                    className="accent-gray-900"
-                  />
-                  <span className="text-sm font-medium text-gray-700">{t('products.offerPriceToggle')}</span>
-                </label>
-                {schedule.offerEnabled && (
-                  <div className="space-y-3 pt-1">
-                    <div>
-                      <CurrencyInput
-                        label={t('products.offerPrice', { symbol: currencySymbol })}
-                        valueCents={schedule.offerPrice}
-                        onChange={(cents) => setSchedule((s) => ({ ...s, offerPrice: cents }))}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs text-gray-500 uppercase tracking-wide block mb-1">
-                        {t('products.offerLabel')}
-                      </label>
-                      <input
-                        type="text"
-                        value={schedule.offerLabel}
-                        onChange={(e) => setSchedule((s) => ({ ...s, offerLabel: e.target.value }))}
-                        placeholder={t('products.offerLabelPlaceholder')}
-                        maxLength={50}
-                        className="w-full border border-gray-200 rounded-lg bg-white text-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400"
-                      />
-                    </div>
-                    {offerError && <p className="text-xs text-red-500">{offerError}</p>}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Footer */}
-          <div className="flex items-center gap-2 px-6 py-4 border-t border-gray-200">
-            <MyButton type="button" variant="secondary" onClick={onClose}>{t('products.cancel')}</MyButton>
-            <div className="flex-1" />
-            <MyButton type="button" disabled={isSaving} onClick={handleSave}>
-              {isSaving ? t('products.saving') : t('products.saveChanges')}
-            </MyButton>
-          </div>
-        </div>
-      </div>
-    </>
-  );
+/** A dish still missing something before it can be on the menu: allergens declared, a photo, a category. */
+function isIncomplete(p: ProductResponse): boolean {
+  return p.isDeclared === false || !p.images?.length || !p.categories?.length;
 }
 
-// ── Products table ─────────────────────────────────────────────────────────────
+function passes(p: ProductResponse, filter: DishFilter, available: boolean): boolean {
+  if (filter === 'onMenu') return available && p.isDeclared !== false;
+  if (filter === 'off') return !available;
+  if (filter === 'incomplete') return isIncomplete(p);
+  return true;
+}
 
-function ProductTable({
-  products,
-  onSelect,
-  shopId,
-  onScheduleClick,
-  currencySymbol,
+function DishRow({
+  product,
+  available,
+  toggling,
+  selected,
+  currencyMoney,
+  onOpen,
+  onToggle,
 }: {
-  products: ProductResponse[];
-  onSelect: (id: string) => void;
-  shopId: string;
-  onScheduleClick: (product: ProductResponse) => void;
-  currencySymbol: string;
+  product: ProductResponse;
+  available: boolean;
+  toggling: boolean;
+  selected: boolean;
+  currencyMoney: (cents: number) => string;
+  onOpen: () => void;
+  onToggle: () => void;
 }) {
   const { t } = useTranslation();
-  const toast = useToast();
-  const [updateProduct] = useUpdateProductMutation();
-  const [togglingIds, setTogglingIds] = useState<Set<string>>(new Set());
-  const [optimisticAvailability, setOptimisticAvailability] = useState<Record<string, boolean>>({});
-
-  const handleToggle = async (e: React.MouseEvent, product: ProductResponse) => {
-    e.stopPropagation();
-    const id = product.id!;
-    if (togglingIds.has(id)) return;
-    const currentAvailability = optimisticAvailability[id] ?? (product.isAvailable !== false);
-    const nextAvailability = !currentAvailability;
-
-    // Block turning ON if product has no categories
-    if (nextAvailability && !product.categories?.length) {
-      toast.error(t('products.availabilityRequiresCategory'));
-      return;
-    }
-
-    setOptimisticAvailability((prev) => ({ ...prev, [id]: nextAvailability }));
-    setTogglingIds(prev => new Set(prev).add(id));
-    try {
-      await updateProduct({
-        productId: id,
-        updateProductRequest: { shopId, isAvailable: nextAvailability },
-      }).unwrap();
-    } catch {
-      setOptimisticAvailability((prev) => ({ ...prev, [id]: currentAvailability }));
-      toast.error(t('products.failedToUpdate'));
-    } finally {
-      setTogglingIds(prev => { const s = new Set(prev); s.delete(id); return s; });
-    }
-  };
+  const imageUrl = product.images?.length ? product.images[product.images.length - 1].url : undefined;
+  const groups = (product.variantGroups?.length ?? 0) + (product.addonGroups?.length ?? 0);
+  const offer = product.schedule?.offerPrice != null ? product.schedule : null;
 
   return (
-    <div className="divide-y divide-gray-200">
-      {products.map((product) => {
-        const isAvailable = optimisticAvailability[product.id!] ?? (product.isAvailable !== false);
-        const imageUrl = product.images?.length
-          ? product.images[product.images.length - 1].url
-          : undefined;
-
-        return (
-          <div
-            key={product.id}
-            onClick={() => onSelect(product.id!)}
-            className="relative flex items-center gap-4 px-4 py-3 hover:bg-gray-50 cursor-pointer group transition-colors"
-          >
-            {!isAvailable && (
-              <div className="absolute inset-0 bg-white/60 pointer-events-none rounded" />
-            )}
-
-            {/* Thumbnail */}
-            <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
-              {imageUrl ? (
-                <img src={imageUrl} alt={product.name} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <span className="text-gray-300 font-semibold text-sm">
-                    {product.name?.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* Name + schedule indicators */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-sm font-medium text-gray-900 truncate">{product.name}</span>
-                {product.isDeclared === false && (
-                  <span className="ml-2 inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">
-                    {t('products.notOnMenu')}
-                  </span>
-                )}
-                {product.schedule ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); onScheduleClick(product); }}
-                      title={t('products.editSchedule')}
-                      className="p-0.5 rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors flex-shrink-0"
-                    >
-                      <Calendar className="w-3.5 h-3.5" />
-                    </button>
-                    {product.schedule.offerPrice != null && (
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); onScheduleClick(product); }}
-                        className="text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-full flex-shrink-0 hover:bg-emerald-100 transition-colors"
-                      >
-                        {product.schedule.offerLabel || t('products.offerBadge')} · {currencySymbol}{(product.schedule.offerPrice / 100).toFixed(2)}
-                      </button>
-                    )}
-                  </>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); onScheduleClick(product); }}
-                    title={t('products.addSchedule')}
-                    className="p-0.5 rounded text-gray-300 hover:text-gray-500 hover:bg-gray-100 transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100"
-                  >
-                    <Calendar className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Price */}
-            <span className="text-sm text-gray-500 flex-shrink-0 w-20 text-right">
-              {currencySymbol}{((product.price ?? 0) / 100).toFixed(2)}
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onOpen();
+        }
+      }}
+      className={`flex cursor-pointer items-center gap-3.5 border-b border-[#f6f1eb] px-4 py-2.5 transition-colors last:border-b-0 hover:bg-cream focus:outline-none focus-visible:bg-cream ${
+        selected ? 'bg-cream shadow-[inset_3px_0_0_#1f1a17]' : ''
+      }`}
+    >
+      {imageUrl ? (
+        <img src={imageUrl} alt="" className={`h-[42px] w-14 flex-shrink-0 rounded-lg object-cover ${available ? '' : 'opacity-50'}`} />
+      ) : (
+        <span className="flex h-[42px] w-14 flex-shrink-0 items-center justify-center rounded-lg bg-[#f6f1eb] text-[11px] text-[#b9ada2]">
+          {t('dishes.photo')}
+        </span>
+      )}
+      <div className={`flex min-w-0 flex-1 flex-col gap-0.5 ${available ? '' : 'opacity-55'}`}>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[15px] font-bold">{product.name}</span>
+          {offer && (
+            <span className="rounded-full bg-[#fdeee6] px-2 py-0.5 text-[11px] font-bold text-[#7c2a09]">
+              {offer.offerLabel || t('products.offerBadge')} · {currencyMoney(offer.offerPrice!)}
             </span>
-
-            {/* Availability toggle */}
-            <div className="flex-shrink-0 w-14 flex justify-center" onClick={(e) => e.stopPropagation()}>
-              <button
-                type="button"
-                disabled={togglingIds.has(product.id!)}
-                onClick={(e) => handleToggle(e, product)}
-                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${
-                  isAvailable ? 'bg-emerald-500' : 'bg-gray-200'
-                } ${togglingIds.has(product.id!) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                aria-label={isAvailable ? t('products.available') : t('products.unavailable')}
-              >
-                <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${
-                  isAvailable ? 'translate-x-4' : 'translate-x-0.5'
-                }`} />
-              </button>
-            </div>
-          </div>
-        );
-      })}
+          )}
+        </div>
+        {product.description && <span className="truncate text-[13px] text-[#6b6058]">{product.description}</span>}
+        {product.isDeclared === false ? (
+          <span className="self-start rounded-full bg-[#fff6e0] px-2 py-0.5 text-xs font-semibold text-[#8a5a00]">{t('products.notOnMenu')}</span>
+        ) : !imageUrl ? (
+          <span className="self-start rounded-full bg-[#fff6e0] px-2 py-0.5 text-xs font-semibold text-[#8a5a00]">{t('dishes.missingPhoto')}</span>
+        ) : null}
+      </div>
+      <span className="hidden w-[110px] text-[13px] text-[#6b6058] md:block">
+        {groups > 0 ? t('dishes.optionGroups', { count: groups }) : '–'}
+      </span>
+      <span className="w-20 text-right text-[15px] font-bold">{currencyMoney(product.price ?? 0)}</span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={available}
+        aria-label={t('dishes.availableFor', { name: product.name })}
+        disabled={toggling}
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggle();
+        }}
+        onKeyDown={(e) => e.stopPropagation()}
+        className={`relative h-6 w-10 flex-shrink-0 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 disabled:opacity-50 ${
+          available ? 'bg-[#2f8a4c]' : 'bg-[#d6cdc4]'
+        }`}
+      >
+        <span className={`absolute top-[3px] h-[18px] w-[18px] rounded-full bg-white shadow transition-all ${available ? 'right-[3px]' : 'left-[3px]'}`} />
+      </button>
     </div>
   );
 }
 
 // ── Page ───────────────────────────────────────────────────────────────────────
 
+/**
+ * ProductsPage ("Gerichte") — the dish list grouped by category with filters and search; clicking a
+ * dish opens it in the single-page editor. The live preview (the real storefront) sits on the right
+ * and follows: it outlines the dish, shows unsaved edits, and opens a dish here when clicked there.
+ */
 export function ProductsPage() {
   const { shopId } = useParams<{ shopId: string }>();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const toast = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: products, isLoading, isFetching, isError } = useGetProductsByShopQuery({ shopId: shopId! });
   const isRefreshing = isListRefreshing({ isLoading, isFetching });
   const { data: shop } = useGetShopByIdQuery({ shopId: shopId! });
-  const currencySymbol = shop?.currency ? getCurrencySymbol(shop.currency) : '$';
+  const { data: categories } = useGetCategoriesByShopQuery({ shopId: shopId! });
+  const [updateProduct] = useUpdateProductMutation();
+  const currencySymbol = shop?.currency ? getCurrencySymbol(shop.currency) : '€';
+  const money = (cents: number) => formatCents(cents, shop?.currency ?? 'EUR', i18n.language);
 
-  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
-  const [scheduleModalProduct, setScheduleModalProduct] = useState<ProductResponse | null>(null);
+  const selectedId = searchParams.get('dish');
+  const setParam = (key: string, value: string | null) =>
+    setSearchParams((p) => {
+      const n = new URLSearchParams(p);
+      if (value === null) n.delete(key);
+      else n.set(key, value);
+      return n;
+    });
   const showAddModal = searchParams.get('addProduct') === '1';
-  const closeAddModal = () => setSearchParams((p) => { const n = new URLSearchParams(p); n.delete('addProduct'); return n; });
   const showImportModal = searchParams.get('importProducts') === '1';
-  const closeImportModal = () => setSearchParams((p) => { const n = new URLSearchParams(p); n.delete('importProducts'); return n; });
 
-  // Capture sort order once on initial load. Subsequent mutation-triggered refetches
-  // will not change this ref, so products won't reorder until the page is remounted.
-  const stableSortRef = useRef<Map<string, number> | null>(null);
-  if (products && stableSortRef.current === null) {
-    const m = new Map<string, number>();
-    [...products]
-      .sort((a, b) => Number(a.isAvailable === false) - Number(b.isAvailable === false))
-      .forEach((p, i) => m.set(p.id!, i));
-    stableSortRef.current = m;
-  }
-  const stableIndex = (p: ProductResponse) => stableSortRef.current?.get(p.id!) ?? Infinity;
+  const [filter, setFilter] = useState<DishFilter>('all');
+  const [query, setQuery] = useState('');
+  const [toggling, setToggling] = useState<Set<string>>(new Set());
+  const [optimistic, setOptimistic] = useState<Record<string, boolean>>({});
 
-  if (isLoading) return <MySpinner label={t('products.loading')} />;
-  if (isError) return <p className="text-red-500">{t('products.loadError')}</p>;
+  // Live preview state
+  const [previewDish, setPreviewDish] = useState<PreviewDish | null>(null);
+  const [previewLanguage, setPreviewLanguage] = useState<MenuLanguage | undefined>();
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const onPreviewChange = useCallback((dish: PreviewDish | null, lang: MenuLanguage | undefined) => {
+    setPreviewDish(dish);
+    setPreviewLanguage(lang);
+  }, []);
+  useEffect(() => {
+    setPreviewOpen(!!selectedId);
+    if (!selectedId) setPreviewDish(null);
+  }, [selectedId]);
 
-  // Group by category
+  const categoriesList = (categories ?? []).filter(
+    (c): c is { id: string; name: string; taxClassId?: string | null } => !!c.id && !!c.name,
+  );
+
+  const availableOf = (p: ProductResponse) => optimistic[p.id!] ?? p.isAvailable !== false;
+
+  const toggle = async (product: ProductResponse) => {
+    const id = product.id!;
+    if (toggling.has(id)) return;
+    const current = availableOf(product);
+    const next = !current;
+    if (next && !product.categories?.length) {
+      toast.error(t('products.availabilityRequiresCategory'));
+      return;
+    }
+    setOptimistic((o) => ({ ...o, [id]: next }));
+    setToggling((s) => new Set(s).add(id));
+    try {
+      await updateProduct({ productId: id, updateProductRequest: { shopId: shopId!, isAvailable: next } }).unwrap();
+      setRefreshKey((k) => k + 1);
+    } catch {
+      setOptimistic((o) => ({ ...o, [id]: current }));
+      toast.error(t('products.failedToUpdate'));
+    } finally {
+      setToggling((s) => {
+        const n = new Set(s);
+        n.delete(id);
+        return n;
+      });
+    }
+  };
+
+  const all = products ?? [];
+  const q = query.trim().toLowerCase();
+  const shown = all.filter((p) => passes(p, filter, availableOf(p)) && (!q || (p.name ?? '').toLowerCase().includes(q)));
+  const countOf = (f: DishFilter) => all.filter((p) => passes(p, f, availableOf(p))).length;
+
+  // Group by category (sorted as on the menu); dishes without one at the end
   const categoryMap = new Map<string, { id: string; name: string; sortOrder: number }>();
-  for (const product of products ?? []) {
+  for (const product of all) {
     for (const cat of product.categories ?? []) {
-      if (cat.id && !categoryMap.has(cat.id)) {
-        categoryMap.set(cat.id, { id: cat.id, name: cat.name ?? '', sortOrder: cat.sortOrder ?? 0 });
-      }
+      if (cat.id && !categoryMap.has(cat.id)) categoryMap.set(cat.id, { id: cat.id, name: cat.name ?? '', sortOrder: cat.sortOrder ?? 0 });
     }
   }
-  const sortedCategories = [...categoryMap.values()].sort(
-    (a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name),
-  );
+  const groups = [...categoryMap.values()]
+    .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
+    .map((cat) => ({ id: cat.id, name: cat.name, items: shown.filter((p) => p.categories?.some((c) => c.id === cat.id)) }));
+  const uncategorized = shown.filter((p) => !p.categories?.length);
+  if (uncategorized.length) groups.push({ id: '_none', name: t('products.uncategorized'), items: uncategorized });
+  const visibleGroups = groups.filter((g) => g.items.length > 0);
 
-  const byCategory = new Map<string, ProductResponse[]>();
-  for (const cat of sortedCategories) {
-    byCategory.set(
-      cat.id,
-      [...(products ?? []).filter((p) => p.categories?.some((c) => c.id === cat.id))].sort(
-        (a, b) => stableIndex(a) - stableIndex(b),
-      ),
-    );
-  }
+  const chip = (on: boolean) =>
+    `inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-[13px] font-semibold transition-colors ${
+      on ? 'border-ink bg-ink text-white' : 'border-[#e3d9ce] bg-white text-[#4a413b] hover:bg-cream'
+    }`;
 
-  const uncategorized = [...(products ?? []).filter((p) => !p.categories?.length)].sort(
-    (a, b) => stableIndex(a) - stableIndex(b),
-  );
-  const isEmpty = !products?.length;
-
-  return (
-    <>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between gap-3">
-          {/* The list refetch after a save takes a moment; without this the
-              old rows read as a save that didn't take. */}
-          <p role="status" className="flex items-center gap-2 text-sm text-gray-500">
-            {isRefreshing && (
-              <>
-                <span className="w-3.5 h-3.5 rounded-full border-2 border-gray-200 border-t-gray-600 animate-spin" />
-                {t('products.refreshing')}
-              </>
-            )}
-          </p>
-          <MyButton
-            variant="secondary"
-            onClick={() => setSearchParams((p) => { const n = new URLSearchParams(p); n.set('importProducts', '1'); return n; })}
-          >
-            Import JSON
-          </MyButton>
+  const list = (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex flex-wrap items-end justify-between gap-4 px-7 pb-3.5 pt-[22px]">
+        <div>
+          <div className="text-[13px] text-[#6b6058]">{t('nav.group.menu')}</div>
+          <h1 className="mt-0.5 font-display text-[30px] font-semibold leading-tight">
+            {t('nav.dishes')} <span className="font-sans text-[15px] font-medium text-[#6b6058]">{all.length}</span>
+          </h1>
         </div>
-
-        <div aria-busy={isRefreshing} className={`space-y-6 transition-opacity ${isRefreshing ? 'opacity-60' : ''}`}>
-          {isEmpty && <p className="text-gray-400 text-sm">{t('products.empty')}</p>}
-
-          {sortedCategories.map((cat) => (
-            <section key={cat.id}>
-              <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2 px-1">
-                {cat.name}
-              </h2>
-              <MyCard>
-                <ProductTable
-                  products={byCategory.get(cat.id)!}
-                  onSelect={setSelectedProductId}
-                  shopId={shopId!}
-                  onScheduleClick={setScheduleModalProduct}
-                  currencySymbol={currencySymbol}
-                />
-              </MyCard>
-            </section>
-          ))}
-
-          {uncategorized.length > 0 && (
-            <section>
-              <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2 px-1">
-                {t('products.uncategorized')}
-              </h2>
-              <MyCard>
-                <ProductTable
-                  products={uncategorized}
-                  onSelect={setSelectedProductId}
-                  shopId={shopId!}
-                  onScheduleClick={setScheduleModalProduct}
-                  currencySymbol={currencySymbol}
-                />
-              </MyCard>
-            </section>
-          )}
+        <div className="flex items-center gap-2">
+          <MyButton variant="secondary" onClick={() => setParam('importProducts', '1')}>
+            {t('dishes.import')}
+          </MyButton>
+          <MyButton size="lg" className="gap-2" onClick={() => setParam('addProduct', '1')}>
+            <Plus size={16} strokeWidth={2.6} aria-hidden="true" />
+            {t('dishes.add')}
+          </MyButton>
         </div>
       </div>
 
-      {selectedProductId && (
-        <ProductModal
-          productId={selectedProductId}
-          shopId={shopId!}
-          onClose={() => setSelectedProductId(null)}
-          onDeleted={() => setSelectedProductId(null)}
-        />
-      )}
+      <div className="flex flex-wrap items-center gap-2 px-7 pb-3.5">
+        <label className="flex h-10 w-[260px] items-center gap-2 rounded-[10px] border border-[#e3d9ce] bg-white px-3 focus-within:border-ink">
+          <Search size={16} className="text-[#8a7f77]" aria-hidden="true" />
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t('dishes.search')}
+            aria-label={t('dishes.search')}
+            className="min-w-0 flex-1 bg-transparent text-sm outline-none"
+          />
+        </label>
+        {(['all', 'onMenu', 'off', 'incomplete'] as const).map((f) => (
+          <button key={f} type="button" aria-pressed={filter === f} className={chip(filter === f)} onClick={() => setFilter(f)}>
+            {t(`dishes.filter.${f}`)}
+            <span className="text-xs opacity-70">{countOf(f)}</span>
+          </button>
+        ))}
+        <span role="status" className="ml-auto flex items-center gap-2 text-[13px] text-[#6b6058]">
+          {isRefreshing && (
+            <>
+              <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#e3d9ce] border-t-[#6b6058]" />
+              {t('products.refreshing')}
+            </>
+          )}
+        </span>
+      </div>
 
-      {showAddModal && (
-        <AddProductModal
-          shopId={shopId!}
-          onClose={closeAddModal}
-        />
-      )}
+      <div aria-busy={isRefreshing} className="min-h-0 flex-1 overflow-y-auto px-7 pb-7">
+        {all.length === 0 && <p className="text-sm text-[#8a7f77]">{t('products.empty')}</p>}
+        {all.length > 0 && visibleGroups.length === 0 && <p className="text-sm text-[#8a7f77]">{t('dishes.noMatch')}</p>}
+        {visibleGroups.map((g) => (
+          <section key={g.id} className="mb-[18px] overflow-hidden rounded-2xl border border-line bg-white">
+            <div className="flex items-center gap-2.5 border-b border-line-soft px-4 py-3">
+              <h2 className="text-[15px] font-bold">{g.name}</h2>
+              <span className="text-[13px] text-[#8a7f77]">{g.items.length}</span>
+            </div>
+            {g.items.map((p) => (
+              <DishRow
+                key={p.id}
+                product={p}
+                available={availableOf(p)}
+                toggling={toggling.has(p.id!)}
+                selected={p.id === selectedId}
+                currencyMoney={money}
+                onOpen={() => setParam('dish', p.id!)}
+                onToggle={() => void toggle(p)}
+              />
+            ))}
+          </section>
+        ))}
+      </div>
+    </div>
+  );
 
-      {showImportModal && <BulkImportModal shopId={shopId!} onClose={closeImportModal} />}
+  return (
+    <div className="flex min-h-0 flex-1">
+      <div className="flex min-w-0 flex-1 flex-col">
+        {isLoading ? (
+          <MySpinner label={t('products.loading')} />
+        ) : isError ? (
+          <p className="p-7 text-[#b42318]">{t('products.loadError')}</p>
+        ) : selectedId ? (
+          <DishEditor
+            key={selectedId}
+            productId={selectedId}
+            shopId={shopId!}
+            currencySymbol={currencySymbol}
+            categoriesList={categoriesList}
+            onClose={() => setParam('dish', null)}
+            onSaved={() => setRefreshKey((k) => k + 1)}
+            onDeleted={() => {
+              setParam('dish', null);
+              setRefreshKey((k) => k + 1);
+            }}
+            onPreviewChange={onPreviewChange}
+          />
+        ) : (
+          list
+        )}
+      </div>
 
-      {scheduleModalProduct && (
-        <ScheduleOfferModal
-          product={scheduleModalProduct}
-          currencySymbol={currencySymbol}
-          onClose={() => setScheduleModalProduct(null)}
-        />
-      )}
-    </>
+      <LivePreview
+        slug={shop?.slug}
+        dish={previewDish}
+        focusId={selectedId}
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        onSelect={(id) => setParam('dish', id)}
+        language={previewLanguage}
+        refreshKey={refreshKey}
+      />
+
+      {showAddModal && <AddProductModal shopId={shopId!} onClose={() => setParam('addProduct', null)} />}
+      {showImportModal && <BulkImportModal shopId={shopId!} onClose={() => setParam('importProducts', null)} />}
+    </div>
   );
 }

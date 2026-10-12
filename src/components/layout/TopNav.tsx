@@ -1,18 +1,180 @@
-import { useState, useEffect } from 'react';
-import { NavLink, useParams, useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Link, NavLink, useNavigate, useParams } from 'react-router-dom';
 import { useMsal } from '@azure/msal-react';
 import { useTranslation } from 'react-i18next';
-import {
-  ArrowLeft, Menu, X,
-  Package, ClipboardList, Tag, CreditCard, Settings, Store,
-  Users, History, LogOut, Scale,
-  QrCode, Percent, ChartColumn, LayoutDashboard, Layers,
-} from 'lucide-react';
-import { useGetShopByIdQuery } from '../../services/api';
-import { shopNavItems } from '../../features/shops/shopNav';
+import { ChevronsUpDown, LayoutDashboard, LogOut, Menu, Store, X } from 'lucide-react';
+import { useGetMyShopsQuery, useGetShopByIdQuery, useUpdateShopMutation, type ShopResponse } from '../../services/api';
+import { useGetOrderQueueQuery } from '../../services/ordersApi';
+import { navGroups } from '../../features/shops/shopNav';
+import { isOfflineBySuperadminError, shopLiveState } from '../../features/shops/shopStatus';
 import { clearStaffSession, readStaffSession } from '../../features/staff/staffSession';
+import { useToast } from '../../contexts/ToastContext';
 import { AccountSettingsModal } from './AccountSettingsModal';
 
+/** Round shop logo, or its first letter when no logo is uploaded. */
+function ShopBadge({ shop, size = 36 }: { shop: Pick<ShopResponse, 'name' | 'branding'> | undefined; size?: number }) {
+  const logo = shop?.branding?.logoUrl;
+  return (
+    <span
+      className="flex flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#efe7de] bg-white"
+      style={{ width: size, height: size }}
+    >
+      {logo ? (
+        <img src={logo} alt="" className="h-[80%] w-[80%] object-contain" />
+      ) : (
+        <span className="text-sm font-bold text-[#6b6058]">{shop?.name?.charAt(0).toUpperCase() ?? '?'}</span>
+      )}
+    </span>
+  );
+}
+
+/**
+ * The shop's state as one line under the switcher: taking orders (switch), orders paused (switch),
+ * or offline (link to the settings, where going online runs the go-live checklist).
+ */
+function ShopStatusSwitch({ shop, canManage }: { shop: ShopResponse; canManage: boolean }) {
+  const { t } = useTranslation();
+  const toast = useToast();
+  const [updateShop, { isLoading }] = useUpdateShopMutation();
+  const live = shopLiveState(shop);
+
+  if (live === 'offline') {
+    return (
+      <Link
+        to={`/shops/${shop.id}/settings#shop-status`}
+        className="mt-2.5 flex items-center gap-2 rounded-[10px] bg-[#f1ede8] px-2.5 py-2 text-[13px] font-bold text-[#4a413b] hover:bg-[#ebe5df]"
+      >
+        <span className="h-2 w-2 rounded-full bg-[#9a8f86]" aria-hidden="true" />
+        {t('nav.offlineShort')}
+      </Link>
+    );
+  }
+
+  const taking = live === 'online';
+  const toggle = async () => {
+    try {
+      await updateShop({ shopId: shop.id!, updateShopRequest: { ordersPaused: taking } }).unwrap();
+    } catch (err) {
+      toast.error(isOfflineBySuperadminError(err) ? t('nav.offlineBySuperadminToast') : t('shops.statusFailedToSave'));
+    }
+  };
+
+  return (
+    <div
+      className={`mt-2.5 flex items-center justify-between gap-2 rounded-[10px] px-2.5 py-2 ${
+        taking ? 'bg-[#e6f3ea]' : 'bg-[#fff6e0]'
+      }`}
+    >
+      <span
+        id="sidebar-status-label"
+        className={`flex items-center gap-2 text-[13px] font-bold ${taking ? 'text-[#1d5a32]' : 'text-[#5c3c00]'}`}
+      >
+        <span className={`h-2 w-2 rounded-full ${taking ? 'bg-[#2f8a4c]' : 'bg-[#d97706]'}`} aria-hidden="true" />
+        {taking ? t('nav.acceptingOrders') : t('nav.ordersPausedBadge')}
+      </span>
+      {canManage && (
+        <button
+          type="button"
+          role="switch"
+          aria-checked={taking}
+          aria-labelledby="sidebar-status-label"
+          disabled={isLoading}
+          onClick={() => void toggle()}
+          className={`relative h-5 w-[34px] flex-shrink-0 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 disabled:opacity-50 ${
+            taking ? 'bg-[#2f8a4c]' : 'bg-[#d6cdc4]'
+          }`}
+        >
+          <span
+            className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${taking ? 'right-0.5' : 'left-0.5'}`}
+          />
+        </button>
+      )}
+    </div>
+  );
+}
+
+/** Switch between the owner's shops; the list is only loaded when opened. */
+function ShopSwitcher({ shop, allowSwitch }: { shop: ShopResponse | undefined; allowSwitch: boolean }) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const { data } = useGetMyShopsQuery(undefined, { skip: !open });
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('pointerdown', onDown);
+    return () => document.removeEventListener('pointerdown', onDown);
+  }, [open]);
+
+  const face = (
+    <>
+      <ShopBadge shop={shop} />
+      <span className="flex min-w-0 flex-1 flex-col text-left">
+        <span className="truncate text-sm font-bold text-ink">{shop?.name ?? '…'}</span>
+        {shop?.address?.city && <span className="truncate text-xs text-[#6b6058]">{shop.address.city}</span>}
+      </span>
+    </>
+  );
+
+  if (!allowSwitch) return <div className="flex items-center gap-2.5 p-2">{face}</div>;
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={t('nav.switchShop')}
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center gap-2.5 rounded-xl border border-line bg-white p-2 hover:bg-cream focus:outline-none focus-visible:ring-2 focus-visible:ring-ink"
+      >
+        {face}
+        <ChevronsUpDown size={14} className="flex-shrink-0 text-[#8a7f77]" aria-hidden="true" />
+      </button>
+      {open && (
+        <div className="absolute left-0 right-0 top-full z-50 mt-1.5 overflow-hidden rounded-xl border border-line bg-white shadow-[0_12px_32px_rgba(31,26,23,0.14)]">
+          <ul role="listbox" aria-label={t('nav.switchShop')} className="max-h-72 overflow-y-auto py-1">
+            {(data?.shops ?? []).map((s) => (
+              <li key={s.id} role="option" aria-selected={s.id === shop?.id}>
+                <Link
+                  to={`/shops/${s.id}`}
+                  onClick={() => setOpen(false)}
+                  className={`flex items-center gap-2.5 px-2.5 py-2 text-sm hover:bg-cream ${s.id === shop?.id ? 'font-bold' : ''}`}
+                >
+                  <ShopBadge shop={s} size={28} />
+                  <span className="truncate">{s.name}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <Link
+            to="/shops"
+            onClick={() => setOpen(false)}
+            className="block border-t border-line-soft px-3 py-2.5 text-sm font-semibold text-[#4a413b] hover:bg-cream"
+          >
+            {t('nav.allShops')}
+          </Link>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const linkClass = (isActive: boolean) =>
+  `flex h-9 items-center justify-between rounded-[9px] px-2.5 text-sm transition-colors ${
+    isActive ? 'bg-sand font-bold text-ink' : 'font-medium text-[#4a413b] hover:bg-cream hover:text-ink'
+  }`;
+
+/**
+ * The admin's sidebar (desktop) and drawer (phones and tablets).
+ *
+ * Inside a shop: the shop switcher, the shop's status switch, then the pages grouped as
+ * Service / Speisekarte / Shop / Geschäft (only those the user may open), and the user at the bottom.
+ * Outside a shop: overview and the shop list.
+ */
 export function TopNav() {
   const { shopId } = useParams<{ shopId?: string }>();
   const { t } = useTranslation();
@@ -24,174 +186,81 @@ export function TopNav() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
 
-  const { data: currentShop } = useGetShopByIdQuery(
-    { shopId: shopId! },
-    { skip: !shopId },
-  );
-
+  const { data: currentShop } = useGetShopByIdQuery({ shopId: shopId! }, { skip: !shopId });
   const perms = currentShop?.callerPermissions ?? [];
-  const nav = shopNavItems(perms);
+  const groups = navGroups(perms);
+  const canSeeOrders = groups.some((g) => g.items.includes('orders'));
 
-  // Close drawer on navigation
-  useEffect(() => {
+  // New orders waiting, for the badge (the orders page itself polls faster)
+  const { data: queue } = useGetOrderQueueQuery(
+    { shopId: shopId! },
+    { skip: !shopId || !canSeeOrders, pollingInterval: 30000 },
+  );
+  const waiting = (queue?.orders ?? []).filter((o) => o.state === 'PLACED').length;
+
+  // Close the drawer when the shop changes
+  const [drawerShop, setDrawerShop] = useState(shopId);
+  if (drawerShop !== shopId) {
+    setDrawerShop(shopId);
     setDrawerOpen(false);
-  }, [shopId]);
+  }
 
-  const navItemClass = (isActive: boolean) =>
-    isActive
-      ? 'flex items-center gap-3 px-3 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-medium'
-      : 'flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 hover:bg-gray-100 hover:text-gray-900 text-sm font-medium transition-colors';
+  const labelOf = (key: string) => (key === 'products' ? t('nav.dishes') : t(`nav.${key}`));
+  const pathOf = (key: string) => (key === 'products' ? `/shops/${shopId}` : `/shops/${shopId}/${key}`);
 
-  const divider = <hr className="border-t border-gray-100 my-0.5" />;
-
-  const shopNavContent = shopId ? (
-    <>
-      {!staffSession && (
-        <NavLink to="/shops" end className={({ isActive }) => navItemClass(isActive)}>
-          <ArrowLeft size={16} className="flex-shrink-0" />
-          {t('nav.myShops')}
-        </NavLink>
-      )}
-      {nav.includes('orders') && (
-        <>
-          {divider}
-          <NavLink to={`/shops/${shopId}/orders`} className={({ isActive }) => navItemClass(isActive)}>
-            <ClipboardList size={16} className="flex-shrink-0" />
-            {t('nav.orders')}
-          </NavLink>
-        </>
-      )}
-      {nav.includes('reports') && (
-        <>
-          {divider}
-          <NavLink to={`/shops/${shopId}/reports`} className={({ isActive }) => navItemClass(isActive)}>
-            <ChartColumn size={16} className="flex-shrink-0" />
-            {t('nav.reports')}
-          </NavLink>
-        </>
-      )}
-      {nav.includes('products') && (
-        <>
-          {divider}
-          <NavLink to={`/shops/${shopId}`} end className={({ isActive }) => navItemClass(isActive)}>
-            <Package size={16} className="flex-shrink-0" />
-            {t('nav.products')}
-          </NavLink>
-        </>
-      )}
-      {nav.includes('combos') && (
-        <>
-          {divider}
-          <NavLink to={`/shops/${shopId}/combos`} className={({ isActive }) => navItemClass(isActive)}>
-            <Layers size={16} className="flex-shrink-0" />
-            {t('nav.combos')}
-          </NavLink>
-        </>
-      )}
-      {nav.includes('categories') && (
-        <>
-          {divider}
-          <NavLink to={`/shops/${shopId}/categories`} className={({ isActive }) => navItemClass(isActive)}>
-            <Tag size={16} className="flex-shrink-0" />
-            {t('nav.categories')}
-          </NavLink>
-        </>
-      )}
-      {nav.includes('tables') && (
-        <>
-          {divider}
-          <NavLink to={`/shops/${shopId}/tables`} className={({ isActive }) => navItemClass(isActive)}>
-            <QrCode size={16} className="flex-shrink-0" />
-            {t('nav.tables')}
-          </NavLink>
-        </>
-      )}
-      {nav.includes('promotions') && (
-        <>
-          {divider}
-          <NavLink to={`/shops/${shopId}/promotions`} className={({ isActive }) => navItemClass(isActive)}>
-            <Percent size={16} className="flex-shrink-0" />
-            {t('nav.promotions')}
-          </NavLink>
-        </>
-      )}
-      {nav.includes('subscription') && (
-        <>
-          {divider}
-          <NavLink to={`/shops/${shopId}/subscription`} className={({ isActive }) => navItemClass(isActive)}>
-            <CreditCard size={16} className="flex-shrink-0" />
-            {t('nav.subscription')}
-          </NavLink>
-        </>
-      )}
-      {nav.includes('staff') && (
-        <>
-          {divider}
-          <NavLink to={`/shops/${shopId}/staff`} className={({ isActive }) => navItemClass(isActive)}>
-            <Users size={16} className="flex-shrink-0" />
-            {t('nav.staff')}
-          </NavLink>
-        </>
-      )}
-      {nav.includes('activity') && (
-        <>
-          {divider}
-          <NavLink to={`/shops/${shopId}/activity`} className={({ isActive }) => navItemClass(isActive)}>
-            <History size={16} className="flex-shrink-0" />
-            {t('nav.activity')}
-          </NavLink>
-        </>
-      )}
-      {nav.includes('settings') && (
-        <>
-          {divider}
-          <NavLink to={`/shops/${shopId}/settings`} className={({ isActive }) => navItemClass(isActive)}>
-            <Settings size={16} className="flex-shrink-0" />
-            {t('nav.settings')}
-          </NavLink>
-          {nav.includes('legal') && (
-            <>
-              {divider}
-              <NavLink to={`/shops/${shopId}/legal`} className={({ isActive }) => navItemClass(isActive)}>
-                <Scale size={16} className="flex-shrink-0" />
-                {t('nav.legal')}
-              </NavLink>
-            </>
-          )}
-        </>
-      )}
-    </>
+  const navContent = shopId ? (
+    <div className="flex flex-col gap-3.5">
+      {groups.map((group) => (
+        <div key={group.key} className="flex flex-col gap-px">
+          <div className="px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.07em] text-[#9a8f86]">
+            {t(`nav.group.${group.key}`)}
+          </div>
+          {group.items.map((key) => (
+            <NavLink key={key} to={pathOf(key)} end={key === 'products'} className={({ isActive }) => linkClass(isActive)}>
+              <span>{labelOf(key)}</span>
+              {key === 'orders' && waiting > 0 && (
+                <span
+                  className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#b23a0c] px-1.5 text-[11px] font-bold text-white"
+                  aria-label={t('nav.waitingOrders', { count: waiting })}
+                >
+                  {waiting}
+                </span>
+              )}
+            </NavLink>
+          ))}
+        </div>
+      ))}
+    </div>
   ) : (
-    <>
-      <NavLink to="/" end className={({ isActive }) => navItemClass(isActive)}>
-        <LayoutDashboard size={16} className="flex-shrink-0" />
-        {t('nav.overview')}
+    <div className="flex flex-col gap-px">
+      <NavLink to="/" end className={({ isActive }) => linkClass(isActive)}>
+        <span className="flex items-center gap-2">
+          <LayoutDashboard size={16} aria-hidden="true" />
+          {t('nav.overview')}
+        </span>
       </NavLink>
-      <NavLink to="/shops" className={({ isActive }) => navItemClass(isActive)}>
-        <Store size={16} className="flex-shrink-0" />
-        {t('nav.myShops')}
+      <NavLink to="/shops" className={({ isActive }) => linkClass(isActive)}>
+        <span className="flex items-center gap-2">
+          <Store size={16} aria-hidden="true" />
+          {t('nav.myShops')}
+        </span>
       </NavLink>
-    </>
+    </div>
   );
 
-  // ── User row (shared) ─────────────────────────────────────────────────────
   const userRow = staffSession ? (
-    <div className="w-full flex items-center gap-2.5 px-1 py-1">
-      <div className="relative w-8 h-8 flex-shrink-0">
-        <div className="w-8 h-8 rounded-full bg-gray-900 flex items-center justify-center">
-          <span className="text-xs font-semibold text-white">
-            {staffSession.username.charAt(0).toUpperCase()}
-          </span>
-        </div>
-      </div>
-      <span className="flex-1 text-xs text-gray-600 truncate">{staffSession.username}</span>
+    <div className="flex items-center gap-2.5 px-1">
+      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-ink text-xs font-bold text-white">
+        {staffSession.username.charAt(0).toUpperCase()}
+      </span>
+      <span className="flex-1 truncate text-[13px] font-semibold">{staffSession.username}</span>
       <button
         onClick={() => {
           clearStaffSession();
           navigate(`/${staffSession.shopSlug}/staff`);
         }}
         aria-label={t('staffLogin.signOut')}
-        className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors flex-shrink-0"
+        className="rounded-lg p-1.5 text-[#8a7f77] hover:bg-sand hover:text-ink"
       >
         <LogOut size={14} />
       </button>
@@ -199,152 +268,73 @@ export function TopNav() {
   ) : (
     <button
       onClick={() => setAccountOpen(true)}
-      className="w-full flex items-center gap-2.5 px-1 py-1 rounded-xl hover:bg-gray-100 transition-colors text-left"
+      className="flex w-full items-center gap-2.5 rounded-xl px-1 py-1 text-left hover:bg-cream"
     >
-      <div className="relative w-8 h-8 flex-shrink-0">
-        <div className="w-8 h-8 rounded-full bg-gray-900 flex items-center justify-center">
-          <span className="text-xs font-semibold text-white">
-            {user?.name?.charAt(0).toUpperCase() ?? '?'}
-          </span>
-        </div>
-      </div>
-      <span className="flex-1 text-xs text-gray-600 truncate">{user?.name}</span>
+      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-ink text-xs font-bold text-white">
+        {user?.name?.charAt(0).toUpperCase() ?? '?'}
+      </span>
+      <span className="flex-1 truncate text-[13px] font-semibold">{user?.name}</span>
     </button>
   );
 
-  const shopLogo = shopId && currentShop ? (
-    <div className="px-4 pt-4 pb-2 border-b border-gray-100 flex justify-center">
-      {currentShop.branding?.logoUrl ? (
-        <img
-          src={currentShop.branding?.logoUrl}
-          alt={currentShop.name}
-          className="w-11 h-11 rounded-lg object-cover"
-        />
-      ) : (
-        <div className="w-11 h-11 rounded-lg bg-gray-100 flex items-center justify-center">
-          <span className="text-base font-semibold text-gray-500">
-            {currentShop.name?.charAt(0).toUpperCase() ?? '?'}
-          </span>
+  const sidebarContent = (
+    <div className="flex h-full flex-col">
+      {shopId && (
+        <div className="border-b border-line-soft px-3.5 pb-3 pt-4">
+          <ShopSwitcher shop={currentShop} allowSwitch={!staffSession} />
+          {currentShop && <ShopStatusSwitch shop={currentShop} canManage={perms.includes('manage_shop')} />}
         </div>
       )}
-    </div>
-  ) : null;
-
-  // ── Sidebar content (shared between desktop sidebar and mobile drawer) ────────
-  const sidebarContent = (
-    <div className="flex flex-col h-full">
-      {shopLogo}
-      {/* Nav items */}
-      <nav className="flex-1 px-3 pt-2 pb-4 overflow-y-auto">
-        {shopNavContent}
-      </nav>
-
-      {/* Bottom: user row */}
-      <div className="px-3 py-4 border-t border-gray-100">
-        {userRow}
-      </div>
-    </div>
-  );
-
-  // ── Mobile drawer content ───────────────────────────────────────────────────
-  const drawerContent = (
-    <div className="flex flex-col h-full">
-      {/* Nav items */}
-      <nav className="flex-1 px-3 pt-2 pb-4 overflow-y-auto">
-        {shopNavContent}
-      </nav>
-
-      {/* Bottom: user row */}
-      <div className="px-3 py-4 border-t border-gray-100">
-        {userRow}
-      </div>
+      <nav className="flex-1 overflow-y-auto px-2.5 pb-4 pt-2.5">{navContent}</nav>
+      <div className="border-t border-line-soft px-3 py-3">{userRow}</div>
     </div>
   );
 
   return (
     <>
-      {/* ── Desktop sidebar ─────────────────────────────────────────────── */}
-      <aside className="hidden lg:flex flex-col w-56 flex-shrink-0 bg-white border-r border-gray-200 sticky top-0 h-screen overflow-hidden">
+      {/* Desktop sidebar */}
+      <aside className="sticky top-0 hidden h-screen w-[236px] flex-shrink-0 flex-col overflow-hidden border-r border-line bg-white lg:flex">
         {sidebarContent}
       </aside>
 
-      {/* ── Mobile top bar ──────────────────────────────────────────────── */}
-      <header className="lg:hidden bg-white border-b border-gray-200 sticky top-0 z-30 flex items-center h-14 px-4 gap-3">
+      {/* Phones and tablets: top bar + drawer */}
+      <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-line bg-white px-4 lg:hidden">
         <button
           onClick={() => setDrawerOpen(true)}
-          className="p-2 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors flex-shrink-0"
-          aria-label="Open menu"
+          className="rounded-lg p-2 text-[#4a413b] hover:bg-sand"
+          aria-label={t('nav.openMenu')}
         >
           <Menu size={20} />
         </button>
         {shopId && currentShop ? (
-          currentShop.branding?.logoUrl ? (
-            <img
-              src={currentShop.branding?.logoUrl}
-              alt={currentShop.name}
-              className="w-8 h-8 rounded-lg object-cover flex-shrink-0"
-            />
-          ) : (
-            <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-              <span className="text-sm font-semibold text-gray-500">
-                {currentShop.name?.charAt(0).toUpperCase() ?? '?'}
-              </span>
-            </div>
-          )
-        ) : (
-          <span className="flex-1 text-sm font-semibold text-gray-900 truncate">
-            {t('nav.myShops')}
+          <span className="flex min-w-0 items-center gap-2">
+            <ShopBadge shop={currentShop} size={30} />
+            <span className="truncate text-sm font-bold">{currentShop.name}</span>
           </span>
+        ) : (
+          <span className="truncate text-sm font-bold">{t('nav.myShops')}</span>
         )}
       </header>
 
-      {/* ── Mobile drawer ───────────────────────────────────────────────── */}
       {drawerOpen && (
         <>
-          {/* Backdrop */}
-          <div
-            className="lg:hidden fixed inset-0 bg-black/30 backdrop-blur-sm z-40"
-            onClick={() => setDrawerOpen(false)}
-          />
-          {/* Drawer panel */}
-          <div className="lg:hidden fixed inset-y-0 left-0 w-64 bg-white z-50 shadow-xl flex flex-col overflow-hidden">
-            <div className="flex items-center justify-between px-4 h-14 border-b border-gray-200 flex-shrink-0">
-              {shopId && currentShop ? (
-                currentShop.branding?.logoUrl ? (
-                  <img
-                    src={currentShop.branding?.logoUrl}
-                    alt={currentShop.name}
-                    className="w-8 h-8 rounded-lg object-cover flex-shrink-0"
-                  />
-                ) : (
-                  <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                    <span className="text-sm font-semibold text-gray-500">
-                      {currentShop.name?.charAt(0).toUpperCase() ?? '?'}
-                    </span>
-                  </div>
-                )
-              ) : (
-                <span className="text-sm font-semibold text-gray-900 truncate">{t('nav.myShops')}</span>
-              )}
+          <div className="fixed inset-0 z-40 bg-black/30 lg:hidden" onClick={() => setDrawerOpen(false)} />
+          <div className="fixed inset-y-0 left-0 z-50 flex w-[272px] flex-col bg-white shadow-xl lg:hidden">
+            <div className="flex h-12 flex-shrink-0 items-center justify-end px-2">
               <button
                 onClick={() => setDrawerOpen(false)}
-                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+                className="rounded-lg p-1.5 text-[#8a7f77] hover:bg-sand"
+                aria-label={t('nav.closeMenu')}
               >
                 <X size={18} />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto">
-              {drawerContent}
-            </div>
+            <div className="min-h-0 flex-1">{sidebarContent}</div>
           </div>
         </>
       )}
 
-      {/* ── Account settings modal ───────────────────────────────────────── */}
-      {accountOpen && user && (
-        <AccountSettingsModal user={user} onClose={() => setAccountOpen(false)} />
-      )}
-
+      {accountOpen && user && <AccountSettingsModal user={user} onClose={() => setAccountOpen(false)} />}
     </>
   );
 }
