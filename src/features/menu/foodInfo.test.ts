@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { initialScheduleDays, unavailableModesInOrder, effectiveTaxClassId, formatRate, isFoodInfoDeclared, foodInfoFromProduct, labelFor, taxClassOptionLabel, toggleId, toggleMode } from './foodInfo';
+import { categoryWithOtherTaxClass, initialScheduleDays, unavailableModesInOrder, effectiveTaxClassId, formatRate, isFoodInfoDeclared, foodInfoFromProduct, labelFor, taxClassOptionLabel, toggleId, toggleMode } from './foodInfo';
 
 describe('toggleId', () => {
   it('adds to a null list', () => {
@@ -124,5 +124,22 @@ describe('unavailableModesInOrder', () => {
   it('lists hidden modes in display order', () => {
     expect(unavailableModesInOrder(['dine_in', 'delivery'])).toEqual(['delivery', 'dine_in']);
     expect(unavailableModesInOrder([])).toEqual([]);
+  });
+});
+
+describe('categoryWithOtherTaxClass', () => {
+  const kids = { name: 'Kids', taxClassId: 'food' };
+  const drinks = { name: 'Getränke', taxClassId: 'beverage' };
+
+  it('names the category whose suggestion the dish does not use', () => {
+    expect(categoryWithOtherTaxClass([drinks, kids], 'beverage')).toBe(kids);
+  });
+
+  it('is quiet when every category agrees with the dish', () => {
+    expect(categoryWithOtherTaxClass([drinks], 'beverage')).toBeUndefined();
+  });
+
+  it('is quiet before the dish has a class', () => {
+    expect(categoryWithOtherTaxClass([kids], null)).toBeUndefined();
   });
 });

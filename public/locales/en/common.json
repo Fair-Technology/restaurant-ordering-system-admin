@@ -616,7 +616,8 @@
     "taxClassNoneYet": "No tax class yet",
     "notOnMenu": "Not on menu — declare allergens",
     "notDeclared": "Not declared",
-    "refsLoadError": "Could not load allergen and tax lists."
+    "refsLoadError": "Could not load allergen and tax lists.",
+    "taxClassDiffers": "{{category}} suggests {{suggested}}. This dish uses {{own}}."
   },
   "variants": {
     "title": "Variants",
@@ -829,8 +830,8 @@
     "name": "Name",
     "namePlaceholder": "Category name",
     "hasStar": "Show star icon",
-    "taxClass": "Tax class",
-    "taxClassHelp": "Every dish in this category inherits this tax class.",
+    "taxClass": "Tax class for new dishes",
+    "taxClassHelp": "New dishes in this category start with this tax class. Changing it doesn't change existing dishes.",
     "deleteTypeToConfirm": "Type \"{{name}}\" to confirm",
     "created": "Category created.",
     "saved": "Category saved.",
@@ -850,7 +851,15 @@
     "toggleFailed": "The visibility couldn't be saved.",
     "shown": "Category shown",
     "hidden": "Category hidden",
-    "visibility": "Visible"
+    "visibility": "Visible",
+    "applyTaxClass": "Apply to all dishes in this category",
+    "applyTaxClassConfirm": "Set every dish in {{name}} to {{label}}? Dishes already on it stay as they are. Combos are skipped.",
+    "applyTaxClassYes": "Yes, apply",
+    "applyTaxClassDone_one": "{{count}} dish changed.",
+    "applyTaxClassDone_other": "{{count}} dishes changed.",
+    "applyTaxClassNone": "Every dish already has this tax class.",
+    "applyTaxClassFailed": "The tax class couldn't be applied.",
+    "applyTaxClassSaveFirst": "Save first, then apply."
   },
   "translationFields": {
     "original": "Original: {{text}}",

@@ -10,7 +10,7 @@ import { CurrencyInput } from '../components/ui/CurrencyInput';
 import { useCreateCategoryMutation } from '../services/api';
 import type { MenuLanguage, ReferenceEntry, ReferenceListsResponse, SpiceLevel, TranslationMap } from '../services/api';
 import { hasOriginalText } from '../features/menu/translations';
-import { effectiveTaxClassId, MODE_ORDER, isFoodInfoDeclared, labelFor, taxClassOptionLabel, toggleId, toggleMode, unavailableModesInOrder } from '../features/menu/foodInfo';
+import { categoryWithOtherTaxClass, effectiveTaxClassId, MODE_ORDER, isFoodInfoDeclared, labelFor, taxClassOptionLabel, toggleId, toggleMode, unavailableModesInOrder } from '../features/menu/foodInfo';
 import type { FoodInfo } from '../features/menu/foodInfo';
 import { DishPhotoField } from '../components/menu/DishPhotoField';
 import { TranslationField } from '../components/menu/LanguageTabs';
@@ -353,7 +353,6 @@ interface Step2CategoriesProps {
   taxClassOverride: string | null;
   setTaxClassOverride: (id: string | null) => void;
   categoryError: boolean;
-  showTaxOverride?: boolean;
 }
 
 export function StepCategories({
@@ -366,7 +365,6 @@ export function StepCategories({
   taxClassOverride,
   setTaxClassOverride,
   categoryError,
-  showTaxOverride = false,
 }: Step2CategoriesProps) {
   const { t, i18n } = useTranslation();
   const [createCategory, { isLoading: isCreating }] = useCreateCategoryMutation();
@@ -500,33 +498,44 @@ export function StepCategories({
           )}
         </div>
 
-      {showTaxOverride && (
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-gray-700">
-            {t('products.taxClass')}
-          </label>
-          <select
-            value={taxClassOverride ?? ''}
-            onChange={(e) => setTaxClassOverride(e.target.value || null)}
-            className="w-full border border-gray-200 rounded-lg bg-white text-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400"
-          >
-            <option value="">
-              {(() => {
-                const fromCategoryId = effectiveTaxClassId(selectedCategoryIds, categories, null);
-                const fromCategory = taxClasses.find((c) => c.id === fromCategoryId);
-                return fromCategory
-                  ? t('products.taxClassFromCategory', { label: taxClassOptionLabel(labelFor(fromCategory.labels, i18n.language), fromCategory.id, taxRefs, i18n.language) })
-                  : t('products.taxClassNoneYet');
-              })()}
-            </option>
-            {taxClasses.filter((c) => c.isActive).map((c) => (
-              <option key={c.id} value={c.id}>
-                {taxClassOptionLabel(labelFor(c.labels, i18n.language), c.id, taxRefs, i18n.language)}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
+      {taxClasses.length > 0 && (() => {
+        // The dish owns its class. Until one is picked by hand it follows its first category's suggestion
+        const ownId = effectiveTaxClassId(selectedCategoryIds, categories, taxClassOverride);
+        const label = (id: string) => {
+          const c = taxClasses.find((x) => x.id === id);
+          return c ? taxClassOptionLabel(labelFor(c.labels, i18n.language), c.id, taxRefs, i18n.language) : id;
+        };
+        const differing = categoryWithOtherTaxClass(selected, ownId);
+        return (
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="dish-tax-class" className="text-sm font-medium text-gray-700">
+              {t('products.taxClass')}
+            </label>
+            <select
+              id="dish-tax-class"
+              value={ownId ?? ''}
+              onChange={(e) => setTaxClassOverride(e.target.value || null)}
+              className="w-full border border-gray-200 rounded-lg bg-white text-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400"
+            >
+              {!ownId && (
+                <option value="" disabled>
+                  {t('products.taxClassNoneYet')}
+                </option>
+              )}
+              {taxClasses.filter((c) => c.isActive).map((c) => (
+                <option key={c.id} value={c.id}>
+                  {label(c.id)}
+                </option>
+              ))}
+            </select>
+            {differing && ownId && (
+              <p role="note" data-testid="tax-class-differs" className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                {t('products.taxClassDiffers', { category: differing.name, suggested: label(differing.taxClassId!), own: label(ownId) })}
+              </p>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 }
