@@ -161,7 +161,10 @@ function SortableCategoryItem({ cat, shopId }: SortableCategoryItemProps) {
   const { t, i18n } = useTranslation();
   const toast = useToast();
   const [updateCategory, { isLoading: switching }] = useUpdateCategoryMutation();
-  const shown = cat.isAvailable !== false;
+  // The switch moves at once; the server's answer replaces this when the list reloads
+  const saved = cat.isAvailable !== false;
+  const [pending, setPending] = useState<{ next: boolean; from: boolean } | null>(null);
+  const shown = pending && pending.from === saved ? pending.next : saved;
   const { refs } = useShopReferenceLists(shopId);
   const taxClass = refs?.taxClasses.find((c) => c.id === cat.taxClassId);
   const {
@@ -189,10 +192,12 @@ function SortableCategoryItem({ cat, shopId }: SortableCategoryItemProps) {
 
   // Switching saves at once; the list refreshes from the server
   const handleShownChange = async (next: boolean) => {
+    setPending({ next, from: saved });
     try {
       await updateCategory({ shopId, categoryId: cat.id!, updateCategoryRequest: { isAvailable: next } }).unwrap();
       toast.success(next ? t('categories.shown') : t('categories.hidden'));
     } catch {
+      setPending(null);
       toast.error(t('categories.toggleFailed'));
     }
   };
