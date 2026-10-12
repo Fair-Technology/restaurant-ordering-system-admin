@@ -24,6 +24,8 @@ import { planActionFor, staffCapOf } from '../features/subscription/planAction';
 import type { BillingInterval, PlanAction } from '../features/subscription/planAction';
 import { currentPlanIdOf, isFreePlan } from '../features/subscription/planDisplay';
 import { MySpinner } from '../components/ui/MySpinner';
+import { PageHeader, Section } from '../components/layout/Page';
+import { badgeClass, chipClass } from '../components/layout/pageStyles';
 
 // Taglines shown beneath each plan name, indexed by sort position
 const PLAN_TAGLINES = [
@@ -121,47 +123,43 @@ function PlanCard({
 
   return (
     <div
-      className={`relative flex flex-col flex-1 min-w-[220px] rounded-2xl overflow-hidden transition-all duration-200 ${
-        isCurrentPlan
-          ? 'bg-white border-2 border-gray-900 shadow-sm'
-          : 'bg-white border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300'
+      className={`relative flex min-w-0 flex-col rounded-2xl bg-white ${
+        isCurrentPlan ? 'border-2 border-ink' : 'border border-line'
       }`}
     >
-      {/* Current plan badge */}
-      {isCurrentPlan && (
-        <div className="absolute top-4 right-4">
-          <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-gray-900 text-white">
-            {t('subscription.currentPlanBadge')}
-          </span>
-        </div>
-      )}
-
-      <div className="flex flex-col flex-1 p-6">
+      <div className="flex flex-1 flex-col p-5">
         {/* Plan name + tagline */}
-        <div className="mb-6 pr-6">
-          <h3 className="text-xl font-bold text-gray-900 mb-1.5">{plan.name}</h3>
-          <p className="text-sm text-gray-500 leading-relaxed">{tagline}</p>
+        <div className="mb-4 flex items-start gap-2">
+          <div className="min-w-0 flex-1">
+            <h3 className="font-display text-[22px] leading-tight font-semibold">{plan.name}</h3>
+            <p className="mt-1 text-[13px] leading-relaxed text-muted">{tagline}</p>
+          </div>
+          {isCurrentPlan && (
+            <span className="flex-shrink-0 rounded-full bg-ink px-2 py-0.5 text-[11px] font-bold text-white">
+              {t('subscription.currentPlanBadge')}
+            </span>
+          )}
         </div>
 
         {/* Price */}
-        <div className="mb-7">
+        <div className="mb-5 border-b border-line-soft pb-5">
           {isFree ? (
-            <p className="text-4xl font-bold text-gray-900">{t('subscription.free')}</p>
+            <p className="text-[32px] leading-none font-bold">{t('subscription.free')}</p>
           ) : hasPrice ? (
-            <div className="flex items-baseline gap-2.5">
-              <p className="text-4xl font-bold text-gray-900">{priceDisplay}</p>
-              <span className="text-sm text-gray-400">{periodLabel}</span>
+            <div className="flex items-baseline gap-2">
+              <p className="text-[32px] leading-none font-bold">{priceDisplay}</p>
+              <span className="text-[13px] text-[#8a7f77]">{periodLabel}</span>
             </div>
           ) : (
-            <p className="text-2xl font-semibold text-gray-300">—</p>
+            <p className="text-2xl leading-none font-semibold text-[#c8bfb6]">—</p>
           )}
         </div>
 
         {/* Features */}
-        <ul className="flex flex-col gap-3 flex-1 mb-8">
+        <ul className="mb-6 flex flex-1 flex-col gap-2.5">
           {features.map((feature) => (
-            <li key={feature} className="flex items-start gap-2.5 text-sm text-gray-600">
-              <CheckCircle2 className="w-4 h-4 text-gray-900 flex-shrink-0 mt-0.5" />
+            <li key={feature} className="flex items-start gap-2 text-[13px] text-[#4a413b]">
+              <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#2f8a4c]" aria-hidden="true" />
               {feature}
             </li>
           ))}
@@ -169,28 +167,30 @@ function PlanCard({
 
         {/* CTA button */}
         {action === 'current' ? (
-          <div className="w-full py-2.5 rounded-xl text-sm font-medium bg-gray-100 border border-gray-200 text-gray-400 text-center cursor-default select-none">
+          <div className="flex h-10 w-full cursor-default items-center justify-center rounded-full bg-sand text-sm font-semibold text-[#8a7f77] select-none">
             {t('subscription.currentPlanBadge')}
           </div>
         ) : !isOwner ? null : action === 'downgrade_blocked' || action === 'cancel_blocked' ? (
-          <div className="w-full py-2.5 px-3 rounded-xl text-xs font-medium bg-red-50 border border-red-200 text-red-700 text-center">
+          <div className="w-full rounded-xl border border-[#f5c2bd] bg-[#fdeceb] px-3 py-2.5 text-center text-xs font-semibold text-[#b42318]">
             {t('subscription.downgradeBlocked', { n: staffCapOf(plan) ?? 0 })}
           </div>
         ) : action === 'downgrade' || action === 'cancel_to_free' ? (
           isCancelPending ? null : (
             <button
+              type="button"
               disabled={isBusy}
               onClick={() => onChoose(plan, action)}
-              className="w-full py-3 rounded-xl text-sm font-semibold bg-white text-red-600 border border-red-200 hover:bg-red-50 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="h-10 w-full rounded-full border border-[#f5c2bd] bg-white text-sm font-bold text-[#b42318] transition-colors hover:bg-[#fdeceb] disabled:cursor-not-allowed disabled:opacity-40"
             >
               {isBusy ? t('subscription.cancellingSubscription') : `${t('subscription.downgrade')} to ${plan.name}`}
             </button>
           )
         ) : (
           <button
+            type="button"
             disabled={isBusy}
             onClick={() => onChoose(plan, action)}
-            className="w-full py-3 rounded-xl text-sm font-semibold bg-gray-900 hover:bg-gray-800 text-white transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="h-10 w-full rounded-full bg-ink text-sm font-bold text-white transition-colors hover:bg-black disabled:cursor-not-allowed disabled:opacity-40"
           >
             {isBusy
               ? t('subscription.upgrading')
@@ -200,6 +200,34 @@ function PlanCard({
           </button>
         )}
       </div>
+    </div>
+  );
+}
+
+/** One usage line with a warm track and a filled bar; no bar when the plan has no limit. */
+function UsageMeter({ label, used, limit, fill, unlimitedText }: { label: string; used: number; limit: number | null; fill: string; unlimitedText: string }) {
+  const pct = limit && limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
+  const full = limit !== null && limit > 0 && used >= limit;
+  return (
+    <div className="px-4 py-3">
+      <div className="flex items-baseline justify-between gap-3 text-sm">
+        <span className="font-semibold">{label}</span>
+        <span className={`text-[13px] font-bold ${full ? 'text-[#b42318]' : 'text-[#4a413b]'}`}>
+          {limit === null ? `${used} · ${unlimitedText}` : `${used} / ${limit}`}
+        </span>
+      </div>
+      {limit !== null && (
+        <div
+          role="meter"
+          aria-label={label}
+          aria-valuemin={0}
+          aria-valuemax={limit}
+          aria-valuenow={Math.min(used, limit)}
+          className="mt-2 h-2 overflow-hidden rounded-full bg-[#efe7de]"
+        >
+          <div className={`h-full rounded-full ${full ? 'bg-[#b42318]' : fill}`} style={{ width: `${pct}%` }} />
+        </div>
+      )}
     </div>
   );
 }
@@ -369,27 +397,34 @@ export function SubscriptionPage() {
   const paymentFailedAt = subscription?.status === 'past_due' ? subscription.paymentFailedAt : null;
   const graceEnd = subscriptionData?.entitlements?.graceEndsAt ?? null;
 
+  const banner = 'mb-3 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border px-3.5 py-2.5 text-sm';
+  const bannerBtn = (dark: boolean) =>
+    `h-8 rounded-full px-3.5 text-[13px] font-bold disabled:cursor-not-allowed disabled:opacity-40 ${
+      dark ? 'bg-ink text-white hover:bg-black' : 'border border-[#e3d9ce] bg-white text-ink hover:bg-sand'
+    }`;
+  const closeBtn = 'ml-auto flex h-7 w-7 items-center justify-center rounded-full text-lg leading-none text-[#8a7f77] hover:bg-white/60 hover:text-ink';
+  const staffCap = currentPlan ? staffCapOf(currentPlan) : (staffData?.limit ?? null);
+  const status = subscription?.status;
+  const statusBadge =
+    status === 'active' ? badgeClass.good : status === 'past_due' ? badgeClass.warn : status === 'canceled' || status === 'expired' ? badgeClass.bad : badgeClass.neutral;
+
   return (
-    <div className="flex flex-col gap-6">
+    <div>
+      <PageHeader eyebrow={t('nav.group.business')} title={t('nav.subscription')} />
+
       {/* Payment result banners */}
       {paymentConfirmed && (
-        <div className="flex items-center justify-between gap-4 px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-700 text-sm">
+        <div role="status" className={`${banner} border-[#cfe6d6] bg-[#e6f3ea] text-[#1d5a32]`}>
           <span>{t('subscription.paymentSuccess')}</span>
-          <button
-            onClick={dismissBanner}
-            className="text-gray-400 hover:text-gray-700 text-lg leading-none"
-          >
+          <button type="button" aria-label={t('subscription.dismiss')} onClick={dismissBanner} className={closeBtn}>
             ×
           </button>
         </div>
       )}
       {paymentParam === 'cancelled' && (
-        <div className="flex items-center justify-between gap-4 px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-600 text-sm">
+        <div role="status" className={`${banner} border-line bg-white text-[#4a413b]`}>
           <span>{t('subscription.paymentCancelled')}</span>
-          <button
-            onClick={dismissBanner}
-            className="text-gray-400 hover:text-gray-700 text-lg leading-none"
-          >
+          <button type="button" aria-label={t('subscription.dismiss')} onClick={dismissBanner} className={closeBtn}>
             ×
           </button>
         </div>
@@ -397,16 +432,16 @@ export function SubscriptionPage() {
 
       {/* Action feedback banner */}
       {actionMessage && (
-        <div className={`flex items-center justify-between gap-4 px-4 py-3 rounded-xl border text-sm ${
-          actionMessage.type === 'success'
-            ? 'bg-gray-50 border-gray-200 text-gray-700'
-            : 'bg-red-50 border-red-200 text-red-700'
-        }`}>
+        <div
+          role={actionMessage.type === 'error' ? 'alert' : 'status'}
+          className={`${banner} ${
+            actionMessage.type === 'success'
+              ? 'border-[#cfe6d6] bg-[#e6f3ea] text-[#1d5a32]'
+              : 'border-[#f5c2bd] bg-[#fdeceb] text-[#8f1c13]'
+          }`}
+        >
           <span>{actionMessage.text}</span>
-          <button
-            onClick={() => setActionMessage(null)}
-            className="text-gray-400 hover:text-gray-700 text-lg leading-none"
-          >
+          <button type="button" aria-label={t('subscription.dismiss')} onClick={() => setActionMessage(null)} className={closeBtn}>
             ×
           </button>
         </div>
@@ -414,19 +449,15 @@ export function SubscriptionPage() {
 
       {/* Scheduled downgrade banner */}
       {scheduled && (
-        <div className="flex items-center justify-between gap-4 px-4 py-3 rounded-xl bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm">
-          <span>
+        <div className={`${banner} border-[#f1dfae] bg-[#fff6e0] text-[#5c3c00]`}>
+          <span className="min-w-0 flex-1">
             {t('subscription.changeScheduled', {
               plan: scheduledPlan?.name ?? '',
               date: new Date(scheduled.effectiveAt).toLocaleDateString(),
             })}
           </span>
           {isOwner && (
-            <button
-              disabled={isKeepingChange}
-              onClick={handleKeepCurrentPlan}
-              className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-yellow-100 hover:bg-yellow-200 border border-yellow-300 text-yellow-900 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-            >
+            <button type="button" disabled={isKeepingChange} onClick={handleKeepCurrentPlan} className={bannerBtn(false)}>
               {t('subscription.keepCurrentPlan')}
             </button>
           )}
@@ -435,25 +466,18 @@ export function SubscriptionPage() {
 
       {/* Failed-payment block */}
       {paymentFailedAt && (
-        <div className="flex items-center justify-between gap-4 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-sm">
-          <span>
+        <div role="alert" className={`${banner} border-[#f5c2bd] bg-[#fdeceb] text-[#8f1c13]`}>
+          <span className="min-w-0 flex-1">
             {t('subscription.paymentFailed', {
               date: new Date(graceEnd ?? paymentFailedAt).toLocaleDateString(),
             })}
           </span>
           {isOwner && (
-            <div className="shrink-0 flex gap-2">
-              <button
-                onClick={handleUpdateCard}
-                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-100 hover:bg-amber-200 border border-amber-300 text-amber-900 transition-all"
-              >
+            <div className="flex flex-shrink-0 gap-2">
+              <button type="button" onClick={handleUpdateCard} className={bannerBtn(false)}>
                 {t('subscription.updateCard')}
               </button>
-              <button
-                disabled={isPayingNow}
-                onClick={handlePayNow}
-                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-900 hover:bg-gray-800 text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-              >
+              <button type="button" disabled={isPayingNow} onClick={handlePayNow} className={bannerBtn(true)}>
                 {t('subscription.payNow')}
               </button>
             </div>
@@ -463,50 +487,87 @@ export function SubscriptionPage() {
 
       {/* Cancel-at-period-end banner */}
       {isCancelPending && subscription?.currentPeriodEnd && (
-        <div className="flex items-center justify-between gap-4 px-4 py-3 rounded-xl bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm">
-          <span>
+        <div className={`${banner} border-[#f1dfae] bg-[#fff6e0] text-[#5c3c00]`}>
+          <span className="min-w-0 flex-1">
             {t('subscription.cancelScheduled', {
               date: new Date(subscription.currentPeriodEnd).toLocaleDateString(),
             })}
           </span>
           {isOwner && (
-            <button
-              disabled={isResuming}
-              onClick={handleResume}
-              className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-yellow-100 hover:bg-yellow-200 border border-yellow-300 text-yellow-900 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-            >
+            <button type="button" disabled={isResuming} onClick={handleResume} className={bannerBtn(false)}>
               {isResuming ? t('subscription.resuming') : t('subscription.keepPlan')}
             </button>
           )}
         </div>
       )}
 
-      {limit && (
-        <p className="text-sm text-gray-600">
-          {limit.limit === null
-            ? t('orderLimit.usageUnlimited', { count: limit.acceptedOrderCount })
-            : t('orderLimit.usageLine', { count: limit.acceptedOrderCount, limit: limit.limit })}
-        </p>
-      )}
+      {/* Current plan and usage */}
+      <div className="max-w-3xl">
+        <Section
+          title={t('subscription.currentPlan')}
+          hint={subscription?.planSource === 'superadmin_override' ? t('subscription.overrideNote') : undefined}
+        >
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line-soft px-4 py-3">
+            <span className="font-display text-[22px] leading-tight font-semibold">{currentPlan?.name ?? subscriptionData?.plan?.name ?? '—'}</span>
+            {status && <span className={statusBadge}>{t(`subscription.statusValue.${status}`)}</span>}
+            <span className="ml-auto flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-muted">
+              {currentInterval && (
+                <span>
+                  {t('subscription.billingInterval')}:{' '}
+                  <span className="font-semibold text-ink">{t(`subscription.${currentInterval}`)}</span>
+                </span>
+              )}
+              {subscription?.currentPeriodEnd && !isCancelPending && (
+                <span>
+                  {t('subscription.periodEnd')}:{' '}
+                  <span className="font-semibold text-ink">{new Date(subscription.currentPeriodEnd).toLocaleDateString()}</span>
+                </span>
+              )}
+            </span>
+          </div>
+          {limit && (
+            <UsageMeter
+              label={t('subscription.ordersUsage')}
+              used={limit.acceptedOrderCount}
+              limit={limit.limit}
+              fill="bg-ink"
+              unlimitedText={t('subscription.unlimited')}
+            />
+          )}
+          {staffData && (
+            <UsageMeter
+              label={t('subscription.staffUsage')}
+              used={activeStaff}
+              limit={staffCap}
+              fill="bg-[#2f8a4c]"
+              unlimitedText={t('subscription.unlimited')}
+            />
+          )}
+        </Section>
+      </div>
 
-      {/* Monthly / yearly toggle */}
-      <div className="inline-flex self-start rounded-xl border border-gray-200 bg-white p-1 text-sm font-medium">
-        {(['monthly', 'yearly'] as const).map((value) => (
-          <button
-            key={value}
-            onClick={() => setBillingInterval(value)}
-            className={`px-4 py-1.5 rounded-lg transition-all ${
-              interval === value ? 'bg-gray-900 text-white' : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            {t(`subscription.${value}`)}
-          </button>
-        ))}
+      {/* Plan choice */}
+      <div className="mt-6 mb-3.5 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-[15px] font-bold">{t('subscription.choosePlan')}</h2>
+        {/* Monthly / yearly toggle */}
+        <div role="group" aria-label={t('subscription.billingInterval')} className="flex gap-2">
+          {(['monthly', 'yearly'] as const).map((value) => (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={interval === value}
+              onClick={() => setBillingInterval(value)}
+              className={chipClass(interval === value)}
+            >
+              {t(`subscription.${value}`)}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Plan cards */}
       {plans.length > 0 && (
-        <div className="flex gap-4 items-stretch">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {plans.map((plan, index) => (
             <PlanCard
               key={plan.id}
@@ -531,7 +592,7 @@ export function SubscriptionPage() {
         </div>
       )}
 
-      {upgradeError && <p className="text-sm text-red-600">{upgradeError}</p>}
+      {upgradeError && <p role="alert" className="mt-3 text-sm text-[#b42318]">{upgradeError}</p>}
     </div>
   );
 }

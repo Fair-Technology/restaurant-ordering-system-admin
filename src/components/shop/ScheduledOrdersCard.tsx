@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { ShopResponse } from '../../services/api';
 import { useUpdateOrderSettingsMutation } from '../../services/ordersApi';
 import { slotCapacityFromInput, slotCapacityInputOf } from '../../features/shops/scheduledSettings';
-import { MyCard } from '../ui/MyCard';
+import { Section } from '../layout/Page';
 import { MyInput } from '../ui/MyInput';
 import { MyButton } from '../ui/MyButton';
 
@@ -45,19 +45,18 @@ export function ScheduledOrdersCard({ shop, onRefetch }: Props) {
   };
 
   return (
-    <MyCard className="p-6 space-y-4" id="orders-for-later">
-      <h2 className="text-base font-semibold text-gray-900">{t('shops.scheduledTitle')}</h2>
-      <p className="text-sm text-gray-600">{t('shops.scheduledHelp')}</p>
-      <label className="flex items-start gap-3 text-sm text-gray-800">
+    <Section id="orders-for-later" className="scroll-mt-[72px]! lg:scroll-mt-6!" title={t('shops.scheduledTitle')} description={t('shops.scheduledHelp')} padded>
+      <div className="space-y-4">
+      <label className="flex items-start gap-3 text-sm text-ink">
         <input
           type="checkbox"
-          className="mt-0.5 h-4 w-4"
+          className="mt-0.5 h-4 w-4 accent-ink"
           checked={scheduledOrders}
           onChange={(e) => setScheduledState(e.target.checked)}
         />
         <span>
-          <span className="block font-medium">{t('shops.scheduledLabel')}</span>
-          <span className="block text-gray-600">{t('shops.scheduledLabelHelp')}</span>
+          <span className="block font-semibold">{t('shops.scheduledLabel')}</span>
+          <span className="block text-[13px] text-muted">{t('shops.scheduledLabelHelp')}</span>
         </span>
       </label>
       {scheduledOrders && (
@@ -72,17 +71,18 @@ export function ScheduledOrdersCard({ shop, onRefetch }: Props) {
             value={capacityText}
             onChange={(e) => setCapacityState(e.target.value)}
           />
-          <p className="text-xs text-gray-500">{t('shops.scheduledCapacityHelp')}</p>
+          <p className="text-xs text-muted">{t('shops.scheduledCapacityHelp')}</p>
         </div>
       )}
       {message && (
-        <p className={`text-sm ${message.kind === 'saved' ? 'text-green-700' : 'text-red-600'}`}>{message.text}</p>
+        <p className={`text-sm ${message.kind === 'saved' ? 'text-[#1d5a32]' : 'text-[#b42318]'}`}>{message.text}</p>
       )}
-      <div className="border-t border-gray-200 pt-4">
+      <div className="flex flex-wrap items-center gap-2 border-t border-line-soft pt-4">
         <MyButton onClick={handleSave} disabled={isLoading}>
           {t('shops.scheduledSave')}
         </MyButton>
       </div>
-    </MyCard>
+      </div>
+    </Section>
   );
 }

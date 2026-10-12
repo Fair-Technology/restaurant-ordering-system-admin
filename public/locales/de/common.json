@@ -78,7 +78,19 @@
     "keepCurrentPlan": "Aktuellen Tarif behalten",
     "paymentFailed": "Ihre letzte Zahlung ist fehlgeschlagen. Aktualisieren Sie Ihre Karte bis {{date}}, um Ihren Tarif zu behalten.",
     "updateCard": "Karte aktualisieren",
-    "payNow": "Jetzt bezahlen"
+    "payNow": "Jetzt bezahlen",
+    "dismiss": "Hinweis schließen",
+    "unlimited": "unbegrenzt",
+    "ordersUsage": "Bestellungen in diesem Monat",
+    "staffUsage": "Mitarbeiter-Zugänge",
+    "choosePlan": "Tarif wählen",
+    "statusValue": {
+      "free": "Kostenlos",
+      "active": "Aktiv",
+      "past_due": "Zahlung offen",
+      "canceled": "Gekündigt",
+      "expired": "Abgelaufen"
+    }
   },
   "auth": {
     "adminPortal": "Admin-Portal",
@@ -184,18 +196,18 @@
     "ohAddSlot": "+ Zeit hinzufügen",
     "deleteShop": {
       "title": "Shop löschen",
-      "explain": "Der Shop verschwindet für dich und deine Kunden. Dein Abo wird sofort gekündigt. Bestellungen und Rechnungen bleiben gesetzlich vorgeschrieben erhalten. Um den Shop wiederherzustellen, wende dich an den Support.",
+      "explain": "Der Shop verschwindet für Sie und Ihre Kunden. Ihr Abo wird sofort gekündigt. Bestellungen und Rechnungen bleiben gesetzlich vorgeschrieben erhalten. Um den Shop wiederherzustellen, wenden Sie sich an den Support.",
       "open": "Shop löschen",
       "modalTitle": "Diesen Shop löschen?",
-      "typeName": "Gib zur Bestätigung den Shop-Namen ein ({{name}})",
+      "typeName": "Geben Sie zur Bestätigung den Shop-Namen ein ({{name}})",
       "cancel": "Abbrechen",
       "confirm": "Shop löschen",
       "deleting": "Wird gelöscht...",
       "deleted": "Shop gelöscht",
-      "openOrders": "Schließe oder erstatte zuerst die offenen Bestellungen.",
+      "openOrders": "Schließen oder erstatten Sie zuerst die offenen Bestellungen.",
       "goToOrders": "Zu den Bestellungen",
       "forbidden": "Nur der Inhaber kann diesen Shop löschen.",
-      "failed": "Der Shop konnte nicht gelöscht werden. Bitte versuche es erneut."
+      "failed": "Der Shop konnte nicht gelöscht werden. Bitte versuchen Sie es erneut."
     },
     "ohSaveHours": "Zeiten speichern",
     "ohSavingHours": "Wird gespeichert...",
@@ -360,7 +372,27 @@
     "shopStatusTitle": "Shop-Status",
     "statusOnline": "Shop online",
     "statusOnlineHelp": "Ausgeschaltet zeigt die Shop-Seite keine Speisekarte, nur den Hinweis, dass das Restaurant offline ist. Für Urlaub oder vor dem Start.",
-    "statusSaveMessage": "Hinweis speichern"
+    "statusSaveMessage": "Hinweis speichern",
+    "count_one": "{{count}} Shop",
+    "count_other": "{{count}} Shops",
+    "listHint": "Tippen Sie auf einen Shop, um ihn zu öffnen",
+    "open": "Öffnen",
+    "settingsPage": {
+      "intro": "Status, Shop-Daten, Auftritt, Bestellungen und Zahlungen Ihres Shops an einem Ort.",
+      "navLabel": "Bereiche der Einstellungen",
+      "groupGeneral": "Allgemein",
+      "groupLook": "Auftritt",
+      "groupOrders": "Bestellungen",
+      "groupPayments": "Zahlungen & Steuern",
+      "groupDanger": "Gefahrenzone",
+      "statusDescription": "Legen Sie fest, ob Ihr Shop online ist und ob gerade Bestellungen angenommen werden.",
+      "detailsDescription": "Grunddaten Ihres Shops und der Mindestbestellwert.",
+      "addressDescription": "Die Anschrift Ihres Restaurants, wie Kunden sie sehen.",
+      "qrDescription": "Drucken Sie den Code aus, damit Gäste Ihren Shop direkt am Handy öffnen.",
+      "logoDescription": "Erscheint oben in Ihrem Shop. JPG, PNG oder WebP.",
+      "hoursDescription": "Zu diesen Zeiten können Kunden bei Ihnen bestellen.",
+      "taxClassesDescription": "Die Steuersätze, die für Ihre Gerichte gelten."
+    }
   },
   "tables": {
     "title": "Tische & QR-Codes",
@@ -378,7 +410,8 @@
     "downloadPng": "QR als PNG",
     "downloadPdf": "Tischkarte (PDF)",
     "downloadAll": "Alle Tischkarten (PDF)",
-    "downloadFailed": "Der Download hat nicht geklappt. Bitte erneut versuchen."
+    "downloadFailed": "Der Download hat nicht geklappt. Bitte erneut versuchen.",
+    "listTitle": "Tische"
   },
   "combos": {
     "accessDenied": "Nur wer die Speisekarte bearbeitet, kann Menüs ändern.",
@@ -425,7 +458,8 @@
     "photoReplaceIncomplete": "Ihre Änderungen wurden gespeichert und das neue Foto hinzugefügt, das alte Foto konnte aber nicht entfernt werden und wird eventuell noch angezeigt. Öffnen Sie das Menü erneut und speichern Sie das Foto noch einmal.",
     "photoUploadFailed": "Das Menü wurde gespeichert, das Foto konnte aber nicht hochgeladen werden.",
     "noPhoto": "kein Foto",
-    "groupNameTranslated": "Name der Auswahl {{number}}"
+    "groupNameTranslated": "Name der Auswahl {{number}}",
+    "selectHint": "Wählen Sie links ein Menü aus, um es zu bearbeiten, oder legen Sie ein neues an."
   },
   "promotions": {
     "accessDenied": "Nur wer das Restaurant verwaltet, kann Rabatte ändern.",
@@ -840,7 +874,10 @@
   "activity": {
     "title": "Aktivität",
     "empty": "Noch keine Aktivität.",
-    "loadError": "Aktivität konnte nicht geladen werden."
+    "loadError": "Aktivität konnte nicht geladen werden.",
+    "count_one": "{{count}} Eintrag",
+    "count_other": "{{count}} Einträge",
+    "listTitle": "Verlauf"
   },
   "staff": {
     "title": "Mitarbeiter-Zugänge",
@@ -862,7 +899,12 @@
     "loginUrl": "Anmeldeadresse für Mitarbeiter: {{url}}",
     "saveFailed": "Speichern fehlgeschlagen. {{error}}",
     "empty": "Noch keine Mitarbeiter-Zugänge.",
-    "loadError": "Mitarbeiter-Zugänge konnten nicht geladen werden."
+    "loadError": "Mitarbeiter-Zugänge konnten nicht geladen werden.",
+    "count_one": "{{count}} Zugang",
+    "count_other": "{{count}} Zugänge",
+    "listTitle": "Zugänge",
+    "newPassword": "Neues Passwort für {{name}}",
+    "savePassword": "Passwort speichern"
   },
   "staffLogin": {
     "title": "Mitarbeiter-Anmeldung",
@@ -931,7 +973,10 @@
     "applyTaxClassDone_other": "{{count}} Gerichte geändert.",
     "applyTaxClassNone": "Alle Gerichte haben diese Steuerklasse schon.",
     "applyTaxClassFailed": "Die Steuerklasse konnte nicht angewendet werden.",
-    "applyTaxClassSaveFirst": "Erst speichern, dann anwenden."
+    "applyTaxClassSaveFirst": "Erst speichern, dann anwenden.",
+    "close": "Schließen",
+    "selectHint": "Wählen Sie links eine Kategorie aus, um sie zu bearbeiten.",
+    "listHelp": "Ziehen Sie eine Kategorie am Griff, um die Reihenfolge auf der Speisekarte zu ändern."
   },
   "translationFields": {
     "original": "Original: {{text}}",
@@ -1034,7 +1079,16 @@
     "eraseConfirm": "Die Daten von {{email}} aus allen Bestellungen entfernen? Das ist endgültig.",
     "eraseDone": "Erledigt – {{count}} Bestellungen anonymisiert.",
     "eraseFailed": "Anonymisierung fehlgeschlagen.",
-    "ownerOnly": "Nur der Inhaber kann Daten exportieren oder Löschanfragen bearbeiten."
+    "ownerOnly": "Nur der Inhaber kann Daten exportieren oder Löschanfragen bearbeiten.",
+    "jumpLabel": "Zu einem Abschnitt springen",
+    "jump": {
+      "dpa": "AV-Vertrag",
+      "impressum": "Impressum",
+      "terms": "AGB",
+      "withdrawal": "Widerruf",
+      "privacy": "Datenschutz",
+      "data": "Ihre Daten"
+    }
   },
   "orderLimit": {
     "bannerWarning": "{{count}} von {{limit}} Bestellungen in diesem Monat genutzt ({{percent}} %). Bei {{limit}} pausieren Online-Bestellungen bis Monatsende.",

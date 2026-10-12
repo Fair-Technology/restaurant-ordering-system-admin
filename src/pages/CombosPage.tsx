@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { Plus, X } from 'lucide-react';
 import {
   useDeleteProductMutation,
   useGetCategoriesByShopQuery,
@@ -11,15 +12,19 @@ import { useGetCombosQuery, useUpdateComboMutation, type ComboBody, type ComboDt
 import { useToast } from '../contexts/ToastContext';
 import { formatCents } from '../utils/money';
 import { comboFormToBody, comboPhotoUrl, formFromCombo } from '../features/combos/combos';
+import { useIsWide } from '../features/menu/useIsWide';
 import { ComboEditor } from '../components/combos/ComboEditor';
+import { EmptyNote, PageHeader, Row, Section, SideCard, SideColumn, SplitPage } from '../components/layout/Page';
+import { badgeClass, pillClass } from '../components/layout/pageStyles';
 import { MyButton } from '../components/ui/MyButton';
-import { MyCard } from '../components/ui/MyCard';
 import { MySpinner } from '../components/ui/MySpinner';
 
 export function CombosPage() {
   const { shopId } = useParams<{ shopId: string }>();
   const { t, i18n } = useTranslation();
   const toast = useToast();
+  const wide = useIsWide();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { data: shop, isLoading, isError } = useGetShopByIdQuery({ shopId: shopId! });
   const canManage = (shop?.callerPermissions ?? []).includes('manage_menu');
   const combos = useGetCombosQuery({ shopId: shopId! }, { skip: !canManage });
@@ -27,25 +32,52 @@ export function CombosPage() {
   const categories = useGetCategoriesByShopQuery({ shopId: shopId! }, { skip: !canManage });
   const [updateCombo, { isLoading: switching }] = useUpdateComboMutation();
   const [deleteProduct, { isLoading: deleting }] = useDeleteProductMutation();
-  const [editing, setEditing] = useState<ComboDto | 'new' | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
-  if (isLoading) return <MySpinner />;
-  if (isError || !shop) return <p className="text-red-500">{t('shops.failedToLoadShop')}</p>;
+  // The open editor lives in the address (?combo=<id> or ?combo=new), so it survives a reload
+  const comboParam = searchParams.get('combo');
+  const setEditing = (value: ComboDto | 'new' | null) =>
+    setSearchParams((p) => {
+      const n = new URLSearchParams(p);
+      if (value === null) n.delete('combo');
+      else n.set('combo', value === 'new' ? 'new' : value.id);
+      return n;
+    });
+
+  const header = (count?: number) => (
+    <PageHeader
+      eyebrow={t('nav.group.menu')}
+      title={t('nav.combos')}
+      count={count}
+      description={t('combos.help')}
+      actions={
+        canManage && (
+          <MyButton size="lg" className="gap-2" onClick={() => setEditing('new')}>
+            <Plus size={16} strokeWidth={2.6} aria-hidden="true" />
+            {t('combos.new')}
+          </MyButton>
+        )
+      }
+    />
+  );
+
+  if (isLoading) return <SplitPage><MySpinner /></SplitPage>;
+  if (isError || !shop) return <SplitPage><p className="text-[#b42318]">{t('shops.failedToLoadShop')}</p></SplitPage>;
 
   if (!canManage) {
     return (
-      <div className="max-w-lg">
-        <MyCard className="p-5">
-          <p className="text-sm text-gray-600">{t('combos.accessDenied')}</p>
-        </MyCard>
-      </div>
+      <SplitPage>
+        {header()}
+        <Section className="max-w-lg">
+          <EmptyNote>{t('combos.accessDenied')}</EmptyNote>
+        </Section>
+      </SplitPage>
     );
   }
 
-  if (combos.isLoading || products.isLoading || categories.isLoading) return <MySpinner />;
+  if (combos.isLoading || products.isLoading || categories.isLoading) return <SplitPage><MySpinner /></SplitPage>;
   if (combos.isError || !combos.data || !products.data || !categories.data) {
-    return <p className="text-red-500">{t('combos.saveFailed')}</p>;
+    return <SplitPage><p className="text-[#b42318]">{t('combos.saveFailed')}</p></SplitPage>;
   }
 
   const dishes = products.data;
@@ -55,6 +87,9 @@ export function CombosPage() {
   const money = (cents: number) => formatCents(cents, shop.currency ?? 'EUR', i18n.language);
   const serverMessage = (err: unknown): string =>
     (err as { data?: { error?: string } })?.data?.error ?? t('combos.saveFailed');
+
+  const editing: ComboDto | 'new' | null =
+    comboParam === 'new' ? 'new' : (combos.data.find((c) => c.id === comboParam) ?? null);
 
   const toggle = async (c: ComboDto) => {
     const body = comboFormToBody(formFromCombo(c, dishIds));
@@ -77,97 +112,138 @@ export function CombosPage() {
     try {
       await deleteProduct({ productId: c.id, shopId: shopId! }).unwrap();
       setConfirmingId(null);
+      if (editing !== 'new' && editing?.id === c.id) setEditing(null);
     } catch (err) {
       toast.error(serverMessage(err));
     }
   };
 
-  return (
-    <div className="space-y-6 max-w-3xl">
-      <h1 className="text-xl font-semibold text-gray-900">{t('nav.combos')}</h1>
-      <p className="text-sm text-gray-600">{t('combos.help')}</p>
-      <div>
-        <MyButton onClick={() => setEditing('new')}>{t('combos.new')}</MyButton>
-      </div>
+  const editor = editing && (
+    <ComboEditor
+      key={editing === 'new' ? 'new' : editing.id}
+      shop={shop}
+      shopId={shopId!}
+      combo={editing === 'new' ? null : editing}
+      products={dishes}
+      categories={liveCategories}
+      onDone={() => setEditing(null)}
+    />
+  );
+  const editorTitle = editing === 'new' ? t('combos.new') : editing ? editing.name : t('nav.combos');
+  const closeButton = (
+    <button
+      type="button"
+      onClick={() => setEditing(null)}
+      aria-label={t('combos.cancel')}
+      className="rounded-full p-1.5 text-[#8a7f77] transition-colors hover:bg-sand hover:text-ink"
+    >
+      <X size={16} aria-hidden="true" />
+    </button>
+  );
 
-      {editing && (
-        <ComboEditor
-          key={editing === 'new' ? 'new' : editing.id}
-          shop={shop}
-          shopId={shopId!}
-          combo={editing === 'new' ? null : editing}
-          products={dishes}
-          categories={liveCategories}
-          onDone={() => setEditing(null)}
-        />
+  // Combos grouped under the category they are shown in, in menu order; any without one at the end
+  const groups = liveCategories
+    .slice()
+    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+    .map((cat) => ({ id: cat.id!, name: cat.name ?? '', items: combos.data.filter((c) => c.categoryId === cat.id) }))
+    .filter((g) => g.items.length > 0);
+  const homeless = combos.data.filter((c) => !liveCategories.some((cat) => cat.id === c.categoryId));
+  if (homeless.length) groups.push({ id: '_none', name: t('products.uncategorized'), items: homeless });
+
+  const stop = (e: React.SyntheticEvent) => e.stopPropagation();
+
+  const comboRow = (c: ComboDto) => {
+    const photo = comboPhotoUrl(c);
+    const selected = editing !== 'new' && editing?.id === c.id;
+    return (
+      <div key={c.id}>
+        <Row selected={selected} onSelect={() => setEditing(c)} className="flex-wrap">
+          {photo ? (
+            <img src={photo} alt="" className={`h-[42px] w-14 flex-shrink-0 rounded-lg object-cover ${c.isAvailable ? '' : 'opacity-50'}`} />
+          ) : (
+            <span className="flex h-[42px] w-14 flex-shrink-0 items-center justify-center rounded-lg border border-[#f1dfae] bg-[#fff6e0] text-center text-[11px] leading-tight font-semibold text-[#8a5a00]">
+              {t('combos.noPhoto')}
+            </span>
+          )}
+          <div className={`flex min-w-0 flex-1 flex-col gap-0.5 ${c.isAvailable ? '' : 'opacity-60'}`}>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[15px] font-bold">{c.name}</span>
+              <span className={c.isAvailable ? badgeClass.good : badgeClass.neutral}>
+                {c.isAvailable ? t('combos.statusOn') : t('combos.statusOff')}
+              </span>
+              {c.bmfDrinkShare && <span className={badgeClass.neutral}>{t('combos.bmfBadge')}</span>}
+            </div>
+            <span className="text-[13px] text-[#6b6058]">
+              {c.groups
+                .map((g) => t('combos.groupSummary', { name: g.name, count: dishCount(g.productIds) }))
+                .join(' · ')}
+            </span>
+          </div>
+          <span className="text-right text-[15px] font-bold">{money(c.priceCents)}</span>
+          <span className="flex w-full flex-wrap justify-end gap-2 sm:w-auto" onClick={stop} onKeyDown={stop}>
+            <button type="button" className={pillClass(false)} onClick={() => setEditing(c)}>
+              {t('combos.edit')}
+            </button>
+            <button type="button" className={pillClass(false)} disabled={switching} onClick={() => toggle(c)}>
+              {c.isAvailable ? t('combos.switchOff') : t('combos.switchOn')}
+            </button>
+            <button
+              type="button"
+              className={`${pillClass(false)} !text-[#b42318]`}
+              onClick={() => setConfirmingId(c.id)}
+            >
+              {t('combos.delete')}
+            </button>
+          </span>
+        </Row>
+        {confirmingId === c.id && (
+          <div className="flex flex-wrap items-center gap-3 border-b border-[#f5c2bd] bg-[#fdeceb] px-4 py-2.5">
+            <span className="min-w-0 flex-1 text-sm text-[#b42318]">{t('combos.deleteConfirm', { name: c.name })}</span>
+            <button
+              type="button"
+              disabled={deleting}
+              onClick={() => remove(c)}
+              className="h-[34px] rounded-full bg-[#b42318] px-3.5 text-[13px] font-bold text-white hover:bg-[#912018] disabled:opacity-40"
+            >
+              {deleting ? '…' : t('combos.delete')}
+            </button>
+            <button type="button" className={pillClass(false)} onClick={() => setConfirmingId(null)}>
+              {t('combos.cancel')}
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const side = wide ? (
+    <SideColumn label={editorTitle} title={editorTitle} actions={editing && closeButton}>
+      <SideCard>{editor || <EmptyNote>{t('combos.selectHint')}</EmptyNote>}</SideCard>
+    </SideColumn>
+  ) : undefined;
+
+  return (
+    <SplitPage side={side}>
+      {header(combos.data.length)}
+
+      {/* Smaller screens: the editor opens above the list */}
+      {!wide && editing && (
+        <Section title={editorTitle} actions={closeButton}>
+          {editor}
+        </Section>
       )}
 
-      <MyCard className="p-6">
-        {combos.data.length === 0 ? (
-          <p className="text-sm text-gray-500">{t('combos.none')}</p>
-        ) : (
-          combos.data.map((c) => (
-            <div key={c.id}>
-              <div className="border-b py-2 flex flex-wrap items-center gap-x-3 text-sm">
-                {comboPhotoUrl(c) ? (
-                  <img src={comboPhotoUrl(c)!} alt="" className="w-10 h-10 rounded-lg object-cover border border-gray-200" />
-                ) : (
-                  <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs text-amber-800">
-                    {t('combos.noPhoto')}
-                  </span>
-                )}
-                <span className="font-bold text-gray-900">{c.name}</span>
-                <span>{money(c.priceCents)}</span>
-                <span className="text-gray-600">
-                  {liveCategories.find((cat) => cat.id === c.categoryId)?.name ?? '—'}
-                </span>
-                <span className="text-gray-600">
-                  {c.groups
-                    .map((g) => t('combos.groupSummary', { name: g.name, count: dishCount(g.productIds) }))
-                    .join(' · ')}
-                </span>
-                <span className="rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs text-gray-700">
-                  {c.isAvailable ? t('combos.statusOn') : t('combos.statusOff')}
-                </span>
-                {c.bmfDrinkShare && (
-                  <span className="rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs text-gray-700">
-                    {t('combos.bmfBadge')}
-                  </span>
-                )}
-                <span className="ml-auto flex gap-2">
-                  <MyButton size="sm" variant="secondary" onClick={() => setEditing(c)}>
-                    {t('combos.edit')}
-                  </MyButton>
-                  <MyButton size="sm" variant="secondary" disabled={switching} onClick={() => toggle(c)}>
-                    {c.isAvailable ? t('combos.switchOff') : t('combos.switchOn')}
-                  </MyButton>
-                  <MyButton size="sm" variant="secondary" onClick={() => setConfirmingId(c.id)}>
-                    {t('combos.delete')}
-                  </MyButton>
-                </span>
-              </div>
-              {confirmingId === c.id && (
-                <div className="px-3 py-2.5 bg-red-50 border-b border-red-100 flex items-center gap-3">
-                  <span className="flex-1 text-sm text-red-700">{t('combos.deleteConfirm', { name: c.name })}</span>
-                  <button
-                    disabled={deleting}
-                    onClick={() => remove(c)}
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-600 text-white hover:bg-red-700 disabled:opacity-40 transition-colors"
-                  >
-                    {deleting ? '…' : t('combos.delete')}
-                  </button>
-                  <button
-                    onClick={() => setConfirmingId(null)}
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium text-gray-600 border border-gray-200 hover:bg-gray-50 transition-colors"
-                  >
-                    {t('combos.cancel')}
-                  </button>
-                </div>
-              )}
-            </div>
-          ))
-        )}
-      </MyCard>
-    </div>
+      {combos.data.length === 0 ? (
+        <Section>
+          <EmptyNote>{t('combos.none')}</EmptyNote>
+        </Section>
+      ) : (
+        groups.map((g) => (
+          <Section key={g.id} title={g.name} count={g.items.length}>
+            {g.items.map(comboRow)}
+          </Section>
+        ))
+      )}
+    </SplitPage>
   );
 }

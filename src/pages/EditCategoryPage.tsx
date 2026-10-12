@@ -1,354 +1,38 @@
-import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useGetShopByIdQuery } from '../services/api';
-import {
-  useApplyCategoryTaxClassMutation,
-  useGetCategoryByIdQuery,
-  useUpdateCategoryMutation,
-  useDeleteCategoryMutation,
-} from '../services/api';
-import { MyCard } from '../components/ui/MyCard';
-import { MyButton } from '../components/ui/MyButton';
-import { MyInput } from '../components/ui/MyInput';
-import { MySpinner } from '../components/ui/MySpinner';
 import { Breadcrumb } from '../components/ui/Breadcrumb';
-import { useToast } from '../contexts/ToastContext';
-import { useShopReferenceLists } from '../features/menu/useShopReferenceLists';
-import { labelFor, taxClassOptionLabel } from '../features/menu/foodInfo';
-import { menuLanguagesOf, resolveActiveLanguage, withTranslation } from '../features/menu/translations';
-import { LanguageTabs, TranslationField } from '../components/menu/LanguageTabs';
-import type { CategorySchedule, MenuLanguage, TranslationMap } from '../services/api';
-import { MySwitch } from '../components/ui/MySwitch';
-import { DEFAULT_SCHEDULE, WEEK_DAYS, dayName, isScheduleValid } from '../features/menu/categorySchedule';
+import { PageHeader } from '../components/layout/Page';
+import { CategoryEditor } from '../components/categories/CategoryEditor';
 
 export function EditCategoryPage() {
   const { shopId, categoryId } = useParams<{ shopId: string; categoryId: string }>();
   const navigate = useNavigate();
-  const { t, i18n } = useTranslation();
-  const toast = useToast();
-
+  const { t } = useTranslation();
   const { data: shop } = useGetShopByIdQuery({ shopId: shopId! });
-  const { data: category, isLoading, isError } = useGetCategoryByIdQuery(
-    { shopId: shopId!, categoryId: categoryId! },
-    { refetchOnMountOrArgChange: true },
-  );
-  const [updateCategory, { isLoading: isUpdating, isError: isUpdateError }] =
-    useUpdateCategoryMutation();
-  const [deleteCategory, { isLoading: isDeleting, isError: isDeleteError }] =
-    useDeleteCategoryMutation();
-  const { refs } = useShopReferenceLists(shopId!);
-  const [applyTaxClass, { isLoading: isApplying }] = useApplyCategoryTaxClassMutation();
-  const [confirmingApply, setConfirmingApply] = useState(false);
-
-  const [name, setName] = useState('');
-  const [icon, setIcon] = useState<string | null>(null);
-  const [taxClassId, setTaxClassId] = useState('');
-  const [nameTranslations, setNameTranslations] = useState<TranslationMap>({});
-  const [shown, setShown] = useState(true);
-  const [schedule, setSchedule] = useState<CategorySchedule | null>(null);
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [deleteConfirmName, setDeleteConfirmName] = useState('');
-
-  useEffect(() => {
-    if (category) {
-      setName(category.name ?? '');
-      setIcon(category.icon ?? null);
-      setTaxClassId(category.taxClassId ?? '');
-      setNameTranslations(category.nameTranslations ?? {});
-      setShown(category.isAvailable !== false);
-      setSchedule(category.schedule ?? null);
-    }
-  }, [category]);
-
-  const [pickedLanguage, setPickedLanguage] = useState<MenuLanguage | undefined>();
-  const languages = shop ? menuLanguagesOf(shop) : [];
-  const extraLanguage = languages[1];
-  const activeLanguage = resolveActiveLanguage(languages, pickedLanguage);
-  const translating = extraLanguage !== undefined && activeLanguage === extraLanguage;
-
-  if (isLoading) return <MySpinner label={t('categories.loadingCategory')} />;
-  if (isError || !category) return <p className="text-red-500">{t('categories.failedToLoad')}</p>;
-
-  const scheduleInvalid = schedule !== null && !isScheduleValid(schedule);
-  const toggleDay = (day: number) =>
-    setSchedule((s) =>
-      s && { ...s, daysOfWeek: s.daysOfWeek.includes(day) ? s.daysOfWeek.filter((d) => d !== day) : [...s.daysOfWeek, day] },
-    );
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (scheduleInvalid) return;
-    try {
-      await updateCategory({
-        shopId: shopId!,
-        categoryId: categoryId!,
-        updateCategoryRequest: {
-          name,
-          ...(extraLanguage ? { nameTranslations } : {}),
-          icon: icon ?? undefined,
-          ...(taxClassId ? { taxClassId } : {}),
-          isAvailable: shown,
-          schedule,
-        },
-      }).unwrap();
-      toast.success(t('categories.saved'));
-      navigate(`/shops/${shopId}/categories`);
-    } catch {
-      // error shown below
-    }
-  };
-
-  // Sets every dish in the category to its saved class; asks first, since it changes many dishes at once
-  const savedTaxClass = refs?.taxClasses.find((c) => c.id === category.taxClassId);
-  const savedTaxLabel = savedTaxClass
-    ? taxClassOptionLabel(labelFor(savedTaxClass.labels, i18n.language), savedTaxClass.id, refs, i18n.language)
-    : '';
-  const handleApplyTaxClass = async () => {
-    try {
-      const { updatedCount } = await applyTaxClass({ shopId: shopId!, categoryId: categoryId! }).unwrap();
-      toast.success(
-        updatedCount > 0 ? t('categories.applyTaxClassDone', { count: updatedCount }) : t('categories.applyTaxClassNone'),
-      );
-    } catch {
-      toast.error(t('categories.applyTaxClassFailed'));
-    } finally {
-      setConfirmingApply(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    try {
-      await deleteCategory({ shopId: shopId!, categoryId: categoryId! }).unwrap();
-      toast.success(t('categories.deleted'));
-      navigate(`/shops/${shopId}/categories`);
-    } catch {
-      setConfirmingDelete(false);
-    }
-  };
+  const backToList = () => navigate(`/shops/${shopId}/categories`);
 
   return (
-    <div className="max-w-lg space-y-5">
-      <Breadcrumb items={[
-        { label: t('nav.shops'), to: '/shops' },
-        { label: shop?.name ?? t('shops.shop'), to: `/shops/${shopId}` },
-        { label: t('nav.categories'), to: `/shops/${shopId}/categories` },
-        { label: t('categories.editTitle') },
-      ]} />
-      <h1 className="text-2xl font-semibold text-gray-900">{t('categories.editTitle')}</h1>
-
-      {isUpdateError && (
-        <MyCard className="p-4 !bg-red-50 !border-red-200">
-          <p className="text-sm text-red-600">{t('categories.failedToUpdate')}</p>
-        </MyCard>
-      )}
-
-      {isDeleteError && (
-        <MyCard className="p-4 !bg-red-50 !border-red-200">
-          <p className="text-sm text-red-600">{t('categories.failedToDelete')}</p>
-        </MyCard>
-      )}
-
-      <MyCard className="p-6">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {extraLanguage && activeLanguage && (
-            <LanguageTabs languages={languages} active={activeLanguage} onChange={setPickedLanguage} />
-          )}
-          {translating ? (
-            <TranslationField
-              label={t('categories.name')}
-              original={name}
-              value={nameTranslations[extraLanguage] ?? ''}
-              onChange={(v) => setNameTranslations((m) => withTranslation(m, extraLanguage, v))}
-            />
-          ) : (
-            <MyInput
-              label={t('categories.name')}
-              type="text"
-              required
-              placeholder={t('categories.namePlaceholder')}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          )}
-          {!translating && (refs?.taxClasses.length ?? 0) > 0 && (
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-gray-700">{t('categories.taxClass')}</label>
-              <select
-                value={taxClassId}
-                onChange={(e) => setTaxClassId(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg bg-white text-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400"
-              >
-                {refs!.taxClasses.filter((c) => c.isActive).map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {labelFor(c.labels, i18n.language)}
-                  </option>
-                ))}
-              </select>
-              <p className="text-xs text-gray-400">{t('categories.taxClassHelp')}</p>
-              {savedTaxClass &&
-                (confirmingApply ? (
-                  <div className="space-y-2 rounded-lg bg-amber-50 p-3">
-                    <p className="text-sm text-amber-900">
-                      {t('categories.applyTaxClassConfirm', { name: category.name, label: savedTaxLabel })}
-                    </p>
-                    <div className="flex gap-2">
-                      <MyButton type="button" size="sm" disabled={isApplying} onClick={handleApplyTaxClass}>
-                        {t('categories.applyTaxClassYes')}
-                      </MyButton>
-                      <MyButton type="button" size="sm" variant="ghost" disabled={isApplying} onClick={() => setConfirmingApply(false)}>
-                        {t('categories.cancel')}
-                      </MyButton>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-wrap items-center gap-2">
-                    <MyButton
-                      type="button"
-                      size="sm"
-                      variant="secondary"
-                      disabled={taxClassId !== category.taxClassId}
-                      onClick={() => setConfirmingApply(true)}
-                    >
-                      {t('categories.applyTaxClass')}
-                    </MyButton>
-                    {taxClassId !== category.taxClassId && (
-                      <span className="text-xs text-gray-500">{t('categories.applyTaxClassSaveFirst')}</span>
-                    )}
-                  </div>
-                ))}
-            </div>
-          )}
-          {!translating && (
-            <div className="border-t border-gray-200 pt-4 space-y-4">
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{t('categories.visibilityTitle')}</p>
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p id="category-shown-label" className="text-sm font-medium text-gray-900">
-                    {t('categories.shownOnMenu')}
-                  </p>
-                  <p id="category-shown-help" className="text-sm text-gray-500">
-                    {t('categories.shownOnMenuHelp')}
-                  </p>
-                </div>
-                <MySwitch
-                  checked={shown}
-                  onChange={setShown}
-                  labelledBy="category-shown-label"
-                  describedBy="category-shown-help"
-                />
-              </div>
-              <div className="space-y-3">
-                <label className="flex items-start gap-2.5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="mt-0.5 h-4 w-4 rounded border-gray-300"
-                    checked={schedule !== null}
-                    onChange={(e) => setSchedule(e.target.checked ? DEFAULT_SCHEDULE : null)}
-                  />
-                  <span>
-                    <span className="block text-sm font-medium text-gray-900">{t('categories.onlyAtTimes')}</span>
-                    <span className="block text-sm text-gray-500">{t('categories.onlyAtTimesHelp')}</span>
-                  </span>
-                </label>
-                {schedule && (
-                  <div className="space-y-3 pl-6">
-                    <div role="group" aria-label={t('categories.days')} className="flex flex-wrap gap-1.5">
-                      {WEEK_DAYS.map((day) => {
-                        const on = schedule.daysOfWeek.includes(day);
-                        return (
-                          <button
-                            key={day}
-                            type="button"
-                            aria-pressed={on}
-                            onClick={() => toggleDay(day)}
-                            className={`min-w-11 rounded-full border px-3 py-1 text-sm transition-colors ${
-                              on ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
-                            }`}
-                          >
-                            {dayName(day, i18n.language)}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <div className="flex gap-3">
-                      <div className="flex-1">
-                        <MyInput
-                          label={t('categories.from')}
-                          type="time"
-                          value={schedule.startTime}
-                          onChange={(e) => setSchedule({ ...schedule, startTime: e.target.value })}
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <MyInput
-                          label={t('categories.until')}
-                          type="time"
-                          value={schedule.endTime}
-                          onChange={(e) => setSchedule({ ...schedule, endTime: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                    {scheduleInvalid && <p className="text-sm text-red-600">{t('categories.scheduleInvalid')}</p>}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-          <div className="flex gap-2">
-            <MyButton
-              type="button"
-              variant="ghost"
-              disabled={isUpdating}
-              className="flex-1"
-              onClick={() => navigate(`/shops/${shopId}/categories`)}
-            >
-              {t('categories.cancel')}
-            </MyButton>
-            <MyButton type="submit" disabled={isUpdating || scheduleInvalid} className="flex-1">
-              {isUpdating ? t('categories.saving') : t('categories.saveChanges')}
-            </MyButton>
-          </div>
-        </form>
-      </MyCard>
-
-      <MyCard className="p-6">
-        <div className="space-y-3">
-          <p className="text-sm font-medium text-gray-900">{t('categories.dangerZone')}</p>
-          <p className="text-xs text-gray-400">{t('categories.deleteWarning')}</p>
-          {confirmingDelete ? (
-            <div className="space-y-3">
-              <MyInput
-                label={t('categories.deleteTypeToConfirm', { name: category.name })}
-                type="text"
-                value={deleteConfirmName}
-                onChange={(e) => setDeleteConfirmName(e.target.value)}
-                placeholder={category.name}
-              />
-              <div className="flex gap-2">
-                <MyButton
-                  variant="danger"
-                  disabled={isDeleting || deleteConfirmName !== category.name}
-                  onClick={handleDelete}
-                >
-                  {isDeleting ? t('categories.deleting') : t('categories.confirmDelete')}
-                </MyButton>
-                <MyButton
-                  variant="ghost"
-                  disabled={isDeleting}
-                  onClick={() => { setConfirmingDelete(false); setDeleteConfirmName(''); }}
-                >
-                  {t('categories.cancel')}
-                </MyButton>
-              </div>
-            </div>
-          ) : (
-            <MyButton variant="danger" onClick={() => setConfirmingDelete(true)}>
-              {t('categories.delete')}
-            </MyButton>
-          )}
-        </div>
-      </MyCard>
+    <div className="max-w-3xl">
+      <div className="mb-3">
+        <Breadcrumb
+          items={[
+            { label: t('nav.shops'), to: '/shops' },
+            { label: shop?.name ?? t('shops.shop'), to: `/shops/${shopId}` },
+            { label: t('nav.categories'), to: `/shops/${shopId}/categories` },
+            { label: t('categories.editTitle') },
+          ]}
+        />
+      </div>
+      <PageHeader eyebrow={t('nav.group.menu')} title={t('categories.editTitle')} />
+      <CategoryEditor
+        key={categoryId}
+        shopId={shopId!}
+        categoryId={categoryId!}
+        onSaved={backToList}
+        onCancel={backToList}
+        onDeleted={backToList}
+      />
     </div>
   );
 }

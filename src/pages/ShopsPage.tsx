@@ -16,6 +16,11 @@ import { MyButton } from '../components/ui/MyButton';
 import { MyInput } from '../components/ui/MyInput';
 import { MySpinner } from '../components/ui/MySpinner';
 import { useToast } from '../contexts/ToastContext';
+import { PageHeader, Section, Row, EmptyNote } from '../components/layout/Page';
+import { pillClass } from '../components/layout/pageStyles';
+import { ShopLogoBadge } from '../components/shop/ShopLogoBadge';
+import { ShopLiveBadge } from '../components/shop/ShopLiveBadge';
+import { shopLiveState } from '../features/shops/shopStatus';
 
 const COUNTRY_OPTIONS = [
   { code: 'AU', label: 'Australia' },
@@ -125,18 +130,20 @@ function CreateShopModal({ onClose }: { onClose: () => void }) {
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40" />
+      <div className="fixed inset-0 z-40 bg-ink/30 backdrop-blur-sm" />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
+        <div className="max-h-[calc(100vh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-line bg-white shadow-xl">
           {/* Header */}
-          <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-gray-200">
+          <div className="flex items-start justify-between border-b border-line-soft px-6 pt-5 pb-4">
             <div>
-              <h2 className="text-base font-semibold text-gray-900">{t('shops.newShop')}</h2>
-              <p className="text-xs text-gray-400 mt-0.5">{t('shops.createSubtitle')}</p>
+              <h2 className="font-display text-[22px] leading-tight font-semibold">{t('shops.newShop')}</h2>
+              <p className="mt-0.5 text-[13px] text-muted">{t('shops.createSubtitle')}</p>
             </div>
             <button
+              type="button"
               onClick={onClose}
-              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+              aria-label={t('products.cancel')}
+              className="rounded-full p-1.5 text-[#8a7f77] transition-colors hover:bg-sand hover:text-ink"
             >
               <X size={16} />
             </button>
@@ -146,8 +153,8 @@ function CreateShopModal({ onClose }: { onClose: () => void }) {
           <form onSubmit={handleSubmit}>
             <div className="px-6 py-5 space-y-4">
               {isError && (
-                <div className="p-3 rounded-xl bg-red-50 border border-red-200">
-                  <p className="text-sm text-red-600">
+                <div className="rounded-xl border border-[#f5c2bd] bg-[#fdeceb] p-3">
+                  <p className="text-sm text-[#b42318]">
                     {(error as { data?: { error?: string } })?.data?.error ?? t('shops.failedToCreate')}
                   </p>
                 </div>
@@ -164,12 +171,12 @@ function CreateShopModal({ onClose }: { onClose: () => void }) {
               />
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-gray-700">Industry</label>
+                <label className="text-[13px] font-semibold text-[#4a413b]">Industry</label>
                 <select
                   required
                   value={form.industry ?? ''}
                   onChange={(e) => setForm((f) => ({ ...f, industry: e.target.value }))}
-                  className="w-full border border-gray-200 rounded-lg bg-white text-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400"
+                  className="h-10 w-full rounded-[10px] border border-[#e3d9ce] bg-white px-3 text-sm text-ink focus:border-ink focus:outline-none"
                 >
                   <option value="" disabled>Select an industry…</option>
                   {INDUSTRY_OPTIONS.map((opt) => (
@@ -183,18 +190,18 @@ function CreateShopModal({ onClose }: { onClose: () => void }) {
                     placeholder="Describe your industry…"
                     value={industryOther}
                     onChange={(e) => setIndustryOther(e.target.value)}
-                    className="w-full border border-gray-200 rounded-lg bg-white text-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400"
+                    className="h-10 w-full rounded-[10px] border border-[#e3d9ce] bg-white px-3 text-sm text-ink focus:border-ink focus:outline-none"
                   />
                 )}
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-gray-700">{t('shops.shopCountry')}</label>
+                <label className="text-[13px] font-semibold text-[#4a413b]">{t('shops.shopCountry')}</label>
                 <select
                   required
                   value={form.countryCode ?? 'AU'}
                   onChange={(e) => handleCountryChange(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg bg-white text-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400"
+                  className="h-10 w-full rounded-[10px] border border-[#e3d9ce] bg-white px-3 text-sm text-ink focus:border-ink focus:outline-none"
                 >
                   {COUNTRY_OPTIONS.map((c) => (
                     <option key={c.code} value={c.code}>{c.label}</option>
@@ -203,22 +210,22 @@ function CreateShopModal({ onClose }: { onClose: () => void }) {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="shop-menu-language" className="text-sm font-medium text-gray-700">{t('shops.menuLanguage')}</label>
+                <label htmlFor="shop-menu-language" className="text-[13px] font-semibold text-[#4a413b]">{t('shops.menuLanguage')}</label>
                 <select
                   id="shop-menu-language"
                   value={form.menuLanguage ?? 'en'}
                   onChange={(e) => setForm((f) => ({ ...f, menuLanguage: e.target.value as MenuLanguage }))}
-                  className="w-full border border-gray-200 rounded-lg bg-white text-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400"
+                  className="h-10 w-full rounded-[10px] border border-[#e3d9ce] bg-white px-3 text-sm text-ink focus:border-ink focus:outline-none"
                 >
                   <option value="de">{t('shops.languageName.de')}</option>
                   <option value="en">{t('shops.languageName.en')}</option>
                 </select>
-                <p className="text-xs text-gray-400">{t('shops.menuLanguageHelp')}</p>
+                <p className="text-xs text-muted">{t('shops.menuLanguageHelp')}</p>
               </div>
 
               <div className="space-y-2">
-                {dpaLoadFailed && <p className="text-sm text-red-600">{t('shops.dpaLoadError')}</p>}
-                <label className="flex items-start gap-2 text-sm text-gray-700">
+                {dpaLoadFailed && <p className="text-sm text-[#b42318]">{t('shops.dpaLoadError')}</p>}
+                <label className="flex items-start gap-2 text-sm text-[#4a413b]">
                   <input
                     type="checkbox"
                     className="mt-0.5"
@@ -237,12 +244,12 @@ function CreateShopModal({ onClose }: { onClose: () => void }) {
                   </span>
                 </label>
                 {showDpa && dpa && (
-                  <div className="max-h-64 overflow-y-auto border border-gray-100 rounded-xl p-3 space-y-3 bg-gray-50">
+                  <div className="max-h-64 space-y-3 overflow-y-auto rounded-xl border border-line-soft bg-cream p-3">
                     {dpa.sections[dpaLang].map((sec) => (
                       <div key={sec.heading}>
-                        <h4 className="text-sm font-semibold text-gray-900">{sec.heading}</h4>
+                        <h4 className="text-sm font-bold text-ink">{sec.heading}</h4>
                         {sec.paragraphs.map((p) => (
-                          <p key={p} className="text-xs text-gray-600 mt-1">{p}</p>
+                          <p key={p} className="mt-1 text-xs text-[#4a413b]">{p}</p>
                         ))}
                       </div>
                     ))}
@@ -252,7 +259,7 @@ function CreateShopModal({ onClose }: { onClose: () => void }) {
             </div>
 
             {/* Footer */}
-            <div className="flex items-center gap-2 px-6 pb-5">
+            <div className="flex items-center gap-2 border-t border-line-soft px-6 py-4">
               <MyButton type="submit" disabled={isLoading || !dpaTicked || !dpa} className="flex-1">
                 {isLoading ? t('shops.creating') : t('shops.create')}
               </MyButton>
@@ -267,9 +274,17 @@ function CreateShopModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-function ShopAvailabilityToggle({ shop }: { shop: ShopResponse }) {
+function ShopAvailabilityToggle({
+  shop,
+  isPaused,
+  setIsPaused,
+}: {
+  shop: ShopResponse;
+  isPaused: boolean;
+  setIsPaused: (paused: boolean) => void;
+}) {
+  const { t } = useTranslation();
   const [updateShop, { isLoading }] = useUpdateShopMutation();
-  const [isPaused, setIsPaused] = useState(shop.isPaused ?? true);
   const isOn = !isPaused;
 
   const handleClick = async (e: React.MouseEvent) => {
@@ -289,14 +304,19 @@ function ShopAvailabilityToggle({ shop }: { shop: ShopResponse }) {
 
   return (
     <button
+      type="button"
+      role="switch"
+      aria-checked={isOn}
+      aria-label={`${t('shops.statusOnline')}: ${shop.name ?? ''}`}
       onClick={handleClick}
+      onKeyDown={(e) => e.stopPropagation()}
       disabled={isLoading || shop.offlineBySuperadmin === true}
-      title={isOn ? 'Shop is live — click to pause' : 'Shop is paused — click to go live'}
-      className="flex-shrink-0 focus:outline-none disabled:opacity-50"
+      title={t('shops.statusOnline')}
+      className={`relative h-5 w-[34px] flex-shrink-0 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 disabled:opacity-50 ${
+        isOn ? 'bg-[#2f8a4c]' : 'bg-[#d6cdc4]'
+      }`}
     >
-      <span className={`relative flex items-center w-9 h-5 rounded-full transition-colors duration-200 ${isOn ? 'bg-emerald-500' : 'bg-gray-200'}`}>
-        <span className={`absolute w-4 h-4 bg-white rounded-full shadow-md transition-transform duration-200 ${isOn ? 'translate-x-4' : 'translate-x-0.5'}`} />
-      </span>
+      <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${isOn ? 'right-0.5' : 'left-0.5'}`} />
     </button>
   );
 }
@@ -311,22 +331,53 @@ function ShopPlanBadge({ shopId }: { shopId: string }) {
   const isActive = data.subscription.status === 'active';
 
   return (
-    <span
-      role="button"
+    <button
+      type="button"
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
         navigate(`/shops/${shopId}/subscription`);
       }}
-      className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border transition-colors ${
+      onKeyDown={(e) => e.stopPropagation()}
+      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-bold transition-colors ${
         isActive
-          ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100'
-          : 'bg-gray-100 border-gray-200 text-gray-400 hover:bg-gray-50 hover:text-gray-600'
+          ? 'border-[#cfe6d6] bg-[#e6f3ea] text-[#1d5a32] hover:bg-[#d9eee0]'
+          : 'border-line bg-sand text-[#4a413b] hover:bg-cream'
       }`}
     >
-      <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-500' : 'bg-gray-300'}`} />
+      <span className={`h-1.5 w-1.5 rounded-full ${isActive ? 'bg-[#2f8a4c]' : 'bg-[#9a8f86]'}`} aria-hidden="true" />
       {planName}
-    </span>
+    </button>
+  );
+}
+
+/** One shop: logo, name, plan, what diners see, the online switch and a button to open it. */
+function ShopRow({ shop }: { shop: ShopResponse }) {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const [isPaused, setIsPaused] = useState(shop.isPaused ?? true);
+  const open = `/shops/${shop.id}`;
+
+  return (
+    <Row onSelect={() => navigate(open)}>
+      <ShopLogoBadge shop={shop} size={40} />
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <span className="truncate text-[15px] font-bold">{shop.name}</span>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <ShopLiveBadge state={shopLiveState({ ...shop, isPaused })} />
+          <ShopPlanBadge shopId={shop.id!} />
+        </div>
+      </div>
+      <ShopAvailabilityToggle shop={shop} isPaused={isPaused} setIsPaused={setIsPaused} />
+      <Link
+        to={open}
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+        className={`hidden items-center sm:inline-flex ${pillClass(false)}`}
+      >
+        {t('shops.open')}
+      </Link>
+    </Row>
   );
 }
 
@@ -336,46 +387,30 @@ export function ShopsPage() {
   const { data, isLoading, isError } = useGetMyShopsQuery();
 
   const showModal = searchParams.get('addShop') === '1';
+  const openModal = () => setSearchParams((p) => { const n = new URLSearchParams(p); n.set('addShop', '1'); return n; });
   const closeModal = () => setSearchParams((p) => { const n = new URLSearchParams(p); n.delete('addShop'); return n; });
 
   if (isLoading) return <MySpinner label={t('shops.loading')} />;
-  if (isError) return <p className="text-red-500">{t('shops.loadError')}</p>;
+  if (isError) return <p className="text-sm text-[#b42318]">{t('shops.loadError')}</p>;
+
+  const shops = visibleShops(data?.shops ?? []);
 
   return (
     <>
-      <div className="space-y-5">
-        <h1 className="text-2xl font-semibold text-gray-900">{t('shops.title')}</h1>
+      <div>
+        <PageHeader
+          title={t('nav.myShops')}
+          count={t('shops.count', { count: shops.length })}
+          actions={<MyButton onClick={openModal}>{t('shops.newShop')}</MyButton>}
+        />
 
-        {visibleShops(data?.shops ?? []).length === 0 && (
-          <p className="text-gray-400 text-sm">{t('shops.empty')}</p>
-        )}
-
-        <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-3">
-          {visibleShops(data?.shops ?? []).map((shop) => (
-            <Link
-              key={shop.id}
-              to={`/shops/${shop.id}`}
-              className="rounded-2xl bg-white border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 cursor-pointer overflow-hidden block transition-all"
-            >
-              <div className="aspect-square w-full bg-gray-50 flex items-center justify-center">
-                {shop.branding?.logoUrl ? (
-                  <img src={shop.branding.logoUrl} alt={shop.name} className="w-full h-full object-contain" />
-                ) : (
-                  <span className="text-4xl font-semibold text-gray-200">
-                    {shop.name?.charAt(0).toUpperCase()}
-                  </span>
-                )}
-              </div>
-              <div className="p-3">
-                <p className="font-medium text-gray-900 text-sm leading-snug truncate">{shop.name}</p>
-                <div className="flex items-center justify-between mt-1.5">
-                  <ShopPlanBadge shopId={shop.id!} />
-                  <ShopAvailabilityToggle shop={shop} />
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
+        <Section title={t('shops.title')} count={shops.length} hint={t('shops.listHint')}>
+          {shops.length === 0 ? (
+            <EmptyNote>{t('shops.empty')}</EmptyNote>
+          ) : (
+            shops.map((shop) => <ShopRow key={shop.id} shop={shop} />)
+          )}
+        </Section>
       </div>
 
       {showModal && <CreateShopModal onClose={closeModal} />}

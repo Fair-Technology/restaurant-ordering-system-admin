@@ -20,9 +20,9 @@ import {
   type ComboGroupForm,
 } from '../../features/combos/combos';
 import { MyButton } from '../ui/MyButton';
-import { MyCard } from '../ui/MyCard';
 import { MyInput, MyTextarea } from '../ui/MyInput';
 import { DishPhotoField } from '../menu/DishPhotoField';
+import { selectClass } from '../../features/menu/useIsWide';
 import { LanguageTabs, TranslationField } from '../menu/LanguageTabs';
 
 const MAX_GROUPS = 5;
@@ -166,7 +166,7 @@ export function ComboEditor({ shop, shopId, combo, products, categories, onDone 
   if (translating) {
     const nothing = form.name.trim() === '' && form.description.trim() === '';
     return (
-      <MyCard className="p-6 space-y-4">
+      <div className="space-y-4 p-4 sm:p-5">
         <LanguageTabs languages={languages} active={activeLanguage!} onChange={setPickedLanguage} />
         <TranslationField
           label={t('combos.name')}
@@ -191,26 +191,26 @@ export function ComboEditor({ shop, shopId, combo, products, categories, onDone 
           />
         ))}
         {nothing && form.groups.every((g) => g.name.trim() === '') && (
-          <p className="text-sm text-gray-400">{t('translationFields.nothingToTranslate')}</p>
+          <p className="text-sm text-muted">{t('translationFields.nothingToTranslate')}</p>
         )}
-        <div className="flex gap-2">
-          <MyButton disabled={busy} onClick={submit}>
+        <div className="flex flex-wrap gap-2 border-t border-line-soft pt-4">
+          <MyButton type="button" disabled={busy} onClick={submit}>
             {saveLabel}
           </MyButton>
-          <MyButton variant="ghost" onClick={onDone}>
+          <MyButton type="button" variant="secondary" onClick={onDone}>
             {t('combos.cancel')}
           </MyButton>
         </div>
-        {formError && <p className="text-sm text-red-600">{t(`combos.formError.${formError}`)}</p>}
-      </MyCard>
+        {formError && <p role="alert" className="text-sm text-[#b42318]">{t(`combos.formError.${formError}`)}</p>}
+      </div>
     );
   }
 
   return (
-    <MyCard className="p-6 space-y-4">
+    <div className="space-y-4 p-4 sm:p-5">
       {createdComboId && (
-        <div role="alert" className="p-3 rounded-xl bg-amber-50 border border-amber-200">
-          <p className="text-sm text-amber-800">{t('combos.createdWithoutPhoto')}</p>
+        <div role="alert" className="rounded-xl border border-[#f1dfae] bg-[#fff6e0] p-3">
+          <p className="text-sm text-[#8a5a00]">{t('combos.createdWithoutPhoto')}</p>
         </div>
       )}
       {extraLanguage && activeLanguage && (
@@ -230,14 +230,14 @@ export function ComboEditor({ shop, shopId, combo, products, categories, onDone 
         onChange={(e) => set({ price: e.target.value })}
       />
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="combo-category" className="text-sm font-medium text-gray-700">
+        <label htmlFor="combo-category" className="text-[13px] font-semibold text-[#4a413b]">
           {t('combos.category')}
         </label>
         <select
           id="combo-category"
           value={form.categoryId}
           onChange={(e) => set({ categoryId: e.target.value })}
-          className="w-full border border-gray-200 rounded-lg bg-white px-3 py-2 text-sm"
+          className={selectClass}
         >
           <option value="">{t('combos.categoryPick')}</option>
           {categories.map((c) => (
@@ -252,52 +252,54 @@ export function ComboEditor({ shop, shopId, combo, products, categories, onDone 
 
       {shop.countryCode === 'DE' && (
         <div className="space-y-1">
-          <label className="flex items-center gap-2 text-sm text-gray-800">
+          <label className="flex items-center gap-2 text-sm font-semibold">
             <input
               type="checkbox"
+              className="accent-[#1f1a17]"
               checked={form.bmfDrinkShare}
               onChange={(e) => set({ bmfDrinkShare: e.target.checked })}
             />
             {t('combos.bmf')}
           </label>
-          <p className="text-xs text-gray-500">{t('combos.bmfHelp')}</p>
+          <p className="pl-6 text-xs text-muted">{t('combos.bmfHelp')}</p>
         </div>
       )}
 
-      <label className="flex items-center gap-2 text-sm text-gray-800">
-        <input type="checkbox" checked={form.isAvailable} onChange={(e) => set({ isAvailable: e.target.checked })} />
+      <label className="flex items-center gap-2 text-sm font-semibold">
+        <input type="checkbox" className="accent-[#1f1a17]" checked={form.isAvailable} onChange={(e) => set({ isAvailable: e.target.checked })} />
         {t('combos.available')}
       </label>
 
-      <h2 className="text-base font-semibold text-gray-900">{t('combos.groups')}</h2>
+      <h3 className="border-t border-line-soft pt-4 text-[15px] font-bold">{t('combos.groups')}</h3>
       {form.groups.map((group, index) => (
-        <div key={group.id ?? index} className="rounded-lg border border-gray-200 p-4 space-y-3">
+        <div key={group.id ?? index} className="space-y-3 rounded-xl border border-line bg-paper p-3.5">
           <MyInput
             label={t('combos.groupName')}
             value={group.name}
             onChange={(e) => setGroup(index, { name: e.target.value })}
           />
-          <p className="text-sm font-medium text-gray-700">{t('combos.groupDishes')}</p>
+          <p className="text-[13px] font-semibold text-[#4a413b]">{t('combos.groupDishes')}</p>
           <div className="space-y-3">
             {[...dishesByCategory.entries()].map(([categoryName, dishes]) => {
               const ids = dishes.map((p) => p.id!);
               const allOn = ids.every((id) => group.productIds.includes(id));
               return (
                 <div key={categoryName} className="space-y-1">
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-800">
-                    <input type="checkbox" checked={allOn} onChange={(e) => toggleDishes(index, ids, e.target.checked)} />
+                  <label className="flex items-center gap-2 text-sm font-semibold">
+                    <input type="checkbox" className="accent-[#1f1a17]" checked={allOn} onChange={(e) => toggleDishes(index, ids, e.target.checked)} />
                     {t('combos.wholeCategory', { category: categoryName })}
                   </label>
                   <div className="pl-6 space-y-1">
                     {dishes.map((p) => (
-                      <label key={p.id} className="flex items-center gap-2 text-sm text-gray-700">
+                      <label key={p.id} className="flex items-center gap-2 text-sm text-[#4a413b]">
                         <input
                           type="checkbox"
+                          className="accent-[#1f1a17]"
                           checked={group.productIds.includes(p.id!)}
                           onChange={(e) => toggleDishes(index, [p.id!], e.target.checked)}
                         />
                         {p.name}
-                        <span className="text-gray-400">{money(p.price ?? 0)}</span>
+                        <span className="ml-auto pl-2 text-[13px] text-[#8a7f77]">{money(p.price ?? 0)}</span>
                       </label>
                     ))}
                   </div>
@@ -308,7 +310,7 @@ export function ComboEditor({ shop, shopId, combo, products, categories, onDone 
           {form.groups.length > 1 && (
             <button
               type="button"
-              className="text-xs text-red-600 hover:underline"
+              className="text-xs font-semibold text-[#b42318] hover:underline"
               onClick={() => set({ groups: form.groups.filter((_, i) => i !== index) })}
             >
               {t('combos.removeGroup')}
@@ -318,6 +320,7 @@ export function ComboEditor({ shop, shopId, combo, products, categories, onDone 
       ))}
       {form.groups.length < MAX_GROUPS && (
         <MyButton
+          type="button"
           variant="secondary"
           size="sm"
           onClick={() => set({ groups: [...form.groups, { name: '', nameTranslations: {}, productIds: [] }] })}
@@ -326,15 +329,15 @@ export function ComboEditor({ shop, shopId, combo, products, categories, onDone 
         </MyButton>
       )}
 
-      <div className="flex gap-2">
-        <MyButton disabled={busy} onClick={submit}>
+      <div className="flex flex-wrap gap-2 border-t border-line-soft pt-4">
+        <MyButton type="button" disabled={busy} onClick={submit}>
           {saveLabel}
         </MyButton>
-        <MyButton variant="ghost" onClick={onDone}>
+        <MyButton type="button" variant="secondary" onClick={onDone}>
           {t('combos.cancel')}
         </MyButton>
       </div>
-      {formError && <p className="text-sm text-red-600">{t(`combos.formError.${formError}`)}</p>}
-    </MyCard>
+      {formError && <p role="alert" className="text-sm text-[#b42318]">{t(`combos.formError.${formError}`)}</p>}
+    </div>
   );
 }

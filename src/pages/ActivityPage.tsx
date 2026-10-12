@@ -3,9 +3,8 @@ import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useGetAuditEntriesQuery } from '../services/api';
 import type { AuditEntry } from '../services/api';
-import { MyCard } from '../components/ui/MyCard';
+import { EmptyNote, PageHeader, Pager, Row, Section } from '../components/layout/Page';
 import { MySpinner } from '../components/ui/MySpinner';
-import { MyButton } from '../components/ui/MyButton';
 
 const PAGE_SIZE = 20;
 
@@ -26,14 +25,20 @@ interface ActivityRowProps {
 
 function ActivityRow({ entry, actorLabel }: ActivityRowProps) {
   return (
-    <div className="px-5 py-4">
-      <div className="flex flex-col gap-0.5 text-sm">
-        <span className="text-gray-900">
-          <span className="font-medium">{actorLabel}</span> &middot; {entry.action} &middot; {entry.entityName}
-        </span>
-        <span className="text-xs text-gray-500">{formatDate(entry.timestamp)}</span>
+    <Row>
+      <span
+        aria-hidden="true"
+        className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-sand text-xs font-bold text-[#4a413b]"
+      >
+        {actorLabel.charAt(0).toUpperCase() || '?'}
+      </span>
+      <div className="min-w-0 flex-1 text-sm">
+        <p className="break-words">
+          <span className="font-bold">{actorLabel}</span> <span className="text-[#4a413b]">&middot; {entry.action} &middot; {entry.entityName}</span>
+        </p>
+        <p className="mt-0.5 text-xs text-[#8a7f77]">{formatDate(entry.timestamp)}</p>
       </div>
-    </div>
+    </Row>
   );
 }
 
@@ -55,7 +60,7 @@ export function ActivityPage() {
   });
 
   if (isLoading) return <MySpinner label={t('activity.title')} />;
-  if (isError) return <p className="text-red-500">{t('activity.loadError')}</p>;
+  if (isError) return <p className="text-sm text-[#b42318]">{t('activity.loadError')}</p>;
 
   const entries = data?.entries ?? [];
   const actorLabels = data?.actorLabels ?? {};
@@ -63,48 +68,24 @@ export function ActivityPage() {
   const showPagination = data ? data.total > PAGE_SIZE : false;
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-lg font-semibold text-gray-900">{t('activity.title')}</h1>
+    <div>
+      <PageHeader eyebrow={t('nav.group.business')} title={t('activity.title')} count={data ? t('activity.count', { count: data.total }) : undefined} />
 
-      <MyCard>
+      <Section title={t('activity.listTitle')}>
         {entries.length === 0 ? (
-          <p className="p-5 text-gray-400 text-sm">{t('activity.empty')}</p>
+          <EmptyNote>{t('activity.empty')}</EmptyNote>
         ) : (
-          <div className="divide-y divide-gray-200">
-            {entries.map((entry) => (
-              <ActivityRow
-                key={entry.id}
-                entry={entry}
-                actorLabel={actorLabels[`${entry.actorType}:${entry.actorId}`] ?? entry.actorId}
-              />
-            ))}
-          </div>
+          entries.map((entry) => (
+            <ActivityRow
+              key={entry.id}
+              entry={entry}
+              actorLabel={actorLabels[`${entry.actorType}:${entry.actorId}`] ?? entry.actorId}
+            />
+          ))
         )}
-      </MyCard>
+      </Section>
 
-      {showPagination && (
-        <div className="flex items-center justify-between mt-4">
-          <MyButton
-            variant="secondary"
-            size="sm"
-            disabled={page === 1}
-            onClick={() => setPage((p) => p - 1)}
-          >
-            {t('orders.previousPage')}
-          </MyButton>
-          <span className="text-sm text-gray-500">
-            {t('orders.pageInfo', { page, total: totalPages })}
-          </span>
-          <MyButton
-            variant="secondary"
-            size="sm"
-            disabled={page === totalPages}
-            onClick={() => setPage((p) => p + 1)}
-          >
-            {t('orders.nextPage')}
-          </MyButton>
-        </div>
-      )}
+      {showPagination && <Pager page={page} totalPages={totalPages} onPage={setPage} />}
     </div>
   );
 }

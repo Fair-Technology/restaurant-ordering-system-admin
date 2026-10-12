@@ -19,6 +19,10 @@ import { ImageCropDialog } from '../components/ui/ImageCropDialog';
 import { MySwitch } from '../components/ui/MySwitch';
 import { bannerShownOf, brandingWithBanner } from '../features/shops/bannerSwitch';
 import { MyCard } from '../components/ui/MyCard';
+import { PageHeader, Section } from '../components/layout/Page';
+import { badgeClass } from '../components/layout/pageStyles';
+import { SettingsNav } from '../components/shop/SettingsNav';
+import { canDeleteShop } from '../features/shops/deleteShop';
 import { MySpinner } from '../components/ui/MySpinner';
 import { MyButton } from '../components/ui/MyButton';
 import { MyInput } from '../components/ui/MyInput';
@@ -57,7 +61,16 @@ function buildInitialHours(shopHours: Record<string, unknown> | undefined): Open
   return result;
 }
 
-const inputClass = 'w-full border border-gray-200 rounded-lg bg-white text-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400';
+const inputClass = 'h-10 w-full rounded-[10px] border border-[#e3d9ce] bg-white px-3 text-sm text-ink focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink';
+
+/** Anchor targets sit below the 56px phone header; on desktop the page scrolls from the top. */
+const SCROLL_TARGET_CLASS = 'scroll-mt-[72px]! lg:scroll-mt-6!';
+const GROUP_CLASS = `${SCROLL_TARGET_CLASS} pt-2`;
+const GROUP_LABEL_CLASS = 'mb-2.5 px-1 text-[12px] font-bold tracking-wide text-[#8a7f77] uppercase';
+const FOOTER_CLASS = 'mt-5 flex flex-wrap items-center gap-2 border-t border-line-soft pt-4';
+const ERROR_CLASS = 'text-sm text-[#b42318]';
+const FILE_INPUT_CLASS =
+  'block w-full min-w-0 cursor-pointer text-sm text-muted file:mr-3 file:h-8 file:cursor-pointer file:rounded-full file:border file:border-solid file:border-[#e3d9ce] file:bg-white file:px-3 file:text-xs file:font-semibold file:text-ink hover:file:bg-cream';
 
 export function ShopSettingsPage() {
   const { shopId } = useParams<{ shopId: string }>();
@@ -129,15 +142,16 @@ export function ShopSettingsPage() {
   const [isSavingLanguages, setIsSavingLanguages] = useState(false);
 
   if (isLoading) return <MySpinner label={t('shops.loadingSettings')} />;
-  if (isError || !shop) return <p className="text-red-500">{t('shops.failedToLoadShop')}</p>;
+  if (isError || !shop) return <p className="text-[#b42318]">{t('shops.failedToLoadShop')}</p>;
 
   const canManageShop = (shop.callerPermissions ?? []).includes('manage_shop');
 
   if (!canManageShop) {
     return (
-      <div className="max-w-lg">
+      <div className="max-w-3xl">
+        <PageHeader eyebrow={t('nav.group.shop')} title={t('nav.settings')} />
         <MyCard className="p-5">
-          <p className="text-sm text-gray-600">{t('shops.membersAccessDenied')}</p>
+          <p className="text-sm text-[#4a413b]">{t('shops.membersAccessDenied')}</p>
         </MyCard>
       </div>
     );
@@ -295,8 +309,8 @@ export function ShopSettingsPage() {
       setNameChangeState(null);
       toast.success(t('shops.nameChangeSubmitted'));
       refetch();
-    } catch (err: any) {
-      setNameChangeError(err?.data?.error ?? t('shops.nameChangeFailed'));
+    } catch (err) {
+      setNameChangeError((err as { data?: { error?: string } })?.data?.error ?? t('shops.nameChangeFailed'));
     } finally {
       setIsRequestingNameChange(false);
     }
@@ -307,8 +321,8 @@ export function ShopSettingsPage() {
       await cancelShopNameChange({ shopId: shopId! }).unwrap();
       toast.success(t('shops.nameChangeCancelled'));
       refetch();
-    } catch (err: any) {
-      toast.error(err?.data?.error ?? t('shops.nameChangeCancelFailed'));
+    } catch (err) {
+      toast.error((err as { data?: { error?: string } })?.data?.error ?? t('shops.nameChangeCancelFailed'));
     }
   };
 
@@ -453,550 +467,563 @@ export function ShopSettingsPage() {
   const currentCoverUrl = shop.branding?.heroImageUrl || null;
   const bannerShown = bannerShownOf(shop.branding);
 
+  const navItems = [
+    { id: 'shop-status', label: t('shops.shopStatusTitle') },
+    { id: 'settings-general', label: t('shops.settingsPage.groupGeneral') },
+    { id: 'settings-look', label: t('shops.settingsPage.groupLook') },
+    { id: 'opening-hours', label: t('shops.openingHours') },
+    { id: 'settings-orders', label: t('shops.settingsPage.groupOrders') },
+    { id: 'settings-payments', label: t('shops.settingsPage.groupPayments') },
+    ...(canDeleteShop(shop.callerRole) ? [{ id: 'settings-danger', label: t('shops.settingsPage.groupDanger') }] : []),
+  ];
+
   return (
-    <div className="max-w-lg space-y-4">
-      <MyCard>
-        {infoRows.map((row, i) => (
-          <div
-            key={row.label}
-            className={`flex items-center justify-between px-5 py-4 ${
-              i > 0 ? 'border-t border-gray-200' : ''
-            }`}
+    <div>
+      <PageHeader
+        eyebrow={t('nav.group.shop')}
+        title={t('nav.settings')}
+        description={t('shops.settingsPage.intro')}
+      />
+      <SettingsNav label={t('shops.settingsPage.navLabel')} items={navItems} />
+
+      <div className="max-w-3xl">
+        <ShopStatusCard shop={shop} onRefetch={refetch} />
+
+        <div id="settings-general" className={GROUP_CLASS}>
+          <p className={GROUP_LABEL_CLASS}>{t('shops.settingsPage.groupGeneral')}</p>
+
+          <Section
+            title={t('shops.detailsTitle')}
+            description={t('shops.settingsPage.detailsDescription')}
+            padded
           >
-            <span className="text-sm text-gray-400">{row.label}</span>
-            <span className={`text-sm text-gray-900 ${row.mono ? 'font-mono' : 'font-medium'}`}>
-              {row.value}
-            </span>
-          </div>
-        ))}
-      </MyCard>
+            <dl className="divide-y divide-line-soft">
+              {infoRows.map((row) => (
+                <div key={row.label} className="flex items-center justify-between gap-4 py-2.5 first:pt-0">
+                  <dt className="text-[13px] text-muted">{row.label}</dt>
+                  <dd className={`min-w-0 truncate text-sm text-ink ${row.mono ? 'font-mono' : 'font-medium'}`}>
+                    {row.value}
+                  </dd>
+                </div>
+              ))}
+              {/* Shop name — read-only; changes require a request */}
+              <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-2.5">
+                <dt className="text-[13px] text-muted">{t('shops.detailsName')}</dt>
+                <dd className="flex min-w-0 items-center gap-2">
+                  <span className="truncate text-sm font-medium text-ink">{shop.name}</span>
+                  {!shop.pendingNameChange && !nameChangeState && (
+                    <MyButton
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setNameChangeState({ requestedName: '' })}
+                    >
+                      {t('shops.nameChangeRequest')}
+                    </MyButton>
+                  )}
+                </dd>
+              </div>
+              <div className="flex items-center justify-between gap-4 py-2.5">
+                <dt className="text-[13px] text-muted">{t('shops.detailsCurrency')}</dt>
+                <dd className="text-sm text-[#4a413b]">{shop.currency ?? '—'}</dd>
+              </div>
+              <div className="flex items-center justify-between gap-4 py-2.5">
+                <dt className="text-[13px] text-muted">{t('shops.detailsTimezone')}</dt>
+                <dd className="text-sm text-[#4a413b]">{shop.timezone ?? '—'}</dd>
+              </div>
+            </dl>
 
-      <MyCard className="p-5 flex flex-col items-center gap-3">
-        <p className="text-xs font-medium text-gray-400 uppercase tracking-wide self-start">
-          QR Code
-        </p>
-        <QRCodeCanvas
-          ref={qrRef}
-          value={shopUrl}
-          size={160}
-          marginSize={1}
-        />
-        <p className="text-xs text-gray-400 font-mono break-all text-center">{shopUrl}</p>
-        <MyButton type="button" variant="secondary" size="sm" onClick={handleDownloadQr}>
-          Download PNG
-        </MyButton>
-      </MyCard>
-
-      <MyCard className="p-5 space-y-4">
-        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-          {t('shops.detailsTitle')}
-        </p>
-        <div className="space-y-3">
-          {/* Shop name — read-only; changes require a request */}
-          <div>
-            <p className="text-xs text-gray-500 mb-1">{t('shops.detailsName')}</p>
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-sm text-gray-900 font-medium">{shop.name}</p>
-              {!shop.pendingNameChange && !nameChangeState && (
-                <MyButton
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setNameChangeState({ requestedName: '' })}
-                >
-                  {t('shops.nameChangeRequest')}
+            {/* Pending name change banner */}
+            {shop.pendingNameChange && (
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#f1dfae] bg-[#fff6e0] px-4 py-3">
+                <p className="text-sm text-[#8a5a00]">
+                  {t('shops.nameChangePending', { name: shop.pendingNameChange.requestedName })}
+                </p>
+                <MyButton variant="secondary" size="sm" onClick={handleCancelNameChange}>
+                  {t('shops.nameChangeCancelRequest')}
                 </MyButton>
-              )}
-            </div>
-          </div>
+              </div>
+            )}
 
-          {/* Pending name change banner */}
-          {shop.pendingNameChange && (
-            <div className="rounded-lg bg-yellow-50 border border-yellow-200 px-4 py-3 flex items-start justify-between gap-3">
-              <p className="text-sm text-yellow-800">
-                {t('shops.nameChangePending', { name: shop.pendingNameChange.requestedName })}
-              </p>
-              <MyButton
-                variant="ghost"
-                size="sm"
-                onClick={handleCancelNameChange}
-              >
-                {t('shops.nameChangeCancelRequest')}
-              </MyButton>
-            </div>
-          )}
+            {/* Inline name change request form */}
+            {nameChangeState && !shop.pendingNameChange && (
+              <div className="mt-3 space-y-3 rounded-xl border border-line bg-cream p-4">
+                <MyInput
+                  label={t('shops.nameChangeRequestedName')}
+                  value={nameChangeState.requestedName}
+                  placeholder={t('shops.detailsName')}
+                  onChange={(e) => {
+                    setNameChangeState({ requestedName: e.target.value });
+                    setNameChangeError(null);
+                  }}
+                />
+                {nameChangeError && <p className={ERROR_CLASS}>{nameChangeError}</p>}
+                <div className="flex flex-wrap gap-2">
+                  <MyButton
+                    size="sm"
+                    onClick={handleRequestNameChange}
+                    disabled={isRequestingNameChange || nameChangeState.requestedName.trim().length < 3}
+                  >
+                    {isRequestingNameChange ? t('shops.nameChangeSubmitting') : t('shops.nameChangeSubmit')}
+                  </MyButton>
+                  <MyButton
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => { setNameChangeState(null); setNameChangeError(null); }}
+                    disabled={isRequestingNameChange}
+                  >
+                    {t('shops.detailsCancel')}
+                  </MyButton>
+                </div>
+              </div>
+            )}
 
-          {/* Inline name change request form */}
-          {nameChangeState && !shop.pendingNameChange && (
-            <div className="space-y-2 rounded-lg border border-gray-200 p-3">
-              <MyInput
-                label={t('shops.nameChangeRequestedName')}
-                value={nameChangeState.requestedName}
-                placeholder={t('shops.detailsName')}
-                onChange={(e) => {
-                  setNameChangeState({ requestedName: e.target.value });
-                  setNameChangeError(null);
-                }}
+            <div className="mt-4">
+              <CurrencyInput
+                label={t('shops.detailsMinOrder')}
+                valueCents={currentDetails.minOrderAmountCents}
+                onChange={(cents) => setDetailsState({ ...currentDetails, minOrderAmountCents: cents })}
               />
-              {nameChangeError && <p className="text-sm text-red-600">{nameChangeError}</p>}
-              <div className="flex gap-2">
-                <MyButton
-                  onClick={handleRequestNameChange}
-                  disabled={isRequestingNameChange || nameChangeState.requestedName.trim().length < 3}
-                >
-                  {isRequestingNameChange ? t('shops.nameChangeSubmitting') : t('shops.nameChangeSubmit')}
-                </MyButton>
+            </div>
+            {detailsError && <p className={`mt-3 ${ERROR_CLASS}`}>{detailsError}</p>}
+            <div className={FOOTER_CLASS}>
+              <MyButton onClick={handleSaveDetails} disabled={isSavingDetails}>
+                {isSavingDetails ? t('shops.detailsSaving') : t('shops.detailsSave')}
+              </MyButton>
+              {detailsState && (
                 <MyButton
                   variant="ghost"
-                  onClick={() => { setNameChangeState(null); setNameChangeError(null); }}
-                  disabled={isRequestingNameChange}
+                  onClick={() => { setDetailsState(null); setDetailsError(null); }}
+                  disabled={isSavingDetails}
                 >
                   {t('shops.detailsCancel')}
                 </MyButton>
+              )}
+            </div>
+          </Section>
+
+          <Section
+            title={t('shops.addressTitle')}
+            description={t('shops.settingsPage.addressDescription')}
+            padded
+          >
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <MyInput
+                  label={t('shops.addressStreet')}
+                  value={currentAddress.street}
+                  onChange={(e) => setAddressState({ ...currentAddress, street: e.target.value })}
+                />
+              </div>
+              <MyInput
+                label={t('shops.addressPostcode')}
+                value={currentAddress.postcode}
+                onChange={(e) => setAddressState({ ...currentAddress, postcode: e.target.value })}
+              />
+              <MyInput
+                label={t('shops.addressCity')}
+                value={currentAddress.city}
+                onChange={(e) => setAddressState({ ...currentAddress, city: e.target.value })}
+              />
+              <MyInput
+                label={t('shops.addressState')}
+                value={currentAddress.state}
+                onChange={(e) => setAddressState({ ...currentAddress, state: e.target.value })}
+              />
+              <MyInput
+                label={t('shops.addressCountry')}
+                value={currentAddress.country}
+                onChange={(e) => setAddressState({ ...currentAddress, country: e.target.value })}
+              />
+            </div>
+            {addressError && <p className={`mt-3 ${ERROR_CLASS}`}>{addressError}</p>}
+            <div className={FOOTER_CLASS}>
+              <MyButton onClick={handleSaveAddress} disabled={isSavingAddress}>
+                {isSavingAddress ? t('shops.addressSaving') : t('shops.addressSave')}
+              </MyButton>
+            </div>
+          </Section>
+
+          <Section title="QR Code" description={t('shops.settingsPage.qrDescription')} padded>
+            <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center">
+              <div className="rounded-xl border border-line bg-white p-2">
+                <QRCodeCanvas ref={qrRef} value={shopUrl} size={160} marginSize={1} />
+              </div>
+              <div className="min-w-0 flex-1 space-y-3 text-center sm:text-left">
+                <p className="font-mono text-xs break-all text-muted">{shopUrl}</p>
+                <MyButton type="button" variant="secondary" size="sm" onClick={handleDownloadQr}>
+                  Download PNG
+                </MyButton>
               </div>
             </div>
-          )}
-
-          <div>
-            <p className="text-xs text-gray-500 mb-1">{t('shops.detailsCurrency')}</p>
-            <p className="text-sm text-gray-700">{shop.currency ?? '—'}</p>
-          </div>
-          <div>
-            <p className="text-xs text-gray-500 mb-1">{t('shops.detailsTimezone')}</p>
-            <p className="text-sm text-gray-700">{shop.timezone ?? '—'}</p>
-          </div>
-          <CurrencyInput
-            label={t('shops.detailsMinOrder')}
-            valueCents={currentDetails.minOrderAmountCents}
-            onChange={(cents) => setDetailsState({ ...currentDetails, minOrderAmountCents: cents })}
-          />
+          </Section>
         </div>
-        {detailsError && <p className="text-sm text-red-600">{detailsError}</p>}
-        <div className="border-t border-gray-200 pt-4 flex gap-2">
-          {detailsState && (
-            <MyButton
-              variant="ghost"
-              onClick={() => { setDetailsState(null); setDetailsError(null); }}
-              disabled={isSavingDetails}
-            >
-              {t('shops.detailsCancel')}
-            </MyButton>
-          )}
-          <MyButton onClick={handleSaveDetails} disabled={isSavingDetails}>
-            {isSavingDetails ? t('shops.detailsSaving') : t('shops.detailsSave')}
-          </MyButton>
-        </div>
-      </MyCard>
 
-      <MyCard className="p-5 space-y-4">
-        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-          {t('shops.logo')}
-        </p>
-        <div className="flex items-center gap-4">
-          {currentLogoUrl ? (
-            <img
-              src={currentLogoUrl}
-              alt="Shop logo"
-              className="h-24 w-auto max-w-96 rounded-xl object-contain border border-gray-200"
-            />
-          ) : (
-            <div className="w-24 h-24 rounded-xl bg-gray-100 border border-gray-200 flex items-center justify-center">
-              <span className="text-xs text-gray-400">{t('shops.logoPlaceholder')}</span>
+        <div id="settings-look" className={GROUP_CLASS}>
+          <p className={GROUP_LABEL_CLASS}>{t('shops.settingsPage.groupLook')}</p>
+
+          <Section title={t('shops.logo')} description={t('shops.settingsPage.logoDescription')} padded>
+            <div className="flex items-center gap-4">
+              {currentLogoUrl ? (
+                <img
+                  src={currentLogoUrl}
+                  alt="Shop logo"
+                  className="h-24 w-auto max-w-full rounded-xl border border-line object-contain"
+                />
+              ) : (
+                <div className="flex h-24 w-24 items-center justify-center rounded-xl border border-line bg-sand">
+                  <span className="text-xs text-muted">{t('shops.logoPlaceholder')}</span>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-        {uploadError && <p className="text-sm text-red-600">{uploadError}</p>}
-        <form onSubmit={handleLogoUpload} className="space-y-3">
-          <div className="flex flex-col gap-1">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              onChange={(e) => {
-                setLogoFile(e.target.files?.[0] ?? null);
-                setUploadError(null);
-              }}
-              className="block w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer"
-            />
-            {logoFile && <p className="text-xs text-gray-400">{logoFile.name}</p>}
-          </div>
-          <MyButton type="submit" disabled={!logoFile || isUploading}>
-            {isUploading ? t('shops.uploadingLogo') : t('shops.uploadLogo')}
-          </MyButton>
-        </form>
-      </MyCard>
+            {uploadError && <p className={`mt-3 ${ERROR_CLASS}`}>{uploadError}</p>}
+            <form onSubmit={handleLogoUpload} className="mt-4">
+              <div className="flex flex-col gap-1">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={(e) => {
+                    setLogoFile(e.target.files?.[0] ?? null);
+                    setUploadError(null);
+                  }}
+                  className={FILE_INPUT_CLASS}
+                />
+                {logoFile && <p className="text-xs text-muted">{logoFile.name}</p>}
+              </div>
+              <div className={FOOTER_CLASS}>
+                <MyButton type="submit" disabled={!logoFile || isUploading}>
+                  {isUploading ? t('shops.uploadingLogo') : t('shops.uploadLogo')}
+                </MyButton>
+              </div>
+            </form>
+          </Section>
 
-      <MyCard className="p-5 space-y-4">
-        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-          {t('shops.coverImage')}
-        </p>
-        <div className="flex items-start gap-3 text-sm text-gray-800">
-          <MySwitch
-            checked={bannerShown}
-            disabled={isSavingBanner}
-            onChange={handleBannerSwitch}
-            labelledBy="banner-switch-label"
-            describedBy="banner-switch-help"
-          />
-          <span>
-            <span id="banner-switch-label" className="block font-medium">{t('shops.bannerShowLabel')}</span>
-            <span id="banner-switch-help" className="block text-gray-600">{t('shops.bannerShowHelp')}</span>
-          </span>
-        </div>
-        <p className="text-sm text-gray-500">{t('shops.coverImageHelp')}</p>
-        <div className="relative">
-          {currentCoverUrl ? (
-            <img
-              src={currentCoverUrl}
-              alt={t('shops.coverImage')}
-              className={`w-full aspect-[3/1] rounded-xl object-cover border border-gray-200 ${bannerShown ? '' : 'opacity-40 grayscale'}`}
-            />
-          ) : (
-            <div className="w-full aspect-[3/1] rounded-xl bg-gray-100 border border-gray-200 flex items-center justify-center px-4 text-center">
-              <span className="text-xs text-gray-400">{t('shops.coverImagePlaceholder')}</span>
-            </div>
-          )}
-          {!bannerShown && (
-            <span className="absolute inset-0 flex items-center justify-center">
-              <span className="rounded-full bg-gray-900/80 px-3 py-1 text-xs font-medium text-white">
-                {t('shops.bannerHiddenNote')}
+          <Section title={t('shops.coverImage')} description={t('shops.coverImageHelp')} padded>
+            <div className="flex items-start justify-between gap-4">
+              <span>
+                <span id="banner-switch-label" className="block text-sm font-semibold text-ink">{t('shops.bannerShowLabel')}</span>
+                <span id="banner-switch-help" className="block text-[13px] text-muted">{t('shops.bannerShowHelp')}</span>
               </span>
-            </span>
-          )}
-        </div>
-        {coverError && <p className="text-sm text-red-600">{coverError}</p>}
-        <div className="space-y-3">
-          <div className="flex flex-col gap-1">
-            <input
-              ref={coverInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              aria-label={t('shops.uploadCoverImage')}
-              onChange={(e) => {
-                const f = e.target.files?.[0] ?? null;
-                const err = f ? checkCoverImageFile(f) : null;
-                setCoverError(err ? t(`shops.${err}`) : null);
-                setCoverFile(f && !err ? f : null);
-                if (err && coverInputRef.current) coverInputRef.current.value = '';
-              }}
-              disabled={isUploadingCover || isRemovingCover}
-              className="block w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer"
-            />
-          </div>
-          {currentCoverUrl && (
-            <MyButton
-              type="button"
-              variant="ghost"
-              onClick={handleCoverRemove}
-              disabled={isRemovingCover || isUploadingCover}
-            >
-              {isRemovingCover ? t('shops.removingCoverImage') : t('shops.removeCoverImage')}
-            </MyButton>
-          )}
-        </div>
-        {coverFile && (
-          <ImageCropDialog
-            file={coverFile}
-            rule={COVER_IMAGE_RULE}
-            title={t('shops.coverCropTitle')}
-            hint={t('shops.coverCropHint')}
-            safeAreaLabel={t('shops.coverVisibleOnPhones')}
-            tooSmallMessage={t('shops.coverImageTooSmall')}
-            previews={[
-              { label: t('shops.coverPreviewDesktop'), aspect: 3 },
-              { label: t('shops.coverPreviewPhone'), aspect: 2 },
-            ]}
-            busy={isUploadingCover}
-            onCancel={closeCoverDialog}
-            onConfirm={handleCoverUpload}
-          />
-        )}
-      </MyCard>
-
-      <MyCard className="p-5 space-y-4">
-        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-          {t('shops.accentTitle')}
-        </p>
-        <p className="text-sm text-gray-500">{t('shops.accentHelp')}</p>
-        <div className="flex items-center gap-3">
-          <input
-            type="color"
-            value={currentAccent}
-            onChange={(e) => setAccentState(e.target.value)}
-            className="w-8 h-8 rounded cursor-pointer border-0 bg-transparent p-0"
-          />
-          <input
-            type="text"
-            value={currentAccent}
-            maxLength={7}
-            onChange={(e) => {
-              const val = e.target.value;
-              if (/^#[0-9a-fA-F]{0,6}$/.test(val)) {
-                setAccentState(val);
-              }
-            }}
-            className={`${inputClass} w-28 font-mono`}
-          />
-          <button
-            type="button"
-            disabled
-            className="px-3 py-2 rounded-lg text-sm font-medium"
-            style={{ backgroundColor: currentAccent, color: accentOnColor }}
-          >
-            {t('shops.colorsSave')}
-          </button>
-        </div>
-        {accentCheck && !accentCheck.ok && (
-          <p className="text-sm text-red-600">
-            {t('shops.accentTooLight', { ratio: accentCheck.ratio.toFixed(2) })}
-          </p>
-        )}
-        {colorsError && <p className="text-sm text-red-600">{colorsError}</p>}
-        <div className="border-t border-gray-200 pt-4">
-          <MyButton onClick={handleSaveColors} disabled={isSavingColors || !accentCheck?.ok}>
-            {isSavingColors ? t('shops.colorsSaving') : t('shops.colorsSave')}
-          </MyButton>
-        </div>
-      </MyCard>
-
-      <MyCard className="p-5 space-y-4">
-        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-          {t('shops.addressTitle')}
-        </p>
-        <div className="space-y-3">
-          <MyInput
-            label={t('shops.addressStreet')}
-            value={currentAddress.street}
-            onChange={(e) => setAddressState({ ...currentAddress, street: e.target.value })}
-          />
-          <MyInput
-            label={t('shops.addressCity')}
-            value={currentAddress.city}
-            onChange={(e) => setAddressState({ ...currentAddress, city: e.target.value })}
-          />
-          <MyInput
-            label={t('shops.addressState')}
-            value={currentAddress.state}
-            onChange={(e) => setAddressState({ ...currentAddress, state: e.target.value })}
-          />
-          <MyInput
-            label={t('shops.addressPostcode')}
-            value={currentAddress.postcode}
-            onChange={(e) => setAddressState({ ...currentAddress, postcode: e.target.value })}
-          />
-          <MyInput
-            label={t('shops.addressCountry')}
-            value={currentAddress.country}
-            onChange={(e) => setAddressState({ ...currentAddress, country: e.target.value })}
-          />
-        </div>
-        {addressError && <p className="text-sm text-red-600">{addressError}</p>}
-        <div className="border-t border-gray-200 pt-4">
-          <MyButton onClick={handleSaveAddress} disabled={isSavingAddress}>
-            {isSavingAddress ? t('shops.addressSaving') : t('shops.addressSave')}
-          </MyButton>
-        </div>
-      </MyCard>
-
-      {/* Payments card */}
-      <PaymentsCard shop={shop} onRefetch={refetch} />
-
-      {/* Order alerts card */}
-      <OrderAlertsCard shop={shop} onRefetch={refetch} />
-
-      {/* Automatic acceptance card */}
-      <AutoAcceptCard shop={shop} onRefetch={refetch} />
-
-      {/* Kitchen timing card */}
-      <KitchenTimingCard shop={shop} onRefetch={refetch} />
-
-      {/* Delivery card */}
-      <DeliveryCard shop={shop} refs={refs} onRefetch={refetch} />
-
-      {/* Dine in card */}
-      <DineInCard shop={shop} onRefetch={refetch} />
-
-      {/* Orders for later card */}
-      <ScheduledOrdersCard shop={shop} onRefetch={refetch} />
-
-      {/* Menu languages card */}
-      <MyCard className="p-5 space-y-3">
-        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-          {t('shops.menuLanguagesTitle')}
-        </p>
-        <p className="text-sm text-gray-700">
-          {t('shops.menuLanguagesOriginal', { language: t(`shops.languageName.${originalLanguage}`) })}
-        </p>
-        <div className="space-y-2">
-          {MENU_LANGUAGES.filter((lang) => lang !== originalLanguage).map((lang) => (
-            <label key={lang} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={currentLanguages.includes(lang)}
-                onChange={(e) =>
-                  setLanguagesState(
-                    e.target.checked
-                      ? [...currentLanguages, lang]
-                      : currentLanguages.filter((l) => l !== lang),
-                  )
-                }
-                className="accent-gray-900"
+              <MySwitch
+                checked={bannerShown}
+                disabled={isSavingBanner}
+                onChange={handleBannerSwitch}
+                labelledBy="banner-switch-label"
+                describedBy="banner-switch-help"
               />
-              {t(`shops.languageName.${lang}`)}
-            </label>
-          ))}
-        </div>
-        <p className="text-xs text-gray-400">
-          {t('shops.menuLanguagesHelp', { original: t(`shops.languageName.${originalLanguage}`) })}
-        </p>
-        <div className="border-t border-gray-200 pt-4">
-          <MyButton onClick={handleSaveLanguages} disabled={isSavingLanguages}>
-            {isSavingLanguages ? t('shops.menuLanguagesSaving') : t('shops.menuLanguagesSave')}
-          </MyButton>
-        </div>
-      </MyCard>
-
-      {/* Tax classes card */}
-      <MyCard className="p-5 space-y-3">
-        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-          {t('shops.taxClassesTitle')}
-        </p>
-        {!refs || refs.taxClasses.filter((c) => c.isActive).length === 0 ? (
-          <p className="text-sm text-gray-400">{t('shops.taxClassesEmpty', { country: shop.countryCode ?? '' })}</p>
-        ) : refs.taxRatesUniformAcrossModes ? (
-          <div className="space-y-0">
-            {refs.taxClasses.filter((c) => c.isActive).map((c) => {
-              const rates = refs.currentTaxRates.find((r) => r.taxClassId === c.id)?.rates;
-              return (
-                <div
-                  key={c.id}
-                  className="flex items-center justify-between border-t border-gray-200 py-2.5 first:border-t-0 first:pt-0"
-                >
-                  <span className="text-sm text-gray-700">{labelFor(c.labels, i18n.language)}</span>
-                  <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-500 font-mono">
-                    {formatRate(rates?.collection ?? null)}
+            </div>
+            <div className="relative mt-4">
+              {currentCoverUrl ? (
+                <img
+                  src={currentCoverUrl}
+                  alt={t('shops.coverImage')}
+                  className={`aspect-[3/1] w-full rounded-xl border border-line object-cover ${bannerShown ? '' : 'opacity-40 grayscale'}`}
+                />
+              ) : (
+                <div className="flex aspect-[3/1] w-full items-center justify-center rounded-xl border border-line bg-sand px-4 text-center">
+                  <span className="text-xs text-muted">{t('shops.coverImagePlaceholder')}</span>
+                </div>
+              )}
+              {!bannerShown && (
+                <span className="absolute inset-0 flex items-center justify-center">
+                  <span className="rounded-full bg-ink/80 px-3 py-1 text-xs font-medium text-white">
+                    {t('shops.bannerHiddenNote')}
                   </span>
+                </span>
+              )}
+            </div>
+            {coverError && <p className={`mt-3 ${ERROR_CLASS}`}>{coverError}</p>}
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <input
+                ref={coverInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                aria-label={t('shops.uploadCoverImage')}
+                onChange={(e) => {
+                  const f = e.target.files?.[0] ?? null;
+                  const err = f ? checkCoverImageFile(f) : null;
+                  setCoverError(err ? t(`shops.${err}`) : null);
+                  setCoverFile(f && !err ? f : null);
+                  if (err && coverInputRef.current) coverInputRef.current.value = '';
+                }}
+                disabled={isUploadingCover || isRemovingCover}
+                className={FILE_INPUT_CLASS}
+              />
+              {currentCoverUrl && (
+                <MyButton
+                  type="button"
+                  variant="danger"
+                  size="sm"
+                  className="flex-shrink-0 self-start sm:self-auto"
+                  onClick={handleCoverRemove}
+                  disabled={isRemovingCover || isUploadingCover}
+                >
+                  {isRemovingCover ? t('shops.removingCoverImage') : t('shops.removeCoverImage')}
+                </MyButton>
+              )}
+            </div>
+            {coverFile && (
+              <ImageCropDialog
+                file={coverFile}
+                rule={COVER_IMAGE_RULE}
+                title={t('shops.coverCropTitle')}
+                hint={t('shops.coverCropHint')}
+                safeAreaLabel={t('shops.coverVisibleOnPhones')}
+                tooSmallMessage={t('shops.coverImageTooSmall')}
+                previews={[
+                  { label: t('shops.coverPreviewDesktop'), aspect: 3 },
+                  { label: t('shops.coverPreviewPhone'), aspect: 2 },
+                ]}
+                busy={isUploadingCover}
+                onCancel={closeCoverDialog}
+                onConfirm={handleCoverUpload}
+              />
+            )}
+          </Section>
+
+          <Section title={t('shops.accentTitle')} description={t('shops.accentHelp')} padded>
+            <div className="flex flex-wrap items-center gap-3">
+              <input
+                type="color"
+                value={currentAccent}
+                aria-label={t('shops.accentTitle')}
+                onChange={(e) => setAccentState(e.target.value)}
+                className="h-10 w-10 cursor-pointer rounded-[10px] border border-[#e3d9ce] bg-white p-1"
+              />
+              <input
+                type="text"
+                value={currentAccent}
+                maxLength={7}
+                aria-label={t('shops.accentTitle')}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (/^#[0-9a-fA-F]{0,6}$/.test(val)) {
+                    setAccentState(val);
+                  }
+                }}
+                className={`${inputClass} w-28 font-mono`}
+              />
+              <button
+                type="button"
+                disabled
+                className="h-10 rounded-full px-4 text-sm font-semibold"
+                style={{ backgroundColor: currentAccent, color: accentOnColor }}
+              >
+                {t('shops.colorsSave')}
+              </button>
+            </div>
+            {accentCheck && !accentCheck.ok && (
+              <p className={`mt-3 ${ERROR_CLASS}`}>
+                {t('shops.accentTooLight', { ratio: accentCheck.ratio.toFixed(2) })}
+              </p>
+            )}
+            {colorsError && <p className={`mt-3 ${ERROR_CLASS}`}>{colorsError}</p>}
+            <div className={FOOTER_CLASS}>
+              <MyButton onClick={handleSaveColors} disabled={isSavingColors || !accentCheck?.ok}>
+                {isSavingColors ? t('shops.colorsSaving') : t('shops.colorsSave')}
+              </MyButton>
+            </div>
+          </Section>
+
+          <Section
+            title={t('shops.menuLanguagesTitle')}
+            description={t('shops.menuLanguagesOriginal', { language: t(`shops.languageName.${originalLanguage}`) })}
+            padded
+          >
+            <div className="space-y-2">
+              {MENU_LANGUAGES.filter((lang) => lang !== originalLanguage).map((lang) => (
+                <label key={lang} className="flex cursor-pointer items-center gap-2.5 text-sm font-medium text-ink">
+                  <input
+                    type="checkbox"
+                    checked={currentLanguages.includes(lang)}
+                    onChange={(e) =>
+                      setLanguagesState(
+                        e.target.checked
+                          ? [...currentLanguages, lang]
+                          : currentLanguages.filter((l) => l !== lang),
+                      )
+                    }
+                    className="h-4 w-4 accent-ink"
+                  />
+                  {t(`shops.languageName.${lang}`)}
+                </label>
+              ))}
+            </div>
+            <p className="mt-3 text-[13px] text-muted">
+              {t('shops.menuLanguagesHelp', { original: t(`shops.languageName.${originalLanguage}`) })}
+            </p>
+            <div className={FOOTER_CLASS}>
+              <MyButton onClick={handleSaveLanguages} disabled={isSavingLanguages}>
+                {isSavingLanguages ? t('shops.menuLanguagesSaving') : t('shops.menuLanguagesSave')}
+              </MyButton>
+            </div>
+          </Section>
+        </div>
+
+        <Section
+          id="opening-hours"
+          className={SCROLL_TARGET_CLASS}
+          title={t('shops.openingHours')}
+          description={t('shops.settingsPage.hoursDescription')}
+        >
+          <div>
+            {DAYS.map(({ key, label }) => {
+              const slots = currentHours[key];
+              const isOpen = slots.length > 0;
+              return (
+                <div key={key} className="border-b border-line-soft px-4 py-3 last:border-b-0 sm:px-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className={`text-sm ${isOpen ? 'font-semibold text-ink' : 'text-muted'}`}>{label}</span>
+                    <button
+                      type="button"
+                      aria-pressed={isOpen}
+                      onClick={() => toggleDay(key)}
+                      className={`h-8 rounded-full border px-3 text-xs font-semibold transition-colors ${
+                        isOpen
+                          ? 'border-ink bg-ink text-white'
+                          : 'border-[#e3d9ce] bg-white text-[#4a413b] hover:bg-sand'
+                      }`}
+                    >
+                      {isOpen ? t('shops.ohOpen') : t('shops.ohClosed')}
+                    </button>
+                  </div>
+                  {isOpen && (
+                    <div className="mt-2.5 space-y-2">
+                      {slots.map((slot, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <input
+                            type="time"
+                            value={slot.open}
+                            onChange={(e) => updateSlot(key, idx, 'open', e.target.value)}
+                            className={`${inputClass} w-28`}
+                          />
+                          <span className="text-xs text-muted">{t('shops.ohTo')}</span>
+                          <input
+                            type="time"
+                            value={slot.close}
+                            onChange={(e) => updateSlot(key, idx, 'close', e.target.value)}
+                            className={`${inputClass} w-28`}
+                          />
+                          {slots.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeSlot(key, idx)}
+                              className="flex h-8 w-8 items-center justify-center rounded-full text-base leading-none text-[#8a7f77] transition-colors hover:bg-[#fdeceb] hover:text-[#b42318]"
+                              aria-label="Remove slot"
+                            >
+                              ×
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => addSlot(key)}
+                        className="text-xs font-semibold text-[#4a413b] underline-offset-2 hover:text-ink hover:underline"
+                      >
+                        {t('shops.ohAddSlot')}
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             })}
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-xs text-gray-400 uppercase tracking-wide">
-                  <th className="text-left font-medium py-1.5" />
-                  <th className="text-right font-medium py-1.5">{t('shops.taxModeCollection')}</th>
-                  <th className="text-right font-medium py-1.5">{t('shops.taxModeDelivery')}</th>
-                  <th className="text-right font-medium py-1.5">{t('shops.taxModeDineIn')}</th>
-                </tr>
-              </thead>
-              <tbody>
+          <div className="border-t border-line-soft p-4 sm:px-5">
+            {hoursError && <p className={`mb-3 ${ERROR_CLASS}`}>{hoursError}</p>}
+            <MyButton onClick={handleSaveHours} disabled={isSavingHours}>
+              {isSavingHours ? t('shops.ohSavingHours') : t('shops.ohSaveHours')}
+            </MyButton>
+          </div>
+        </Section>
+
+        <div id="settings-orders" className={GROUP_CLASS}>
+          <p className={GROUP_LABEL_CLASS}>{t('shops.settingsPage.groupOrders')}</p>
+          <OrderAlertsCard shop={shop} onRefetch={refetch} />
+          <AutoAcceptCard shop={shop} onRefetch={refetch} />
+          <KitchenTimingCard shop={shop} onRefetch={refetch} />
+          <ScheduledOrdersCard shop={shop} onRefetch={refetch} />
+          <DeliveryCard shop={shop} refs={refs} onRefetch={refetch} />
+          <DineInCard shop={shop} onRefetch={refetch} />
+        </div>
+
+        <div id="settings-payments" className={GROUP_CLASS}>
+          <p className={GROUP_LABEL_CLASS}>{t('shops.settingsPage.groupPayments')}</p>
+          <PaymentsCard shop={shop} onRefetch={refetch} />
+
+          <Section
+            title={t('shops.taxClassesTitle')}
+            description={t('shops.settingsPage.taxClassesDescription')}
+            padded
+          >
+            {!refs || refs.taxClasses.filter((c) => c.isActive).length === 0 ? (
+              <p className="text-sm text-[#8a7f77]">{t('shops.taxClassesEmpty', { country: shop.countryCode ?? '' })}</p>
+            ) : refs.taxRatesUniformAcrossModes ? (
+              <div>
                 {refs.taxClasses.filter((c) => c.isActive).map((c) => {
                   const rates = refs.currentTaxRates.find((r) => r.taxClassId === c.id)?.rates;
                   return (
-                    <tr key={c.id} className="border-t border-gray-200">
-                      <td className="py-2 text-gray-700">{labelFor(c.labels, i18n.language)}</td>
-                      <td className="py-2 text-right font-mono text-xs text-gray-500">{formatRate(rates?.collection ?? null)}</td>
-                      <td className="py-2 text-right font-mono text-xs text-gray-500">{formatRate(rates?.delivery ?? null)}</td>
-                      <td className="py-2 text-right font-mono text-xs text-gray-500">{formatRate(rates?.dine_in ?? null)}</td>
-                    </tr>
+                    <div
+                      key={c.id}
+                      className="flex items-center justify-between gap-3 border-t border-line-soft py-2.5 first:border-t-0 first:pt-0"
+                    >
+                      <span className="text-sm text-ink">{labelFor(c.labels, i18n.language)}</span>
+                      <span className={`${badgeClass.neutral} font-mono`}>
+                        {formatRate(rates?.collection ?? null)}
+                      </span>
+                    </div>
                   );
                 })}
-              </tbody>
-            </table>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-xs text-[#8a7f77]">
+                      <th className="py-1.5 text-left font-semibold" />
+                      <th className="py-1.5 text-right font-semibold">{t('shops.taxModeCollection')}</th>
+                      <th className="py-1.5 text-right font-semibold">{t('shops.taxModeDelivery')}</th>
+                      <th className="py-1.5 text-right font-semibold">{t('shops.taxModeDineIn')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {refs.taxClasses.filter((c) => c.isActive).map((c) => {
+                      const rates = refs.currentTaxRates.find((r) => r.taxClassId === c.id)?.rates;
+                      return (
+                        <tr key={c.id} className="border-t border-line-soft">
+                          <td className="py-2 text-ink">{labelFor(c.labels, i18n.language)}</td>
+                          <td className="py-2 text-right font-mono text-xs text-[#4a413b]">{formatRate(rates?.collection ?? null)}</td>
+                          <td className="py-2 text-right font-mono text-xs text-[#4a413b]">{formatRate(rates?.delivery ?? null)}</td>
+                          <td className="py-2 text-right font-mono text-xs text-[#4a413b]">{formatRate(rates?.dine_in ?? null)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {shop.countryCode && (
+              <p className="mt-3 text-[13px] text-muted">
+                {t('shops.taxClassesNote', { country: shop.countryCode })}
+              </p>
+            )}
+          </Section>
+        </div>
+
+        {canDeleteShop(shop.callerRole) && (
+          <div id="settings-danger" className={GROUP_CLASS}>
+            <p className={`${GROUP_LABEL_CLASS} text-[#b42318]`}>{t('shops.settingsPage.groupDanger')}</p>
+            <DeleteShopCard shopId={shop.id ?? shopId!} shopName={shop.name ?? ''} callerRole={shop.callerRole} />
           </div>
         )}
-        {shop.countryCode && (
-          <p className="text-xs text-gray-400">
-            {t('shops.taxClassesNote', { country: shop.countryCode })}
-          </p>
-        )}
-      </MyCard>
 
-      <ShopStatusCard shop={shop} onRefetch={refetch} />
-
-      <MyCard className="p-5">
-        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-          {t('shops.openingHours')}
-        </p>
-        <div className="space-y-0">
-          {DAYS.map(({ key, label }) => {
-            const slots = currentHours[key];
-            const isOpen = slots.length > 0;
-            return (
-              <div key={key} className="border-t border-gray-200 pt-3 pb-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600 w-28 shrink-0">{label}</span>
-                  <button
-                    type="button"
-                    onClick={() => toggleDay(key)}
-                    className={`text-xs px-2.5 py-1 rounded-lg border transition-colors ${
-                      isOpen
-                        ? 'bg-gray-900 border-gray-900 text-white'
-                        : 'bg-white border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-600'
-                    }`}
-                  >
-                    {isOpen ? t('shops.ohOpen') : t('shops.ohClosed')}
-                  </button>
-                </div>
-                {isOpen && (
-                  <div className="mt-2.5 space-y-2 pl-0">
-                    {slots.map((slot, idx) => (
-                      <div key={idx} className="flex items-center gap-2">
-                        <input
-                          type="time"
-                          value={slot.open}
-                          onChange={(e) => updateSlot(key, idx, 'open', e.target.value)}
-                          className={`${inputClass} w-28`}
-                        />
-                        <span className="text-xs text-gray-400">{t('shops.ohTo')}</span>
-                        <input
-                          type="time"
-                          value={slot.close}
-                          onChange={(e) => updateSlot(key, idx, 'close', e.target.value)}
-                          className={`${inputClass} w-28`}
-                        />
-                        {slots.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => removeSlot(key, idx)}
-                            className="text-sm text-gray-300 hover:text-red-500 transition-colors px-1 leading-none"
-                            aria-label="Remove slot"
-                          >
-                            ×
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() => addSlot(key)}
-                      className="text-xs text-gray-400 hover:text-gray-700 transition-colors mt-1"
-                    >
-                      {t('shops.ohAddSlot')}
-                    </button>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-        {hoursError && <p className="text-sm text-red-600 mt-2">{hoursError}</p>}
-        <div className="mt-4 border-t border-gray-200 pt-4">
-          <MyButton onClick={handleSaveHours} disabled={isSavingHours}>
-            {isSavingHours ? t('shops.ohSavingHours') : t('shops.ohSaveHours')}
-          </MyButton>
-        </div>
-      </MyCard>
-
-      <DeleteShopCard shopId={shop.id ?? shopId!} shopName={shop.name ?? ''} callerRole={shop.callerRole} />
-
-      <MyCard className="p-4">
-        <p className="text-xs text-gray-400 mb-2 uppercase tracking-wide">Debug</p>
-        <pre className="text-gray-500 text-xs whitespace-pre-wrap">
-          {JSON.stringify(shop, null, 2)}
-        </pre>
-      </MyCard>
+        <details className="mt-2 rounded-2xl border border-line bg-white">
+          <summary className="cursor-pointer px-4 py-3 text-[13px] font-semibold text-[#8a7f77]">Debug</summary>
+          <pre className="overflow-x-auto border-t border-line-soft p-4 text-xs whitespace-pre-wrap text-[#8a7f77]">
+            {JSON.stringify(shop, null, 2)}
+          </pre>
+        </details>
+      </div>
     </div>
   );
 }

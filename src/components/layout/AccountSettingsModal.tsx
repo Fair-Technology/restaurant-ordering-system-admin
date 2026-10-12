@@ -2,6 +2,7 @@ import type { AccountInfo } from '@azure/msal-browser';
 import { useMsal } from '@azure/msal-react';
 import { X, LogOut } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { chipClass } from './pageStyles';
 
 interface AccountSettingsModalProps {
   user: AccountInfo;
@@ -14,15 +15,23 @@ export function AccountSettingsModal({ user, onClose }: AccountSettingsModalProp
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50" />
-      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm flex flex-col overflow-hidden">
+      <div className="fixed inset-0 z-50 bg-ink/30 backdrop-blur-sm" />
+      <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="account-settings-title"
+          className="flex w-full max-w-sm flex-col overflow-hidden rounded-2xl border border-line bg-white text-ink shadow-xl"
+        >
           {/* Header */}
-          <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-100">
-            <p className="text-sm font-semibold text-gray-900">{t('account.title')}</p>
+          <div className="flex items-center justify-between border-b border-line-soft px-5 pt-5 pb-4">
+            <h2 id="account-settings-title" className="font-display text-[22px] leading-tight font-semibold">
+              {t('account.title')}
+            </h2>
             <button
+              type="button"
               onClick={onClose}
-              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+              className="rounded-full p-1.5 text-[#8a7f77] transition-colors hover:bg-sand hover:text-ink"
               aria-label="Close"
             >
               <X size={16} />
@@ -30,38 +39,35 @@ export function AccountSettingsModal({ user, onClose }: AccountSettingsModalProp
           </div>
 
           {/* User info */}
-          <div className="px-5 py-4 flex items-center gap-3 border-b border-gray-100">
-            <div className="w-10 h-10 rounded-full bg-gray-900 flex items-center justify-center flex-shrink-0">
-              <span className="text-sm font-semibold text-white">
-                {user.name?.charAt(0).toUpperCase() ?? '?'}
-              </span>
+          <div className="flex items-center gap-3 border-b border-line-soft px-5 py-4">
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-ink">
+              <span className="text-sm font-bold text-white">{user.name?.charAt(0).toUpperCase() ?? '?'}</span>
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
-              <p className="text-xs text-gray-400 truncate">{user.username}</p>
+              <p className="truncate text-[15px] font-bold">{user.name}</p>
+              <p className="truncate text-[13px] text-muted">{user.username}</p>
             </div>
           </div>
 
           {/* Language + sign out */}
-          <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-between">
-            <div className="flex gap-1">
+          <div className="flex items-center justify-between gap-3 px-5 py-4">
+            <div className="flex gap-1.5">
               {(['en', 'de'] as const).map((lng) => (
                 <button
                   key={lng}
+                  type="button"
+                  aria-pressed={i18n.resolvedLanguage === lng}
                   onClick={() => i18n.changeLanguage(lng)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-medium uppercase transition-colors ${
-                    i18n.resolvedLanguage === lng
-                      ? 'bg-gray-900 text-white'
-                      : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100'
-                  }`}
+                  className={`${chipClass(i18n.resolvedLanguage === lng)} uppercase`}
                 >
                   {lng}
                 </button>
               ))}
             </div>
             <button
+              type="button"
               onClick={() => instance.logoutRedirect()}
-              className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors"
+              className="inline-flex h-9 items-center gap-1.5 rounded-full border border-[#e3d9ce] bg-white px-3.5 text-[13px] font-bold text-ink transition-colors hover:bg-sand"
             >
               <LogOut size={14} />
               {t('nav.signOut')}

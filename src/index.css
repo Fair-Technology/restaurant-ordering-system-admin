@@ -10,6 +10,19 @@
   --color-sand: #f4efe9;
   --color-cream: #faf6f1;
   --color-muted: #6b6058;
+
+  /* Tailwind's grays, warmed to the same palette, so every older screen and dialog matches */
+  --color-gray-50: #faf6f1;
+  --color-gray-100: #f4efe9;
+  --color-gray-200: #ece6df;
+  --color-gray-300: #e3d9ce;
+  --color-gray-400: #9a8f86;
+  --color-gray-500: #8a7f77;
+  --color-gray-600: #6b6058;
+  --color-gray-700: #4a413b;
+  --color-gray-800: #3a322d;
+  --color-gray-900: #1f1a17;
+  --color-gray-950: #14110f;
 }
 
 body {

@@ -47,17 +47,17 @@ export function StaffLoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="flex min-h-screen items-center justify-center bg-paper text-ink">
       <div className="w-full max-w-sm px-4">
         <MyCard className="p-8">
           <div className="mb-7">
-            <h1 className="text-2xl font-semibold text-gray-900">{t('staffLogin.title')}</h1>
+            <h1 className="font-display text-[30px] leading-tight font-semibold">{t('staffLogin.title')}</h1>
           </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             {error && (
-              <div className="p-3 rounded-xl bg-red-50 border border-red-200">
-                <p className="text-sm text-red-600">{error}</p>
+              <div role="alert" className="rounded-xl border border-[#f5c2bd] bg-[#fdeceb] p-3">
+                <p className="text-sm text-[#b42318]">{error}</p>
               </div>
             )}
             <MyInput
@@ -76,7 +76,7 @@ export function StaffLoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
-            <MyButton type="submit" className="w-full" disabled={isLoading}>
+            <MyButton type="submit" size="lg" className="mt-1 w-full" disabled={isLoading}>
               {t('staffLogin.submit')}
             </MyButton>
           </form>

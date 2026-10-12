@@ -11,7 +11,7 @@ import {
   shopLiveState,
 } from '../../features/shops/shopStatus';
 import { useToast } from '../../contexts/ToastContext';
-import { MyCard } from '../ui/MyCard';
+import { Section } from '../layout/Page';
 import { MyButton } from '../ui/MyButton';
 import { MyInput } from '../ui/MyInput';
 import { MySwitch } from '../ui/MySwitch';
@@ -65,18 +65,22 @@ export function ShopStatusCard({ shop, onRefetch }: Props) {
   };
 
   return (
-    <MyCard className="p-5 space-y-5" id="shop-status">
-      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{t('shops.shopStatusTitle')}</p>
-
+    <Section
+      id="shop-status"
+      className="scroll-mt-[72px]! lg:scroll-mt-6!"
+      title={t('shops.shopStatusTitle')}
+      description={t('shops.settingsPage.statusDescription')}
+      padded
+    >
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p id="shop-online-label" className="text-sm font-medium text-gray-900">
+          <p id="shop-online-label" className="text-sm font-semibold text-ink">
             {t('shops.statusOnline')}
           </p>
-          <p id="shop-online-help" className="text-sm text-gray-500">
+          <p id="shop-online-help" className="text-[13px] text-muted">
             {t('shops.statusOnlineHelp')}
           </p>
-          {takenOfflineByPlatform && <p className="mt-1 text-sm text-red-600">{t('nav.offlineBySuperadmin')}</p>}
+          {takenOfflineByPlatform && <p className="mt-1 text-sm text-[#b42318]">{t('nav.offlineBySuperadmin')}</p>}
         </div>
         <MySwitch
           checked={online}
@@ -87,13 +91,13 @@ export function ShopStatusCard({ shop, onRefetch }: Props) {
         />
       </div>
 
-      <div className="border-t border-gray-200 pt-5 space-y-3">
+      <div className="mt-4 space-y-3 border-t border-line-soft pt-4">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p id="orders-paused-label" className="text-sm font-medium text-gray-900">
+            <p id="orders-paused-label" className="text-sm font-semibold text-ink">
               {t('shops.statusPaused')}
             </p>
-            <p id="orders-paused-help" className="text-sm text-gray-500">
+            <p id="orders-paused-help" className="text-[13px] text-muted">
               {t('shops.statusPauseHelp')}
             </p>
           </div>
@@ -107,7 +111,7 @@ export function ShopStatusCard({ shop, onRefetch }: Props) {
         </div>
         {liveState === 'ordersPaused' && (
           <div className="space-y-2">
-            <span className="text-sm text-gray-600">{t('shops.statusPauseMessage')}</span>
+            <span className="block text-[13px] font-semibold text-[#4a413b]">{t('shops.statusPauseMessage')}</span>
             <MyInput
               maxLength={ORDERS_PAUSED_MESSAGE_MAX}
               value={message}
@@ -142,6 +146,6 @@ export function ShopStatusCard({ shop, onRefetch }: Props) {
           }}
         />
       )}
-    </MyCard>
+    </Section>
   );
 }

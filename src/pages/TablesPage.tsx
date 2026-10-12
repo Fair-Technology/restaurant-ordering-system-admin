@@ -3,10 +3,12 @@ import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { QRCodeSVG } from 'qrcode.react';
 import { useGetShopByIdQuery } from '../services/api';
-import { MyCard } from '../components/ui/MyCard';
 import { MyButton } from '../components/ui/MyButton';
 import { MyInput } from '../components/ui/MyInput';
 import { MySpinner } from '../components/ui/MySpinner';
+import { Download } from 'lucide-react';
+import { EmptyNote, PageHeader, Row, Section } from '../components/layout/Page';
+import { pillClass } from '../components/layout/pageStyles';
 import { useToast } from '../contexts/ToastContext';
 import { downloadBase64File } from '../features/files/downloadBase64';
 import { PNG_DATA_URL_PREFIX, parseTableNumbers, qrPngDataUrl, tableUrl } from '../features/tables/tableLinks';
@@ -21,15 +23,16 @@ export function TablesPage() {
   const [input, setInput] = useState('');
 
   if (isLoading) return <MySpinner />;
-  if (isError || !shop) return <p className="text-red-500">{t('shops.failedToLoadShop')}</p>;
+  if (isError || !shop) return <p className="text-[#b42318]">{t('shops.failedToLoadShop')}</p>;
 
   const permissions = shop.callerPermissions ?? [];
   if (!permissions.includes('manage_menu')) {
     return (
-      <div className="max-w-lg">
-        <MyCard className="p-5">
-          <p className="text-sm text-gray-600">{t('tables.accessDenied')}</p>
-        </MyCard>
+      <div className="max-w-3xl">
+        <PageHeader eyebrow={t('nav.group.shop')} title={t('tables.title')} />
+        <Section padded>
+          <p className="text-sm text-[#4a413b]">{t('tables.accessDenied')}</p>
+        </Section>
       </div>
     );
   }
@@ -71,72 +74,81 @@ export function TablesPage() {
     });
 
   return (
-    <div className="max-w-3xl space-y-5">
-      <div className="space-y-1">
-        <h1 className="text-xl font-semibold text-gray-900">{t('tables.title')}</h1>
-        <p className="text-sm text-gray-600">{t('tables.help')}</p>
-      </div>
+    <div className="max-w-3xl">
+      <PageHeader
+        eyebrow={t('nav.group.shop')}
+        title={t('tables.title')}
+        count={parsed.valid.length > 0 ? parsed.valid.length : undefined}
+        description={t('tables.help')}
+        actions={
+          <MyButton
+            type="button"
+            size="lg"
+            className="gap-2"
+            disabled={parsed.valid.length === 0}
+            onClick={() => downloadCards(parsed.valid, `${slug}-tische.pdf`)}
+          >
+            <Download size={16} strokeWidth={2.4} aria-hidden="true" />
+            {t('tables.downloadAll')}
+          </MyButton>
+        }
+      />
 
       {!(shop.orderSettings?.dineIn ?? false) && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 space-y-2">
+        <div className="mb-[18px] space-y-1.5 rounded-2xl border border-[#f1dfae] bg-[#fff6e0] px-4 py-3 text-sm text-[#8a5a00]">
           <p>{t('tables.dineInOff')}</p>
           {permissions.includes('manage_shop') && (
-            <Link to={`/shops/${shopId}/settings`} className="font-medium underline">
+            <Link to={`/shops/${shopId}/settings`} className="font-bold underline">
               {t('tables.goToSettings')}
             </Link>
           )}
         </div>
       )}
 
-      <div className="space-y-1.5">
-        <MyInput label={t('tables.numbersLabel')} value={input} onChange={(e) => setInput(e.target.value)} />
-        <p className="text-xs text-gray-500">{t('tables.numbersHint')}</p>
-        {parsed.invalid.length > 0 && (
-          <p className="text-sm text-red-600">{t('tables.invalid', { list: parsed.invalid.join(', ') })}</p>
-        )}
-        {parsed.tooMany && <p className="text-sm text-amber-700">{t('tables.tooMany')}</p>}
-      </div>
+      <Section title={t('tables.listTitle')} count={parsed.valid.length}>
+        <div className="space-y-1.5 border-b border-line-soft p-4 sm:p-5">
+          <MyInput label={t('tables.numbersLabel')} value={input} onChange={(e) => setInput(e.target.value)} />
+          <p className="text-xs text-muted">{t('tables.numbersHint')}</p>
+          {parsed.invalid.length > 0 && (
+            <p className="text-sm text-[#b42318]">{t('tables.invalid', { list: parsed.invalid.join(', ') })}</p>
+          )}
+          {parsed.tooMany && <p className="text-sm text-[#8a5a00]">{t('tables.tooMany')}</p>}
+        </div>
 
-      <MyButton
-        disabled={parsed.valid.length === 0}
-        onClick={() => downloadCards(parsed.valid, `${slug}-tische.pdf`)}
-      >
-        {t('tables.downloadAll')}
-      </MyButton>
-
-      {parsed.valid.length === 0 ? (
-        <p className="text-sm text-gray-500">{t('tables.empty')}</p>
-      ) : (
-        <div className="space-y-3">
-          {parsed.valid.map((label) => {
+        {parsed.valid.length === 0 ? (
+          <EmptyNote>{t('tables.empty')}</EmptyNote>
+        ) : (
+          parsed.valid.map((label) => {
             const url = tableUrl(base, slug, label);
             return (
-              <MyCard key={label} className="p-4 flex flex-wrap items-center gap-4">
-                <div className="text-3xl font-bold text-gray-900 min-w-16">{label}</div>
-                <QRCodeSVG value={url} size={96} />
-                <div className="flex-1 min-w-48 space-y-2">
-                  <p className="font-mono text-xs text-gray-600 break-all">{url}</p>
+              <Row key={label} className="flex-wrap">
+                <div className="max-w-full min-w-14 font-display text-[26px] leading-none font-semibold break-words">{label}</div>
+                <div className="flex-shrink-0 rounded-lg border border-line-soft bg-white p-1.5">
+                  <QRCodeSVG value={url} size={72} />
+                </div>
+                <div className="min-w-0 flex-1 basis-48 space-y-2">
+                  <p className="font-mono text-xs break-all text-muted">{url}</p>
                   <div className="flex flex-wrap gap-2">
-                    <MyButton size="sm" variant="secondary" onClick={() => copyLink(url)}>
+                    <button type="button" className={pillClass(false)} onClick={() => copyLink(url)}>
                       {t('tables.copyLink')}
-                    </MyButton>
-                    <MyButton size="sm" variant="secondary" onClick={() => downloadPng(label, url)}>
+                    </button>
+                    <button type="button" className={pillClass(false)} onClick={() => downloadPng(label, url)}>
                       {t('tables.downloadPng')}
-                    </MyButton>
-                    <MyButton
-                      size="sm"
-                      variant="secondary"
+                    </button>
+                    <button
+                      type="button"
+                      className={pillClass(true)}
                       onClick={() => downloadCards([label], `${slug}-tisch-${label}.pdf`)}
                     >
                       {t('tables.downloadPdf')}
-                    </MyButton>
+                    </button>
                   </div>
                 </div>
-              </MyCard>
+              </Row>
             );
-          })}
-        </div>
-      )}
+          })
+        )}
+      </Section>
     </div>
   );
 }

@@ -8,10 +8,10 @@ export function NotFoundPage() {
   const { shopId } = useParams<{ shopId: string }>();
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-3 py-16 text-center">
-      <h1 className="text-xl font-semibold text-gray-900">{t('notFound.title')}</h1>
-      <p className="max-w-sm text-sm text-gray-500">{t('notFound.description')}</p>
-      <MyButton onClick={() => navigate(shopId ? `/shops/${shopId}` : '/shops')}>
+    <div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 py-16 text-center">
+      <h1 className="font-display text-[30px] leading-tight font-semibold">{t('notFound.title')}</h1>
+      <p className="max-w-sm text-sm text-muted">{t('notFound.description')}</p>
+      <MyButton className="mt-2" onClick={() => navigate(shopId ? `/shops/${shopId}` : '/shops')}>
         {shopId ? t('notFound.backToShop') : t('notFound.backToShops')}
       </MyButton>
     </div>

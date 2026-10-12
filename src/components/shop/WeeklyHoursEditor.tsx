@@ -35,30 +35,30 @@ export function WeeklyHoursEditor({ week, onChange, emptyLabel, removeLabel }: P
     <div className="space-y-3">
       {WEEK_DAYS.map((day) => (
         <div key={day} className="flex flex-wrap items-start gap-3">
-          <span className="w-28 pt-2 text-sm font-medium text-gray-800">{t(DAY_LABEL_KEYS[day])}</span>
+          <span className="w-28 pt-2 text-sm font-semibold text-ink">{t(DAY_LABEL_KEYS[day])}</span>
           <div className="space-y-2">
-            {week[day].length === 0 && <span className="block pt-2 text-sm text-gray-500">{emptyLabel}</span>}
+            {week[day].length === 0 && <span className="block pt-2 text-sm text-muted">{emptyLabel}</span>}
             {week[day].map((w, i) => (
               <div key={i} className="flex items-center gap-2">
                 <input
                   type="time"
                   step={60}
-                  className="border border-gray-300 rounded-lg px-2 py-1 text-sm"
+                  className="h-9 rounded-[10px] border border-[#e3d9ce] bg-white px-2 text-sm text-ink focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink"
                   value={w.open}
                   onChange={(e) => changeWindow(day, i, 'open', e.target.value)}
                 />
-                <span className="text-sm text-gray-600">{t('shops.ohTo')}</span>
+                <span className="text-xs text-muted">{t('shops.ohTo')}</span>
                 <input
                   type="time"
                   step={60}
-                  className="border border-gray-300 rounded-lg px-2 py-1 text-sm"
+                  className="h-9 rounded-[10px] border border-[#e3d9ce] bg-white px-2 text-sm text-ink focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink"
                   value={w.close}
                   onChange={(e) => changeWindow(day, i, 'close', e.target.value)}
                 />
                 <button
                   type="button"
                   aria-label={removeLabel}
-                  className="px-2 text-gray-500 hover:text-gray-900"
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-base leading-none text-[#8a7f77] transition-colors hover:bg-[#fdeceb] hover:text-[#b42318]"
                   onClick={() => onChange({ ...week, [day]: week[day].filter((_, j) => j !== i) })}
                 >
                   ×
@@ -68,7 +68,7 @@ export function WeeklyHoursEditor({ week, onChange, emptyLabel, removeLabel }: P
             {week[day].length < MAX_WINDOWS_PER_DAY && (
               <button
                 type="button"
-                className="text-sm font-medium text-gray-900 underline"
+                className="text-[13px] font-semibold text-ink underline underline-offset-2"
                 onClick={() => onChange({ ...week, [day]: [...week[day], { open: '09:00', close: '18:00' }] })}
               >
                 {t('shops.ohAddSlot')}

@@ -29,8 +29,8 @@ export function BusyModeButton({ shopId, busy }: Props) {
       aria-pressed={busy.active}
       disabled={isLoading}
       onClick={() => void toggle()}
-      className={`min-h-12 rounded-xl px-4 text-sm font-semibold border ${
-        busy.active ? 'bg-amber-500 border-amber-600 text-white' : 'bg-white border-amber-400 text-amber-800'
+      className={`inline-flex min-h-12 items-center gap-1.5 rounded-full border px-4 text-[13px] font-bold transition-colors disabled:opacity-50 ${
+        busy.active ? 'border-ink bg-ink text-white' : 'border-[#e3d9ce] bg-white text-[#4a413b] hover:bg-sand'
       }`}
     >
       {t(busy.active ? 'orders.busyOn' : 'orders.busyOff', { minutes: busy.extraMinutes })}
