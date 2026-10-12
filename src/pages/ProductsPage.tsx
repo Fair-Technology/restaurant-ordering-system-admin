@@ -568,7 +568,8 @@ function ProductEditView({
           dietaryTagIds: foodInfo.dietaryTagIds,
           spiceLevel: foodInfo.spiceLevel,
           prepMinutes: foodInfo.prepMinutes,
-          taxClassId: foodInfo.taxClassId,
+          // The dish owns its class: the one picked by hand, else its category's suggestion
+          taxClassId: effectiveTaxClassId(selectedCategoryIds, categoriesList, foodInfo.taxClassId),
           unavailableModes: foodInfo.unavailableModes,
         },
       }).unwrap();
@@ -691,7 +692,7 @@ function ProductEditView({
             <p className="text-sm text-gray-400">{t('translationFields.nothingToTranslate')}</p>
           )}
           {step === 2 && !translatingLanguage && (
-            <StepCategories shopId={shopId} categories={categoriesList} selectedCategoryIds={selectedCategoryIds} setSelectedCategoryIds={setSelectedCategoryIds} taxClasses={refs?.taxClasses ?? []} taxRefs={refs} taxClassOverride={foodInfo.taxClassId} setTaxClassOverride={(id) => setFoodInfo({ ...foodInfo, taxClassId: id })} categoryError={categoryError} showTaxOverride={mode === 'extended'} />
+            <StepCategories shopId={shopId} categories={categoriesList} selectedCategoryIds={selectedCategoryIds} setSelectedCategoryIds={setSelectedCategoryIds} taxClasses={refs?.taxClasses ?? []} taxRefs={refs} taxClassOverride={foodInfo.taxClassId} setTaxClassOverride={(id) => setFoodInfo({ ...foodInfo, taxClassId: id })} categoryError={categoryError} />
           )}
           {step === 3 && translatingLanguage && (
             <p className="text-sm text-gray-400">{t('translationFields.nothingToTranslate')}</p>
@@ -921,7 +922,8 @@ function AddProductModal({ shopId, onClose }: AddProductModalProps) {
               dietaryTagIds: foodInfo.dietaryTagIds,
               spiceLevel: foodInfo.spiceLevel,
               prepMinutes: foodInfo.prepMinutes,
-              taxClassId: foodInfo.taxClassId,
+              // The dish owns its class: the one picked by hand, else its category's suggestion
+          taxClassId: effectiveTaxClassId(selectedCategoryIds, categoriesList, foodInfo.taxClassId),
               unavailableModes: foodInfo.unavailableModes,
             },
           }).unwrap();
@@ -1020,7 +1022,7 @@ function AddProductModal({ shopId, onClose }: AddProductModalProps) {
             )}
             <div key={step} className={direction === 'forward' ? 'animate-slide-in-right' : 'animate-slide-in-left'}>
               {step === 1 && <Step1Basics form={form} setForm={setForm} imageFile={imageFile} setImageFile={setImageFile} currencySymbol={currencySymbol} nameError={nameError} descError={descError} photoError={photoTried && dishPhotoMissing(imageFile, null)} />}
-              {step === 2 && <StepCategories shopId={shopId} categories={categoriesList} selectedCategoryIds={selectedCategoryIds} setSelectedCategoryIds={setSelectedCategoryIds} taxClasses={refs?.taxClasses ?? []} taxRefs={refs} taxClassOverride={foodInfo.taxClassId} setTaxClassOverride={(id) => setFoodInfo({ ...foodInfo, taxClassId: id })} categoryError={categoryError} showTaxOverride={mode === 'extended'} />}
+              {step === 2 && <StepCategories shopId={shopId} categories={categoriesList} selectedCategoryIds={selectedCategoryIds} setSelectedCategoryIds={setSelectedCategoryIds} taxClasses={refs?.taxClasses ?? []} taxRefs={refs} taxClassOverride={foodInfo.taxClassId} setTaxClassOverride={(id) => setFoodInfo({ ...foodInfo, taxClassId: id })} categoryError={categoryError} />}
               {step === 3 && <StepFoodInfo foodInfo={foodInfo} setFoodInfo={setFoodInfo} refs={refs} showOptional={mode === 'extended'} />}
               {step === 4 && <Step4Customise variantGroups={variantGroups} addVariantGroup={addVariantGroup} removeVariantGroup={removeVariantGroup} updateVariantGroupName={updateVariantGroupName} addVariantOption={addVariantOption} removeVariantOption={removeVariantOption} updateVariantOption={updateVariantOption} addonGroups={addonGroups} addAddonGroup={addAddonGroup} removeAddonGroup={removeAddonGroup} updateAddonGroup={updateAddonGroup} addAddonOption={addAddonOption} removeAddonOption={removeAddonOption} updateAddonOption={updateAddonOption} />}
               {step === 6 && <Step6Review form={form} imageFile={imageFile} selectedCategoryIds={selectedCategoryIds} categories={categoriesList} variantGroups={variantGroups} addonGroups={addonGroups} currencySymbol={currencySymbol} foodInfo={foodInfo} refs={refs} effectiveTaxClassLabel={effectiveTaxClassLabel} />}

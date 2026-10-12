@@ -89,6 +89,17 @@ const injectedRtkApi = api.injectEndpoints({
       }),
       invalidatesTags: (_result, _error, arg) => [{ type: 'Categories' as const, id: `LIST-${arg.shopId}` }],
     }),
+    applyCategoryTaxClass: build.mutation<
+      ApplyCategoryTaxClassApiResponse,
+      ApplyCategoryTaxClassApiArg
+    >({
+      query: (queryArg) => ({
+        url: `/shops/${queryArg.shopId}/categories/${queryArg.categoryId}/apply-tax-class`,
+        method: "POST",
+      }),
+      // Every dish in the category may have changed
+      invalidatesTags: ['Products'],
+    }),
     getProductsByShop: build.query<
       GetProductsByShopApiResponse,
       GetProductsByShopApiArg
@@ -956,6 +967,15 @@ export type UpdateCategoryRequest = {
   /** Weekly times the category shows; null clears them */
   schedule?: CategorySchedule | null;
 };
+export type ApplyCategoryTaxClassApiResponse = {
+  taxClassId: string;
+  /** Dishes whose class changed */
+  updatedCount: number;
+};
+export type ApplyCategoryTaxClassApiArg = {
+  shopId: string;
+  categoryId: string;
+};
 export type CategorySchedule = {
   /** 0=Sunday … 6=Saturday; at least one */
   daysOfWeek: number[];
@@ -1613,6 +1633,7 @@ export const {
   useGetCategoryByIdQuery,
   useUpdateCategoryMutation,
   useDeleteCategoryMutation,
+  useApplyCategoryTaxClassMutation,
   useGetProductsByShopQuery,
   useCreateProductMutation,
   useGetProductByIdQuery,

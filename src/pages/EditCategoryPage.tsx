@@ -2,7 +2,12 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useGetShopByIdQuery } from '../services/api';
-import { useGetCategoryByIdQuery, useUpdateCategoryMutation, useDeleteCategoryMutation } from '../services/api';
+import {
+  useApplyCategoryTaxClassMutation,
+  useGetCategoryByIdQuery,
+  useUpdateCategoryMutation,
+  useDeleteCategoryMutation,
+} from '../services/api';
 import { MyCard } from '../components/ui/MyCard';
 import { MyButton } from '../components/ui/MyButton';
 import { MyInput } from '../components/ui/MyInput';
@@ -10,7 +15,7 @@ import { MySpinner } from '../components/ui/MySpinner';
 import { Breadcrumb } from '../components/ui/Breadcrumb';
 import { useToast } from '../contexts/ToastContext';
 import { useShopReferenceLists } from '../features/menu/useShopReferenceLists';
-import { labelFor } from '../features/menu/foodInfo';
+import { labelFor, taxClassOptionLabel } from '../features/menu/foodInfo';
 import { menuLanguagesOf, resolveActiveLanguage, withTranslation } from '../features/menu/translations';
 import { LanguageTabs, TranslationField } from '../components/menu/LanguageTabs';
 import type { CategorySchedule, MenuLanguage, TranslationMap } from '../services/api';
@@ -33,6 +38,8 @@ export function EditCategoryPage() {
   const [deleteCategory, { isLoading: isDeleting, isError: isDeleteError }] =
     useDeleteCategoryMutation();
   const { refs } = useShopReferenceLists(shopId!);
+  const [applyTaxClass, { isLoading: isApplying }] = useApplyCategoryTaxClassMutation();
+  const [confirmingApply, setConfirmingApply] = useState(false);
 
   const [name, setName] = useState('');
   const [icon, setIcon] = useState<string | null>(null);
@@ -89,6 +96,24 @@ export function EditCategoryPage() {
       navigate(`/shops/${shopId}/categories`);
     } catch {
       // error shown below
+    }
+  };
+
+  // Sets every dish in the category to its saved class; asks first, since it changes many dishes at once
+  const savedTaxClass = refs?.taxClasses.find((c) => c.id === category.taxClassId);
+  const savedTaxLabel = savedTaxClass
+    ? taxClassOptionLabel(labelFor(savedTaxClass.labels, i18n.language), savedTaxClass.id, refs, i18n.language)
+    : '';
+  const handleApplyTaxClass = async () => {
+    try {
+      const { updatedCount } = await applyTaxClass({ shopId: shopId!, categoryId: categoryId! }).unwrap();
+      toast.success(
+        updatedCount > 0 ? t('categories.applyTaxClassDone', { count: updatedCount }) : t('categories.applyTaxClassNone'),
+      );
+    } catch {
+      toast.error(t('categories.applyTaxClassFailed'));
+    } finally {
+      setConfirmingApply(false);
     }
   };
 
@@ -161,6 +186,37 @@ export function EditCategoryPage() {
                 ))}
               </select>
               <p className="text-xs text-gray-400">{t('categories.taxClassHelp')}</p>
+              {savedTaxClass &&
+                (confirmingApply ? (
+                  <div className="space-y-2 rounded-lg bg-amber-50 p-3">
+                    <p className="text-sm text-amber-900">
+                      {t('categories.applyTaxClassConfirm', { name: category.name, label: savedTaxLabel })}
+                    </p>
+                    <div className="flex gap-2">
+                      <MyButton type="button" size="sm" disabled={isApplying} onClick={handleApplyTaxClass}>
+                        {t('categories.applyTaxClassYes')}
+                      </MyButton>
+                      <MyButton type="button" size="sm" variant="ghost" disabled={isApplying} onClick={() => setConfirmingApply(false)}>
+                        {t('categories.cancel')}
+                      </MyButton>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <MyButton
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      disabled={taxClassId !== category.taxClassId}
+                      onClick={() => setConfirmingApply(true)}
+                    >
+                      {t('categories.applyTaxClass')}
+                    </MyButton>
+                    {taxClassId !== category.taxClassId && (
+                      <span className="text-xs text-gray-500">{t('categories.applyTaxClassSaveFirst')}</span>
+                    )}
+                  </div>
+                ))}
             </div>
           )}
           {!translating && (

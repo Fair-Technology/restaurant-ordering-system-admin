@@ -616,7 +616,8 @@
     "taxClassNoneYet": "Noch keine Steuerklasse",
     "notOnMenu": "Nicht auf der Karte – Allergene angeben",
     "notDeclared": "Nicht angegeben",
-    "refsLoadError": "Allergen- und Steuerlisten konnten nicht geladen werden."
+    "refsLoadError": "Allergen- und Steuerlisten konnten nicht geladen werden.",
+    "taxClassDiffers": "{{category}} schlägt {{suggested}} vor. Dieses Gericht nutzt {{own}}."
   },
   "variants": {
     "title": "Varianten",
@@ -829,8 +830,8 @@
     "name": "Name",
     "namePlaceholder": "Kategoriename",
     "hasStar": "Stern-Symbol anzeigen",
-    "taxClass": "Steuerklasse",
-    "taxClassHelp": "Alle Gerichte in dieser Kategorie übernehmen diese Steuerklasse.",
+    "taxClass": "Steuerklasse für neue Gerichte",
+    "taxClassHelp": "Neue Gerichte in dieser Kategorie starten mit dieser Steuerklasse. Eine Änderung hier ändert bestehende Gerichte nicht.",
     "deleteTypeToConfirm": "Geben Sie \"{{name}}\" zur Bestätigung ein",
     "created": "Kategorie erstellt.",
     "saved": "Kategorie gespeichert.",
@@ -850,7 +851,15 @@
     "toggleFailed": "Die Sichtbarkeit konnte nicht gespeichert werden.",
     "shown": "Kategorie wird angezeigt",
     "hidden": "Kategorie ausgeblendet",
-    "visibility": "Sichtbar"
+    "visibility": "Sichtbar",
+    "applyTaxClass": "Auf alle Gerichte dieser Kategorie anwenden",
+    "applyTaxClassConfirm": "Alle Gerichte in {{name}} auf {{label}} setzen? Gerichte, die schon so eingestellt sind, bleiben unverändert. Menüs werden übersprungen.",
+    "applyTaxClassYes": "Ja, anwenden",
+    "applyTaxClassDone_one": "{{count}} Gericht geändert.",
+    "applyTaxClassDone_other": "{{count}} Gerichte geändert.",
+    "applyTaxClassNone": "Alle Gerichte haben diese Steuerklasse schon.",
+    "applyTaxClassFailed": "Die Steuerklasse konnte nicht angewendet werden.",
+    "applyTaxClassSaveFirst": "Erst speichern, dann anwenden."
   },
   "translationFields": {
     "original": "Original: {{text}}",

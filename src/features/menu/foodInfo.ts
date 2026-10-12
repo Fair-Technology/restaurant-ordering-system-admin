@@ -83,6 +83,14 @@ export function effectiveTaxClassId(
   );
 }
 
+/** The first chosen category that suggests a different tax class than the dish uses, for a reminder note. */
+export function categoryWithOtherTaxClass<C extends { taxClassId?: string | null }>(
+  selectedCategories: readonly C[],
+  dishTaxClassId: string | null,
+): C | undefined {
+  return dishTaxClassId ? selectedCategories.find((c) => c.taxClassId && c.taxClassId !== dishTaxClassId) : undefined;
+}
+
 export function labelFor(labels: LocalizedLabel, language: string): string {
   return language.startsWith('de') ? labels.de : labels.en;
 }
