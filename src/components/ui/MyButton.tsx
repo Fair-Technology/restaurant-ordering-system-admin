@@ -8,21 +8,22 @@ interface MyButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   size?: Size;
 }
 
+// Same family as the storefront: pill buttons, near-black primary, warm hairline borders
 const variantClasses: Record<Variant, string> = {
-  primary:   'bg-gray-900 text-white hover:bg-gray-800 border border-gray-900',
-  secondary: 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50',
-  ghost:     'bg-transparent text-gray-600 hover:bg-gray-100 border border-transparent',
-  danger:    'bg-white text-red-600 border border-red-200 hover:bg-red-50',
+  primary:   'bg-ink text-white hover:bg-black border border-ink',
+  secondary: 'bg-white text-ink border border-[#e3d9ce] hover:bg-cream',
+  ghost:     'bg-transparent text-[#4a413b] hover:bg-sand border border-transparent',
+  danger:    'bg-white text-[#b42318] border border-[#f0c4ad] hover:bg-[#fdeceb]',
 };
 
 const sizeClasses: Record<Size, string> = {
-  sm: 'px-3 py-1.5 text-xs rounded-lg',
-  md: 'px-4 py-2 text-sm rounded-xl',
-  lg: 'px-5 py-2.5 text-sm rounded-xl',
+  sm: 'h-8 px-3 text-xs rounded-full',
+  md: 'h-10 px-4 text-sm rounded-full',
+  lg: 'h-11 px-5 text-sm rounded-full',
 };
 
 const BASE =
-  'inline-flex items-center justify-center font-medium transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed';
+  'inline-flex items-center justify-center font-semibold transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 disabled:opacity-40 disabled:cursor-not-allowed';
 
 export function MyButton({
   variant = 'primary',

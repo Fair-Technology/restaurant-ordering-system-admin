@@ -28,7 +28,21 @@
     "offlineBySuperadminToast": "The platform took this shop offline. Contact support to bring it back.",
     "staff": "Staff",
     "activity": "Activity",
-    "legal": "Legal"
+    "legal": "Legal",
+    "dishes": "Dishes",
+    "group": {
+      "service": "Service",
+      "menu": "Menu",
+      "shop": "Shop",
+      "business": "Business"
+    },
+    "acceptingOrders": "Taking orders",
+    "offlineShort": "Offline – guests can’t see the shop",
+    "switchShop": "Switch shop",
+    "allShops": "All shops",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "waitingOrders": "{{count}} new orders"
   },
   "subscription": {
     "currentPlan": "Current Plan",
@@ -763,7 +777,65 @@
     "inclDiscount": "incl. discount {{code}} −{{amount}}",
     "discountLine": "Discount {{code}}: −{{amount}}",
     "loyaltyVoucherSent": "Loyalty voucher emailed to the customer.",
-    "refundDiscountHint": "This order had the code {{code}}: ticked items are refunded at what the customer paid after the discount."
+    "refundDiscountHint": "This order had the code {{code}}: ticked items are refunded at what the customer paid after the discount.",
+    "served": "Served",
+    "live": {
+      "openCount_one": "{{count}} open",
+      "openCount_other": "{{count}} open",
+      "connection": {
+        "connected": "Connected",
+        "connecting": "Connecting…",
+        "offline": "Offline"
+      },
+      "soundOff": "Sound off",
+      "busy": "Busy mode",
+      "busyOn": "Busy · +{{minutes}} min",
+      "search": "Search orders",
+      "searchPlaceholder": "Search number or name",
+      "filters": "Filter orders",
+      "filter": {
+        "open": "Open",
+        "new": "New",
+        "work": "In progress",
+        "ready": "Ready",
+        "upcoming": "Pre-orders",
+        "history": "History"
+      },
+      "groupNew": "New",
+      "groupNewHint": "please accept",
+      "groupWork": "In progress",
+      "groupWorkHint": "sorted by due time",
+      "groupReady": "Ready & on the way",
+      "emptyNew": "No new orders – you'll hear a sound as soon as one arrives.",
+      "emptyWork": "Nothing in progress right now.",
+      "emptyReady": "Nothing waiting to be picked up.",
+      "noMatch": "No order matches your search.",
+      "historyHint": "newest first",
+      "rejectIn": "Rejected in {{time}}",
+      "readyIn": "Ready in {{minutes}} min",
+      "deliverIn": "Delivery in {{minutes}} min",
+      "late": "{{minutes}} min overdue",
+      "waitingFor": "waiting · {{minutes}} min",
+      "outFor": "on the way · {{minutes}} min",
+      "at": "at {{time}}",
+      "detail": "Order",
+      "detailHint": "Tap an order on the left",
+      "nothingSelected": "Pick an order on the left to see it here.",
+      "closeDetail": "Close order",
+      "scheduledFor": "Pre-order for {{time}}",
+      "autoRejectIn": "Automatic rejection in",
+      "guest": "Guest",
+      "payment": "Payment",
+      "discount": "Discount",
+      "deliveryFee": "Delivery fee",
+      "total": "Total",
+      "readyInLabel": "Ready in",
+      "minutes": "{{minutes}} min",
+      "acceptReadyIn": "Accept · ready in {{minutes}} min",
+      "rejectWhy": "Why are you rejecting?",
+      "rejectOrder": "Reject order",
+      "callGuest": "Call guest"
+    }
   },
   "activity": {
     "title": "Activity",
@@ -1054,5 +1126,55 @@
   "common": {
     "cancel": "Cancel",
     "genericError": "Something went wrong. Please try again."
+  },
+  "dishes": {
+    "add": "Add dish",
+    "import": "Import",
+    "search": "Search dishes",
+    "filter": {
+      "all": "All",
+      "onMenu": "On the menu",
+      "off": "Unavailable",
+      "incomplete": "Incomplete"
+    },
+    "photo": "Photo",
+    "missingPhoto": "Photo missing",
+    "optionGroups_one": "{{count}} group",
+    "optionGroups_other": "{{count}} groups",
+    "availableFor": "{{name}} on the menu",
+    "noMatch": "No dishes match this filter.",
+    "preview": {
+      "title": "Live preview",
+      "subtitle": "How guests see your shop",
+      "device": "Device",
+      "phone": "Phone",
+      "desktop": "Desktop",
+      "view": "View",
+      "menu": "Menu",
+      "dishOpen": "Dish opened",
+      "hint": "Click a dish to edit it",
+      "openShop": "Open shop",
+      "notConfigured": "The preview isn't available because the shop's address isn't set up."
+    },
+    "editor": {
+      "basics": "Basics",
+      "categories": "Categories",
+      "foodInfo": "Food info",
+      "options": "Options & extras",
+      "availability": "Availability",
+      "onMenu": "On the menu",
+      "onMenuHelp": "Guests can order this dish now.",
+      "scheduleSet": "Schedule active",
+      "scheduleNone": "No schedule – always available while the shop is open",
+      "scheduleSetUp": "Set schedule",
+      "deleteHint": "The dish is removed from the menu. Existing orders are kept.",
+      "unsaved": "Unsaved changes",
+      "allSaved": "All changes saved",
+      "discard": "Discard",
+      "save": "Save",
+      "nameRequired": "Please enter a name.",
+      "descriptionRequired": "Please enter a description.",
+      "descriptionHint": "{{count}} / {{max}} characters"
+    }
   }
 }

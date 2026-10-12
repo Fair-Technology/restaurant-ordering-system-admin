@@ -1,7 +1,20 @@
 @import "tailwindcss";
 
+/* Shared look with the storefront: warm neutrals, Fraunces for page titles (self-hosted, no Google request) */
+@theme {
+  --font-display: "Fraunces Variable", Georgia, serif;
+  --color-ink: #1f1a17;
+  --color-paper: #f7f5f2;
+  --color-line: #ece6df;
+  --color-line-soft: #f1ebe4;
+  --color-sand: #f4efe9;
+  --color-cream: #faf6f1;
+  --color-muted: #6b6058;
+}
+
 body {
-  @apply bg-gray-50;
+  background-color: #f7f5f2;
+  color: #1f1a17;
 }
 
 @keyframes fade-in {
