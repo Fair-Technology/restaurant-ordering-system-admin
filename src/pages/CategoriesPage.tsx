@@ -16,7 +16,7 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Pencil, X } from 'lucide-react';
+import { Clock, GripVertical, Pencil, X } from 'lucide-react';
 import { IconPickerInline } from '../components/ui/IconPicker';
 import {
   useGetCategoriesByShopQuery,
@@ -28,9 +28,11 @@ import { MyCard } from '../components/ui/MyCard';
 import { MyButton } from '../components/ui/MyButton';
 import { MyInput } from '../components/ui/MyInput';
 import { MySpinner } from '../components/ui/MySpinner';
+import { MySwitch } from '../components/ui/MySwitch';
 import { useToast } from '../contexts/ToastContext';
 import { useShopReferenceLists } from '../features/menu/useShopReferenceLists';
 import { labelFor, taxClassOptionLabel } from '../features/menu/foodInfo';
+import { formatSchedule } from '../features/menu/categorySchedule';
 
 type Category = NonNullable<GetCategoriesByShopApiResponse>[number];
 
@@ -157,7 +159,9 @@ interface SortableCategoryItemProps {
 
 function SortableCategoryItem({ cat, shopId }: SortableCategoryItemProps) {
   const { t, i18n } = useTranslation();
-  const [updateCategory] = useUpdateCategoryMutation();
+  const toast = useToast();
+  const [updateCategory, { isLoading: switching }] = useUpdateCategoryMutation();
+  const shown = cat.isAvailable !== false;
   const { refs } = useShopReferenceLists(shopId);
   const taxClass = refs?.taxClasses.find((c) => c.id === cat.taxClassId);
   const {
@@ -183,8 +187,18 @@ function SortableCategoryItem({ cat, shopId }: SortableCategoryItemProps) {
     });
   };
 
+  // Switching saves at once; the list refreshes from the server
+  const handleShownChange = async (next: boolean) => {
+    try {
+      await updateCategory({ shopId, categoryId: cat.id!, updateCategoryRequest: { isAvailable: next } }).unwrap();
+      toast.success(next ? t('categories.shown') : t('categories.hidden'));
+    } catch {
+      toast.error(t('categories.toggleFailed'));
+    }
+  };
+
   return (
-    <div ref={setNodeRef} style={style} className="grid grid-cols-[auto_auto_1fr_auto] items-center gap-3 px-5 py-4">
+    <div ref={setNodeRef} style={style} className="grid grid-cols-[auto_auto_1fr_auto_auto] items-center gap-3 px-5 py-4">
       {/* Drag handle */}
       <button
         {...attributes}
@@ -200,14 +214,33 @@ function SortableCategoryItem({ cat, shopId }: SortableCategoryItemProps) {
       <IconPickerInline value={cat.icon ?? null} onChange={handleIconChange} />
 
       {/* Name */}
-      <div className="flex items-center gap-2 min-w-0">
-        <p className="font-medium text-gray-900 truncate">{cat.name}</p>
+      <div className="flex flex-wrap items-center gap-2 min-w-0">
+        <p id={`category-name-${cat.id}`} className={`font-medium truncate ${shown ? 'text-gray-900' : 'text-gray-400'}`}>
+          {cat.name}
+        </p>
+        {!shown && (
+          <span className="text-xs px-2 py-0.5 rounded-full bg-gray-200 text-gray-600 flex-shrink-0">{t('categories.off')}</span>
+        )}
+        {cat.schedule && (
+          <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 flex-shrink-0">
+            <Clock size={12} aria-hidden="true" />
+            {formatSchedule(cat.schedule, i18n.language)}
+          </span>
+        )}
         {taxClass && (
           <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 flex-shrink-0">
             {taxClassOptionLabel(labelFor(taxClass.labels, i18n.language), taxClass.id, refs, i18n.language)}
           </span>
         )}
       </div>
+
+      {/* Shown on the storefront */}
+      <MySwitch
+        checked={shown}
+        onChange={handleShownChange}
+        disabled={switching}
+        labelledBy={`category-name-${cat.id}`}
+      />
 
       {/* Edit */}
       <Link
@@ -300,10 +333,11 @@ export function CategoriesPage() {
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
               <SortableContext items={orderedCategories.map((c) => c.id!)} strategy={verticalListSortingStrategy}>
                 {/* Header row */}
-                <div className="grid grid-cols-[auto_auto_1fr_auto] items-center gap-3 px-5 py-2 border-b border-gray-100">
+                <div className="grid grid-cols-[auto_auto_1fr_auto_auto] items-center gap-3 px-5 py-2 border-b border-gray-100">
                   <span className="w-4.5" />
                   <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Icon</span>
                   <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">{t('categories.name')}</span>
+                  <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">{t('categories.visibility')}</span>
                   <span className="w-7" />
                 </div>
                 <div className="divide-y divide-gray-200">

@@ -835,7 +835,22 @@
     "created": "Category created.",
     "saved": "Category saved.",
     "deleted": "Category deleted.",
-    "reordered": "Category order saved."
+    "reordered": "Category order saved.",
+    "visibilityTitle": "Visibility",
+    "shownOnMenu": "Show on the menu",
+    "shownOnMenuHelp": "Switched off, the category disappears from the online shop. Its dishes can't be ordered then, not even in combos, unless they also sit in a visible category.",
+    "onlyAtTimes": "Only show at certain times",
+    "onlyAtTimesHelp": "Outside these times the category is hidden. The shop's time zone applies.",
+    "days": "Days",
+    "from": "From",
+    "until": "Until",
+    "scheduleInvalid": "Pick at least one day and an end time after the start time.",
+    "off": "Off",
+    "shownOnMenuFor": "Show {{name}} on the menu",
+    "toggleFailed": "The visibility couldn't be saved.",
+    "shown": "Category shown",
+    "hidden": "Category hidden",
+    "visibility": "Visible"
   },
   "translationFields": {
     "original": "Original: {{text}}",

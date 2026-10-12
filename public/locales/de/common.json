@@ -835,7 +835,22 @@
     "created": "Kategorie erstellt.",
     "saved": "Kategorie gespeichert.",
     "deleted": "Kategorie gelöscht.",
-    "reordered": "Kategoriereihenfolge gespeichert."
+    "reordered": "Kategoriereihenfolge gespeichert.",
+    "visibilityTitle": "Sichtbarkeit",
+    "shownOnMenu": "Auf der Speisekarte zeigen",
+    "shownOnMenuHelp": "Ausgeschaltet verschwindet die Kategorie aus dem Online-Shop. Ihre Gerichte können dann nicht bestellt werden, auch nicht in Menüs – außer sie stehen zusätzlich in einer sichtbaren Kategorie.",
+    "onlyAtTimes": "Nur zu bestimmten Zeiten zeigen",
+    "onlyAtTimesHelp": "Außerhalb dieser Zeiten ist die Kategorie ausgeblendet. Es gilt die Zeitzone des Shops.",
+    "days": "Tage",
+    "from": "Von",
+    "until": "Bis",
+    "scheduleInvalid": "Bitte mindestens einen Tag wählen und eine Endzeit nach der Startzeit.",
+    "off": "Aus",
+    "shownOnMenuFor": "{{name}} auf der Speisekarte zeigen",
+    "toggleFailed": "Die Sichtbarkeit konnte nicht gespeichert werden.",
+    "shown": "Kategorie wird angezeigt",
+    "hidden": "Kategorie ausgeblendet",
+    "visibility": "Sichtbar"
   },
   "translationFields": {
     "original": "Original: {{text}}",
