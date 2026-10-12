@@ -914,6 +914,10 @@ export type CategoryResponse = {
   icon?: string;
   /** Whether category is deleted */
   isDeleted?: boolean;
+  /** false = switched off, hidden on the storefront */
+  isAvailable?: boolean;
+  /** Weekly times the category shows; null = always */
+  schedule?: CategorySchedule | null;
   /** Tax class for dishes in this category; null when the country has no tax classes set up */
   taxClassId?: string | null;
   /** Translations of the category name, keyed by menu language */
@@ -947,6 +951,18 @@ export type UpdateCategoryRequest = {
   taxClassId?: string;
   /** Translations of the category name, keyed by menu language */
   nameTranslations?: TranslationMap;
+  /** false switches the category off */
+  isAvailable?: boolean;
+  /** Weekly times the category shows; null clears them */
+  schedule?: CategorySchedule | null;
+};
+export type CategorySchedule = {
+  /** 0=Sunday … 6=Saturday; at least one */
+  daysOfWeek: number[];
+  /** HH:mm in the shop time zone; shown from */
+  startTime: string;
+  /** HH:mm; hidden from; after startTime */
+  endTime: string;
 };
 export type ProductResponse = {
   /** Product ID */

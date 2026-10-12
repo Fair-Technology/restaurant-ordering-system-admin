@@ -13,7 +13,9 @@ import { useShopReferenceLists } from '../features/menu/useShopReferenceLists';
 import { labelFor } from '../features/menu/foodInfo';
 import { menuLanguagesOf, resolveActiveLanguage, withTranslation } from '../features/menu/translations';
 import { LanguageTabs, TranslationField } from '../components/menu/LanguageTabs';
-import type { MenuLanguage, TranslationMap } from '../services/api';
+import type { CategorySchedule, MenuLanguage, TranslationMap } from '../services/api';
+import { MySwitch } from '../components/ui/MySwitch';
+import { DEFAULT_SCHEDULE, WEEK_DAYS, dayName, isScheduleValid } from '../features/menu/categorySchedule';
 
 export function EditCategoryPage() {
   const { shopId, categoryId } = useParams<{ shopId: string; categoryId: string }>();
@@ -36,6 +38,8 @@ export function EditCategoryPage() {
   const [icon, setIcon] = useState<string | null>(null);
   const [taxClassId, setTaxClassId] = useState('');
   const [nameTranslations, setNameTranslations] = useState<TranslationMap>({});
+  const [shown, setShown] = useState(true);
+  const [schedule, setSchedule] = useState<CategorySchedule | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleteConfirmName, setDeleteConfirmName] = useState('');
 
@@ -45,6 +49,8 @@ export function EditCategoryPage() {
       setIcon(category.icon ?? null);
       setTaxClassId(category.taxClassId ?? '');
       setNameTranslations(category.nameTranslations ?? {});
+      setShown(category.isAvailable !== false);
+      setSchedule(category.schedule ?? null);
     }
   }, [category]);
 
@@ -57,8 +63,15 @@ export function EditCategoryPage() {
   if (isLoading) return <MySpinner label={t('categories.loadingCategory')} />;
   if (isError || !category) return <p className="text-red-500">{t('categories.failedToLoad')}</p>;
 
+  const scheduleInvalid = schedule !== null && !isScheduleValid(schedule);
+  const toggleDay = (day: number) =>
+    setSchedule((s) =>
+      s && { ...s, daysOfWeek: s.daysOfWeek.includes(day) ? s.daysOfWeek.filter((d) => d !== day) : [...s.daysOfWeek, day] },
+    );
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (scheduleInvalid) return;
     try {
       await updateCategory({
         shopId: shopId!,
@@ -68,6 +81,8 @@ export function EditCategoryPage() {
           ...(extraLanguage ? { nameTranslations } : {}),
           icon: icon ?? undefined,
           ...(taxClassId ? { taxClassId } : {}),
+          isAvailable: shown,
+          schedule,
         },
       }).unwrap();
       toast.success(t('categories.saved'));
@@ -148,6 +163,82 @@ export function EditCategoryPage() {
               <p className="text-xs text-gray-400">{t('categories.taxClassHelp')}</p>
             </div>
           )}
+          {!translating && (
+            <div className="border-t border-gray-200 pt-4 space-y-4">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{t('categories.visibilityTitle')}</p>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p id="category-shown-label" className="text-sm font-medium text-gray-900">
+                    {t('categories.shownOnMenu')}
+                  </p>
+                  <p id="category-shown-help" className="text-sm text-gray-500">
+                    {t('categories.shownOnMenuHelp')}
+                  </p>
+                </div>
+                <MySwitch
+                  checked={shown}
+                  onChange={setShown}
+                  labelledBy="category-shown-label"
+                  describedBy="category-shown-help"
+                />
+              </div>
+              <div className="space-y-3">
+                <label className="flex items-start gap-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 h-4 w-4 rounded border-gray-300"
+                    checked={schedule !== null}
+                    onChange={(e) => setSchedule(e.target.checked ? DEFAULT_SCHEDULE : null)}
+                  />
+                  <span>
+                    <span className="block text-sm font-medium text-gray-900">{t('categories.onlyAtTimes')}</span>
+                    <span className="block text-sm text-gray-500">{t('categories.onlyAtTimesHelp')}</span>
+                  </span>
+                </label>
+                {schedule && (
+                  <div className="space-y-3 pl-6">
+                    <div role="group" aria-label={t('categories.days')} className="flex flex-wrap gap-1.5">
+                      {WEEK_DAYS.map((day) => {
+                        const on = schedule.daysOfWeek.includes(day);
+                        return (
+                          <button
+                            key={day}
+                            type="button"
+                            aria-pressed={on}
+                            onClick={() => toggleDay(day)}
+                            className={`min-w-11 rounded-full border px-3 py-1 text-sm transition-colors ${
+                              on ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                            }`}
+                          >
+                            {dayName(day, i18n.language)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="flex gap-3">
+                      <div className="flex-1">
+                        <MyInput
+                          label={t('categories.from')}
+                          type="time"
+                          value={schedule.startTime}
+                          onChange={(e) => setSchedule({ ...schedule, startTime: e.target.value })}
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <MyInput
+                          label={t('categories.until')}
+                          type="time"
+                          value={schedule.endTime}
+                          onChange={(e) => setSchedule({ ...schedule, endTime: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    {scheduleInvalid && <p className="text-sm text-red-600">{t('categories.scheduleInvalid')}</p>}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
           <div className="flex gap-2">
             <MyButton
               type="button"
@@ -158,7 +249,7 @@ export function EditCategoryPage() {
             >
               {t('categories.cancel')}
             </MyButton>
-            <MyButton type="submit" disabled={isUpdating} className="flex-1">
+            <MyButton type="submit" disabled={isUpdating || scheduleInvalid} className="flex-1">
               {isUpdating ? t('categories.saving') : t('categories.saveChanges')}
             </MyButton>
           </div>
