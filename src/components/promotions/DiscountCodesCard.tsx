@@ -9,8 +9,10 @@ import {
 import { useToast } from '../../contexts/ToastContext';
 import { formatCents } from '../../utils/money';
 import { codeFormToBody, codeStatus, codeValueLabel, shopToday, type CodeForm, type CodeFormError } from '../../features/promotions/promotions';
+import { STATUS_TONE } from './statusTone';
 import { MyButton } from '../ui/MyButton';
-import { MyCard } from '../ui/MyCard';
+import { EmptyNote, Row, Section } from '../layout/Page';
+import { badgeClass, chipClass, pillClass } from '../layout/pageStyles';
 import { MyInput } from '../ui/MyInput';
 
 const EMPTY_FORM: CodeForm = {
@@ -80,76 +82,71 @@ export function DiscountCodesCard({ shopId, shop, data }: DiscountCodesCardProps
   };
 
   return (
-    <MyCard className="p-6 space-y-4" id="discount-codes">
-      <div className="space-y-1">
-        <h2 className="text-base font-semibold text-gray-900">{t('promotions.codesTitle')}</h2>
-        <p className="text-sm text-gray-600">{t('promotions.codesHelp')}</p>
-      </div>
-
+    <Section id="discount-codes" title={t('promotions.codesTitle')} count={data.codes.length} description={t('promotions.codesHelp')}>
       {data.codes.length === 0 ? (
-        <p className="text-sm text-gray-500">{t('promotions.noCodes')}</p>
+        <EmptyNote>{t('promotions.noCodes')}</EmptyNote>
       ) : (
-        <div>
-          {data.codes.map((c) => (
-            <div key={c.id} className="border-b py-2 flex flex-wrap items-center gap-x-3 text-sm">
-              <span className="font-mono font-bold text-gray-900">{c.code}</span>
-              <span>{codeValueLabel(c, currency, i18n.language)}</span>
-              {c.minSubtotalCents > 0 && (
-                <span className="text-gray-600">{t('promotions.minOrder', { amount: money(c.minSubtotalCents) })}</span>
-              )}
-              {(c.validFrom || c.validUntil) && (
-                <span className="text-gray-600">
-                  {t('promotions.validRange', {
-                    from: showDate(c.validFrom, i18n.language),
-                    until: showDate(c.validUntil, i18n.language),
-                  })}
-                </span>
-              )}
-              <span className="text-gray-600">
-                {c.totalLimit !== null
-                  ? t('promotions.usesOf', { uses: c.uses, limit: c.totalLimit })
-                  : t('promotions.uses', { uses: c.uses })}
-              </span>
-              {c.perEmailLimit !== null && (
-                <span className="text-gray-600">{t('promotions.perDiner', { n: c.perEmailLimit })}</span>
-              )}
-              <span className="rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs text-gray-700">
-                {t(`promotions.status.${codeStatus(c, today)}`)}
-              </span>
-              <MyButton
-                size="sm"
-                variant="secondary"
-                className="ml-auto"
+        data.codes.map((c) => {
+          const status = codeStatus(c, today);
+          return (
+            <Row key={c.id} className="flex-wrap">
+              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-mono text-[15px] font-bold">{c.code}</span>
+                  <span className="text-[15px] font-semibold">{codeValueLabel(c, currency, i18n.language)}</span>
+                  <span className={badgeClass[STATUS_TONE[status]]}>{t(`promotions.status.${status}`)}</span>
+                </div>
+                <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[13px] text-muted">
+                  {c.minSubtotalCents > 0 && <span>{t('promotions.minOrder', { amount: money(c.minSubtotalCents) })}</span>}
+                  {(c.validFrom || c.validUntil) && (
+                    <span>
+                      {t('promotions.validRange', {
+                        from: showDate(c.validFrom, i18n.language),
+                        until: showDate(c.validUntil, i18n.language),
+                      })}
+                    </span>
+                  )}
+                  <span>
+                    {c.totalLimit !== null
+                      ? t('promotions.usesOf', { uses: c.uses, limit: c.totalLimit })
+                      : t('promotions.uses', { uses: c.uses })}
+                  </span>
+                  {c.perEmailLimit !== null && <span>{t('promotions.perDiner', { n: c.perEmailLimit })}</span>}
+                </div>
+              </div>
+              <button
+                type="button"
+                className={pillClass(false)}
                 disabled={switching}
                 onClick={() => toggle(c.id, !c.active)}
               >
                 {c.active ? t('promotions.switchOff') : t('promotions.switchOn')}
-              </MyButton>
-            </div>
-          ))}
-        </div>
+              </button>
+            </Row>
+          );
+        })
       )}
 
-      <div className="space-y-3 pt-2">
-        <h3 className="text-sm font-semibold text-gray-900">{t('promotions.newCode')}</h3>
+      <div className="space-y-3 border-t border-line-soft p-4 sm:p-5">
+        <h3 className="text-[15px] font-bold">{t('promotions.newCode')}</h3>
         <MyInput label={t('promotions.code')} value={form.code} onChange={(e) => set({ code: e.target.value })} />
-        <div className="flex gap-2">
-          <MyButton
-            size="sm"
-            variant={form.kind === 'percent' ? 'primary' : 'secondary'}
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            className={chipClass(form.kind === 'percent')}
             aria-pressed={form.kind === 'percent'}
             onClick={() => set({ kind: 'percent' })}
           >
             {t('promotions.kindPercent')}
-          </MyButton>
-          <MyButton
-            size="sm"
-            variant={form.kind === 'amount' ? 'primary' : 'secondary'}
+          </button>
+          <button
+            type="button"
+            className={chipClass(form.kind === 'amount')}
             aria-pressed={form.kind === 'amount'}
             onClick={() => set({ kind: 'amount' })}
           >
             {t('promotions.kindAmount')}
-          </MyButton>
+          </button>
         </div>
         <MyInput
           label={form.kind === 'percent' ? t('promotions.valuePercent') : t('promotions.valueAmount')}
@@ -161,7 +158,7 @@ export function DiscountCodesCard({ shopId, shop, data }: DiscountCodesCardProps
           value={form.minOrder}
           onChange={(e) => set({ minOrder: e.target.value })}
         />
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <MyInput
             type="date"
             label={t('promotions.validFrom')}
@@ -175,7 +172,7 @@ export function DiscountCodesCard({ shopId, shop, data }: DiscountCodesCardProps
             onChange={(e) => set({ validUntil: e.target.value })}
           />
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <MyInput
             label={t('promotions.totalLimit')}
             value={form.totalLimit}
@@ -187,11 +184,11 @@ export function DiscountCodesCard({ shopId, shop, data }: DiscountCodesCardProps
             onChange={(e) => set({ perEmailLimit: e.target.value })}
           />
         </div>
-        {formError && <p className="text-sm text-red-600">{t(`promotions.formError.${formError}`)}</p>}
-        <MyButton disabled={creating} onClick={submit}>
+        {formError && <p className="text-sm text-[#b42318]">{t(`promotions.formError.${formError}`)}</p>}
+        <MyButton type="button" disabled={creating} onClick={submit}>
           {t('promotions.create')}
         </MyButton>
       </div>
-    </MyCard>
+    </Section>
   );
 }

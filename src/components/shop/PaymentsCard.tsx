@@ -6,7 +6,8 @@ import {
   useLazyGetGoLiveStatusQuery,
   useDisconnectStripeAccountMutation,
 } from '../../services/api';
-import { MyCard } from '../ui/MyCard';
+import { Section } from '../layout/Page';
+import { badgeClass } from '../layout/pageStyles';
 import { MyButton } from '../ui/MyButton';
 import { StripeOnboardingModal } from './StripeOnboardingModal';
 
@@ -66,7 +67,7 @@ export function PaymentsCard({ shop, onRefetch }: Props) {
   const badge = (() => {
     if (status === 'complete') {
       return (
-        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">
+        <span className={`inline-flex items-center gap-1 ${badgeClass.good}`}>
           <CheckCircle size={12} />
           {t('shops.paymentsComplete')}
         </span>
@@ -74,14 +75,14 @@ export function PaymentsCard({ shop, onRefetch }: Props) {
     }
     if (status === 'pending') {
       return (
-        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full">
+        <span className={`inline-flex items-center gap-1 ${badgeClass.warn}`}>
           <AlertCircle size={12} />
           {t('shops.paymentsPending')}
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 bg-gray-50 border border-gray-200 px-2.5 py-1 rounded-full">
+      <span className={`inline-flex items-center gap-1 ${badgeClass.neutral}`}>
         <Circle size={12} />
         {t('shops.paymentsNotConnected')}
       </span>
@@ -90,11 +91,14 @@ export function PaymentsCard({ shop, onRefetch }: Props) {
 
   return (
     <>
-      <MyCard className="p-6" id="payments">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-semibold text-gray-900">{t('shops.paymentsTitle')}</h2>
-          {badge}
-        </div>
+      <Section
+        id="payments"
+        className="scroll-mt-[72px]! lg:scroll-mt-6!"
+        title={t('shops.paymentsTitle')}
+        actions={badge}
+        description={t('shops.paymentsOnlineOnly')}
+        padded
+      >
 
         <div className="flex flex-wrap gap-2">
           {status !== 'complete' && (
@@ -135,7 +139,7 @@ export function PaymentsCard({ shop, onRefetch }: Props) {
         </div>
 
         {confirmDisconnect && (
-          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800">
+          <div className="mt-4 rounded-xl border border-[#f5c2bd] bg-[#fdeceb] p-4 text-sm text-[#b42318]">
             <p className="mb-3 font-medium">{t('shops.paymentsDisconnectConfirm')}</p>
             <div className="flex gap-2">
               <MyButton
@@ -157,9 +161,7 @@ export function PaymentsCard({ shop, onRefetch }: Props) {
             </div>
           </div>
         )}
-
-        <p className="mt-5 pt-5 border-t border-gray-200 text-sm text-gray-600">{t('shops.paymentsOnlineOnly')}</p>
-      </MyCard>
+      </Section>
 
       {modalOpen && (
         <StripeOnboardingModal shopId={shop.id!} purpose={modalPurpose} onClose={handleClose} />

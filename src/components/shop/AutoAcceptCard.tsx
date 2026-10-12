@@ -10,7 +10,7 @@ import {
   weekOf,
   type AutoAcceptChoice,
 } from '../../features/shops/kitchenSettings';
-import { MyCard } from '../ui/MyCard';
+import { Section } from '../layout/Page';
 import { MyButton } from '../ui/MyButton';
 import { WeeklyHoursEditor } from './WeeklyHoursEditor';
 
@@ -44,16 +44,15 @@ export function AutoAcceptCard({ shop, onRefetch }: Props) {
   };
 
   return (
-    <MyCard className="p-6 space-y-4" id="auto-accept">
-      <h2 className="text-base font-semibold text-gray-900">{t('shops.autoAcceptTitle')}</h2>
-      <p className="text-sm text-gray-600">{t('shops.autoAcceptHelp')}</p>
+    <Section id="auto-accept" className="scroll-mt-[72px]! lg:scroll-mt-6!" title={t('shops.autoAcceptTitle')} description={t('shops.autoAcceptHelp')} padded>
+      <div className="space-y-4">
       <div className="space-y-2">
         {AUTO_ACCEPT_CHOICES.map((c) => (
-          <label key={c} className="flex items-center gap-3 text-sm text-gray-800">
+          <label key={c} className="flex items-center gap-3 text-sm text-ink">
             <input
               type="radio"
               name="autoAcceptChoice"
-              className="h-4 w-4"
+              className="h-4 w-4 accent-ink"
               checked={choice === c}
               onChange={() => setChoiceState(c)}
             />
@@ -70,13 +69,14 @@ export function AutoAcceptCard({ shop, onRefetch }: Props) {
         />
       )}
       {message && (
-        <p className={`text-sm ${message.kind === 'saved' ? 'text-green-700' : 'text-red-600'}`}>{message.text}</p>
+        <p className={`text-sm ${message.kind === 'saved' ? 'text-[#1d5a32]' : 'text-[#b42318]'}`}>{message.text}</p>
       )}
-      <div className="border-t border-gray-200 pt-4">
+      <div className="flex flex-wrap items-center gap-2 border-t border-line-soft pt-4">
         <MyButton onClick={handleSave} disabled={isLoading}>
           {t('shops.autoAcceptSave')}
         </MyButton>
       </div>
-    </MyCard>
+      </div>
+    </Section>
   );
 }

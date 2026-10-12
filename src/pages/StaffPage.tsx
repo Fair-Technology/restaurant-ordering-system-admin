@@ -10,7 +10,9 @@ import {
   useDeleteStaffMutation,
 } from '../services/api';
 import type { StaffAccountDto, StaffRole } from '../services/api';
-import { MyCard } from '../components/ui/MyCard';
+import { Plus } from 'lucide-react';
+import { EmptyNote, PageHeader, Section } from '../components/layout/Page';
+import { badgeClass, pillClass } from '../components/layout/pageStyles';
 import { MyButton } from '../components/ui/MyButton';
 import { MyInput } from '../components/ui/MyInput';
 import { MySpinner } from '../components/ui/MySpinner';
@@ -22,7 +24,7 @@ function serverErrorText(err: unknown): string {
 
 // ── Add-login form ───────────────────────────────────────────────────────────
 
-function AddStaffForm({ shopId, canGrantManager }: { shopId: string; canGrantManager: boolean }) {
+function AddStaffForm({ shopId, canGrantManager, onClose }: { shopId: string; canGrantManager: boolean; onClose?: () => void }) {
   const { t } = useTranslation();
   const toast = useToast();
   const [createStaff, { isLoading }] = useCreateStaffMutation();
@@ -57,14 +59,14 @@ function AddStaffForm({ shopId, canGrantManager }: { shopId: string; canGrantMan
   };
 
   return (
-    <MyCard className="p-5">
+    <Section title={t('staff.add')} padded>
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         {error && (
-          <div className="p-3 rounded-xl bg-red-50 border border-red-200">
-            <p className="text-sm text-red-600">{error}</p>
-          </div>
+          <p role="alert" className="rounded-xl border border-[#f5c2bd] bg-[#fdeceb] px-3.5 py-2.5 text-sm text-[#8f1c13]">
+            {error}
+          </p>
         )}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <MyInput
             type="text"
             required
@@ -85,23 +87,30 @@ function AddStaffForm({ shopId, canGrantManager }: { shopId: string; canGrantMan
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-gray-700">{t('staff.role')}</label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[13px] font-semibold text-[#4a413b]">{t('staff.role')}</span>
             <select
               value={role}
               onChange={(e) => setRole(e.target.value as StaffRole)}
-              className="w-full border border-gray-200 rounded-lg bg-white text-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400"
+              className="h-[38px] w-full rounded-[10px] border border-[#e3d9ce] bg-white px-3 text-sm text-ink focus:border-ink focus:ring-1 focus:ring-ink focus:outline-none"
             >
               {canGrantManager && <option value="manager">{t('staff.roleManager')}</option>}
               <option value="staff">{t('staff.roleStaff')}</option>
             </select>
-          </div>
+          </label>
         </div>
-        <MyButton type="submit" disabled={isLoading} className="self-start">
-          {t('staff.add')}
-        </MyButton>
+        <div className="flex flex-wrap gap-2">
+          <MyButton type="submit" disabled={isLoading}>
+            {t('staff.add')}
+          </MyButton>
+          {onClose && (
+            <MyButton type="button" variant="secondary" onClick={onClose}>
+              {t('common.cancel')}
+            </MyButton>
+          )}
+        </div>
       </form>
-    </MyCard>
+    </Section>
   );
 }
 
@@ -128,15 +137,25 @@ function StaffRow({ acc, shopId }: { acc: StaffAccountDto; shopId: string }) {
     }
   };
 
-  const handleResetPassword = async () => {
-    const password = window.prompt(t('staff.password'));
+  const [resetOpen, setResetOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [resetting, setResetting] = useState(false);
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const password = newPassword;
     if (!password) return;
     setError(null);
+    setResetting(true);
     try {
       await resetStaffPassword({ shopId, staffId: acc.id, resetStaffPasswordRequest: { password } }).unwrap();
       toast.success(t('staff.resetPassword'));
+      setNewPassword('');
+      setResetOpen(false);
     } catch (err) {
       setError(t('staff.saveFailed', { error: serverErrorText(err) }));
+    } finally {
+      setResetting(false);
     }
   };
 
@@ -150,40 +169,81 @@ function StaffRow({ acc, shopId }: { acc: StaffAccountDto; shopId: string }) {
     }
   };
 
+  const name = acc.displayName ?? acc.username;
+  const initials =
+    name
+      .split(/[\s._-]+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part.charAt(0).toUpperCase())
+      .join('') || '?';
+
   return (
-    <div className="px-5 py-4 flex flex-col gap-2">
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="min-w-0">
-          <p className="text-sm font-medium text-gray-900 truncate">
-            {acc.displayName ?? acc.username}
-          </p>
-          <p className="text-xs text-gray-400 truncate">
-            {acc.username} &middot; {acc.role === 'manager' ? t('staff.roleManager') : t('staff.roleStaff')}
-          </p>
+    <div className="border-b border-line-soft last:border-b-0">
+      <div className="flex flex-wrap items-center gap-3 px-4 py-3">
+        <span
+          aria-hidden="true"
+          className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[13px] font-bold ${
+            acc.isActive ? 'bg-ink text-white' : 'bg-sand text-[#8a7f77]'
+          }`}
+        >
+          {initials}
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="truncate text-sm font-bold">{name}</span>
+            <span className={badgeClass.neutral}>{acc.role === 'manager' ? t('staff.roleManager') : t('staff.roleStaff')}</span>
+            {acc.isLocked && <span className={badgeClass.warn}>{t('staff.locked')}</span>}
+            {!acc.isActive && <span className={badgeClass.bad}>{t('staff.inactive')}</span>}
+          </div>
+          <p className="mt-0.5 truncate text-xs text-[#8a7f77]">{acc.username}</p>
         </div>
-        {acc.isLocked && (
-          <span className="inline-flex items-center text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full">
-            {t('staff.locked')}
-          </span>
-        )}
-        {!acc.isActive && (
-          <span className="inline-flex items-center text-xs font-medium text-gray-500 bg-gray-50 border border-gray-200 px-2.5 py-1 rounded-full">
-            {t('staff.inactive')}
-          </span>
-        )}
-        <div className="ml-auto flex flex-wrap gap-2">
-          <MyButton variant="secondary" size="sm" onClick={handleResetPassword}>
+        <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+          <button
+            type="button"
+            aria-expanded={resetOpen}
+            className={pillClass(false)}
+            onClick={() => {
+              setResetOpen((v) => !v);
+              setNewPassword('');
+            }}
+          >
             {t('staff.resetPassword')}
-          </MyButton>
-          <MyButton variant="secondary" size="sm" onClick={handleToggleActive}>
+          </button>
+          <button type="button" className={pillClass(false)} onClick={handleToggleActive}>
             {acc.isActive ? t('staff.deactivate') : t('staff.activate')}
-          </MyButton>
-          <MyButton variant="danger" size="sm" onClick={handleDelete}>
+          </button>
+          <button
+            type="button"
+            className="h-[34px] rounded-full border border-[#f5c2bd] bg-white px-3.5 text-[13px] font-bold whitespace-nowrap text-[#b42318] hover:bg-[#fdeceb]"
+            onClick={handleDelete}
+          >
             {t('staff.delete')}
-          </MyButton>
+          </button>
         </div>
       </div>
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {resetOpen && (
+        <form onSubmit={handleResetPassword} className="flex flex-wrap items-end gap-2 bg-cream px-4 py-3">
+          <div className="min-w-0 flex-1 sm:max-w-xs">
+            <MyInput
+              type="password"
+              required
+              autoFocus
+              autoComplete="new-password"
+              label={t('staff.newPassword', { name })}
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+            />
+          </div>
+          <button type="submit" disabled={resetting || !newPassword} className={pillClass(true)}>
+            {t('staff.savePassword')}
+          </button>
+          <button type="button" className={pillClass(false)} onClick={() => setResetOpen(false)}>
+            {t('common.cancel')}
+          </button>
+        </form>
+      )}
+      {error && <p role="alert" className="px-4 pb-3 text-xs text-[#b42318]">{error}</p>}
     </div>
   );
 }
@@ -195,39 +255,54 @@ export function StaffPage() {
   const { t } = useTranslation();
   const { data: shop } = useGetShopByIdQuery({ shopId: shopId! });
   const { data, isLoading, isError } = useListStaffQuery({ shopId: shopId! });
+  // null: open the form only while there are no logins yet
+  const [showForm, setShowForm] = useState<boolean | null>(null);
 
   if (isLoading) return <MySpinner label={t('staff.title')} />;
-  if (isError || !data) return <p className="text-red-500">{t('staff.loadError')}</p>;
+  if (isError || !data) return <p className="text-sm text-[#b42318]">{t('staff.loadError')}</p>;
 
   const canGrantManager = shop?.callerRole !== 'manager';
   const loginUrl = shop?.slug ? `${window.location.origin}/${shop.slug}/staff` : '';
+  const formOpen = showForm ?? data.staff.length === 0;
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-gray-900">{t('staff.title')}</h1>
-        {data.limit !== null && data.limit !== -1 && (
-          <span className="text-sm text-gray-500">
-            {t('staff.usage', { count: data.activeCount, limit: data.limit })}
-          </span>
-        )}
-      </div>
+    <div>
+      <PageHeader
+        eyebrow={t('nav.group.business')}
+        title={t('staff.title')}
+        count={
+          data.limit !== null && data.limit !== -1
+            ? t('staff.usage', { count: data.activeCount, limit: data.limit })
+            : t('staff.count', { count: data.staff.length })
+        }
+        description={loginUrl ? t('staff.loginUrl', { url: loginUrl }) : undefined}
+        actions={
+          !formOpen && (
+            <MyButton type="button" onClick={() => setShowForm(true)} className="gap-1.5">
+              <Plus size={16} aria-hidden="true" />
+              {t('staff.add')}
+            </MyButton>
+          )
+        }
+      />
 
-      {loginUrl && <p className="text-sm text-gray-500">{t('staff.loginUrl', { url: loginUrl })}</p>}
+      {shopId && formOpen && (
+        <div className="max-w-3xl">
+          <AddStaffForm
+            shopId={shopId}
+            canGrantManager={canGrantManager}
+            onClose={data.staff.length > 0 ? () => setShowForm(false) : undefined}
+          />
+        </div>
+      )}
 
-      {shopId && <AddStaffForm shopId={shopId} canGrantManager={canGrantManager} />}
-
-      <MyCard>
+      <Section title={t('staff.listTitle')} count={data.staff.length}>
         {data.staff.length === 0 ? (
-          <p className="p-5 text-gray-400 text-sm">{t('staff.empty')}</p>
+          <EmptyNote>{t('staff.empty')}</EmptyNote>
         ) : (
-          <div className="divide-y divide-gray-200">
-            {data.staff.map((acc) => (
-              <StaffRow key={acc.id} acc={acc} shopId={shopId!} />
-            ))}
-          </div>
+          data.staff.map((acc) => <StaffRow key={acc.id} acc={acc} shopId={shopId!} />)
         )}
-      </MyCard>
+      </Section>
     </div>
   );
 }

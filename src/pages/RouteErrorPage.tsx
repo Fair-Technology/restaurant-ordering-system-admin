@@ -10,10 +10,10 @@ export function RouteErrorPage() {
   if (isRouteErrorResponse(error) && error.status === 404) return <NotFoundPage />;
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-3 text-center">
-      <h1 className="text-xl font-semibold text-gray-900">{t('notFound.errorTitle')}</h1>
-      <p className="max-w-sm text-sm text-gray-500">{t('notFound.errorDescription')}</p>
-      <MyButton onClick={() => window.location.assign('/shops')}>{t('notFound.backToShops')}</MyButton>
+    <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-paper px-4 text-center text-ink">
+      <h1 className="font-display text-[30px] leading-tight font-semibold">{t('notFound.errorTitle')}</h1>
+      <p className="max-w-sm text-sm text-muted">{t('notFound.errorDescription')}</p>
+      <MyButton className="mt-2" onClick={() => window.location.assign('/shops')}>{t('notFound.backToShops')}</MyButton>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, Link, useSearchParams } from 'react-router-dom';
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   DndContext,
@@ -16,7 +16,7 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Clock, GripVertical, Pencil, X } from 'lucide-react';
+import { Clock, GripVertical, Pencil, Plus, X } from 'lucide-react';
 import { IconPickerInline } from '../components/ui/IconPicker';
 import {
   useGetCategoriesByShopQuery,
@@ -24,7 +24,6 @@ import {
   useCreateCategoryMutation,
 } from '../services/api';
 import type { GetCategoriesByShopApiResponse } from '../services/api';
-import { MyCard } from '../components/ui/MyCard';
 import { MyButton } from '../components/ui/MyButton';
 import { MyInput } from '../components/ui/MyInput';
 import { MySpinner } from '../components/ui/MySpinner';
@@ -33,6 +32,10 @@ import { useToast } from '../contexts/ToastContext';
 import { useShopReferenceLists } from '../features/menu/useShopReferenceLists';
 import { labelFor, taxClassOptionLabel } from '../features/menu/foodInfo';
 import { formatSchedule } from '../features/menu/categorySchedule';
+import { selectClass, useIsWide } from '../features/menu/useIsWide';
+import { EmptyNote, PageHeader, Section, SideCard, SideColumn, SplitPage } from '../components/layout/Page';
+import { badgeClass } from '../components/layout/pageStyles';
+import { CategoryEditor } from '../components/categories/CategoryEditor';
 
 type Category = NonNullable<GetCategoriesByShopApiResponse>[number];
 
@@ -77,51 +80,63 @@ function CreateCategoryModal({
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40" />
+      <div className="fixed inset-0 z-40 bg-[#1f1a17]/40 backdrop-blur-sm" />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="create-category-title"
+          className="w-full max-w-md overflow-hidden rounded-2xl border border-line bg-white shadow-xl"
+        >
           {/* Header */}
-          <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-gray-200">
+          <div className="flex items-start justify-between gap-3 border-b border-line-soft px-5 pt-5 pb-4">
             <div>
-              <h2 className="text-base font-semibold text-gray-900">{t('categories.newCategory')}</h2>
-              <p className="text-xs text-gray-400 mt-0.5">{t('categories.createSubtitle')}</p>
+              <h2 id="create-category-title" className="font-display text-[22px] leading-tight font-semibold">
+                {t('categories.newCategory')}
+              </h2>
+              <p className="mt-1 text-[13px] text-muted">{t('categories.createSubtitle')}</p>
             </div>
             <button
+              type="button"
               onClick={onClose}
-              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+              aria-label={t('categories.close')}
+              className="rounded-full p-1.5 text-[#8a7f77] transition-colors hover:bg-sand hover:text-ink"
             >
-              <X size={16} />
+              <X size={16} aria-hidden="true" />
             </button>
           </div>
 
           {/* Body */}
           <form onSubmit={handleSubmit}>
-            <div className="px-6 py-5 space-y-4">
+            <div className="space-y-4 px-5 py-5">
               {isError && (
-                <div className="p-3 rounded-xl bg-red-50 border border-red-200">
-                  <p className="text-sm text-red-600">
-                    {(error as { data?: { error?: string } })?.data?.error ?? t('categories.failedToCreate')}
-                  </p>
-                </div>
+                <p role="alert" className="rounded-xl border border-[#f5c2bd] bg-[#fdeceb] p-3 text-sm text-[#b42318]">
+                  {(error as { data?: { error?: string } })?.data?.error ?? t('categories.failedToCreate')}
+                </p>
               )}
               <div className="flex items-center gap-2">
                 <IconPickerInline value={icon} onChange={setIcon} />
-                <MyInput
-                  type="text"
-                  required
-                  placeholder={t('categories.namePlaceholder')}
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="flex-1"
-                />
+                <div className="min-w-0 flex-1">
+                  <MyInput
+                    type="text"
+                    required
+                    aria-label={t('categories.name')}
+                    placeholder={t('categories.namePlaceholder')}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
+                </div>
               </div>
               {(refs?.taxClasses.length ?? 0) > 0 && (
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium text-gray-700">{t('categories.taxClass')}</label>
+                  <label htmlFor="create-category-tax" className="text-[13px] font-semibold text-[#4a413b]">
+                    {t('categories.taxClass')}
+                  </label>
                   <select
+                    id="create-category-tax"
                     value={taxClassId}
                     onChange={(e) => setTaxClassOverride(e.target.value)}
-                    className="w-full border border-gray-200 rounded-lg bg-white text-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400"
+                    className={selectClass}
                   >
                     {refs!.taxClasses.filter((c) => c.isActive).map((c) => (
                       <option key={c.id} value={c.id}>
@@ -129,18 +144,18 @@ function CreateCategoryModal({
                       </option>
                     ))}
                   </select>
-                  <p className="text-xs text-gray-400">{t('categories.taxClassHelp')}</p>
+                  <p className="text-xs text-muted">{t('categories.taxClassHelp')}</p>
                 </div>
               )}
             </div>
 
             {/* Footer */}
-            <div className="flex items-center gap-2 px-6 pb-5">
-              <MyButton type="submit" disabled={isLoading} className="flex-1">
-                {isLoading ? t('categories.creating') : t('categories.create')}
-              </MyButton>
+            <div className="flex items-center justify-end gap-2 border-t border-line-soft px-5 py-4">
               <MyButton type="button" variant="secondary" onClick={onClose}>
                 {t('products.cancel')}
+              </MyButton>
+              <MyButton type="submit" disabled={isLoading}>
+                {isLoading ? t('categories.creating') : t('categories.create')}
               </MyButton>
             </div>
           </form>
@@ -155,9 +170,14 @@ function CreateCategoryModal({
 interface SortableCategoryItemProps {
   cat: Category;
   shopId: string;
+  selected: boolean;
+  onOpen: () => void;
 }
 
-function SortableCategoryItem({ cat, shopId }: SortableCategoryItemProps) {
+/** Stops clicks on the controls inside a row from also opening the category. */
+const keepInside = (e: React.SyntheticEvent) => e.stopPropagation();
+
+function SortableCategoryItem({ cat, shopId, selected, onOpen }: SortableCategoryItemProps) {
   const { t, i18n } = useTranslation();
   const toast = useToast();
   const [updateCategory, { isLoading: switching }] = useUpdateCategoryMutation();
@@ -203,57 +223,84 @@ function SortableCategoryItem({ cat, shopId }: SortableCategoryItemProps) {
   };
 
   return (
-    <div ref={setNodeRef} style={style} className="grid grid-cols-[auto_auto_1fr_auto_auto] items-center gap-3 px-5 py-4">
+    <div
+      ref={setNodeRef}
+      style={style}
+      role="button"
+      tabIndex={0}
+      aria-current={selected ? 'true' : undefined}
+      aria-labelledby={`category-name-${cat.id}`}
+      onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault();
+          onOpen();
+        }
+      }}
+      className={`flex cursor-pointer items-center gap-3 border-b border-line-soft px-4 py-3 transition-colors last:border-b-0 hover:bg-cream focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink ${
+        selected ? 'bg-cream shadow-[inset_3px_0_0_#1f1a17]' : 'bg-white'
+      }`}
+    >
       {/* Drag handle */}
       <button
         {...attributes}
         {...listeners}
-        className="text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing touch-none"
+        onClick={keepInside}
+        className="flex-shrink-0 cursor-grab touch-none text-[#b9ada2] hover:text-ink active:cursor-grabbing"
         aria-label={t('categories.dragHandle')}
         type="button"
       >
-        <GripVertical size={18} />
+        <GripVertical size={18} aria-hidden="true" />
       </button>
 
       {/* Icon picker */}
-      <IconPickerInline value={cat.icon ?? null} onChange={handleIconChange} />
+      <span className="flex-shrink-0" onClick={keepInside} onKeyDown={keepInside}>
+        <IconPickerInline value={cat.icon ?? null} onChange={handleIconChange} />
+      </span>
 
       {/* Name */}
-      <div className="flex flex-wrap items-center gap-2 min-w-0">
-        <p id={`category-name-${cat.id}`} className={`font-medium truncate ${shown ? 'text-gray-900' : 'text-gray-400'}`}>
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
+        <span id={`category-name-${cat.id}`} className={`truncate text-[15px] font-bold ${shown ? '' : 'text-[#8a7f77]'}`}>
           {cat.name}
-        </p>
-        {!shown && (
-          <span className="text-xs px-2 py-0.5 rounded-full bg-gray-200 text-gray-600 flex-shrink-0">{t('categories.off')}</span>
-        )}
+        </span>
+        {!shown && <span className={`flex-shrink-0 ${badgeClass.neutral}`}>{t('categories.off')}</span>}
         {cat.schedule && (
-          <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 flex-shrink-0">
+          <span className={`inline-flex flex-shrink-0 items-center gap-1 ${badgeClass.warn}`}>
             <Clock size={12} aria-hidden="true" />
             {formatSchedule(cat.schedule, i18n.language)}
           </span>
         )}
         {taxClass && (
-          <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 flex-shrink-0">
+          <span className="flex-shrink-0 text-[13px] text-[#8a7f77]">
             {taxClassOptionLabel(labelFor(taxClass.labels, i18n.language), taxClass.id, refs, i18n.language)}
           </span>
         )}
       </div>
 
       {/* Shown on the storefront */}
-      <MySwitch
-        checked={shown}
-        onChange={handleShownChange}
-        disabled={switching}
-        labelledBy={`category-name-${cat.id}`}
-      />
+      <span className="flex flex-shrink-0 items-center" onClick={keepInside} onKeyDown={keepInside}>
+        <MySwitch
+          checked={shown}
+          onChange={handleShownChange}
+          disabled={switching}
+          labelledBy={`category-name-${cat.id}`}
+        />
+      </span>
 
-      {/* Edit */}
+      {/* Edit (a link, so it can be opened in a new tab; on wide screens it opens the side column) */}
       <Link
         to={`/shops/${shopId}/categories/${cat.id}/edit`}
-        className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+          e.preventDefault();
+          onOpen();
+        }}
+        onKeyDown={keepInside}
+        className="flex-shrink-0 rounded-full p-1.5 text-[#8a7f77] transition-colors hover:bg-sand hover:text-ink"
         aria-label={t('categories.edit')}
       >
-        <Pencil size={15} />
+        <Pencil size={15} aria-hidden="true" />
       </Link>
     </div>
   );
@@ -265,6 +312,8 @@ export function CategoriesPage() {
   const { shopId } = useParams<{ shopId: string }>();
   const { t } = useTranslation();
   const toast = useToast();
+  const navigate = useNavigate();
+  const wide = useIsWide();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: categories, isLoading, isError } = useGetCategoriesByShopQuery({ shopId: shopId! });
   const [updateCategory] = useUpdateCategoryMutation();
@@ -315,46 +364,109 @@ export function CategoriesPage() {
     }
   };
 
+  const setParam = (key: string, value: string | null) =>
+    setSearchParams((p) => {
+      const n = new URLSearchParams(p);
+      if (value === null) n.delete(key);
+      else n.set(key, value);
+      return n;
+    });
   const showModal = searchParams.get('addCategory') === '1';
-  const closeModal = () => setSearchParams((p) => { const n = new URLSearchParams(p); n.delete('addCategory'); return n; });
+  const closeModal = () => setParam('addCategory', null);
 
-  if (isLoading) return <MySpinner label={t('categories.loading')} />;
-  if (isError) return <p className="text-red-500">{t('categories.loadError')}</p>;
+  const selectedId = searchParams.get('category');
+  const selected = orderedCategories.find((c) => c.id === selectedId);
+  // Wide screens edit in the right column; smaller ones open the edit page
+  const open = (cat: Category) => {
+    if (wide) setParam('category', cat.id!);
+    else navigate(`/shops/${shopId}/categories/${cat.id}/edit`);
+  };
+  const closeEditor = () => setParam('category', null);
+
+  const side = wide ? (
+    <SideColumn
+      label={t('categories.editTitle')}
+      title={selected ? t('categories.editTitle') : t('nav.categories')}
+      hint={selected?.name}
+      actions={
+        selected && (
+          <button
+            type="button"
+            onClick={closeEditor}
+            aria-label={t('categories.close')}
+            className="rounded-full p-1.5 text-[#8a7f77] transition-colors hover:bg-sand hover:text-ink"
+          >
+            <X size={16} aria-hidden="true" />
+          </button>
+        )
+      }
+    >
+      {selected ? (
+        <div className="-mx-[18px] min-h-0 flex-1 overflow-y-auto px-[18px]">
+          <CategoryEditor
+            key={selected.id}
+            shopId={shopId!}
+            categoryId={selected.id!}
+            onSaved={() => undefined}
+            onCancel={closeEditor}
+            onDeleted={closeEditor}
+          />
+        </div>
+      ) : (
+        <SideCard>
+          <EmptyNote>{t('categories.selectHint')}</EmptyNote>
+        </SideCard>
+      )}
+    </SideColumn>
+  ) : undefined;
 
   return (
-    <>
-      <div className="space-y-4">
-        {reorderError && (
-          <MyCard className="p-4 !bg-red-50 !border-red-200">
-            <p className="text-sm text-red-600">{t('categories.failedToReorder')}</p>
-          </MyCard>
-        )}
+    <SplitPage side={side}>
+      <PageHeader
+        eyebrow={t('nav.group.menu')}
+        title={t('nav.categories')}
+        count={categories ? orderedCategories.length : undefined}
+        description={t('categories.listHelp')}
+        actions={
+          <MyButton size="lg" className="gap-2" onClick={() => setParam('addCategory', '1')}>
+            <Plus size={16} strokeWidth={2.6} aria-hidden="true" />
+            {t('categories.newCategory')}
+          </MyButton>
+        }
+      />
 
-        <MyCard>
-          {orderedCategories.length === 0 && !isLoading && (
-            <p className="p-5 text-gray-400 text-sm">{t('categories.empty')}</p>
+      {isLoading ? (
+        <MySpinner label={t('categories.loading')} />
+      ) : isError ? (
+        <p className="text-[#b42318]">{t('categories.loadError')}</p>
+      ) : (
+        <>
+          {reorderError && (
+            <p role="alert" className="mb-[18px] rounded-2xl border border-[#f5c2bd] bg-[#fdeceb] px-4 py-3 text-sm text-[#b42318]">
+              {t('categories.failedToReorder')}
+            </p>
           )}
-          {orderedCategories.length > 0 && (
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-              <SortableContext items={orderedCategories.map((c) => c.id!)} strategy={verticalListSortingStrategy}>
-                {/* Header row */}
-                <div className="grid grid-cols-[auto_auto_1fr_auto_auto] items-center gap-3 px-5 py-2 border-b border-gray-100">
-                  <span className="w-4.5" />
-                  <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Icon</span>
-                  <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">{t('categories.name')}</span>
-                  <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">{t('categories.visibility')}</span>
-                  <span className="w-7" />
-                </div>
-                <div className="divide-y divide-gray-200">
+
+          <Section>
+            {orderedCategories.length === 0 && <EmptyNote>{t('categories.empty')}</EmptyNote>}
+            {orderedCategories.length > 0 && (
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={orderedCategories.map((c) => c.id!)} strategy={verticalListSortingStrategy}>
                   {orderedCategories.map((cat) => (
-                    <SortableCategoryItem key={cat.id} cat={cat} shopId={shopId!} />
+                    <SortableCategoryItem
+                      key={cat.id}
+                      cat={cat}
+                      shopId={shopId!}
+                      selected={wide && cat.id === selectedId}
+                      onOpen={() => open(cat)}
+                    />
                   ))}
-                </div>
-              </SortableContext>
-            </DndContext>
-          )}
-        </MyCard>
-      </div>
+                </SortableContext>
+              </DndContext>
+            )}
+          </Section>
+        </>
+      )}
 
       {showModal && (
         <CreateCategoryModal
@@ -363,6 +475,6 @@ export function CategoriesPage() {
           onClose={closeModal}
         />
       )}
-    </>
+    </SplitPage>
   );
 }

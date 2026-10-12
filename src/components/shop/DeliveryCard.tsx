@@ -10,7 +10,7 @@ import {
   type DeliveryForm,
 } from '../../features/shops/deliverySettings';
 import { formatRate, labelFor } from '../../features/menu/foodInfo';
-import { MyCard } from '../ui/MyCard';
+import { Section } from '../layout/Page';
 import { MyButton } from '../ui/MyButton';
 import { CurrencyInput } from '../ui/CurrencyInput';
 import { WeeklyHoursEditor } from './WeeklyHoursEditor';
@@ -48,29 +48,28 @@ export function DeliveryCard({ shop, refs, onRefetch }: Props) {
   };
 
   return (
-    <MyCard className="p-6 space-y-4" id="delivery">
-      <h2 className="text-base font-semibold text-gray-900">{t('shops.deliveryTitle')}</h2>
-      <p className="text-sm text-gray-600">{t('shops.deliveryHelp')}</p>
-      <label className="flex items-start gap-3 text-sm text-gray-800">
+    <Section id="delivery" className="scroll-mt-[72px]! lg:scroll-mt-6!" title={t('shops.deliveryTitle')} description={t('shops.deliveryHelp')} padded>
+      <div className="space-y-4">
+      <label className="flex items-start gap-3 text-sm text-ink">
         <input
           type="checkbox"
-          className="mt-0.5 h-4 w-4"
+          className="mt-0.5 h-4 w-4 accent-ink"
           checked={form.delivery}
           onChange={(e) => change({ delivery: e.target.checked })}
         />
         <span>
-          <span className="block font-medium">{t('shops.deliveryLabel')}</span>
-          <span className="block text-gray-600">{t('shops.deliveryLabelHelp')}</span>
+          <span className="block font-semibold">{t('shops.deliveryLabel')}</span>
+          <span className="block text-[13px] text-muted">{t('shops.deliveryLabelHelp')}</span>
         </span>
       </label>
       {form.delivery && form.zones.length === 0 && (
-        <p className="text-sm text-amber-800">{t('shops.deliveryNoZones')}</p>
+        <p className="rounded-xl border border-[#f1dfae] bg-[#fff6e0] px-3 py-2 text-sm text-[#8a5a00]">{t('shops.deliveryNoZones')}</p>
       )}
       {refs && (
         <div className="space-y-1">
           <select
             aria-label={t('shops.deliveryFeeTaxClass')}
-            className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900"
+            className="h-10 w-full rounded-[10px] border border-[#e3d9ce] bg-white px-3 text-sm text-ink focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink"
             value={form.feeTaxClassId ?? ''}
             onChange={(e) => change({ feeTaxClassId: e.target.value || null })}
           >
@@ -84,12 +83,12 @@ export function DeliveryCard({ shop, refs, onRefetch }: Props) {
                 </option>
               ))}
           </select>
-          <p className="text-xs text-gray-500">{t('shops.deliveryFeeTaxClassHelp')}</p>
+          <p className="text-xs text-muted">{t('shops.deliveryFeeTaxClassHelp')}</p>
         </div>
       )}
       <div className="space-y-2">
         {form.zones.length > 0 && (
-          <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 text-xs font-medium text-gray-500 uppercase tracking-wide">
+          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] gap-2 text-xs font-semibold text-[#8a7f77]">
             <span>{t('shops.deliveryPostcode')}</span>
             <span>{t('shops.deliveryFee')}</span>
             <span>{t('shops.deliveryMinOrder')}</span>
@@ -97,12 +96,12 @@ export function DeliveryCard({ shop, refs, onRefetch }: Props) {
           </div>
         )}
         {form.zones.map((z, i) => (
-          <div key={i} className="grid grid-cols-[1fr_1fr_1fr_auto] items-center gap-2">
+          <div key={i} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-2">
             <input
               type="text"
               aria-label={t('shops.deliveryPostcode')}
-              className={`w-full bg-white border rounded-lg px-3 py-2 text-sm text-gray-900 ${
-                badRows.includes(i) ? 'border-red-500' : 'border-gray-200'
+              className={`h-10 w-full min-w-0 rounded-[10px] border bg-white px-3 text-sm text-ink focus:outline-none focus:ring-1 focus:ring-ink ${
+                badRows.includes(i) ? 'border-[#b42318]' : 'border-[#e3d9ce]'
               }`}
               value={z.postcode}
               onChange={(e) => changeZone(i, { postcode: e.target.value })}
@@ -112,7 +111,7 @@ export function DeliveryCard({ shop, refs, onRefetch }: Props) {
             <button
               type="button"
               aria-label={t('shops.deliveryRemoveZone')}
-              className="px-2 text-gray-500 hover:text-gray-900"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-base leading-none text-[#8a7f77] transition-colors hover:bg-[#fdeceb] hover:text-[#b42318]"
               onClick={() => change({ zones: form.zones.filter((_, j) => j !== i) })}
             >
               ×
@@ -122,7 +121,7 @@ export function DeliveryCard({ shop, refs, onRefetch }: Props) {
         {form.zones.length < MAX_ZONES && (
           <button
             type="button"
-            className="text-sm font-medium text-gray-900 underline"
+            className="text-[13px] font-semibold text-ink underline underline-offset-2"
             onClick={() => change({ zones: [...form.zones, { postcode: '', feeCents: 0, minOrderCents: 0 }] })}
           >
             {t('shops.deliveryAddZone')}
@@ -130,21 +129,21 @@ export function DeliveryCard({ shop, refs, onRefetch }: Props) {
         )}
       </div>
       <div className="space-y-2">
-        <label className="flex items-center gap-3 text-sm text-gray-800">
+        <label className="flex items-center gap-3 text-sm text-ink">
           <input
             type="radio"
             name="deliveryHours"
-            className="h-4 w-4"
+            className="h-4 w-4 accent-ink"
             checked={!form.ownHours}
             onChange={() => change({ ownHours: false })}
           />
           <span>{t('shops.deliveryHoursSame')}</span>
         </label>
-        <label className="flex items-center gap-3 text-sm text-gray-800">
+        <label className="flex items-center gap-3 text-sm text-ink">
           <input
             type="radio"
             name="deliveryHours"
-            className="h-4 w-4"
+            className="h-4 w-4 accent-ink"
             checked={form.ownHours}
             onChange={() => change({ ownHours: true })}
           />
@@ -160,13 +159,14 @@ export function DeliveryCard({ shop, refs, onRefetch }: Props) {
         />
       )}
       {message && (
-        <p className={`text-sm ${message.kind === 'saved' ? 'text-green-700' : 'text-red-600'}`}>{message.text}</p>
+        <p className={`text-sm ${message.kind === 'saved' ? 'text-[#1d5a32]' : 'text-[#b42318]'}`}>{message.text}</p>
       )}
-      <div className="border-t border-gray-200 pt-4">
+      <div className="flex flex-wrap items-center gap-2 border-t border-line-soft pt-4">
         <MyButton onClick={handleSave} disabled={isLoading || badRows.length > 0}>
           {t('shops.deliverySave')}
         </MyButton>
       </div>
-    </MyCard>
+      </div>
+    </Section>
   );
 }

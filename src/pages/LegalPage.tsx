@@ -25,7 +25,8 @@ import type {
   ShopLegalSettingsDto,
   UpdateShopLegalBody,
 } from '../services/legalApi';
-import { MyCard } from '../components/ui/MyCard';
+import { PageHeader, Section } from '../components/layout/Page';
+import { badgeClass, chipClass } from '../components/layout/pageStyles';
 import { MyButton } from '../components/ui/MyButton';
 import { MyInput, MyTextarea } from '../components/ui/MyInput';
 import { MySpinner } from '../components/ui/MySpinner';
@@ -37,11 +38,14 @@ const IMPRESSUM_TEXT_FIELDS: ImpressumFieldKey[] = [
   'registerCourt', 'registerNumber', 'vatId', 'supervisoryAuthority',
 ];
 
+/** Section ids on this page, in order; the chips under the header jump to them. */
+const LEGAL_PARTS = ['dpa', 'impressum', 'terms', 'withdrawal', 'privacy', 'data'] as const;
+
 const TERMS_GUIDE_COUNT = 6;
 const WITHDRAWAL_GUIDE_COUNT = 4;
 
 const SELECT_CLASS =
-  'w-full border border-gray-200 rounded-lg bg-white text-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400';
+  'h-10 w-full rounded-[10px] border border-[#e3d9ce] bg-white px-3 text-sm text-ink focus:border-ink focus:outline-none';
 
 function errorMessage(err: unknown, fallback: string): string {
   return (err as { data?: { error?: string } })?.data?.error ?? fallback;
@@ -58,28 +62,19 @@ function downloadFile(name: string, content: string, mime: string) {
   URL.revokeObjectURL(url);
 }
 
-function CardHeader({ title, complete }: { title: string; complete?: boolean }) {
+function StatusBadge({ complete }: { complete: boolean }) {
   const { t } = useTranslation();
   return (
-    <div className="flex items-center justify-between gap-3 px-6 py-4 border-b border-gray-100">
-      <h2 className="text-base font-semibold text-gray-900">{title}</h2>
-      {complete !== undefined && (
-        <span
-          className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-            complete ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
-          }`}
-        >
-          {complete ? t('legal.complete') : t('legal.incomplete')}
-        </span>
-      )}
-    </div>
+    <span className={complete ? badgeClass.good : badgeClass.warn}>
+      {complete ? t('legal.complete') : t('legal.incomplete')}
+    </span>
   );
 }
 
 function DraftBadge() {
   const { t } = useTranslation();
   return (
-    <span className="inline-block text-xs font-medium px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+    <span className={`inline-block ${badgeClass.warn}`}>
       {t('legal.draftBadge')}
     </span>
   );
@@ -87,12 +82,12 @@ function DraftBadge() {
 
 function DocumentSections({ sections }: { sections: LegalSection[] }) {
   return (
-    <div className="max-h-96 overflow-y-auto border border-gray-100 rounded-xl p-4 space-y-3 bg-gray-50">
+    <div className="max-h-96 space-y-3 overflow-y-auto rounded-xl border border-line-soft bg-cream p-4">
       {sections.map((s) => (
         <div key={s.heading}>
-          <h4 className="text-sm font-semibold text-gray-900">{s.heading}</h4>
+          <h4 className="text-sm font-bold">{s.heading}</h4>
           {s.paragraphs.map((p) => (
-            <p key={p} className="text-sm text-gray-600 mt-1">{p}</p>
+            <p key={p} className="mt-1 text-sm text-[#4a413b]">{p}</p>
           ))}
         </div>
       ))}
@@ -138,11 +133,10 @@ function DpaCard({ shopId, shopName, legal, lang }: {
   };
 
   return (
-    <MyCard id="dpa">
-      <CardHeader title={t('legal.dpaTitle')} complete={legal.completeness.dpa} />
-      <div className="px-6 py-4 space-y-4">
-        <p className="text-sm text-gray-500">{t('legal.dpaIntro')}</p>
-        <p className="text-sm font-medium text-gray-900">{status}</p>
+    <Section id="dpa" title={t('legal.dpaTitle')} hint={<StatusBadge complete={legal.completeness.dpa} />} padded>
+      <div className="space-y-4">
+        <p className="text-sm text-muted">{t('legal.dpaIntro')}</p>
+        <p className="text-sm font-medium text-ink">{status}</p>
         {currentIsDraft && <DraftBadge />}
         <div>
           <MyButton type="button" variant="secondary" size="sm" onClick={() => setShowDoc((v) => !v)}>
@@ -152,8 +146,8 @@ function DpaCard({ shopId, shopName, legal, lang }: {
         {showDoc && doc && <DocumentSections sections={doc.sections[lang]} />}
         {platform && (
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 mb-1">{t('legal.subProcessorsTitle')}</h3>
-            <ul className="text-sm text-gray-600 space-y-1 list-disc pl-5">
+            <h3 className="text-sm font-bold mb-1">{t('legal.subProcessorsTitle')}</h3>
+            <ul className="text-sm text-[#4a413b] space-y-1 list-disc pl-5">
               {platform.subProcessors.map((sp) => (
                 <li key={sp.id}>{sp.name} — {sp.purpose[lang]} ({sp.location[lang]})</li>
               ))}
@@ -162,8 +156,8 @@ function DpaCard({ shopId, shopName, legal, lang }: {
         )}
         {needsAcceptance &&
           (legal.callerIsOwner ? (
-            <div className="space-y-3 pt-2 border-t border-gray-100">
-              <label className="flex items-start gap-2 text-sm text-gray-700">
+            <div className="space-y-3 pt-2 border-t border-line-soft">
+              <label className="flex items-start gap-2 text-sm text-[#4a413b]">
                 <input
                   type="checkbox"
                   className="mt-0.5"
@@ -177,10 +171,10 @@ function DpaCard({ shopId, shopName, legal, lang }: {
               </MyButton>
             </div>
           ) : (
-            <p className="text-sm text-gray-500">{t('legal.dpaOwnerOnly')}</p>
+            <p className="text-sm text-muted">{t('legal.dpaOwnerOnly')}</p>
           ))}
       </div>
-    </MyCard>
+    </Section>
   );
 }
 
@@ -232,13 +226,13 @@ function ImpressumCard({ shopId, legal, shopAddress }: {
   );
 
   return (
-    <MyCard id="impressum">
-      <CardHeader title={t('legal.impressumTitle')} complete={legal.completeness.impressum} />
-      <div className="px-6 py-4 space-y-4">
-        <p className="text-sm text-gray-500">{t('legal.impressumHelp')}</p>
+    <Section id="impressum" title={t('legal.impressumTitle')} hint={<StatusBadge complete={legal.completeness.impressum} />} padded>
+      <div className="space-y-4">
+        <p className="text-sm text-muted">{t('legal.impressumHelp')}</p>
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-gray-700">{t('legal.f.legalForm')}</label>
+          <label htmlFor="legal-form" className="text-[13px] font-semibold text-[#4a413b]">{t('legal.f.legalForm')}</label>
           <select
+            id="legal-form"
             className={SELECT_CLASS}
             value={value.legalForm}
             onChange={(e) => set('legalForm', e.target.value as LegalForm)}
@@ -257,25 +251,25 @@ function ImpressumCard({ shopId, legal, shopAddress }: {
               value={taxNumber}
               onChange={(e) => setTaxDraft(e.target.value)}
             />
-            <p className="text-xs text-gray-500">{t('legal.taxNumberHelp')}</p>
+            <p className="text-xs text-muted">{t('legal.taxNumberHelp')}</p>
           </div>
         </div>
         {value.vatId.trim() === '' && taxNumber.trim() === '' && (
-          <p className="text-sm text-amber-700">{t('legal.taxIdMissing')}</p>
+          <p className="text-sm text-[#8a5a00]">{t('legal.taxIdMissing')}</p>
         )}
         {legal.missingImpressumFields.length > 0 && (
-          <p className="text-sm text-amber-700">
+          <p className="text-sm text-[#8a5a00]">
             {t('legal.impressumMissing', {
               fields: legal.missingImpressumFields.map((k) => t(`legal.f.${k}`)).join(', '),
             })}
           </p>
         )}
-        {serverError && <p className="text-sm text-red-600">{serverError}</p>}
+        {serverError && <p className="text-sm text-[#b42318]">{serverError}</p>}
         <MyButton type="button" onClick={handleSave} disabled={isLoading}>
           {isLoading ? t('legal.saving') : t('legal.impressumSave')}
         </MyButton>
       </div>
-    </MyCard>
+    </Section>
   );
 }
 
@@ -313,10 +307,10 @@ function TextEditor({ label, saved, max, minLength, onSave, saveLabel }: {
         value={value}
         onChange={(e) => setDraft(e.target.value)}
       />
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
         <span>{t('legal.charCount', { count: value.length, max })}</span>
         {minLength !== undefined && trimmedLength < minLength && (
-          <span className="text-amber-700">{t('legal.minLength', { min: minLength })}</span>
+          <span className="text-[#8a5a00]">{t('legal.minLength', { min: minLength })}</span>
         )}
         {saved && (
           <span>
@@ -363,25 +357,25 @@ function TextCard({ id, kind, title, complete, saved, guideCount, shopId }: {
   const guideKey = kind === 'terms' ? 'legal.termsGuide' : 'legal.withdrawalGuide';
 
   return (
-    <MyCard id={id}>
-      <CardHeader title={title} complete={complete} />
-      <div className="px-6 py-4 space-y-4">
+    <Section id={id} title={title} hint={<StatusBadge complete={complete} />} padded>
+      <div className="space-y-4">
         <div>
           <button
             type="button"
-            className="text-sm font-medium text-gray-700 underline"
+            aria-expanded={showGuide}
+            className="text-sm font-semibold text-[#4a413b] underline"
             onClick={() => setShowGuide((v) => !v)}
           >
             {t('legal.showGuide')}
           </button>
           {showGuide && (
             <div className="mt-2 space-y-2">
-              <ul className="text-sm text-gray-600 space-y-1 list-disc pl-5">
+              <ul className="text-sm text-[#4a413b] space-y-1 list-disc pl-5">
                 {Array.from({ length: guideCount }, (_, i) => (
                   <li key={i}>{t(`${guideKey}.${i + 1}`)}</li>
                 ))}
               </ul>
-              <p className="text-xs text-gray-400">{t('legal.notLegalAdvice')}</p>
+              <p className="text-xs text-[#8a7f77]">{t('legal.notLegalAdvice')}</p>
             </div>
           )}
         </div>
@@ -393,7 +387,7 @@ function TextCard({ id, kind, title, complete, saved, guideCount, shopId }: {
           onSave={(text) => save({ [kind]: text })}
         />
       </div>
-    </MyCard>
+    </Section>
   );
 }
 
@@ -405,21 +399,20 @@ function PrivacyCard({ shopId, slug, legal }: { shopId: string; slug: string; le
   const base = import.meta.env.VITE_SHOP_BASE_URL ?? 'https://www.example.com';
 
   return (
-    <MyCard id="privacy">
-      <CardHeader title={t('legal.privacyTitle')} complete={legal.completeness.privacyNotice} />
-      <div className="px-6 py-4 space-y-4">
-        <p className="text-sm text-gray-500">{t('legal.privacyHelp')}</p>
+    <Section id="privacy" title={t('legal.privacyTitle')} hint={<StatusBadge complete={legal.completeness.privacyNotice} />} padded>
+      <div className="space-y-4">
+        <p className="text-sm text-muted">{t('legal.privacyHelp')}</p>
         <DraftBadge />
         {!legal.completeness.impressum ? (
-          <p className="text-sm text-amber-700">{t('legal.privacyUnavailable')}</p>
+          <p className="text-sm text-[#8a5a00]">{t('legal.privacyUnavailable')}</p>
         ) : !legal.platformIdentityComplete ? (
-          <p className="text-sm text-amber-700">{t('legal.privacyPlatformMissing')}</p>
+          <p className="text-sm text-[#8a5a00]">{t('legal.privacyPlatformMissing')}</p>
         ) : (
           <a
             href={`${base}/shops/${slug}/legal/privacy`}
             target="_blank"
             rel="noreferrer"
-            className="text-sm font-medium text-gray-900 underline"
+            className="text-sm font-medium text-ink underline"
           >
             {t('legal.viewOnStorefront')}
           </a>
@@ -432,7 +425,7 @@ function PrivacyCard({ shopId, slug, legal }: { shopId: string; slug: string; le
           onSave={(text) => save({ privacyAddition: text })}
         />
       </div>
-    </MyCard>
+    </Section>
   );
 }
 
@@ -479,15 +472,14 @@ function DataCard({ shopId, slug, legal }: { shopId: string; slug: string; legal
   };
 
   return (
-    <MyCard id="data">
-      <CardHeader title={t('legal.dataTitle')} />
-      <div className="px-6 py-4 space-y-6">
+    <Section id="data" title={t('legal.dataTitle')} padded>
+      <div className="space-y-6">
         {!legal.callerIsOwner ? (
-          <p className="text-sm text-gray-500">{t('legal.ownerOnly')}</p>
+          <p className="text-sm text-muted">{t('legal.ownerOnly')}</p>
         ) : (
           <>
             <div className="space-y-3">
-              <p className="text-sm text-gray-500">{t('legal.dataHelp')}</p>
+              <p className="text-sm text-muted">{t('legal.dataHelp')}</p>
               <div className="flex flex-wrap gap-2">
                 {(
                   [
@@ -508,11 +500,11 @@ function DataCard({ shopId, slug, legal }: { shopId: string; slug: string; legal
                   </MyButton>
                 ))}
               </div>
-              {exporting && <p className="text-xs text-gray-400">{t('legal.exporting')}</p>}
+              {exporting && <p className="text-xs text-[#8a7f77]">{t('legal.exporting')}</p>}
             </div>
-            <div className="space-y-3 pt-4 border-t border-gray-100">
-              <h3 className="text-sm font-semibold text-gray-900">{t('legal.eraseTitle')}</h3>
-              <p className="text-sm text-gray-500">{t('legal.eraseHelp')}</p>
+            <div className="space-y-3 pt-4 border-t border-line-soft">
+              <h3 className="text-sm font-bold">{t('legal.eraseTitle')}</h3>
+              <p className="text-sm text-muted">{t('legal.eraseHelp')}</p>
               <MyInput
                 label={t('legal.eraseEmail')}
                 type="email"
@@ -526,7 +518,7 @@ function DataCard({ shopId, slug, legal }: { shopId: string; slug: string; legal
           </>
         )}
       </div>
-    </MyCard>
+    </Section>
   );
 }
 
@@ -546,12 +538,32 @@ export function LegalPage() {
     document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, [legal]);
 
-  if (isError) return <p className="p-6 text-sm text-red-600">{t('legal.loadError')}</p>;
+  if (isError) return <p className="text-sm text-[#b42318]">{t('legal.loadError')}</p>;
   if (!legal || !shop) return <MySpinner label={t('legal.loading')} />;
 
+  const jump = (id: string) => {
+    window.history.replaceState(null, '', `#${id}`);
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   return (
-    <div className="max-w-3xl mx-auto w-full p-6 space-y-6">
-      <h1 className="text-xl font-semibold text-gray-900">{t('legal.title')}</h1>
+    <div className="mx-auto w-full max-w-3xl">
+      <PageHeader eyebrow={t('nav.group.shop')} title={t('legal.title')} />
+      <nav aria-label={t('legal.jumpLabel')} className="mb-3.5 flex flex-wrap items-center gap-2">
+        {LEGAL_PARTS.map((part) => (
+          <a
+            key={part}
+            href={`#${part}`}
+            className={chipClass(false)}
+            onClick={(e) => {
+              e.preventDefault();
+              jump(part);
+            }}
+          >
+            {t(`legal.jump.${part}`)}
+          </a>
+        ))}
+      </nav>
       <DpaCard shopId={shopId!} shopName={shop.name ?? ''} legal={legal} lang={lang} />
       <ImpressumCard shopId={shopId!} legal={legal} shopAddress={shop.address} />
       <TextCard

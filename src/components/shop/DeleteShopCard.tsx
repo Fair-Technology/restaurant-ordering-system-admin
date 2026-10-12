@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useDeleteShopMutation } from '../../services/api';
 import { canDeleteShop, deleteShopErrorKind, isShopNameMatch } from '../../features/shops/deleteShop';
 import type { DeleteShopErrorKind } from '../../features/shops/deleteShop';
-import { MyCard } from '../ui/MyCard';
+import { Section } from '../layout/Page';
 import { MyButton } from '../ui/MyButton';
 import { MyInput } from '../ui/MyInput';
 import { useToast } from '../../contexts/ToastContext';
@@ -47,15 +47,14 @@ export function DeleteShopCard({ shopId, shopName, callerRole }: Props) {
 
   return (
     <>
-      <MyCard className="p-5 border-red-200">
-        <h2 className="text-base font-semibold text-red-700">{t('shops.deleteShop.title')}</h2>
-        <p className="text-sm text-gray-600 mt-2">{t('shops.deleteShop.explain')}</p>
-        <div className="mt-4">
-          <MyButton variant="danger" onClick={() => setOpen(true)}>
+      <Section tone="danger" title={t('shops.deleteShop.title')} padded>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-[#4a413b]">{t('shops.deleteShop.explain')}</p>
+          <MyButton variant="danger" className="flex-shrink-0 self-start sm:self-auto" onClick={() => setOpen(true)}>
             {t('shops.deleteShop.open')}
           </MyButton>
         </div>
-      </MyCard>
+      </Section>
 
       {open && (
         <>
@@ -67,8 +66,8 @@ export function DeleteShopCard({ shopId, shopName, callerRole }: Props) {
               aria-label={t('shops.deleteShop.modalTitle')}
               className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4"
             >
-              <h2 className="text-base font-semibold text-gray-900">{t('shops.deleteShop.modalTitle')}</h2>
-              <p className="text-sm text-gray-600">{t('shops.deleteShop.explain')}</p>
+              <h2 className="font-display text-xl font-semibold text-ink">{t('shops.deleteShop.modalTitle')}</h2>
+              <p className="text-sm text-[#4a413b]">{t('shops.deleteShop.explain')}</p>
               <MyInput
                 label={t('shops.deleteShop.typeName', { name: shopName })}
                 value={typed}
@@ -77,7 +76,7 @@ export function DeleteShopCard({ shopId, shopName, callerRole }: Props) {
                 autoFocus
               />
               {errorKind === 'openOrders' && (
-                <p className="text-sm text-red-600">
+                <p className="text-sm text-[#b42318]">
                   {t('shops.deleteShop.openOrders')}{' '}
                   <Link to={`/shops/${shopId}/orders`} className="underline">
                     {t('shops.deleteShop.goToOrders')}
@@ -85,10 +84,10 @@ export function DeleteShopCard({ shopId, shopName, callerRole }: Props) {
                 </p>
               )}
               {errorKind === 'forbidden' && (
-                <p className="text-sm text-red-600">{t('shops.deleteShop.forbidden')}</p>
+                <p className="text-sm text-[#b42318]">{t('shops.deleteShop.forbidden')}</p>
               )}
               {errorKind === 'generic' && (
-                <p className="text-sm text-red-600">{t('shops.deleteShop.failed')}</p>
+                <p className="text-sm text-[#b42318]">{t('shops.deleteShop.failed')}</p>
               )}
               <div className="flex justify-end gap-2">
                 <MyButton variant="secondary" onClick={close} disabled={isLoading}>
@@ -98,7 +97,7 @@ export function DeleteShopCard({ shopId, shopName, callerRole }: Props) {
                   type="button"
                   onClick={handleDelete}
                   disabled={!isShopNameMatch(typed, shopName) || isLoading}
-                  className="inline-flex items-center justify-center font-medium px-4 py-2 text-sm rounded-xl bg-red-600 text-white hover:bg-red-700 border border-red-600 disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="inline-flex h-10 items-center justify-center rounded-full border border-[#b42318] bg-[#b42318] px-4 text-sm font-semibold text-white hover:bg-[#912018] disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {isLoading ? t('shops.deleteShop.deleting') : t('shops.deleteShop.confirm')}
                 </button>

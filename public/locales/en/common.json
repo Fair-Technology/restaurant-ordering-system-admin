@@ -78,7 +78,19 @@
     "keepCurrentPlan": "Keep current plan",
     "paymentFailed": "Your last payment failed. Update your card by {{date}} to keep your plan.",
     "updateCard": "Update card",
-    "payNow": "Pay now"
+    "payNow": "Pay now",
+    "dismiss": "Dismiss message",
+    "unlimited": "unlimited",
+    "ordersUsage": "Orders this month",
+    "staffUsage": "Staff logins",
+    "choosePlan": "Choose a plan",
+    "statusValue": {
+      "free": "Free",
+      "active": "Active",
+      "past_due": "Payment due",
+      "canceled": "Cancelled",
+      "expired": "Expired"
+    }
   },
   "auth": {
     "adminPortal": "Admin Portal",
@@ -360,7 +372,27 @@
     "shopStatusTitle": "Shop status",
     "statusOnline": "Shop online",
     "statusOnlineHelp": "Switched off, the shop page shows no menu, only a notice that the restaurant is offline. Use it for holidays or before you launch.",
-    "statusSaveMessage": "Save message"
+    "statusSaveMessage": "Save message",
+    "count_one": "{{count}} shop",
+    "count_other": "{{count}} shops",
+    "listHint": "Tap a shop to open it",
+    "open": "Open",
+    "settingsPage": {
+      "intro": "Your shop's status, details, look, orders and payments in one place.",
+      "navLabel": "Settings areas",
+      "groupGeneral": "General",
+      "groupLook": "Appearance",
+      "groupOrders": "Orders",
+      "groupPayments": "Payments & tax",
+      "groupDanger": "Danger zone",
+      "statusDescription": "Choose whether your shop is online and whether it is taking orders right now.",
+      "detailsDescription": "Your shop's basic details and the minimum order value.",
+      "addressDescription": "Your restaurant's address as customers see it.",
+      "qrDescription": "Print this code so guests can open your shop straight on their phone.",
+      "logoDescription": "Shown at the top of your shop. JPG, PNG or WebP.",
+      "hoursDescription": "Customers can order from you during these times.",
+      "taxClassesDescription": "The tax rates that apply to your dishes."
+    }
   },
   "tables": {
     "title": "Tables & QR codes",
@@ -378,7 +410,8 @@
     "downloadPng": "QR as PNG",
     "downloadPdf": "Table card (PDF)",
     "downloadAll": "All table cards (PDF)",
-    "downloadFailed": "The download didn't work. Please try again."
+    "downloadFailed": "The download didn't work. Please try again.",
+    "listTitle": "Tables"
   },
   "combos": {
     "accessDenied": "Only people who edit the menu can change combos.",
@@ -425,7 +458,8 @@
     "photoReplaceIncomplete": "Your changes were saved and the new photo was added, but the old photo could not be removed, so it may still show. Open the combo again and save the photo once more.",
     "photoUploadFailed": "The combo was saved, but its photo could not be uploaded.",
     "noPhoto": "no photo",
-    "groupNameTranslated": "Name of choice {{number}}"
+    "groupNameTranslated": "Name of choice {{number}}",
+    "selectHint": "Select a combo on the left to edit it, or create a new one."
   },
   "promotions": {
     "accessDenied": "Only people who manage the restaurant can change discounts.",
@@ -840,7 +874,10 @@
   "activity": {
     "title": "Activity",
     "empty": "No activity yet.",
-    "loadError": "Could not load activity."
+    "loadError": "Could not load activity.",
+    "count_one": "{{count}} entry",
+    "count_other": "{{count}} entries",
+    "listTitle": "History"
   },
   "staff": {
     "title": "Staff logins",
@@ -862,7 +899,12 @@
     "loginUrl": "Staff sign-in address: {{url}}",
     "saveFailed": "Could not save. {{error}}",
     "empty": "No staff logins yet.",
-    "loadError": "Could not load staff logins."
+    "loadError": "Could not load staff logins.",
+    "count_one": "{{count}} login",
+    "count_other": "{{count}} logins",
+    "listTitle": "Logins",
+    "newPassword": "New password for {{name}}",
+    "savePassword": "Save password"
   },
   "staffLogin": {
     "title": "Staff sign-in",
@@ -931,7 +973,10 @@
     "applyTaxClassDone_other": "{{count}} dishes changed.",
     "applyTaxClassNone": "Every dish already has this tax class.",
     "applyTaxClassFailed": "The tax class couldn't be applied.",
-    "applyTaxClassSaveFirst": "Save first, then apply."
+    "applyTaxClassSaveFirst": "Save first, then apply.",
+    "close": "Close",
+    "selectHint": "Select a category on the left to edit it.",
+    "listHelp": "Drag a category by its handle to change its order on the menu."
   },
   "translationFields": {
     "original": "Original: {{text}}",
@@ -1034,7 +1079,16 @@
     "eraseConfirm": "Remove {{email}}'s details from all their orders? This cannot be undone.",
     "eraseDone": "Done — {{count}} orders anonymised.",
     "eraseFailed": "Could not anonymise the customer.",
-    "ownerOnly": "Only the restaurant owner can export data or handle erasure requests."
+    "ownerOnly": "Only the restaurant owner can export data or handle erasure requests.",
+    "jumpLabel": "Jump to a section",
+    "jump": {
+      "dpa": "DPA",
+      "impressum": "Impressum",
+      "terms": "Terms",
+      "withdrawal": "Withdrawal",
+      "privacy": "Privacy",
+      "data": "Your data"
+    }
   },
   "orderLimit": {
     "bannerWarning": "{{count}} of {{limit}} orders used this month ({{percent}} %). At {{limit}} online ordering pauses until the month ends.",

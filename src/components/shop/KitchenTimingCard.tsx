@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { ShopResponse } from '../../services/api';
 import { useUpdateOrderSettingsMutation } from '../../services/ordersApi';
 import { kitchenTimingBody, kitchenTimingOf } from '../../features/shops/kitchenSettings';
-import { MyCard } from '../ui/MyCard';
+import { Section } from '../layout/Page';
 import { MyButton } from '../ui/MyButton';
 import { MyInput } from '../ui/MyInput';
 
@@ -61,9 +61,8 @@ export function KitchenTimingCard({ shop, onRefetch }: Props) {
   };
 
   return (
-    <MyCard className="p-6 space-y-4" id="kitchen-timing">
-      <h2 className="text-base font-semibold text-gray-900">{t('shops.kitchenTitle')}</h2>
-      <p className="text-sm text-gray-600">{t('shops.kitchenHelp')}</p>
+    <Section id="kitchen-timing" className="scroll-mt-[72px]! lg:scroll-mt-6!" title={t('shops.kitchenTitle')} description={t('shops.kitchenHelp')} padded>
+      <div className="space-y-4">
       <MyInput
         type="number"
         min={5}
@@ -101,22 +100,22 @@ export function KitchenTimingCard({ shop, onRefetch }: Props) {
         onChange={(e) => setBusyState(e.target.value)}
       />
       <div className="space-y-2">
-        <p className="text-sm font-medium text-gray-700">{t('shops.kitchenLastOrders')}</p>
-        <label className="flex items-center gap-3 text-sm text-gray-800">
+        <p className="text-[13px] font-semibold text-[#4a413b]">{t('shops.kitchenLastOrders')}</p>
+        <label className="flex items-center gap-3 text-sm text-ink">
           <input
             type="radio"
             name="kitchenLastOrders"
-            className="h-4 w-4"
+            className="h-4 w-4 accent-ink"
             checked={!fixed}
             onChange={() => setFixedState(false)}
           />
           <span>{t('shops.kitchenLastOrdersPrep')}</span>
         </label>
-        <label className="flex items-center gap-3 text-sm text-gray-800">
+        <label className="flex items-center gap-3 text-sm text-ink">
           <input
             type="radio"
             name="kitchenLastOrders"
-            className="h-4 w-4"
+            className="h-4 w-4 accent-ink"
             checked={fixed}
             onChange={() => setFixedState(true)}
           />
@@ -135,13 +134,14 @@ export function KitchenTimingCard({ shop, onRefetch }: Props) {
         )}
       </div>
       {message && (
-        <p className={`text-sm ${message.kind === 'saved' ? 'text-green-700' : 'text-red-600'}`}>{message.text}</p>
+        <p className={`text-sm ${message.kind === 'saved' ? 'text-[#1d5a32]' : 'text-[#b42318]'}`}>{message.text}</p>
       )}
-      <div className="border-t border-gray-200 pt-4">
+      <div className="flex flex-wrap items-center gap-2 border-t border-line-soft pt-4">
         <MyButton onClick={handleSave} disabled={isLoading}>
           {t('shops.kitchenSave')}
         </MyButton>
       </div>
-    </MyCard>
+      </div>
+    </Section>
   );
 }

@@ -51,7 +51,7 @@ interface BannerRowProps extends OrderLimitBannerProps {
 function BannerRow({ tone, text, shopId, canManageBilling }: BannerRowProps) {
   const { t } = useTranslation();
   return (
-    <div role="status" className={`mx-4 mt-4 px-4 py-3 rounded-xl border text-sm flex items-center justify-between gap-4 ${tone}`}>
+    <div role="status" className={`mb-4 px-4 py-3 rounded-xl border text-sm flex items-center justify-between gap-4 ${tone}`}>
       <span>{text}</span>
       {canManageBilling ? (
         <Link

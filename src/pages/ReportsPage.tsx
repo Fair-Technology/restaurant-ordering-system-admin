@@ -8,7 +8,7 @@ import { useGetOrderLimitQuery } from '../services/subscriptionApi';
 import { buildReportCsv, rateText, reportFileName } from '../features/reports/reportCsv';
 import { isValidRange, rangeFor, REPORT_PRESETS, todayIn, type ReportPreset } from '../features/reports/reportRange';
 import { MyButton } from '../components/ui/MyButton';
-import { MyCard } from '../components/ui/MyCard';
+import { Chip, EmptyNote, PageHeader, Row, Section, Toolbar } from '../components/layout/Page';
 import { MySpinner } from '../components/ui/MySpinner';
 import { formatCents } from '../utils/money';
 
@@ -37,13 +37,14 @@ const MODE_LABELS = {
   dine_in: 'reports.modeDineIn',
 } as const;
 
-function StatCard({ label, value, help }: { label: string; value: string; help?: string }) {
+/** A white tile with a big number and a small label, for the key figures. */
+function StatTile({ label, value, help }: { label: string; value: string; help?: string }) {
   return (
-    <MyCard className="p-5">
-      <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">{label}</p>
-      <p className="text-3xl font-semibold text-gray-900">{value}</p>
-      {help && <p className="text-xs text-gray-400 mt-2">{help}</p>}
-    </MyCard>
+    <div className="min-w-0 rounded-2xl border border-line bg-white px-4 py-3.5">
+      <p className="truncate font-display text-[26px] leading-tight font-semibold text-ink">{value}</p>
+      <p className="mt-1 text-[13px] font-semibold text-[#4a413b]">{label}</p>
+      {help && <p className="mt-1 text-xs text-[#8a7f77]">{help}</p>}
+    </div>
   );
 }
 
@@ -66,7 +67,7 @@ export function ReportsPage() {
   const { data: limit } = useGetOrderLimitQuery({ shopId: shopId! }, { skip: !allowed });
 
   if (!shop) return <MySpinner label={t('reports.loading')} />;
-  if (!allowed) return <p className="text-gray-500">{t('reports.accessDenied')}</p>;
+  if (!allowed) return <p className="text-sm text-muted">{t('reports.accessDenied')}</p>;
 
   const choosePreset = (p: ReportPreset) => {
     setPreset(p);
@@ -106,182 +107,169 @@ export function ReportsPage() {
     );
 
   const maxHour = report ? Math.max(1, ...report.byHour) : 1;
-  const th = 'text-xs font-medium text-gray-400 uppercase tracking-wider py-2';
+  const dateInput =
+    'h-9 rounded-full border border-[#e3d9ce] bg-white px-3 text-[13px] font-semibold text-ink outline-none focus-visible:border-ink';
+  const th = 'px-4 py-2 text-xs font-semibold text-[#8a7f77]';
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold text-gray-900">{t('reports.title')}</h1>
+    <div>
+      <PageHeader
+        eyebrow={t('nav.group.business')}
+        title={t('reports.title')}
+        actions={
+          valid &&
+          report && (
+            <MyButton variant="secondary" onClick={() => download(report)} className="gap-2">
+              <Download size={16} aria-hidden="true" />
+              {t('reports.downloadCsv')}
+            </MyButton>
+          )
+        }
+      />
 
-      <div className="flex flex-wrap items-end gap-2">
+      <Toolbar>
         {REPORT_PRESETS.map((p) => (
-          <button
-            key={p}
-            type="button"
-            onClick={() => choosePreset(p)}
-            className={`px-4 py-2 text-sm font-medium rounded-xl border transition-colors ${
-              preset === p
-                ? 'bg-gray-900 text-white border-gray-900'
-                : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-            }`}
-          >
+          <Chip key={p} active={preset === p} onClick={() => choosePreset(p)}>
             {t(PRESET_LABELS[p])}
-          </button>
+          </Chip>
         ))}
-        <label className="text-xs text-gray-500 flex flex-col gap-1">
-          {t('reports.from')}
-          <input
-            type="date"
-            value={range.from}
-            onChange={(e) => changeDate('from', e.target.value)}
-            className="border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900"
-          />
-        </label>
-        <label className="text-xs text-gray-500 flex flex-col gap-1">
-          {t('reports.to')}
-          <input
-            type="date"
-            value={range.to}
-            onChange={(e) => changeDate('to', e.target.value)}
-            className="border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900"
-          />
-        </label>
-      </div>
-      {!valid && <p className="text-sm text-red-500">{t('reports.rangeInvalid')}</p>}
+        <span className="flex flex-wrap items-center gap-2">
+          <label className="flex items-center gap-1.5 text-[13px] text-muted">
+            {t('reports.from')}
+            <input type="date" value={range.from} onChange={(e) => changeDate('from', e.target.value)} className={dateInput} />
+          </label>
+          <label className="flex items-center gap-1.5 text-[13px] text-muted">
+            {t('reports.to')}
+            <input type="date" value={range.to} onChange={(e) => changeDate('to', e.target.value)} className={dateInput} />
+          </label>
+        </span>
+      </Toolbar>
+      {!valid && <p className="mb-3 text-sm text-[#b42318]">{t('reports.rangeInvalid')}</p>}
 
-      {valid && isError && <p className="text-red-500">{t('reports.loadError')}</p>}
+      {valid && isError && <p className="text-sm text-[#b42318]">{t('reports.loadError')}</p>}
       {valid && !report && !isError && <MySpinner label={t('reports.loading')} />}
 
       {valid && report && (
-        <div className={`space-y-6 ${isFetching ? 'opacity-60' : ''}`}>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard label={t('reports.takings')} value={money(report.totals.takingsCents)} help={t('reports.takingsHelp')} />
-            <StatCard label={t('reports.orders')} value={String(report.totals.orderCount)} />
-            <StatCard
-              label={t('reports.refunds')}
-              value={money(report.totals.refundCents)}
-              help={t('reports.stripeRefundsNote')}
-            />
-            <StatCard label={t('reports.discounts')} value={money(report.totals.discountCents)} />
+        <div className={isFetching ? 'opacity-60' : ''}>
+          <div className="mb-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <StatTile label={t('reports.takings')} value={money(report.totals.takingsCents)} help={t('reports.takingsHelp')} />
+            <StatTile label={t('reports.orders')} value={String(report.totals.orderCount)} />
+            <StatTile label={t('reports.refunds')} value={money(report.totals.refundCents)} help={t('reports.stripeRefundsNote')} />
+            <StatTile label={t('reports.discounts')} value={money(report.totals.discountCents)} />
           </div>
-          <p className="text-sm text-gray-500">
-            {t('reports.gross')}: {money(report.totals.grossCents)} · {t('reports.deliveryFees')}:{' '}
-            {money(report.totals.deliveryFeeCents)}
-          </p>
-          {limit && (
-            <p className="text-sm text-gray-700">
-              {limit.limit === null
-                ? t('reports.monthToDateUnlimited', { count: limit.acceptedOrderCount })
-                : t('reports.monthToDate', { count: limit.acceptedOrderCount, limit: limit.limit })}
-            </p>
-          )}
+          <div className="mb-[18px] flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-muted">
+            <span>
+              {t('reports.gross')}: <span className="font-semibold text-ink">{money(report.totals.grossCents)}</span>
+            </span>
+            <span>
+              {t('reports.deliveryFees')}: <span className="font-semibold text-ink">{money(report.totals.deliveryFeeCents)}</span>
+            </span>
+            {limit && (
+              <span className="text-[#4a413b]">
+                {limit.limit === null
+                  ? t('reports.monthToDateUnlimited', { count: limit.acceptedOrderCount })
+                  : t('reports.monthToDate', { count: limit.acceptedOrderCount, limit: limit.limit })}
+              </span>
+            )}
+          </div>
 
           {report.totals.orderCount === 0 && report.totals.refundCents === 0 ? (
-            <p className="text-gray-500">{t('reports.empty')}</p>
+            <Section>
+              <EmptyNote>{t('reports.empty')}</EmptyNote>
+            </Section>
           ) : (
             <>
-              <MyCard className="p-5">
-                <h2 className="text-sm font-semibold text-gray-700 mb-3">{t('reports.byDay')}</h2>
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-left">
-                      <th className={th}>{t('reports.date')}</th>
-                      <th className={`${th} text-right`}>{t('reports.orders')}</th>
-                      <th className={`${th} text-right`}>{t('reports.gross')}</th>
-                      <th className={`${th} text-right`}>{t('reports.refunds')}</th>
-                      <th className={`${th} text-right`}>{t('reports.takings')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {report.days.map((d) => (
-                      <tr key={d.date} className="border-t border-gray-100">
-                        <td className="py-2">{dayText(d.date)}</td>
-                        <td className="py-2 text-right">{d.orderCount}</td>
-                        <td className="py-2 text-right">{money(d.grossCents)}</td>
-                        <td className="py-2 text-right">{money(d.refundCents)}</td>
-                        <td className="py-2 text-right font-medium">{money(d.takingsCents)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </MyCard>
-
-              <MyCard className="p-5">
-                <h2 className="text-sm font-semibold text-gray-700 mb-3">{t('reports.byRate')}</h2>
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-left">
-                      <th className={th}>{t('reports.rate')}</th>
-                      <th className={`${th} text-right`}>{t('reports.gross')}</th>
-                      <th className={`${th} text-right`}>{t('reports.vat')}</th>
-                      <th className={`${th} text-right`}>{t('reports.net')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {report.totals.byRate.map((r) => (
-                      <tr key={r.rateBasisPoints} className="border-t border-gray-100">
-                        <td className="py-2">{rateText(r.rateBasisPoints)}</td>
-                        <td className="py-2 text-right">{money(r.grossCents)}</td>
-                        <td className="py-2 text-right">{money(r.taxCents)}</td>
-                        <td className="py-2 text-right">{money(r.netCents)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </MyCard>
-
-              <MyCard className="p-5">
-                <h2 className="text-sm font-semibold text-gray-700">{t('reports.byHour')}</h2>
-                <p className="text-xs text-gray-400 mb-3">{t('reports.byHourHelp')}</p>
-                <div className="flex items-end gap-1 h-32">
-                  {report.byHour.map((n, hour) => (
-                    <div key={hour} className="flex-1 flex flex-col items-center justify-end h-full" title={`${hour}:00 · ${n}`}>
-                      <div className="w-full bg-gray-900 rounded-t" style={{ height: `${(n / maxHour) * 100}%` }} />
+              <Section title={t('reports.byDay')} count={report.days.length}>
+                {report.days.map((d) => (
+                  <Row key={d.date}>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-semibold">{dayText(d.date)}</div>
+                      <div className="mt-0.5 text-xs text-[#8a7f77]">
+                        {t('reports.orders')}: {d.orderCount} · {t('reports.gross')}: {money(d.grossCents)}
+                        {d.refundCents !== 0 && (
+                          <>
+                            {' '}
+                            · {t('reports.refunds')}: {money(d.refundCents)}
+                          </>
+                        )}
+                      </div>
                     </div>
-                  ))}
-                </div>
-                <div className="flex gap-1 mt-1">
-                  {report.byHour.map((_, hour) => (
-                    <span key={hour} className="flex-1 text-center text-[10px] text-gray-400">
-                      {hour % 3 === 0 ? hour : ''}
-                    </span>
-                  ))}
-                </div>
-              </MyCard>
+                    <div className="text-right text-sm font-bold whitespace-nowrap">{money(d.takingsCents)}</div>
+                  </Row>
+                ))}
+              </Section>
 
-              <MyCard className="p-5">
-                <h2 className="text-sm font-semibold text-gray-700 mb-3">{t('reports.byMode')}</h2>
-                <ul className="text-sm divide-y divide-gray-100">
+              <div className="grid gap-x-[18px] lg:grid-cols-2">
+                <Section title={t('reports.byHour')} hint={t('reports.byHourHelp')} padded>
+                  <div className="flex h-32 items-end gap-[3px] border-b border-[#c8bfb6]">
+                    {report.byHour.map((n, hour) => (
+                      <div key={hour} className="flex h-full flex-1 flex-col items-center justify-end" title={`${hour}:00 · ${n}`}>
+                        <div
+                          className={`w-full rounded-t-[3px] ${n > 0 ? 'bg-[#1f1a17]' : 'bg-[#c8bfb6]'}`}
+                          style={{ height: n > 0 ? `${(n / maxHour) * 100}%` : '2px' }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-1 flex gap-[3px]">
+                    {report.byHour.map((_, hour) => (
+                      <span key={hour} className="flex-1 text-center text-[10px] text-[#8a7f77]">
+                        {hour % 3 === 0 ? hour : ''}
+                      </span>
+                    ))}
+                  </div>
+                </Section>
+
+                <Section title={t('reports.byMode')}>
                   {report.byMode.map((m) => (
-                    <li key={m.mode} className="flex justify-between py-2">
-                      <span>{t(MODE_LABELS[m.mode])}</span>
-                      <span>
-                        {m.orderCount} · {money(m.grossCents)}
-                      </span>
-                    </li>
+                    <Row key={m.mode}>
+                      <span className="flex-1 text-sm font-semibold">{t(MODE_LABELS[m.mode])}</span>
+                      <span className="text-[13px] text-[#8a7f77]">{m.orderCount}</span>
+                      <span className="w-24 text-right text-sm font-bold whitespace-nowrap">{money(m.grossCents)}</span>
+                    </Row>
                   ))}
-                </ul>
-              </MyCard>
+                </Section>
+              </div>
 
-              <MyCard className="p-5">
-                <h2 className="text-sm font-semibold text-gray-700 mb-3">{t('reports.topDishes')}</h2>
-                <ul className="text-sm divide-y divide-gray-100">
-                  {report.topDishes.map((d) => (
-                    <li key={d.productId} className="flex justify-between gap-4 py-2">
-                      <span>{d.name}</span>
-                      <span className="text-gray-500">
-                        {t('reports.quantity')}: {d.quantity} · {money(d.grossCents)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </MyCard>
+              <Section title={t('reports.byRate')}>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-line-soft text-left">
+                        <th className={th}>{t('reports.rate')}</th>
+                        <th className={`${th} text-right`}>{t('reports.gross')}</th>
+                        <th className={`${th} text-right`}>{t('reports.vat')}</th>
+                        <th className={`${th} text-right`}>{t('reports.net')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {report.totals.byRate.map((r) => (
+                        <tr key={r.rateBasisPoints} className="border-b border-line-soft last:border-b-0">
+                          <td className="px-4 py-3 font-semibold">{rateText(r.rateBasisPoints)}</td>
+                          <td className="px-4 py-3 text-right whitespace-nowrap">{money(r.grossCents)}</td>
+                          <td className="px-4 py-3 text-right whitespace-nowrap">{money(r.taxCents)}</td>
+                          <td className="px-4 py-3 text-right whitespace-nowrap">{money(r.netCents)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Section>
+
+              <Section title={t('reports.topDishes')} count={report.topDishes.length}>
+                {report.topDishes.map((d, i) => (
+                  <Row key={d.productId}>
+                    <span className="w-5 text-[13px] font-bold text-[#8a7f77]">{i + 1}</span>
+                    <span className="min-w-0 flex-1 truncate text-sm font-semibold">{d.name}</span>
+                    <span className="text-[13px] whitespace-nowrap text-[#8a7f77]">
+                      {t('reports.quantity')}: {d.quantity}
+                    </span>
+                    <span className="text-right text-sm font-bold whitespace-nowrap">{money(d.grossCents)}</span>
+                  </Row>
+                ))}
+              </Section>
             </>
           )}
-
-          <MyButton variant="secondary" onClick={() => download(report)} className="gap-2">
-            <Download size={16} />
-            {t('reports.downloadCsv')}
-          </MyButton>
         </div>
       )}
     </div>

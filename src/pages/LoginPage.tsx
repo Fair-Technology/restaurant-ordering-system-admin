@@ -24,19 +24,20 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="flex min-h-screen items-center justify-center bg-paper text-ink">
       <div className="w-full max-w-sm px-4">
         {inProgress !== InteractionStatus.None ? (
-          <p className="text-center text-gray-400">{t('auth.loading')}</p>
+          <p className="text-center text-sm text-muted">{t('auth.loading')}</p>
         ) : (
           <MyCard className="p-8">
             <div className="mb-7">
-              <h1 className="text-2xl font-semibold text-gray-900">{t('auth.adminPortal')}</h1>
-              <p className="text-sm text-gray-400 mt-1">{t('auth.signInSubtitle')}</p>
+              <h1 className="font-display text-[30px] leading-tight font-semibold">{t('auth.adminPortal')}</h1>
+              <p className="mt-1.5 text-sm text-muted">{t('auth.signInSubtitle')}</p>
             </div>
 
             <div className="flex flex-col gap-3">
               <MyButton
+                size="lg"
                 className="w-full"
                 onClick={() => instance.loginRedirect(loginRequest)}
               >
@@ -44,6 +45,7 @@ export function LoginPage() {
               </MyButton>
               <MyButton
                 variant="secondary"
+                size="lg"
                 className="w-full"
                 onClick={() => instance.loginRedirect({ ...loginRequest, prompt: 'create' })}
               >
