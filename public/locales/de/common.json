@@ -650,6 +650,8 @@
     "allergens": "Allergene",
     "additives": "Zusatzstoffe",
     "allergensNone": "Enthält keines der 14 Allergene",
+    "optionFoodInfo": "Allergene & Zusatzstoffe",
+    "optionFoodInfoHelp": "Nur, was diese Option hinzufügt – die Allergene des Gerichts selbst stehen oben.",
     "additivesNone": "Enthält keine kennzeichnungspflichtigen Zusatzstoffe",
     "foodInfoUndeclaredWarning": "Solange Allergene und Zusatzstoffe nicht angegeben sind, erscheint dieses Gericht nicht auf Ihrer Karte.",
     "dietaryTags": "Ernährungshinweise",

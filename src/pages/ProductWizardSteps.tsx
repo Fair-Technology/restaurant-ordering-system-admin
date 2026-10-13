@@ -12,14 +12,15 @@ import type { MenuLanguage, ReferenceEntry, ReferenceListsResponse, SpiceLevel, 
 import { hasOriginalText } from '../features/menu/translations';
 import { categoryWithOtherTaxClass, dishTaxClasses, effectiveTaxClassId, MODE_ORDER, isFoodInfoDeclared, labelFor, taxClassOptionLabel, toggleId, toggleMode, unavailableModesInOrder } from '../features/menu/foodInfo';
 import type { FoodInfo } from '../features/menu/foodInfo';
+import { OptionFoodInfoField } from '../components/menu/OptionFoodInfoField';
 import { DishPhotoField } from '../components/menu/DishPhotoField';
 import { TranslationField } from '../components/menu/LanguageTabs';
 
 // ── Shared types ──────────────────────────────────────────────────────────────
 
-export type VariantOption = { id: string; name: string; nameTranslations?: TranslationMap; priceDelta: number; isAvailable: boolean };
+export type VariantOption = { id: string; name: string; nameTranslations?: TranslationMap; priceDelta: number; isAvailable: boolean; allergenIds?: string[]; additiveIds?: string[] };
 export type VariantGroup  = { id: string; name: string; nameTranslations?: TranslationMap; options: VariantOption[] };
-export type AddonOption   = { id: string; name: string; nameTranslations?: TranslationMap; priceDelta: number; isAvailable: boolean };
+export type AddonOption   = { id: string; name: string; nameTranslations?: TranslationMap; priceDelta: number; isAvailable: boolean; allergenIds?: string[]; additiveIds?: string[] };
 export type AddonGroup    = { id: string; name: string; nameTranslations?: TranslationMap; minSelectable: number; maxSelectable: number; options: AddonOption[] };
 export type StepNum = 1 | 2 | 3 | 4 | 6;
 
@@ -557,6 +558,7 @@ interface Step4Props {
   addAddonOption: (groupId: string) => void;
   removeAddonOption: (groupId: string, optionId: string) => void;
   updateAddonOption: (groupId: string, optionId: string, patch: Partial<AddonOption>) => void;
+  refs: ReferenceListsResponse | undefined;
   /** Present only while the translation tab is active: the fields then edit this language's text. */
   translation?: {
     language: MenuLanguage;
@@ -570,7 +572,7 @@ export function Step4Customise({
   addVariantOption, removeVariantOption, updateVariantOption,
   addonGroups, addAddonGroup, removeAddonGroup, updateAddonGroup,
   addAddonOption, removeAddonOption, updateAddonOption,
-  translation,
+  refs, translation,
 }: Step4Props) {
   const { t } = useTranslation();
   if (translation) {
@@ -630,7 +632,8 @@ export function Step4Customise({
             />
             <div className="space-y-2">
               {group.options.map(option => (
-                <div key={option.id} className="flex items-center gap-2">
+                <div key={option.id} className="space-y-1">
+                <div className="flex items-center gap-2">
                   <MyInput
                     placeholder={t('variants.optionNamePlaceholder')}
                     value={option.name}
@@ -654,6 +657,8 @@ export function Step4Customise({
                   <MyButton type="button" variant="ghost" size="sm" onClick={() => removeVariantOption(group.id, option.id)}>
                     ×
                   </MyButton>
+                </div>
+                <OptionFoodInfoField allergenIds={option.allergenIds ?? []} additiveIds={option.additiveIds ?? []} refs={refs} onChange={(p) => updateVariantOption(group.id, option.id, p)} />
                 </div>
               ))}
             </div>
@@ -708,7 +713,8 @@ export function Step4Customise({
             </div>
             <div className="space-y-2">
               {group.options.map(option => (
-                <div key={option.id} className="flex items-center gap-2">
+                <div key={option.id} className="space-y-1">
+                <div className="flex items-center gap-2">
                   <MyInput
                     placeholder={t('addons.optionNamePlaceholder')}
                     value={option.name}
@@ -732,6 +738,8 @@ export function Step4Customise({
                   <MyButton type="button" variant="ghost" size="sm" onClick={() => removeAddonOption(group.id, option.id)}>
                     ×
                   </MyButton>
+                </div>
+                <OptionFoodInfoField allergenIds={option.allergenIds ?? []} additiveIds={option.additiveIds ?? []} refs={refs} onChange={(p) => updateAddonOption(group.id, option.id, p)} />
                 </div>
               ))}
             </div>
