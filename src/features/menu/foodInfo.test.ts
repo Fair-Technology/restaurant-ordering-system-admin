@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { categoryWithOtherTaxClass, initialScheduleDays, unavailableModesInOrder, effectiveTaxClassId, formatRate, isFoodInfoDeclared, foodInfoFromProduct, labelFor, taxClassOptionLabel, toggleId, toggleMode } from './foodInfo';
+import { categoryWithOtherTaxClass, dishTaxClasses, initialScheduleDays, unavailableModesInOrder, effectiveTaxClassId, formatRate, isFoodInfoDeclared, foodInfoFromProduct, labelFor, taxClassOptionLabel, toggleId, toggleMode } from './foodInfo';
 
 describe('toggleId', () => {
   it('adds to a null list', () => {
@@ -141,5 +141,13 @@ describe('categoryWithOtherTaxClass', () => {
 
   it('is quiet before the dish has a class', () => {
     expect(categoryWithOtherTaxClass([kids], null)).toBeUndefined();
+  });
+});
+
+describe('dishTaxClasses', () => {
+  const E = (id: string, isActive = true) => ({ id, labels: { de: id, en: id }, isActive });
+
+  it('hides inactive classes and the fee-only Delivery class', () => {
+    expect(dishTaxClasses([E('food'), E('beverage'), E('delivery'), E('old', false)]).map((c) => c.id)).toEqual(['food', 'beverage']);
   });
 });

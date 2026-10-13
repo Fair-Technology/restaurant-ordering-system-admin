@@ -10,7 +10,7 @@ import { CurrencyInput } from '../components/ui/CurrencyInput';
 import { useCreateCategoryMutation } from '../services/api';
 import type { MenuLanguage, ReferenceEntry, ReferenceListsResponse, SpiceLevel, TranslationMap } from '../services/api';
 import { hasOriginalText } from '../features/menu/translations';
-import { categoryWithOtherTaxClass, effectiveTaxClassId, MODE_ORDER, isFoodInfoDeclared, labelFor, taxClassOptionLabel, toggleId, toggleMode, unavailableModesInOrder } from '../features/menu/foodInfo';
+import { categoryWithOtherTaxClass, dishTaxClasses, effectiveTaxClassId, MODE_ORDER, isFoodInfoDeclared, labelFor, taxClassOptionLabel, toggleId, toggleMode, unavailableModesInOrder } from '../features/menu/foodInfo';
 import type { FoodInfo } from '../features/menu/foodInfo';
 import { DishPhotoField } from '../components/menu/DishPhotoField';
 import { TranslationField } from '../components/menu/LanguageTabs';
@@ -522,7 +522,7 @@ export function StepCategories({
                   {t('products.taxClassNoneYet')}
                 </option>
               )}
-              {taxClasses.filter((c) => c.isActive).map((c) => (
+              {dishTaxClasses(taxClasses).map((c) => (
                 <option key={c.id} value={c.id}>
                   {label(c.id)}
                 </option>

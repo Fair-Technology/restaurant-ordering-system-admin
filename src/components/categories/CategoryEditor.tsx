@@ -15,7 +15,7 @@ import { MySpinner } from '../ui/MySpinner';
 import { MySwitch } from '../ui/MySwitch';
 import { useToast } from '../../contexts/ToastContext';
 import { useShopReferenceLists } from '../../features/menu/useShopReferenceLists';
-import { labelFor, taxClassOptionLabel } from '../../features/menu/foodInfo';
+import { dishTaxClasses, labelFor, taxClassOptionLabel } from '../../features/menu/foodInfo';
 import { menuLanguagesOf, resolveActiveLanguage, withTranslation } from '../../features/menu/translations';
 import { LanguageTabs, TranslationField } from '../menu/LanguageTabs';
 import { DEFAULT_SCHEDULE, WEEK_DAYS, dayName, isScheduleValid } from '../../features/menu/categorySchedule';
@@ -178,7 +178,7 @@ export function CategoryEditor({ shopId, categoryId, onSaved, onCancel, onDelete
                   onChange={(e) => setTaxClassId(e.target.value)}
                   className={selectClass}
                 >
-                  {refs!.taxClasses.filter((c) => c.isActive).map((c) => (
+                  {dishTaxClasses(refs!.taxClasses).map((c) => (
                     <option key={c.id} value={c.id}>
                       {labelFor(c.labels, i18n.language)}
                     </option>

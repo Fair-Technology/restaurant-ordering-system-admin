@@ -91,6 +91,14 @@ export function categoryWithOtherTaxClass<C extends { taxClassId?: string | null
   return dishTaxClassId ? selectedCategories.find((c) => c.taxClassId && c.taxClassId !== dishTaxClassId) : undefined;
 }
 
+/** The country's Delivery tax class: used for delivery fees only, never for dishes or categories. */
+export const DELIVERY_TAX_CLASS_ID = 'delivery';
+
+/** Classes a dish or category may use: active, and not the fee-only Delivery class. */
+export function dishTaxClasses<T extends { id: string; isActive: boolean }>(classes: readonly T[]): T[] {
+  return classes.filter((c) => c.isActive && c.id !== DELIVERY_TAX_CLASS_ID);
+}
+
 export function labelFor(labels: LocalizedLabel, language: string): string {
   return language.startsWith('de') ? labels.de : labels.en;
 }
