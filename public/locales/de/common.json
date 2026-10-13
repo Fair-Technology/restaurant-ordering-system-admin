@@ -1120,7 +1120,6 @@
     "discounts": "Rabatte und Gutscheine",
     "deliveryFees": "Liefergebühren",
     "refunds": "Erstattungen",
-    "stripeRefundsNote": "Direkt in Stripe erstattete Beträge sind nicht enthalten.",
     "monthToDate": "Diesen Monat: {{count}} von {{limit}} Bestellungen",
     "monthToDateUnlimited": "Diesen Monat: {{count}} Bestellungen (kein Limit)",
     "byDay": "Einnahmen pro Tag",
