@@ -8,7 +8,8 @@ const msalConfig: Configuration = {
     redirectUri: window.location.origin,
     postLogoutRedirectUri: window.location.origin,
   },
-  cache: { cacheLocation: 'sessionStorage' },
+  // localStorage: a sign-in carries over to new tabs and browser restarts; signing out clears it.
+  cache: { cacheLocation: 'localStorage' },
 };
 
 export const msalInstance = new PublicClientApplication(msalConfig);
