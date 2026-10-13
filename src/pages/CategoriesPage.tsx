@@ -30,7 +30,7 @@ import { MySpinner } from '../components/ui/MySpinner';
 import { MySwitch } from '../components/ui/MySwitch';
 import { useToast } from '../contexts/ToastContext';
 import { useShopReferenceLists } from '../features/menu/useShopReferenceLists';
-import { labelFor, taxClassOptionLabel } from '../features/menu/foodInfo';
+import { dishTaxClasses, labelFor, taxClassOptionLabel } from '../features/menu/foodInfo';
 import { formatSchedule } from '../features/menu/categorySchedule';
 import { selectClass, useIsWide } from '../features/menu/useIsWide';
 import { EmptyNote, PageHeader, Section, SideCard, SideColumn, SplitPage } from '../components/layout/Page';
@@ -138,7 +138,7 @@ function CreateCategoryModal({
                     onChange={(e) => setTaxClassOverride(e.target.value)}
                     className={selectClass}
                   >
-                    {refs!.taxClasses.filter((c) => c.isActive).map((c) => (
+                    {dishTaxClasses(refs!.taxClasses).map((c) => (
                       <option key={c.id} value={c.id}>
                         {taxClassOptionLabel(labelFor(c.labels, i18n.language), c.id, refs, i18n.language)}
                       </option>

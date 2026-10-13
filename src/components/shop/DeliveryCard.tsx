@@ -5,11 +5,11 @@ import { useUpdateOrderSettingsMutation } from '../../services/ordersApi';
 import {
   MAX_ZONES,
   deliveryBody,
+  deliveryFeeVat,
   deliveryFormOf,
   invalidZoneRows,
   type DeliveryForm,
 } from '../../features/shops/deliverySettings';
-import { formatRate, labelFor } from '../../features/menu/foodInfo';
 import { Section } from '../layout/Page';
 import { MyButton } from '../ui/MyButton';
 import { CurrencyInput } from '../ui/CurrencyInput';
@@ -23,11 +23,12 @@ interface Props {
 
 export function DeliveryCard({ shop, refs, onRefetch }: Props) {
   const { t, i18n } = useTranslation();
+  const feeVat = refs ? deliveryFeeVat(refs, i18n.language) : null;
   const [formState, setFormState] = useState<DeliveryForm | null>(null);
   const [message, setMessage] = useState<{ kind: 'saved' | 'failed'; text: string } | null>(null);
   const [updateOrderSettings, { isLoading }] = useUpdateOrderSettingsMutation();
 
-  const form = formState ?? deliveryFormOf(shop.orderSettings, refs?.defaultTaxClassId ?? null);
+  const form = formState ?? deliveryFormOf(shop.orderSettings);
   const badRows = invalidZoneRows(form.zones, shop.countryCode ?? 'DE');
   const change = (patch: Partial<DeliveryForm>) => setFormState({ ...form, ...patch });
   const changeZone = (index: number, patch: Partial<DeliveryForm['zones'][number]>) =>
@@ -65,25 +66,12 @@ export function DeliveryCard({ shop, refs, onRefetch }: Props) {
       {form.delivery && form.zones.length === 0 && (
         <p className="rounded-xl border border-[#f1dfae] bg-[#fff6e0] px-3 py-2 text-sm text-[#8a5a00]">{t('shops.deliveryNoZones')}</p>
       )}
-      {refs && (
+      {feeVat && (
         <div className="space-y-1">
-          <select
-            aria-label={t('shops.deliveryFeeTaxClass')}
-            className="h-10 w-full rounded-[10px] border border-[#e3d9ce] bg-white px-3 text-sm text-ink focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink"
-            value={form.feeTaxClassId ?? ''}
-            onChange={(e) => change({ feeTaxClassId: e.target.value || null })}
-          >
-            {refs.taxClasses
-              .filter((c) => c.isActive)
-              .map((c) => (
-                <option key={c.id} value={c.id}>
-                  {`${labelFor(c.labels, i18n.language)} (${formatRate(
-                    refs.currentTaxRates.find((r) => r.taxClassId === c.id)?.rates.delivery ?? null,
-                  )})`}
-                </option>
-              ))}
-          </select>
-          <p className="text-xs text-muted">{t('shops.deliveryFeeTaxClassHelp')}</p>
+          <p className="text-sm font-semibold text-ink">
+            {t('shops.deliveryFeeVat', { name: feeVat.name, rate: feeVat.rate })}
+          </p>
+          <p className="text-xs text-muted">{t('shops.deliveryFeeVatHelp')}</p>
         </div>
       )}
       <div className="space-y-2">

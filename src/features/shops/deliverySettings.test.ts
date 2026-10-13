@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { WeeklyHoursDto } from '../../services/ordersApi';
-import { deliveryBody, deliveryFormOf, invalidZoneRows } from './deliverySettings';
+import { defaultDeliveryFeeTaxClassId, deliveryBody, deliveryFeeVat, deliveryFormOf, invalidZoneRows } from './deliverySettings';
 
 const EMPTY_WEEK: WeeklyHoursDto = { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] };
 const WEEK: WeeklyHoursDto = { ...EMPTY_WEEK, mon: [{ open: '17:00', close: '22:00' }] };
@@ -9,12 +9,11 @@ const zone = (postcode: string) => ({ postcode, feeCents: 0, minOrderCents: 0 })
 
 describe('delivery settings helpers', () => {
   it('reads the stored delivery settings', () => {
-    expect(deliveryFormOf(undefined, 'food')).toEqual({
+    expect(deliveryFormOf(undefined)).toEqual({
       delivery: false,
       ownHours: false,
       hours: EMPTY_WEEK,
       zones: [],
-      feeTaxClassId: 'food',
     });
     expect(
       deliveryFormOf(
@@ -26,14 +25,12 @@ describe('delivery settings helpers', () => {
           deliveryHours: WEEK,
           deliveryFeeTaxClassId: 'beverage',
         },
-        'food',
       ),
     ).toEqual({
       delivery: true,
       ownHours: true,
       hours: WEEK,
       zones: [{ postcode: '10115', feeCents: 250, minOrderCents: 1500 }],
-      feeTaxClassId: 'beverage',
     });
   });
 
@@ -43,16 +40,46 @@ describe('delivery settings helpers', () => {
       ownHours: false,
       hours: WEEK,
       zones: [{ postcode: ' 10 115', feeCents: 250, minOrderCents: 1500 }],
-      feeTaxClassId: 'food',
     };
     const expected = {
       delivery: true,
       deliveryHours: null,
       deliveryZones: [{ postcode: '10115', feeCents: 250, minOrderCents: 1500 }],
-      deliveryFeeTaxClassId: 'food',
     };
     expect(deliveryBody(form)).toEqual(expected);
     expect(deliveryBody({ ...form, ownHours: true })).toEqual({ ...expected, deliveryHours: WEEK });
+  });
+
+  it('never sends a fee tax class, whatever the stored settings hold', () => {
+    const form = deliveryFormOf({
+      autoRejectMinutes: 10,
+      alertEmail: null,
+      delivery: true,
+      deliveryFeeTaxClassId: 'food',
+    });
+    expect('deliveryFeeTaxClassId' in deliveryBody(form)).toBe(false);
+  });
+
+  const E = (id: string, isActive = true) => ({ id, labels: { de: id === 'delivery' ? 'Lieferung' : id, en: id === 'delivery' ? 'Delivery' : id }, isActive });
+
+  it('the fee class is the active Delivery class, else the country default', () => {
+    expect(defaultDeliveryFeeTaxClassId({ taxClasses: [E('food'), E('delivery')], defaultTaxClassId: 'food' })).toBe('delivery');
+    expect(defaultDeliveryFeeTaxClassId({ taxClasses: [E('food'), E('delivery', false)], defaultTaxClassId: 'food' })).toBe('food');
+    expect(defaultDeliveryFeeTaxClassId({ taxClasses: [E('food')], defaultTaxClassId: 'food' })).toBe('food');
+  });
+
+  it('names the fee class and its delivery rate in the owner language', () => {
+    const refs = {
+      taxClasses: [E('food'), E('delivery')],
+      defaultTaxClassId: 'food',
+      currentTaxRates: [
+        { taxClassId: 'food', rates: { collection: 700, delivery: 700, dine_in: 700 } },
+        { taxClassId: 'delivery', rates: { collection: 1900, delivery: 1900, dine_in: 1900 } },
+      ],
+    };
+    expect(deliveryFeeVat(refs, 'de')).toEqual({ name: 'Lieferung', rate: '19 %' });
+    expect(deliveryFeeVat(refs, 'en')).toEqual({ name: 'Delivery', rate: '19%' });
+    expect(deliveryFeeVat({ ...refs, taxClasses: [], defaultTaxClassId: null }, 'en')).toBeNull();
   });
 
   it('marks bad and repeated postcodes', () => {
