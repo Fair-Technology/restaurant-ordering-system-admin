@@ -28,18 +28,14 @@ import { EMPTY_FOOD_INFO, effectiveTaxClassId, labelFor, taxClassOptionLabel } f
 import type { FoodInfo } from '../features/menu/foodInfo';
 import { isListRefreshing } from '../features/menu/productListStatus';
 import { wizardBackAction, wizardStepSequence } from '../features/menu/wizardSteps';
+import { importRowToCreateRequest, type MenuImportRow } from '../features/menu/menuImport';
 import type { PreviewDish } from '../features/menu/previewBridge';
 import { DishEditor } from '../components/menu/DishEditor';
 import { LivePreview } from '../components/menu/LivePreview';
 
 // ── Bulk import types ──────────────────────────────────────────────────────────
 
-type ImportRow = {
-  name: string;
-  description: string;
-  price: number | null;
-  image_url: string | null;
-};
+type ImportRow = MenuImportRow;
 type ImportStep = 'upload' | 'preview' | 'importing' | 'done';
 // ── Add Product Modal (5-step wizard) ─────────────────────────────────────────
 
@@ -327,7 +323,6 @@ function BulkImportModal({ shopId, onClose }: { shopId: string; onClose: () => v
             name: item.name,
             description: item.description,
             price: item.price == null ? null : Number(item.price),
-            image_url: typeof item.image_url === 'string' ? item.image_url : null,
           };
         });
         setParseError(null);
@@ -358,16 +353,7 @@ function BulkImportModal({ shopId, onClose }: { shopId: string; onClose: () => v
       setProgress(i + 1);
       try {
         await createProduct({
-          createProductRequest: {
-            shopId,
-            name: row.name,
-            description: row.description,
-            price: Math.round(row.price! * 100),
-            categoryIds: [],
-            images: row.image_url
-              ? [{ id: crypto.randomUUID(), url: row.image_url }]
-              : undefined,
-          },
+          createProductRequest: importRowToCreateRequest(shopId, row),
         }).unwrap();
       } catch {
         errs.push({ name: row.name, error: 'Failed to create' });
@@ -403,8 +389,8 @@ function BulkImportModal({ shopId, onClose }: { shopId: string; onClose: () => v
                   Upload a JSON file containing an array of products with{' '}
                   <code className="text-xs bg-gray-100 px-1 rounded">name</code>,{' '}
                   <code className="text-xs bg-gray-100 px-1 rounded">description</code>,{' '}
-                  <code className="text-xs bg-gray-100 px-1 rounded">price</code>, and{' '}
-                  <code className="text-xs bg-gray-100 px-1 rounded">image_url</code>.
+                  <code className="text-xs bg-gray-100 px-1 rounded">price</code>.
+                  Photos are not imported (any image_url is ignored) — add each dish's photo in the dish editor afterwards.
                 </p>
                 <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-gray-400 transition-colors">
                   <span className="text-sm text-gray-400">Click to select a .json file</span>
@@ -428,7 +414,6 @@ function BulkImportModal({ shopId, onClose }: { shopId: string; onClose: () => v
                   <table className="w-full text-sm">
                     <thead className="bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                       <tr>
-                        <th className="px-3 py-2 text-left w-10">Image</th>
                         <th className="px-3 py-2 text-left">Name</th>
                         <th className="px-3 py-2 text-left">Description</th>
                         <th className="px-3 py-2 text-left w-24">Price ({currencySymbol})</th>
@@ -437,13 +422,6 @@ function BulkImportModal({ shopId, onClose }: { shopId: string; onClose: () => v
                     <tbody className="divide-y divide-gray-100">
                       {rows.map((row, idx) => (
                         <tr key={idx} className="hover:bg-gray-50">
-                          <td className="px-3 py-2">
-                            {row.image_url ? (
-                              <img src={row.image_url} alt="" className="w-8 h-8 rounded object-cover" />
-                            ) : (
-                              <div className="w-8 h-8 rounded bg-gray-100" />
-                            )}
-                          </td>
                           <td className="px-3 py-2 font-medium text-gray-900">{row.name}</td>
                           <td className="px-3 py-2 text-gray-500 max-w-xs">
                             <span className="line-clamp-2">{row.description}</span>
