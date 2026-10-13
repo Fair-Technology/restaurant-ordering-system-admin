@@ -41,12 +41,3 @@ export function MyButton({
     </button>
   );
 }
-
-/** Use this on <Link> elements to get MyButton appearance without nesting button inside <a>. */
-export function myButtonLinkClass(
-  variant: Variant = 'primary',
-  size: Size = 'md',
-  extra = '',
-): string {
-  return `${BASE} ${variantClasses[variant]} ${sizeClasses[size]} ${extra}`.trim();
-}

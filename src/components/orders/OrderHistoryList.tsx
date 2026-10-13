@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatCents } from '../../utils/money';
 import { useGetOrdersByShopQuery, useGetShopByIdQuery } from '../../services/api';
@@ -185,9 +185,12 @@ export function OrderHistoryList({ shopId }: OrderHistoryListProps) {
   const { data: shop } = useGetShopByIdQuery({ shopId });
   const permissions = shop?.callerPermissions ?? [];
 
-  useEffect(() => {
+  // Back to page 1 when the shop changes (adjusted during render, not in an effect).
+  const [pageShopId, setPageShopId] = useState(shopId);
+  if (pageShopId !== shopId) {
+    setPageShopId(shopId);
     setPage(1);
-  }, [shopId]);
+  }
 
   const { data, isLoading, isError } = useGetOrdersByShopQuery({
     shopId,
