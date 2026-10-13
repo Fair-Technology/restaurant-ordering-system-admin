@@ -1,7 +1,7 @@
 import { api } from './api';
 import type { OrderResponse } from './api';
 
-export type RejectReason = 'too_busy' | 'item_unavailable' | 'closing_soon' | 'other' | 'no_response' | 'payment_failed';
+export type RejectReason = 'too_busy' | 'item_unavailable' | 'closing_soon' | 'other' | 'no_response' | 'payment_failed' | 'shop_unavailable';
 
 export interface TaxBreakdownEntry {
   rateBasisPoints: number;
