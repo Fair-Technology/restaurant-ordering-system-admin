@@ -326,7 +326,7 @@
     "orderAlertsFailed": "Could not save the order alerts.",
     "paymentsOnlineOnly": "Customers pay online when they order — by card, Apple Pay or Google Pay. The amount is reserved and only taken when the order is accepted. Your restaurant can only go live once Stripe is connected.",
     "autoAcceptTitle": "Automatic acceptance",
-    "autoAcceptHelp": "An order accepted automatically is charged the moment the customer has paid. Orders you accept by hand wait on the board; if nobody answers in time, they are declined and the customer is not charged.",
+    "autoAcceptHelp": "An order accepted automatically is charged the moment the customer has paid. Orders you accept by hand wait on the board; if nobody answers in time, they are declined and the customer is not charged. Orders are only accepted automatically while an orders screen is open on at least one device; otherwise they wait to be accepted by hand.",
     "autoAcceptChoice": {
       "always": "Always",
       "scheduled": "Only at these times (by hand otherwise)",
@@ -692,6 +692,8 @@
     "removeOption": "Remove"
   },
   "orders": {
+    "unwatchedBanner": "Automatic acceptance is on, but no orders screen is open. New orders will wait for someone to accept them by hand, and are declined if nobody does in time.",
+    "unwatchedOpen": "Open orders",
     "phoneView": "Phone view",
     "fullAdmin": "Full admin",
     "switchRestaurant": "Switch restaurant",
