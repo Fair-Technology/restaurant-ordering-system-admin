@@ -326,7 +326,7 @@
     "orderAlertsFailed": "Bestellbenachrichtigungen konnten nicht gespeichert werden.",
     "paymentsOnlineOnly": "Gäste bezahlen beim Bestellen online – mit Karte, Apple Pay oder Google Pay. Der Betrag wird reserviert und erst bei Annahme der Bestellung abgebucht. Ihr Restaurant kann erst live gehen, wenn Stripe verbunden ist.",
     "autoAcceptTitle": "Automatische Annahme",
-    "autoAcceptHelp": "Automatisch angenommene Bestellungen werden belastet, sobald der Gast bezahlt hat. Von Hand anzunehmende Bestellungen warten auf dem Board; antwortet niemand rechtzeitig, werden sie abgelehnt und der Gast zahlt nichts.",
+    "autoAcceptHelp": "Automatisch angenommene Bestellungen werden belastet, sobald der Gast bezahlt hat. Von Hand anzunehmende Bestellungen warten auf dem Board; antwortet niemand rechtzeitig, werden sie abgelehnt und der Gast zahlt nichts. Automatisch angenommen wird nur, solange auf mindestens einem Gerät ein Bestellbildschirm geöffnet ist; sonst warten Bestellungen auf die Annahme von Hand.",
     "autoAcceptChoice": {
       "always": "Immer",
       "scheduled": "Nur zu diesen Zeiten (sonst von Hand)",
@@ -692,6 +692,8 @@
     "removeOption": "Entfernen"
   },
   "orders": {
+    "unwatchedBanner": "Automatische Annahme ist an, aber kein Bestellbildschirm ist geöffnet. Neue Bestellungen warten, bis jemand sie von Hand annimmt, und werden abgelehnt, wenn das nicht rechtzeitig passiert.",
+    "unwatchedOpen": "Bestellungen öffnen",
     "phoneView": "Handy-Ansicht",
     "fullAdmin": "Volle Ansicht",
     "switchRestaurant": "Restaurant wechseln",

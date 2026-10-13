@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useGetOrderQueueQuery, type IntakeOrder } from '../../services/ordersApi';
+import { useGetOrderQueueQuery, useSendOrdersScreenHeartbeatMutation, type IntakeOrder } from '../../services/ordersApi';
 import {
   connectionState,
   hasWaitingOrders,
@@ -12,18 +12,25 @@ import {
 import { useOrderAlarm } from './useOrderAlarm';
 import { useWakeLock } from './useWakeLock';
 import { useNow } from './useNow';
+import { startHeartbeat } from './ordersScreen';
 
 const NO_ORDERS: IntakeOrder[] = [];
 
 /**
  * The live order queue, shared by the orders page and the phone view: polls every 10 s, shows an
  * order as accepted from the first tap (while the server takes the payment), rings while orders
- * wait, chimes once for each auto-accepted order and keeps the screen on while the sound is on.
+ * wait, chimes once for each auto-accepted order and keeps the screen on while the sound is on,
+ * and tells the server every minute that a board is open, so auto-accept only runs while someone can see it.
  */
 export function useLiveQueue(shopId: string) {
   const { data, isLoading, isError, fulfilledTimeStamp, refetch } = useGetOrderQueueQuery(
     { shopId },
     { pollingInterval: 10000, refetchOnReconnect: true },
+  );
+  const [sendHeartbeat] = useSendOrdersScreenHeartbeatMutation();
+  useEffect(
+    () => startHeartbeat(() => { void sendHeartbeat({ shopId }); }, { doc: document, win: window }),
+    [shopId, sendHeartbeat],
   );
   const nowMs = useNow(1000);
 

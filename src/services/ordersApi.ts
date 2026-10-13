@@ -81,6 +81,12 @@ export interface SlotCapacityDto {
   taken: Record<string, number>;
 }
 
+export interface OrdersScreenDto {
+  lastSeenAt: string | null;
+  watched: boolean;
+  autoAcceptOn: boolean;
+}
+
 export interface OrderQueueDto {
   serverTime: string;
   timezone: string;
@@ -92,6 +98,8 @@ export interface OrderQueueDto {
   upcoming?: UpcomingOrder[];
   // Absent when talking to a backend from before capacity limits; null = no limit
   capacity?: SlotCapacityDto | null;
+  // Absent when talking to a backend from before the orders-screen ping
+  ordersScreen?: OrdersScreenDto;
 }
 
 export interface OrderSettingsDto {
@@ -237,6 +245,9 @@ export const ordersApi = api.injectEndpoints({
         }
       },
     }),
+    sendOrdersScreenHeartbeat: build.mutation<{ lastSeenAt: string }, { shopId: string }>({
+      query: ({ shopId }) => ({ url: `/shops/${shopId}/orders-screen/heartbeat`, method: 'POST', body: {} }),
+    }),
   }),
 });
 
@@ -251,6 +262,7 @@ export const {
   useGetOrderDocumentMutation,
   useUpdateOrderSettingsMutation,
   useSetBusyModeMutation,
+  useSendOrdersScreenHeartbeatMutation,
 } = ordersApi;
 
 const BOARD_STATES = ['PLACED', 'ACCEPTED', 'READY', 'OUT_FOR_DELIVERY'];
