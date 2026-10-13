@@ -9,7 +9,7 @@ import './index.css'
 import { store } from './store'
 import { router } from './router'
 import { msalInstance } from './config/msalConfig'
-import { ToastProvider } from './contexts/ToastContext'
+import { ToastProvider } from './contexts/ToastProvider'
 
 ;(async () => {
   console.log('[env]', {

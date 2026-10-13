@@ -6,40 +6,13 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
-export const ICON_MAP: Record<string, LucideIcon> = {
+const ICON_MAP: Record<string, LucideIcon> = {
   Flame, Leaf, Fish, Wheat, Droplets, Heart, Star, Snowflake,
   Zap, Shield, AlertTriangle, Coffee, Utensils, Wine, Beer,
   Cake, IceCream, Carrot, Cherry, Citrus, Egg, TreePine, Sun, Sandwich,
 };
 
-export const ICON_NAMES = Object.keys(ICON_MAP);
-
-export const ICON_DEFAULT_LABELS: Record<string, string> = {
-  Flame:         'Spicy',
-  Leaf:          'Vegan',
-  Fish:          'Contains Fish',
-  Wheat:         'Contains Gluten',
-  Droplets:      'Contains Dairy',
-  Heart:         'Healthy',
-  Star:          "Chef's Special",
-  Snowflake:     'Chilled',
-  Zap:           'Quick Prep',
-  Shield:        'Allergen Free',
-  AlertTriangle: 'Contains Allergens',
-  Coffee:        'Contains Caffeine',
-  Utensils:      'Vegetarian',
-  Wine:          'Contains Alcohol',
-  Beer:          'Contains Beer',
-  Cake:          'Contains Sugar',
-  IceCream:      'Frozen',
-  Carrot:        'Plant-Based',
-  Cherry:        'Contains Cherry',
-  Citrus:        'Contains Citrus',
-  Egg:           'Contains Egg',
-  TreePine:      'Natural',
-  Sun:           'Fresh',
-  Sandwich:      'Contains Bread',
-};
+const ICON_NAMES = Object.keys(ICON_MAP);
 
 interface IconPickerProps {
   value: string | null;

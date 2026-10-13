@@ -77,6 +77,12 @@ export function ImageCropDialog({ file, rule, title, hint, safeAreaLabel, tooSma
   const [url, setUrl] = useState<string | null>(null);
   const [size, setSize] = useState<{ width: number; height: number } | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
+  // A new file clears the previous file's load failure (adjusted during render, not in an effect).
+  const [loadedFile, setLoadedFile] = useState(file);
+  if (loadedFile !== file) {
+    setLoadedFile(file);
+    setLoadFailed(false);
+  }
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(MIN_ZOOM);
   const [area, setArea] = useState<PercentArea>({ x: 0, y: 0, width: 100, height: 100 });
@@ -91,7 +97,6 @@ export function ImageCropDialog({ file, rule, title, hint, safeAreaLabel, tooSma
     let cancelled = false;
     const objectUrl = URL.createObjectURL(file);
     const img = new Image();
-    setLoadFailed(false);
     img.onload = () => {
       if (cancelled) return;
       imageRef.current = img;
