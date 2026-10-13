@@ -1120,7 +1120,6 @@
     "discounts": "Discounts and vouchers",
     "deliveryFees": "Delivery fees",
     "refunds": "Refunds",
-    "stripeRefundsNote": "Refunds made directly in Stripe are not included.",
     "monthToDate": "This month: {{count}} of {{limit}} orders",
     "monthToDateUnlimited": "This month: {{count}} orders (no limit)",
     "byDay": "Takings by day",

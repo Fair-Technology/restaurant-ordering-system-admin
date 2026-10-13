@@ -154,7 +154,7 @@ export function ReportsPage() {
           <div className="mb-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
             <StatTile label={t('reports.takings')} value={money(report.totals.takingsCents)} help={t('reports.takingsHelp')} />
             <StatTile label={t('reports.orders')} value={String(report.totals.orderCount)} />
-            <StatTile label={t('reports.refunds')} value={money(report.totals.refundCents)} help={t('reports.stripeRefundsNote')} />
+            <StatTile label={t('reports.refunds')} value={money(report.totals.refundCents)} />
             <StatTile label={t('reports.discounts')} value={money(report.totals.discountCents)} />
           </div>
           <div className="mb-[18px] flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-muted">
