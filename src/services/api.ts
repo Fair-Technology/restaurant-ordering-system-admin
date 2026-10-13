@@ -1052,6 +1052,10 @@ export type ProductResponse = {
       priceDelta?: number;
       /** Whether option is available */
       isAvailable?: boolean;
+      /** What this option adds; hand-added — generated client lags */
+      allergenIds?: string[] | null;
+      /** What this option adds; hand-added — generated client lags */
+      additiveIds?: string[] | null;
     }[];
   }[];
   /** Product addon groups (optional) */
@@ -1077,6 +1081,10 @@ export type ProductResponse = {
       priceDelta?: number;
       /** Whether option is available */
       isAvailable?: boolean;
+      /** What this option adds; hand-added — generated client lags */
+      allergenIds?: string[] | null;
+      /** What this option adds; hand-added — generated client lags */
+      additiveIds?: string[] | null;
     }[];
   }[];
   /** Whether product is available */
@@ -1131,7 +1139,7 @@ export type CreateProductRequest = {
     id: string;
     name: string;
     nameTranslations?: TranslationMap;
-    options: { id: string; name: string; nameTranslations?: TranslationMap; priceDelta: number; isAvailable: boolean }[];
+    options: { id: string; name: string; nameTranslations?: TranslationMap; priceDelta: number; isAvailable: boolean; /** What this option adds; hand-added — generated client lags */ allergenIds?: string[]; /** What this option adds; hand-added — generated client lags */ additiveIds?: string[] }[];
   }[];
   addonGroups?: {
     id: string;
@@ -1139,7 +1147,7 @@ export type CreateProductRequest = {
     nameTranslations?: TranslationMap;
     minSelectable: number;
     maxSelectable: number;
-    options: { id: string; name: string; nameTranslations?: TranslationMap; priceDelta: number; isAvailable: boolean }[];
+    options: { id: string; name: string; nameTranslations?: TranslationMap; priceDelta: number; isAvailable: boolean; /** What this option adds; hand-added — generated client lags */ allergenIds?: string[]; /** What this option adds; hand-added — generated client lags */ additiveIds?: string[] }[];
   }[];
   /** Optional availability schedule; null = no time restriction */
   schedule?: ProductSchedule | null;
@@ -1192,6 +1200,10 @@ export type UpdateProductRequest = {
       /** Price delta in cents */
       priceDelta: number;
       isAvailable: boolean;
+      /** What this option adds; hand-added — generated client lags */
+      allergenIds?: string[];
+      /** What this option adds; hand-added — generated client lags */
+      additiveIds?: string[];
     }[];
   }[];
   /** Addon groups (multi-select per group, e.g. Extras) */
@@ -1208,6 +1220,10 @@ export type UpdateProductRequest = {
       /** Price delta in cents */
       priceDelta: number;
       isAvailable: boolean;
+      /** What this option adds; hand-added — generated client lags */
+      allergenIds?: string[];
+      /** What this option adds; hand-added — generated client lags */
+      additiveIds?: string[];
     }[];
   }[];
   /** Optional availability schedule; null = no time restriction */

@@ -28,6 +28,7 @@ import { useUploadProductImage } from '../../features/menu/useUploadProductImage
 import { dishPhotoMissing, isPhotoRequiredError, replaceDishPhoto } from '../../features/menu/productImage';
 import { isWrongSizeError } from '../../features/images/imageRules';
 import { useShopReferenceLists } from '../../features/menu/useShopReferenceLists';
+import { optionGroupsFromProduct } from '../../features/menu/optionFoodInfo';
 import { EMPTY_FOOD_INFO, effectiveTaxClassId, foodInfoFromProduct, type FoodInfo } from '../../features/menu/foodInfo';
 import { menuLanguagesOf, resolveActiveLanguage, withTranslation } from '../../features/menu/translations';
 import type { PreviewDish } from '../../features/menu/previewBridge';
@@ -66,32 +67,7 @@ function stateFromProduct(product: ProductResponse): EditState {
     categoryIds: product.categories?.map((c) => c.id!).filter(Boolean) ?? [],
     foodInfo: foodInfoFromProduct(product),
     isAvailable: product.isAvailable !== false,
-    variantGroups: (product.variantGroups ?? []).map((g) => ({
-      id: g.id ?? crypto.randomUUID(),
-      name: g.name ?? '',
-      nameTranslations: g.nameTranslations ?? {},
-      options: (g.options ?? []).map((o) => ({
-        id: o.id ?? crypto.randomUUID(),
-        name: o.name ?? '',
-        nameTranslations: o.nameTranslations ?? {},
-        priceDelta: o.priceDelta ?? 0,
-        isAvailable: o.isAvailable ?? true,
-      })),
-    })),
-    addonGroups: (product.addonGroups ?? []).map((g) => ({
-      id: g.id ?? crypto.randomUUID(),
-      name: g.name ?? '',
-      nameTranslations: g.nameTranslations ?? {},
-      minSelectable: g.minSelectable ?? 0,
-      maxSelectable: g.maxSelectable ?? 1,
-      options: (g.options ?? []).map((o) => ({
-        id: o.id ?? crypto.randomUUID(),
-        name: o.name ?? '',
-        nameTranslations: o.nameTranslations ?? {},
-        priceDelta: o.priceDelta ?? 0,
-        isAvailable: o.isAvailable ?? true,
-      })),
-    })),
+    ...optionGroupsFromProduct(product),
   };
 }
 
@@ -425,6 +401,7 @@ export function DishEditor({ productId, shopId, currencySymbol, categoriesList, 
               {...variantHelpers}
               addonGroups={edit.addonGroups}
               {...addonHelpers}
+              refs={refs}
               translation={translatingLanguage ? { language: translatingLanguage, setGroup: setGroupTranslation, setOption: setOptionTranslation } : undefined}
             />
           </section>

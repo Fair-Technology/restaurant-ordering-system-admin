@@ -650,6 +650,8 @@
     "allergens": "Allergens",
     "additives": "Additives",
     "allergensNone": "Contains none of the 14 allergens",
+    "optionFoodInfo": "Allergens & additives",
+    "optionFoodInfoHelp": "Only what this option adds — the dish's own allergens are set above.",
     "additivesNone": "Contains no declarable additives",
     "foodInfoUndeclaredWarning": "Until allergens and additives are declared, this dish stays off your menu.",
     "dietaryTags": "Dietary tags",
