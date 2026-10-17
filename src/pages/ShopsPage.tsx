@@ -9,6 +9,8 @@ import {
   useUpdateShopMutation,
 } from '../services/api';
 import type { CreateShopRequest, MenuLanguage, ShopResponse } from '../services/api';
+import { TakeShopOfflineModal } from '../components/shop/GoLiveModal';
+import { isOfflineBySuperadminError } from '../features/shops/shopStatus';
 import { visibleShops } from '../features/shops/deleteShop';
 import { defaultMenuLanguageForUiLanguage } from '../features/menu/translations';
 import { useGetDpaDocumentQuery } from '../services/legalApi';
@@ -284,40 +286,58 @@ function ShopAvailabilityToggle({
   setIsPaused: (paused: boolean) => void;
 }) {
   const { t } = useTranslation();
+  const toast = useToast();
   const [updateShop, { isLoading }] = useUpdateShopMutation();
+  const [confirmOffline, setConfirmOffline] = useState(false);
   const isOn = !isPaused;
 
   const handleClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const next = !isPaused;
-    setIsPaused(next);
+    // Going offline asks first: diners lose the menu
+    if (!isPaused) {
+      setConfirmOffline(true);
+      return;
+    }
+    setIsPaused(false);
     try {
-      await updateShop({
-        shopId: shop.id!,
-        updateShopRequest: { isPaused: next },
-      }).unwrap();
-    } catch {
-      setIsPaused(isPaused);
+      await updateShop({ shopId: shop.id!, updateShopRequest: { isPaused: false } }).unwrap();
+    } catch (err) {
+      setIsPaused(true);
+      toast.error(isOfflineBySuperadminError(err) ? t('nav.offlineBySuperadminToast') : t('shops.statusFailedToSave'));
     }
   };
 
   return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={isOn}
-      aria-label={`${t('shops.statusOnline')}: ${shop.name ?? ''}`}
-      onClick={handleClick}
-      onKeyDown={(e) => e.stopPropagation()}
-      disabled={isLoading || shop.offlineBySuperadmin === true}
-      title={t('shops.statusOnline')}
-      className={`relative h-5 w-[34px] flex-shrink-0 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 disabled:opacity-50 ${
-        isOn ? 'bg-[#2f8a4c]' : 'bg-[#d6cdc4]'
-      }`}
-    >
-      <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${isOn ? 'right-0.5' : 'left-0.5'}`} />
-    </button>
+    <>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={isOn}
+        aria-label={`${t('shops.statusOnline')}: ${shop.name ?? ''}`}
+        onClick={handleClick}
+        onKeyDown={(e) => e.stopPropagation()}
+        disabled={isLoading || shop.offlineBySuperadmin === true}
+        title={t('shops.statusOnline')}
+        className={`relative h-5 w-[34px] flex-shrink-0 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 disabled:opacity-50 ${
+          isOn ? 'bg-[#2f8a4c]' : 'bg-[#d6cdc4]'
+        }`}
+      >
+        <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${isOn ? 'right-0.5' : 'left-0.5'}`} />
+      </button>
+      {confirmOffline && (
+        <div onClick={(e) => e.stopPropagation()}>
+          <TakeShopOfflineModal
+            shopId={shop.id!}
+            onClose={() => setConfirmOffline(false)}
+            onSuccess={() => {
+              setConfirmOffline(false);
+              setIsPaused(true);
+            }}
+          />
+        </div>
+      )}
+    </>
   );
 }
 
