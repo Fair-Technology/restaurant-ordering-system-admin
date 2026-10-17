@@ -82,6 +82,13 @@ describe('refund helpers', () => {
     expect(itemSelectionCents({ items, refunds: [] }, { 0: 1, 1: 2 })).toBe(1367);
   });
 
+  it('a failed refund and its reversal entry do not shift the discounted price share', () => {
+    const items = [{ unitPriceCents: 350, quantity: 2, lineTotalCents: 700, discountCents: 133 }];
+    const line = [{ lineIndex: 0, quantity: 1 }];
+    const refunds = [{ lines: line, reversed: true }, { lines: line, reversal: true }];
+    expect(itemSelectionCents({ items, refunds }, { 0: 1 })).toBe(283);
+  });
+
   it('turns the selection into request items', () => {
     expect(selectionToItems({ 1: 1, 0: 0, 3: 2 })).toEqual([
       { lineIndex: 1, quantity: 1 },
