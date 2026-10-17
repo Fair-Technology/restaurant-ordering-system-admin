@@ -647,6 +647,10 @@ export type ShopResponse = {
   ordersPaused?: boolean;
   /** Message shown while orders are paused (max 280) */
   ordersPausedMessage?: string;
+  /** End of a timed pause (ISO); null/absent = until switched back */
+  ordersPausedUntil?: string | null;
+  /** Set when the server paused orders after missed orders in a row */
+  ordersAutoPaused?: { missedOrders: number; at: string } | null;
   /** isPaused or offlineBySuperadmin: show no menu */
   isOffline?: boolean;
   /** Platform took the shop offline; owner cannot bring it online */
@@ -860,6 +864,8 @@ export type UpdateShopRequest = {
   ordersPaused?: boolean;
   /** Message shown while orders are paused (max 280) */
   ordersPausedMessage?: string;
+  /** How long a pause lasts; only with ordersPaused: true. Omitted = until switched back */
+  ordersPausedFor?: import('../features/shops/shopStatus').OrdersPauseDuration;
   /** Payment policy */
   /** Minimum order amount in cents */
   minOrderAmountCents?: number;

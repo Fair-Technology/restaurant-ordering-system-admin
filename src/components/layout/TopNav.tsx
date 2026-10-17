@@ -1,15 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
+import { useDispatch } from 'react-redux';
 import { Link, NavLink, useNavigate, useParams } from 'react-router-dom';
 import { useMsal } from '@azure/msal-react';
 import { useTranslation } from 'react-i18next';
 import { ChevronsUpDown, LayoutDashboard, LogOut, Menu, Store, X } from 'lucide-react';
 import { useGetMyShopsQuery, useGetShopByIdQuery, useUpdateShopMutation, type ShopResponse } from '../../services/api';
 import { useGetOrderQueueQuery } from '../../services/ordersApi';
+import { baseApi } from '../../services/baseApi';
+import { useNow } from '../../features/orders/useNow';
 import { navGroups } from '../../features/shops/shopNav';
-import { isOfflineBySuperadminError, shopLiveState } from '../../features/shops/shopStatus';
+import { formatPauseEnd, isOfflineBySuperadminError, isOrdersPausedAt, shopLiveState, shopPauseOutOfDate } from '../../features/shops/shopStatus';
 import { clearStaffSession, readStaffSession } from '../../features/staff/staffSession';
 import { useToast } from '../../contexts/ToastContext';
 import { AccountSettingsModal } from './AccountSettingsModal';
+import { PauseOrdersDialog } from '../shop/PauseOrdersDialog';
 
 /** Round shop logo, or its first letter when no logo is uploaded. */
 function ShopBadge({ shop, size = 36 }: { shop: Pick<ShopResponse, 'name' | 'branding'> | undefined; size?: number }) {
@@ -33,10 +37,12 @@ function ShopBadge({ shop, size = 36 }: { shop: Pick<ShopResponse, 'name' | 'bra
  * or offline (link to the settings, where going online runs the go-live checklist).
  */
 function ShopStatusSwitch({ shop, canManage }: { shop: ShopResponse; canManage: boolean }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const toast = useToast();
   const [updateShop, { isLoading }] = useUpdateShopMutation();
-  const live = shopLiveState(shop);
+  const nowMs = useNow(30_000);
+  const live = shopLiveState(shop, nowMs);
+  const [pausing, setPausing] = useState(false);
 
   if (live === 'offline') {
     return (
@@ -52,8 +58,13 @@ function ShopStatusSwitch({ shop, canManage }: { shop: ShopResponse; canManage: 
 
   const taking = live === 'online';
   const toggle = async () => {
+    // Pausing asks how long first; switching back on needs no question
+    if (taking) {
+      setPausing(true);
+      return;
+    }
     try {
-      await updateShop({ shopId: shop.id!, updateShopRequest: { ordersPaused: taking } }).unwrap();
+      await updateShop({ shopId: shop.id!, updateShopRequest: { ordersPaused: false } }).unwrap();
     } catch (err) {
       toast.error(isOfflineBySuperadminError(err) ? t('nav.offlineBySuperadminToast') : t('shops.statusFailedToSave'));
     }
@@ -70,7 +81,13 @@ function ShopStatusSwitch({ shop, canManage }: { shop: ShopResponse; canManage: 
         className={`flex items-center gap-2 text-[13px] font-bold ${taking ? 'text-[#1d5a32]' : 'text-[#5c3c00]'}`}
       >
         <span className={`h-2 w-2 rounded-full ${taking ? 'bg-[#2f8a4c]' : 'bg-[#d97706]'}`} aria-hidden="true" />
-        {taking ? t('nav.acceptingOrders') : t('nav.ordersPausedBadge')}
+        {taking
+          ? t('nav.acceptingOrders')
+          : shop.ordersPausedUntil && isOrdersPausedAt(shop, nowMs)
+            ? t('nav.ordersPausedUntil', {
+                time: formatPauseEnd(shop.ordersPausedUntil, shop.timezone ?? 'Europe/Berlin', i18n.language),
+              })
+            : t('nav.ordersPausedBadge')}
       </span>
       {canManage && (
         <button
@@ -88,6 +105,9 @@ function ShopStatusSwitch({ shop, canManage }: { shop: ShopResponse; canManage: 
             className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${taking ? 'right-0.5' : 'left-0.5'}`}
           />
         </button>
+      )}
+      {pausing && (
+        <PauseOrdersDialog shopId={shop.id!} onClose={() => setPausing(false)} onPaused={() => setPausing(false)} />
       )}
     </div>
   );
@@ -186,17 +206,25 @@ export function TopNav() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
 
-  const { data: currentShop } = useGetShopByIdQuery({ shopId: shopId! }, { skip: !shopId });
+  const dispatch = useDispatch();
+  const { data: currentShop, fulfilledTimeStamp: shopAt } = useGetShopByIdQuery({ shopId: shopId! }, { skip: !shopId });
   const perms = currentShop?.callerPermissions ?? [];
   const groups = navGroups(perms);
   const canSeeOrders = groups.some((g) => g.items.includes('orders'));
 
   // New orders waiting, for the badge (the orders page itself polls faster)
-  const { data: queue } = useGetOrderQueueQuery(
+  const { data: queue, fulfilledTimeStamp: queueAt } = useGetOrderQueueQuery(
     { shopId: shopId! },
     { skip: !shopId || !canSeeOrders, pollingInterval: 30000 },
   );
   const waiting = (queue?.orders ?? []).filter((o) => o.state === 'PLACED').length;
+
+  // The server can pause orders on its own (missed orders); the queue we already poll tells us, so refetch the shop
+  useEffect(() => {
+    if (shopPauseOutOfDate(queue?.ordersPause, queueAt, currentShop, shopAt, Date.now())) {
+      dispatch(baseApi.util.invalidateTags([{ type: 'Shops', id: shopId! }]));
+    }
+  }, [queue, queueAt, currentShop, shopAt, shopId, dispatch]);
 
   // Close the drawer when the shop changes
   const [drawerShop, setDrawerShop] = useState(shopId);
