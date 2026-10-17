@@ -53,7 +53,15 @@ export type IntakeOrder = Omit<OrderResponse, 'items'> & {
   customerAddress: { street: string; postcode: string; city: string; country: string } | null;
   refundedCents: number;
   // lines is [] for a free-amount refund
-  refunds: Array<{ amountCents: number; reason: string; at: string; lines: OrderRefundLine[] }>;
+  refunds: Array<{
+    amountCents: number;
+    reason: string;
+    at: string;
+    lines: OrderRefundLine[];
+    // Absent on a backend from before refund reversals
+    reversal?: boolean;
+    reversed?: boolean;
+  }>;
   releaseFailure: { at: string; message: string } | null;
   documents: OrderDocument[];
   autoAccepted: boolean;

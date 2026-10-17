@@ -36,6 +36,8 @@ export function StateBadge({ order }: { order: Pick<IntakeOrder, 'displayState'>
         ? 'bg-sand text-ink'
         : s === 'READY' || s === 'OUT_FOR_DELIVERY' || s === 'COMPLETED'
           ? 'bg-[#e6f3ea] text-[#1d5a32]'
-          : 'bg-[#fdeceb] text-[#b42318]';
+          : s === 'REFUNDED'
+            ? 'bg-[#efe7de] text-[#4a413b]'
+            : 'bg-[#fdeceb] text-[#b42318]';
   return <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold whitespace-nowrap ${style}`}>{t(`orders.state.${s}`)}</span>;
 }

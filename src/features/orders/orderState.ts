@@ -6,7 +6,8 @@ export type OrderDisplayState =
   | 'OUT_FOR_DELIVERY'
   | 'COMPLETED'
   | 'REJECTED'
-  | 'CANCELLED';
+  | 'CANCELLED'
+  | 'REFUNDED';
 
 export const ORDER_DISPLAY_STATES: readonly OrderDisplayState[] = [
   'PLACED',
@@ -17,6 +18,7 @@ export const ORDER_DISPLAY_STATES: readonly OrderDisplayState[] = [
   'COMPLETED',
   'REJECTED',
   'CANCELLED',
+  'REFUNDED',
 ];
 
 export const ORDER_STATE_BADGE: Record<OrderDisplayState, string> = {
@@ -28,4 +30,5 @@ export const ORDER_STATE_BADGE: Record<OrderDisplayState, string> = {
   COMPLETED: 'bg-gray-100 text-gray-600 border border-gray-200',
   REJECTED: 'bg-red-50 text-red-700 border border-red-200',
   CANCELLED: 'bg-red-50 text-red-700 border border-red-200',
+  REFUNDED: 'bg-gray-100 text-gray-600 border border-gray-200',
 };

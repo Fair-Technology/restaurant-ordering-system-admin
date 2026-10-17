@@ -50,6 +50,21 @@ describe('refund helpers', () => {
     ).toEqual([1, 1]);
   });
 
+  it('a refund Stripe failed frees its items again', () => {
+    expect(
+      remainingQuantities({
+        items: [{ quantity: 1 }, { quantity: 2 }],
+        refunds: [{ lines: [{ lineIndex: 1, quantity: 2 }], reversed: true }, { lines: [], reversal: true }],
+      }),
+    ).toEqual([1, 2]);
+  });
+
+  it('an ended order can be refunded again after a failure', () => {
+    const ended = { state: 'REFUNDED', paymentStatus: 'paid', subtotalCents: 1000, refundedCents: 0 };
+    expect(canRefund(ended, ['refund_orders'])).toBe(true);
+    expect(canRefund({ ...ended, paymentStatus: 'refunded', refundedCents: 1000 }, ['refund_orders'])).toBe(false);
+  });
+
   it('adds up the ticked items', () => {
     const order = { items: [{ unitPriceCents: 1050 }, { unitPriceCents: 350 }] };
     expect(itemSelectionCents(order, { 1: 1 })).toBe(350);
