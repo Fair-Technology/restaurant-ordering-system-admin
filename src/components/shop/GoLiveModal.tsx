@@ -68,15 +68,15 @@ export function GoLiveCriteriaModal({ shopId, status, onClose }: CriteriaProps) 
   );
 }
 
-// ── Pause mode ─────────────────────────────────────────────────────────────
+// ── Take-offline mode ─────────────────────────────────────────────────────────────
 
-interface PauseProps {
+interface TakeOfflineProps {
   shopId: string;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-export function PauseShopModal({ shopId, onClose, onSuccess }: PauseProps) {
+export function TakeShopOfflineModal({ shopId, onClose, onSuccess }: TakeOfflineProps) {
   const { t } = useTranslation();
   const [updateShop, { isLoading, error }] = useUpdateShopMutation();
 
@@ -98,7 +98,7 @@ export function PauseShopModal({ shopId, onClose, onSuccess }: PauseProps) {
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-sm">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="text-base font-semibold text-gray-900">{t('shops.pauseTitle')}</h2>
+          <h2 className="text-base font-semibold text-gray-900">{t('shops.offlineTitle')}</h2>
           <button
             type="button"
             onClick={onClose}
@@ -123,7 +123,7 @@ export function PauseShopModal({ shopId, onClose, onSuccess }: PauseProps) {
             onClick={handleConfirm}
             disabled={isLoading}
           >
-            {isLoading ? t('shops.pausePausing') : t('shops.pauseConfirm')}
+            {isLoading ? t('shops.offlineTaking') : t('shops.offlineConfirm')}
           </MyButton>
         </div>
       </div>

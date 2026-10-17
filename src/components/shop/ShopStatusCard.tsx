@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNow } from '../../features/orders/useNow';
 import type { ShopResponse } from '../../services/api';
 import { useLazyGetGoLiveStatusQuery, useUpdateShopMutation } from '../../services/api';
 import {
@@ -7,7 +8,9 @@ import {
   canGoOnline,
   canToggleOrdersPause,
   cleanOrdersPausedMessage,
+  formatPauseEnd,
   isOfflineBySuperadminError,
+  isOrdersPausedAt,
   shopLiveState,
 } from '../../features/shops/shopStatus';
 import { useToast } from '../../contexts/ToastContext';
@@ -15,7 +18,8 @@ import { Section } from '../layout/Page';
 import { MyButton } from '../ui/MyButton';
 import { MyInput } from '../ui/MyInput';
 import { MySwitch } from '../ui/MySwitch';
-import { GoLiveCriteriaModal, PauseShopModal } from './GoLiveModal';
+import { GoLiveCriteriaModal, TakeShopOfflineModal } from './GoLiveModal';
+import { PauseOrdersDialog } from './PauseOrdersDialog';
 
 interface Props {
   shop: ShopResponse;
@@ -27,15 +31,16 @@ interface Props {
  * Pause orders (menu stays, ordering refused), plus the optional message diners see while paused.
  */
 export function ShopStatusCard({ shop, onRefetch }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const toast = useToast();
   const shopId = shop.id!;
   const [updateShop, { isLoading: saving }] = useUpdateShopMutation();
   const [fetchGoLiveStatus, { data: goLiveStatus, isFetching: goLiveChecking }] = useLazyGetGoLiveStatusQuery();
-  const [modal, setModal] = useState<'criteria' | 'offline' | null>(null);
+  const [modal, setModal] = useState<'criteria' | 'offline' | 'pauseOrders' | null>(null);
   const [messageState, setMessageState] = useState<string | null>(null);
 
-  const liveState = shopLiveState(shop);
+  const nowMs = useNow(30_000);
+  const liveState = shopLiveState(shop, nowMs);
   const online = liveState !== 'offline';
   const takenOfflineByPlatform = shop.offlineBySuperadmin === true;
   const message = messageState ?? shop.ordersPausedMessage ?? '';
@@ -100,11 +105,18 @@ export function ShopStatusCard({ shop, onRefetch }: Props) {
             <p id="orders-paused-help" className="text-[13px] text-muted">
               {t('shops.statusPauseHelp')}
             </p>
+            {liveState === 'ordersPaused' && shop.ordersPausedUntil && (
+              <p className="text-[13px] text-muted">
+                {t('shops.pausedUntil', {
+                  time: formatPauseEnd(shop.ordersPausedUntil, shop.timezone ?? 'Europe/Berlin', i18n.language),
+                })}
+              </p>
+            )}
           </div>
           <MySwitch
-            checked={shop.ordersPaused === true}
-            onChange={(next) => save({ ordersPaused: next })}
-            disabled={busy || !canToggleOrdersPause(shop)}
+            checked={isOrdersPausedAt(shop, nowMs)}
+            onChange={(next) => (next ? setModal('pauseOrders') : save({ ordersPaused: false }))}
+            disabled={busy || !canToggleOrdersPause(shop, nowMs)}
             labelledBy="orders-paused-label"
             describedBy="orders-paused-help"
           />
@@ -137,10 +149,20 @@ export function ShopStatusCard({ shop, onRefetch }: Props) {
         <GoLiveCriteriaModal shopId={shopId} status={goLiveStatus} onClose={() => setModal(null)} />
       )}
       {modal === 'offline' && (
-        <PauseShopModal
+        <TakeShopOfflineModal
           shopId={shopId}
           onClose={() => setModal(null)}
           onSuccess={() => {
+            setModal(null);
+            onRefetch();
+          }}
+        />
+      )}
+      {modal === 'pauseOrders' && (
+        <PauseOrdersDialog
+          shopId={shopId}
+          onClose={() => setModal(null)}
+          onPaused={() => {
             setModal(null);
             onRefetch();
           }}

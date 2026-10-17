@@ -9,6 +9,7 @@ import { PAYMENT_STATUSES } from '../features/orders/refunds';
 import { COVER_IMAGE_FILE_ERRORS } from '../features/shops/coverImage';
 import { PRODUCT_IMAGE_FILE_ERRORS } from '../features/menu/productImage';
 import { AUTO_ACCEPT_CHOICES } from '../features/shops/kitchenSettings';
+import { PAUSE_DURATIONS } from '../features/shops/shopStatus';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -83,6 +84,13 @@ describe('locales', () => {
     for (const status of PAYMENT_STATUSES) {
       expect(en).toHaveProperty(`orders.payment.${status}`);
       expect(de).toHaveProperty(`orders.payment.${status}`);
+    }
+  });
+
+  it('every pause duration is labelled', () => {
+    for (const d of PAUSE_DURATIONS) {
+      expect(en).toHaveProperty(`shops.pauseFor.${d}`);
+      expect(de).toHaveProperty(`shops.pauseFor.${d}`);
     }
   });
 });
