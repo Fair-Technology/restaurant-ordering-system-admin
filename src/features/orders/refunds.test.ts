@@ -50,6 +50,21 @@ describe('refund helpers', () => {
     ).toEqual([1, 1]);
   });
 
+  it('a refund Stripe failed frees its items again', () => {
+    expect(
+      remainingQuantities({
+        items: [{ quantity: 1 }, { quantity: 2 }],
+        refunds: [{ lines: [{ lineIndex: 1, quantity: 2 }], reversed: true }, { lines: [], reversal: true }],
+      }),
+    ).toEqual([1, 2]);
+  });
+
+  it('an ended order can be refunded again after a failure', () => {
+    const ended = { state: 'REFUNDED', paymentStatus: 'paid', subtotalCents: 1000, refundedCents: 0 };
+    expect(canRefund(ended, ['refund_orders'])).toBe(true);
+    expect(canRefund({ ...ended, paymentStatus: 'refunded', refundedCents: 1000 }, ['refund_orders'])).toBe(false);
+  });
+
   it('adds up the ticked items', () => {
     const order = { items: [{ unitPriceCents: 1050 }, { unitPriceCents: 350 }] };
     expect(itemSelectionCents(order, { 1: 1 })).toBe(350);
@@ -65,6 +80,13 @@ describe('refund helpers', () => {
     expect(itemSelectionCents({ items, refunds: [] }, { 1: 1 })).toBe(283);
     expect(itemSelectionCents({ items, refunds: [{ lines: [{ lineIndex: 1, quantity: 1 }] }] }, { 1: 1 })).toBe(284);
     expect(itemSelectionCents({ items, refunds: [] }, { 0: 1, 1: 2 })).toBe(1367);
+  });
+
+  it('a failed refund and its reversal entry do not shift the discounted price share', () => {
+    const items = [{ unitPriceCents: 350, quantity: 2, lineTotalCents: 700, discountCents: 133 }];
+    const line = [{ lineIndex: 0, quantity: 1 }];
+    expect(itemSelectionCents({ items, refunds: [{ lines: line, reversed: true }] }, { 0: 1 })).toBe(283);
+    expect(itemSelectionCents({ items, refunds: [{ lines: line, reversal: true }] }, { 0: 1 })).toBe(283);
   });
 
   it('turns the selection into request items', () => {

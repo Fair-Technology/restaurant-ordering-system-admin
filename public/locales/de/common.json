@@ -726,7 +726,8 @@
       "OUT_FOR_DELIVERY": "In Zustellung",
       "COMPLETED": "Abgeschlossen",
       "REJECTED": "Abgelehnt",
-      "CANCELLED": "Storniert"
+      "CANCELLED": "Storniert",
+      "REFUNDED": "Erstattet"
     },
     "fulfilment": {
       "collection": "Abholung",
@@ -816,6 +817,7 @@
     "refundCorrectionIssued": "Der Kunde hat eine Rechnungskorrektur per E-Mail erhalten.",
     "refundFailedToast": "Die Erstattung hat nicht geklappt: {{message}}",
     "refundLine": "{{amount}} erstattet am {{date}} – {{reason}}",
+    "refundLineFailed": "{{amount}} am {{date}} – diese Erstattung hat Stripe nicht ausgeführt, das Geld ist nicht beim Gast angekommen",
     "refundModeItems": "Artikel auswählen",
     "refundModeAmount": "Betrag eingeben",
     "refundModeHelp": "Bei ausgewählten Artikeln wird jeder mit seinem eigenen Steuersatz erstattet (ein Getränk mit 19 %). Einen Betrag nutzen Sie für Kulanz ohne bestimmten Artikel.",

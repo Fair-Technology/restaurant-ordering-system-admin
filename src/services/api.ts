@@ -1355,7 +1355,7 @@ export type OrderItemResponse = {
   /** This line's share of the order discount; absent on a backend from before discounts */
   discountCents?: number;
 };
-export type OrderState = "PLACED" | "ACCEPTED" | "READY" | "OUT_FOR_DELIVERY" | "COMPLETED" | "REJECTED" | "CANCELLED";
+export type OrderState = "PLACED" | "ACCEPTED" | "READY" | "OUT_FOR_DELIVERY" | "COMPLETED" | "REJECTED" | "CANCELLED" | "REFUNDED";
 export type OrderDisplayState = OrderState | "IN_PREPARATION";
 export type OrderPaymentStatus = "authorized" | "paid" | "partially_refunded" | "refunded" | "canceled" | "not_paid_online";
 export type OrderFulfilmentMode = "collection" | "delivery" | "dine_in";

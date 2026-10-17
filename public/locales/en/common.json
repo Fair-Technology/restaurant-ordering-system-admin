@@ -726,7 +726,8 @@
       "OUT_FOR_DELIVERY": "Out for delivery",
       "COMPLETED": "Completed",
       "REJECTED": "Rejected",
-      "CANCELLED": "Cancelled"
+      "CANCELLED": "Cancelled",
+      "REFUNDED": "Refunded"
     },
     "fulfilment": {
       "collection": "Collection",
@@ -816,6 +817,7 @@
     "refundCorrectionIssued": "The customer has been emailed a correction invoice.",
     "refundFailedToast": "The refund didn't go through: {{message}}",
     "refundLine": "{{amount}} refunded on {{date}} — {{reason}}",
+    "refundLineFailed": "{{amount}} on {{date}} – Stripe did not carry out this refund; the money did not reach the guest",
     "refundModeItems": "Choose items",
     "refundModeAmount": "Enter an amount",
     "refundModeHelp": "Choosing items refunds each at its own VAT rate (a drink at 19 %). Use an amount for goodwill refunds that aren't tied to an item.",

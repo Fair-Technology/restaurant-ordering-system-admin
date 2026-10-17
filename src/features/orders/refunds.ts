@@ -7,7 +7,7 @@ export const PAYMENT_STATUSES = [
   'not_paid_online',
 ] as const;
 
-const REFUNDABLE_STATES = ['ACCEPTED', 'READY', 'OUT_FOR_DELIVERY', 'COMPLETED'];
+const REFUNDABLE_STATES = ['ACCEPTED', 'READY', 'OUT_FOR_DELIVERY', 'COMPLETED', 'REFUNDED'];
 const REFUNDABLE_PAYMENT_STATUSES = ['paid', 'partially_refunded'];
 
 // '3,50' / '3.50' / '10' -> cents, whatever the UI language (owners in Germany type a comma even in
@@ -44,10 +44,15 @@ export function canRefund(
 // per line: ordered quantity minus what earlier item refunds already covered (free-amount refunds have no lines)
 export function remainingQuantities(o: {
   items: ReadonlyArray<{ quantity: number }>;
-  refunds: ReadonlyArray<{ lines: ReadonlyArray<{ lineIndex: number; quantity: number }> }>;
+  refunds: ReadonlyArray<{
+    lines: ReadonlyArray<{ lineIndex: number; quantity: number }>;
+    reversal?: boolean;
+    reversed?: boolean;
+  }>;
 }): number[] {
   const left = o.items.map((item) => item.quantity);
   for (const refund of o.refunds) {
+    if (refund.reversal || refund.reversed) continue;
     for (const line of refund.lines) {
       if (line.lineIndex in left) left[line.lineIndex] -= line.quantity;
     }
@@ -60,13 +65,20 @@ export function remainingQuantities(o: {
 export function itemSelectionCents(
   o: {
     items: ReadonlyArray<{ unitPriceCents: number; quantity?: number; lineTotalCents?: number; discountCents?: number }>;
-    refunds?: ReadonlyArray<{ lines: ReadonlyArray<{ lineIndex: number; quantity: number }> }>;
+    refunds?: ReadonlyArray<{
+      lines: ReadonlyArray<{ lineIndex: number; quantity: number }>;
+      reversal?: boolean;
+      reversed?: boolean;
+    }>;
   },
   selection: Readonly<Record<number, number>>,
 ): number {
   const already = (index: number) =>
     (o.refunds ?? []).reduce(
-      (sum, r) => sum + r.lines.filter((l) => l.lineIndex === index).reduce((t, l) => t + l.quantity, 0),
+      (sum, r) =>
+        r.reversal || r.reversed
+          ? sum
+          : sum + r.lines.filter((l) => l.lineIndex === index).reduce((t, l) => t + l.quantity, 0),
       0,
     );
   return Object.entries(selection).reduce((sum, [key, count]) => {

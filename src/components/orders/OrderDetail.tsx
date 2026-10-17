@@ -286,11 +286,15 @@ export function OrderDetail({
           <dt className="text-muted">{t('orders.live.total')}</dt>
           <dd className="font-bold">{money(chargedCents(order))}</dd>
         </dl>
-        {order.refunds.map((refund, i) => (
-          <p key={i} className="text-[13px] text-muted">
-            {t('orders.refundLine', { amount: money(refund.amountCents), date: dateTime(refund.at), reason: refund.reason })}
-          </p>
-        ))}
+        {order.refunds.map((refund, i) =>
+          refund.reversal ? null : (
+            <p key={i} className="text-[13px] text-muted">
+              {refund.reversed
+                ? t('orders.refundLineFailed', { amount: money(refund.amountCents), date: dateTime(refund.at) })
+                : t('orders.refundLine', { amount: money(refund.amountCents), date: dateTime(refund.at), reason: refund.reason })}
+            </p>
+          ),
+        )}
         {order.releaseFailure && (
           <p className="text-[13px] text-[#b42318]">{t('orders.releaseFailed', { message: order.releaseFailure.message })}</p>
         )}
