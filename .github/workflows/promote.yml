@@ -1,0 +1,79 @@
+# Promotes the build output that dev already tested to the production Static Web App.
+# Nothing is installed and nothing is rebuilt: the dist folder is downloaded from the
+# dev workflow run and uploaded as-is.
+#
+# Usage:
+#   git tag v0.1.0 && git push origin v0.1.0
+#   or Actions -> "Promote artifact to production" -> Run workflow
+#
+# Requires a secret named AZURE_STATIC_WEB_APPS_API_TOKEN holding the PRODUCTION app's
+# deployment token (Static Web App -> Overview -> Manage deployment token). Put it on the
+# `production` environment (repo Settings -> Environments) so it cannot be confused with
+# the dev token that lives under the same name.
+
+name: Promote artifact to production
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: 'Dev workflow run ID to promote (blank = newest successful dev run for the selected ref)'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  actions: read # required to read an artifact from another workflow run
+
+jobs:
+  promote:
+    name: Deploy promoted artifact to production
+    runs-on: ubuntu-latest
+    environment: production # required reviewer / approval rule lives here
+
+    steps:
+      - name: Find the dev run that built this commit
+        id: source
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          RUN_ID="${{ inputs.run_id }}"
+          if [ -z "$RUN_ID" ]; then
+            RUN_ID=$(gh run list \
+              --workflow azure-static-web-apps.yml \
+              --commit "$GITHUB_SHA" \
+              --status success \
+              --limit 1 \
+              --json databaseId \
+              --jq '.[0].databaseId')
+          fi
+          if [ -z "$RUN_ID" ] || [ "$RUN_ID" = "null" ]; then
+            echo "::error::No successful dev run found for $GITHUB_SHA. Deploy this commit to dev first, or pass run_id explicitly."
+            exit 1
+          fi
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+          echo "Promoting dist-$GITHUB_SHA from dev run $RUN_ID"
+
+      - name: Download the dev-built output
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-${{ github.sha }}
+          run-id: ${{ steps.source.outputs.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: dist
+
+      - name: Sanity check the downloaded artifact
+        run: |
+          test -f dist/index.html
+          test -f dist/staticwebapp.config.json
+
+      - name: Deploy to production
+        env:
+          # swa deploy reads the token from this variable when --deployment-token is absent
+          SWA_CLI_DEPLOYMENT_TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+        run: npx --yes @azure/static-web-apps-cli@2 deploy ./dist --env production
