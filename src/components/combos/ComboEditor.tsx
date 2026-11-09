@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useUpdateProductMutation } from '../../services/api';
-import type { CategoryResponse, MenuLanguage, ProductResponse, ShopResponse } from '../../services/api';
+import type { CategoryDto, MenuLanguage, ProductDto, ProductImage, GetShopResultDto } from '../../services/api';
 import { useCreateComboMutation, useUpdateComboMutation, type ComboDto } from '../../services/combosApi';
 import { useToast } from '../../contexts/ToastContext';
 import { formatCents } from '../../utils/money';
@@ -29,11 +29,11 @@ const MAX_GROUPS = 5;
 const NO_CATEGORY = '—';
 
 interface ComboEditorProps {
-  shop: ShopResponse;
+  shop: GetShopResultDto;
   shopId: string;
   combo: ComboDto | null;
-  products: ProductResponse[];
-  categories: CategoryResponse[];
+  products: ProductDto[];
+  categories: CategoryDto[];
   onDone: () => void;
 }
 
@@ -68,7 +68,7 @@ export function ComboEditor({ shop, shopId, combo, products, categories, onDone 
     set({ groups: form.groups.map((g, i) => (i === index ? { ...g, ...patch } : g)) });
 
   // dishes under the name of their first category, so a whole category can be ticked at once
-  const dishesByCategory = new Map<string, ProductResponse[]>();
+  const dishesByCategory = new Map<string, ProductDto[]>();
   for (const p of products) {
     const name = p.categories?.[0]?.name ?? NO_CATEGORY;
     dishesByCategory.set(name, [...(dishesByCategory.get(name) ?? []), p]);
@@ -140,7 +140,7 @@ export function ComboEditor({ shop, shopId, combo, products, categories, onDone 
           keepOnly: async (image) => {
             await updateProduct({
               productId: combo.id,
-              updateProductRequest: { shopId, images: [{ id: image.id, url: image.url }] },
+              body: { shopId, images: [{ id: image.id, url: image.url } as ProductImage] },
             }).unwrap();
           },
         });

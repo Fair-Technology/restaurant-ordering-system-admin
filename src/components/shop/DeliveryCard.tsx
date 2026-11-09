@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ReferenceListsResponse, ShopResponse } from '../../services/api';
+import type { GetReferenceListsApiResponse, GetShopResultDto } from '../../services/api';
 import { useUpdateOrderSettingsMutation } from '../../services/ordersApi';
 import {
   MAX_ZONES,
@@ -16,8 +16,8 @@ import { CurrencyInput } from '../ui/CurrencyInput';
 import { WeeklyHoursEditor } from './WeeklyHoursEditor';
 
 interface Props {
-  shop: ShopResponse;
-  refs: ReferenceListsResponse | undefined;
+  shop: GetShopResultDto;
+  refs: GetReferenceListsApiResponse | undefined;
   onRefetch: () => void;
 }
 

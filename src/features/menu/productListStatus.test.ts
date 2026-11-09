@@ -61,7 +61,7 @@ describe('isListRefreshing', () => {
     expect(status()).toBe(false);
 
     await store.dispatch(
-      api.endpoints.updateProduct.initiate({ productId: 'p1', updateProductRequest: { shopId, allergenIds: [] } as never }),
+      api.endpoints.updateProduct.initiate({ productId: 'p1', body: { shopId, allergenIds: [] } as never }),
     );
     await vi.waitFor(() => expect(listCalls).toBe(2));
 

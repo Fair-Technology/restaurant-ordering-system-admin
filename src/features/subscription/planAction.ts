@@ -1,4 +1,4 @@
-import type { PlanResponse } from '../../services/api';
+import type { Plan } from '../../services/api';
 
 export type PlanAction =
   | 'current'
@@ -12,16 +12,16 @@ export type PlanAction =
 export type BillingInterval = 'monthly' | 'yearly';
 
 /** The staff-account cap of a plan, or null when it has none (or is unlimited). */
-export function staffCapOf(plan: Pick<PlanResponse, 'limits'>): number | null {
+export function staffCapOf(plan: Pick<Plan, 'limits'>): number | null {
   const cap = plan.limits.find((l) => l.key === 'STAFF_ACCOUNTS')?.value;
   return cap === undefined || cap === -1 ? null : cap;
 }
 
 /** What the button on a plan card does. A higher `sortOrder` means a higher plan. */
 export function planActionFor(input: {
-  current: Pick<PlanResponse, 'id' | 'sortOrder'>;
+  current: Pick<Plan, 'id' | 'sortOrder'>;
   currentInterval: BillingInterval | null;
-  target: Pick<PlanResponse, 'id' | 'sortOrder' | 'isDefault' | 'limits'>;
+  target: Pick<Plan, 'id' | 'sortOrder' | 'isDefault' | 'limits'>;
   targetInterval: BillingInterval;
   activeStaff: number;
 }): PlanAction {

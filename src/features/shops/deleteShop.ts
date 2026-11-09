@@ -1,7 +1,7 @@
-import type { ShopResponse } from '../../services/api';
+import type { GetShopResultDto } from '../../services/api';
 
 /** Only the shop's owner may delete it (the backend enforces this too). */
-export function canDeleteShop(callerRole: ShopResponse['callerRole']): boolean {
+export function canDeleteShop(callerRole: GetShopResultDto['callerRole'] | undefined): boolean {
   return callerRole === 'owner';
 }
 

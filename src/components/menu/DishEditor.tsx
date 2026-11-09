@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft } from 'lucide-react';
-import type { MenuLanguage, ProductResponse, TranslationMap } from '../../services/api';
+import type { MenuLanguage, ProductDto, ProductImage, TranslationMap } from '../../services/api';
 import {
   useDeleteProductMutation,
   useGetProductByIdQuery,
@@ -59,7 +59,7 @@ interface EditState {
   isAvailable: boolean;
 }
 
-function stateFromProduct(product: ProductResponse): EditState {
+function stateFromProduct(product: ProductDto): EditState {
   return {
     form: { name: product.name ?? '', description: product.description ?? '', price: product.price ?? 0 },
     nameTranslations: product.nameTranslations ?? {},
@@ -108,7 +108,7 @@ export function DishEditor({ productId, shopId, currencySymbol, categoriesList, 
   // The saved dish is the starting point; a refetch (after a save, or from elsewhere) replaces it,
   // and also replaces the form unless there are unsaved changes in it. (The page gives each dish
   // its own editor via `key`, so switching dishes starts fresh.)
-  const [syncedProduct, setSyncedProduct] = useState<ProductResponse | undefined>();
+  const [syncedProduct, setSyncedProduct] = useState<ProductDto | undefined>();
   if (product && product.id === productId && product !== syncedProduct) {
     setSyncedProduct(product);
     const next = stateFromProduct(product);
@@ -151,7 +151,7 @@ export function DishEditor({ productId, shopId, currencySymbol, categoriesList, 
   const setVariantGroups = (fn: (gs: VariantGroup[]) => VariantGroup[]) => setEdit((e) => (e ? { ...e, variantGroups: fn(e.variantGroups) } : e));
   const setAddonGroups = (fn: (gs: AddonGroup[]) => AddonGroup[]) => setEdit((e) => (e ? { ...e, addonGroups: fn(e.addonGroups) } : e));
 
-  const existingImageUrl = product.images?.find((img) => img.isPrimary)?.url ?? product.images?.[0]?.url ?? null;
+  const existingImageUrl = product.images?.[0]?.url ?? null;
   const nameMissing = edit.form.name.trim() === '';
   const descMissing = edit.form.description.trim() === '';
   const photoMissing = dishPhotoMissing(imageFile, existingImageUrl);
@@ -173,7 +173,7 @@ export function DishEditor({ productId, shopId, currencySymbol, categoriesList, 
     try {
       await updateProduct({
         productId,
-        updateProductRequest: {
+        body: {
           shopId,
           name: edit.form.name,
           description: edit.form.description,
@@ -185,7 +185,7 @@ export function DishEditor({ productId, shopId, currencySymbol, categoriesList, 
           allergenIds: edit.foodInfo.allergenIds,
           additiveIds: edit.foodInfo.additiveIds,
           dietaryTagIds: edit.foodInfo.dietaryTagIds,
-          spiceLevel: edit.foodInfo.spiceLevel,
+          spiceLevel: edit.foodInfo.spiceLevel ?? undefined,
           prepMinutes: edit.foodInfo.prepMinutes,
           // The dish owns its class: the one picked by hand, else its category's suggestion
           taxClassId: effectiveTaxClassId(edit.categoryIds, categoriesList, edit.foodInfo.taxClassId),
@@ -201,7 +201,7 @@ export function DishEditor({ productId, shopId, currencySymbol, categoriesList, 
           hadPhoto: (product.images?.length ?? 0) > 0,
           upload: () => uploadProductImage(shopId, productId, imageFile),
           keepOnly: async (image) => {
-            await updateProduct({ productId, updateProductRequest: { shopId, images: [{ id: image.id, url: image.url }] } }).unwrap();
+            await updateProduct({ productId, body: { shopId, images: [{ id: image.id, url: image.url } as ProductImage] } }).unwrap();
           },
         });
         setIsUploading(false);

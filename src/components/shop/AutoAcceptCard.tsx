@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ShopResponse } from '../../services/api';
+import type { GetShopResultDto } from '../../services/api';
 import { useUpdateOrderSettingsMutation } from '../../services/ordersApi';
 import type { WeeklyHoursDto } from '../../services/ordersApi';
 import {
@@ -15,7 +15,7 @@ import { MyButton } from '../ui/MyButton';
 import { WeeklyHoursEditor } from './WeeklyHoursEditor';
 
 interface Props {
-  shop: ShopResponse;
+  shop: GetShopResultDto;
   onRefetch: () => void;
 }
 

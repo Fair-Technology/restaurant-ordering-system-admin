@@ -41,7 +41,7 @@ function AddStaffForm({ shopId, canGrantManager, onClose }: { shopId: string; ca
     try {
       await createStaff({
         shopId,
-        createStaffRequest: {
+        body: {
           username,
           password,
           role,
@@ -130,7 +130,7 @@ function StaffRow({ acc, shopId }: { acc: StaffAccountDto; shopId: string }) {
       await updateStaff({
         shopId,
         staffId: acc.id,
-        updateStaffRequest: { isActive: !acc.isActive },
+        body: { isActive: !acc.isActive },
       }).unwrap();
     } catch (err) {
       setError(t('staff.saveFailed', { error: serverErrorText(err) }));
@@ -148,7 +148,7 @@ function StaffRow({ acc, shopId }: { acc: StaffAccountDto; shopId: string }) {
     setError(null);
     setResetting(true);
     try {
-      await resetStaffPassword({ shopId, staffId: acc.id, resetStaffPasswordRequest: { password } }).unwrap();
+      await resetStaffPassword({ shopId, staffId: acc.id, body: { password } }).unwrap();
       toast.success(t('staff.resetPassword'));
       setNewPassword('');
       setResetOpen(false);

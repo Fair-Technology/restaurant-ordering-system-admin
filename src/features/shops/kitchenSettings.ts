@@ -1,4 +1,4 @@
-import type { ShopResponse } from '../../services/api';
+import type { GetShopResultDto } from '../../services/api';
 import type { UpdateOrderSettingsBody, WeekDayKey, WeeklyHoursDto } from '../../services/ordersApi';
 
 export const WEEK_DAYS: readonly WeekDayKey[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
@@ -6,9 +6,11 @@ export const WEEK_DAYS: readonly WeekDayKey[] = ['mon', 'tue', 'wed', 'thu', 'fr
 export const AUTO_ACCEPT_CHOICES = ['always', 'scheduled', 'never'] as const;
 export type AutoAcceptChoice = (typeof AUTO_ACCEPT_CHOICES)[number];
 
-type StoredSettings = ShopResponse['orderSettings'];
+// Partial and possibly absent: a shop payload can predate these fields, and the helpers
+// below already read them defensively.
+type StoredSettings = Partial<GetShopResultDto['orderSettings']>;
 
-export function autoAcceptChoiceOf(s: StoredSettings): AutoAcceptChoice {
+export function autoAcceptChoiceOf(s: StoredSettings | undefined): AutoAcceptChoice {
   if (s?.autoAccept === false) return 'never';
   return s?.autoAcceptHours ? 'scheduled' : 'always';
 }
@@ -33,7 +35,7 @@ export interface KitchenTiming {
   busyExtraMinutes: number;
 }
 
-export function kitchenTimingOf(s: StoredSettings): KitchenTiming {
+export function kitchenTimingOf(s: StoredSettings | undefined): KitchenTiming {
   return {
     collection: s?.prepMinutes?.collection ?? 20,
     delivery: s?.prepMinutes?.delivery ?? 45,

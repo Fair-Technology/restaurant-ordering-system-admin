@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
-import { useGetOrderDocumentMutation, type IntakeOrder, type RejectReason } from '../../services/ordersApi';
+import { useLazyGetOrderDocumentQuery } from '../../services/api';
+import { type IntakeOrder, type RejectReason } from '../../services/ordersApi';
 import { REJECT_REASONS, formatCountdown, prepChoices, scheduledReadyMs, type SlotLoad } from '../../features/orders/intake';
 import { orderTiming } from '../../features/orders/orderView';
 import { nextActionLabelKey } from '../../features/orders/useOrderActions';
@@ -100,7 +101,7 @@ export function OrderDetail({
 }: Props) {
   const { t, i18n } = useTranslation();
   const toast = useToast();
-  const [getDocument] = useGetOrderDocumentMutation();
+  const [getDocument] = useLazyGetOrderDocumentQuery();
   const [prep, setPrep] = useState(defaultPrepMinutes);
   const [rejecting, setRejecting] = useState(false);
   const [reason, setReason] = useState<RejectReason | null>(null);

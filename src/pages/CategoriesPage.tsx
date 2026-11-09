@@ -64,7 +64,7 @@ function CreateCategoryModal({
     try {
       await createCategory({
         shopId,
-        createCategoryRequest: {
+        body: {
           name,
           sortOrder: existingCount,
           icon: icon ?? undefined,
@@ -206,7 +206,7 @@ function SortableCategoryItem({ cat, shopId, selected, onOpen }: SortableCategor
     updateCategory({
       shopId,
       categoryId: cat.id!,
-      updateCategoryRequest: { icon },
+      body: { icon: icon ?? undefined },
     });
   };
 
@@ -214,7 +214,7 @@ function SortableCategoryItem({ cat, shopId, selected, onOpen }: SortableCategor
   const handleShownChange = async (next: boolean) => {
     setPending({ next, from: saved });
     try {
-      await updateCategory({ shopId, categoryId: cat.id!, updateCategoryRequest: { isAvailable: next } }).unwrap();
+      await updateCategory({ shopId, categoryId: cat.id!, body: { isAvailable: next } }).unwrap();
       toast.success(next ? t('categories.shown') : t('categories.hidden'));
     } catch {
       setPending(null);
@@ -351,7 +351,7 @@ export function CategoriesPage() {
           updateCategory({
             shopId: shopId!,
             categoryId: cat.id!,
-            updateCategoryRequest: { sortOrder: index },
+            body: { sortOrder: index },
           }).unwrap(),
         ),
       );

@@ -42,7 +42,9 @@ export function matchesOrderSearch(order: IntakeOrder, query: string): boolean {
 }
 
 /** "2× Pomodoro, 1× Mittagsmenü" — the dishes of a combo count once, under the combo's name. */
-export function itemSummary(items: IntakeOrder['items']): string {
+export function itemSummary(
+  items: ReadonlyArray<{ productName: string; quantity: number; combo?: { line: number; name: string } | null }>,
+): string {
   const parts: string[] = [];
   const seenCombos = new Set<number>();
   for (const item of items) {

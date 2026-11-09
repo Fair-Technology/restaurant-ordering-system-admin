@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ReferenceListsResponse } from '../../services/api';
+import type { GetReferenceListsApiResponse } from '../../services/api';
 import { labelFor } from '../../features/menu/foodInfo';
 import { optionDeclarationCount, toggleOptionId } from '../../features/menu/optionFoodInfo';
 
 export interface OptionFoodInfoFieldProps {
   allergenIds: readonly string[];
   additiveIds: readonly string[];
-  refs: ReferenceListsResponse | undefined;
+  refs: GetReferenceListsApiResponse | undefined;
   onChange: (patch: { allergenIds?: string[]; additiveIds?: string[] }) => void;
 }
 

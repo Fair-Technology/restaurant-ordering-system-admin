@@ -4,7 +4,7 @@ import { Link, NavLink, useNavigate, useParams } from 'react-router-dom';
 import { useMsal } from '@azure/msal-react';
 import { useTranslation } from 'react-i18next';
 import { ChevronsUpDown, LayoutDashboard, LogOut, Menu, Store, X } from 'lucide-react';
-import { useGetMyShopsQuery, useGetShopByIdQuery, useUpdateShopMutation, type ShopResponse } from '../../services/api';
+import { useGetMyShopsQuery, useGetShopByIdQuery, useUpdateShopMutation, type GetShopResultDto } from '../../services/api';
 import { useGetOrderQueueQuery } from '../../services/ordersApi';
 import { baseApi } from '../../services/baseApi';
 import { useNow } from '../../features/orders/useNow';
@@ -16,7 +16,7 @@ import { AccountSettingsModal } from './AccountSettingsModal';
 import { PauseOrdersDialog } from '../shop/PauseOrdersDialog';
 
 /** Round shop logo, or its first letter when no logo is uploaded. */
-function ShopBadge({ shop, size = 36 }: { shop: Pick<ShopResponse, 'name' | 'branding'> | undefined; size?: number }) {
+function ShopBadge({ shop, size = 36 }: { shop: Pick<GetShopResultDto, 'name' | 'branding'> | undefined; size?: number }) {
   const logo = shop?.branding?.logoUrl;
   return (
     <span
@@ -36,7 +36,7 @@ function ShopBadge({ shop, size = 36 }: { shop: Pick<ShopResponse, 'name' | 'bra
  * The shop's state as one line under the switcher: taking orders (switch), orders paused (switch),
  * or offline (link to the settings, where going online runs the go-live checklist).
  */
-function ShopStatusSwitch({ shop, canManage }: { shop: ShopResponse; canManage: boolean }) {
+function ShopStatusSwitch({ shop, canManage }: { shop: GetShopResultDto; canManage: boolean }) {
   const { t, i18n } = useTranslation();
   const toast = useToast();
   const [updateShop, { isLoading }] = useUpdateShopMutation();
@@ -64,7 +64,7 @@ function ShopStatusSwitch({ shop, canManage }: { shop: ShopResponse; canManage: 
       return;
     }
     try {
-      await updateShop({ shopId: shop.id!, updateShopRequest: { ordersPaused: false } }).unwrap();
+      await updateShop({ shopId: shop.id!, body: { ordersPaused: false } }).unwrap();
     } catch (err) {
       toast.error(isOfflineBySuperadminError(err) ? t('nav.offlineBySuperadminToast') : t('shops.statusFailedToSave'));
     }
@@ -114,7 +114,7 @@ function ShopStatusSwitch({ shop, canManage }: { shop: ShopResponse; canManage: 
 }
 
 /** Switch between the owner's shops; the list is only loaded when opened. */
-function ShopSwitcher({ shop, allowSwitch }: { shop: ShopResponse | undefined; allowSwitch: boolean }) {
+function ShopSwitcher({ shop, allowSwitch }: { shop: GetShopResultDto | undefined; allowSwitch: boolean }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ShopResponse } from '../../services/api';
+import type { GetShopResultDto } from '../../services/api';
 import {
   useCreateDiscountCodeMutation,
   useSetDiscountCodeActiveMutation,
@@ -36,7 +36,7 @@ function showDate(date: string | null, language: string): string {
 
 interface DiscountCodesCardProps {
   shopId: string;
-  shop: ShopResponse;
+  shop: GetShopResultDto;
   data: PromotionsDto;
 }
 

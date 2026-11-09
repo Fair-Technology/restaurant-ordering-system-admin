@@ -1,4 +1,4 @@
-import type { CreateProductRequest } from '../../services/api';
+import type { CreateProductRequestDto } from '../../services/api';
 
 export interface MenuImportRow {
   name: string;
@@ -7,6 +7,6 @@ export interface MenuImportRow {
 }
 
 /** Photos are never imported: the server only accepts photos sent through the dish photo upload. */
-export function importRowToCreateRequest(shopId: string, row: MenuImportRow): CreateProductRequest {
+export function importRowToCreateRequest(shopId: string, row: MenuImportRow): CreateProductRequestDto {
   return { shopId, name: row.name, description: row.description, price: Math.round((row.price ?? 0) * 100), categoryIds: [] };
 }

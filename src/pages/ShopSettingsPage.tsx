@@ -11,7 +11,7 @@ import {
   useRemoveShopCoverImageMutation,
   useUpdateShopMutation,
   useRequestShopNameChangeMutation,
-  useCancelShopNameChangeMutation,
+  useRejectShopNameChangeMutation,
 } from '../services/api';
 import { checkCoverImageFile, uploadCoverImage } from '../features/shops/coverImage';
 import { COVER_IMAGE_RULE, isWrongSizeError } from '../features/images/imageRules';
@@ -95,7 +95,7 @@ export function ShopSettingsPage() {
   const [removeShopCoverImage] = useRemoveShopCoverImageMutation();
   const [updateShop] = useUpdateShopMutation();
   const [requestShopNameChange] = useRequestShopNameChangeMutation();
-  const [cancelShopNameChange] = useCancelShopNameChangeMutation();
+  const [cancelShopNameChange] = useRejectShopNameChangeMutation();
   const { refs } = useShopReferenceLists(shopId!);
 
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -185,7 +185,7 @@ export function ShopSettingsPage() {
     try {
       await updateShop({
         shopId: shopId!,
-        updateShopRequest: { menuLanguages: currentLanguages },
+        body: { menuLanguages: currentLanguages },
       }).unwrap();
       refetch();
       toast.success(t('shops.menuLanguagesSaved'));
@@ -241,7 +241,7 @@ export function ShopSettingsPage() {
     try {
       await updateShop({
         shopId: shopId!,
-        updateShopRequest: { openingHours: currentHours },
+        body: { openingHours: currentHours },
       }).unwrap();
       toast.success(t('shops.ohHoursSaved'));
       refetch();
@@ -258,7 +258,7 @@ export function ShopSettingsPage() {
     try {
       await updateShop({
         shopId: shopId!,
-        updateShopRequest: {
+        body: {
           branding: {
             ...brandingWithBanner(shop.branding, bannerShownOf(shop.branding)),
             accentColor: currentAccent,
@@ -281,7 +281,7 @@ export function ShopSettingsPage() {
       const cents = currentDetails.minOrderAmountCents > 0 ? currentDetails.minOrderAmountCents : undefined;
       await updateShop({
         shopId: shopId!,
-        updateShopRequest: {
+        body: {
           ...(cents != null && { minOrderAmountCents: cents }),
         },
       }).unwrap();
@@ -304,7 +304,7 @@ export function ShopSettingsPage() {
     try {
       await requestShopNameChange({
         shopId: shopId!,
-        requestedName: nameChangeState.requestedName.trim(),
+        body: { requestedName: nameChangeState.requestedName.trim() },
       }).unwrap();
       setNameChangeState(null);
       toast.success(t('shops.nameChangeSubmitted'));
@@ -332,7 +332,7 @@ export function ShopSettingsPage() {
     try {
       await updateShop({
         shopId: shopId!,
-        updateShopRequest: { address: currentAddress },
+        body: { address: currentAddress },
       }).unwrap();
       toast.success(t('shops.addressSaved'));
       refetch();
@@ -352,7 +352,7 @@ export function ShopSettingsPage() {
       const contentType = logoFile.type as 'image/jpeg' | 'image/png' | 'image/webp';
       const uploadData = await generateShopLogoUploadUrl({
         shopId: shopId!,
-        generateShopLogoUploadUrlRequest: { contentType },
+        body: { contentType },
       }).unwrap();
       await fetch(uploadData.uploadUrl, {
         method: 'PUT',
@@ -361,7 +361,7 @@ export function ShopSettingsPage() {
       });
       await setShopLogo({
         shopId: shopId!,
-        setShopLogoRequest: { imageId: uploadData.imageId, url: uploadData.blobUrl },
+        body: { imageId: uploadData.imageId, url: uploadData.blobUrl },
       }).unwrap();
       setLogoFile(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -380,7 +380,7 @@ export function ShopSettingsPage() {
     try {
       await updateShop({
         shopId: shopId!,
-        updateShopRequest: { branding: brandingWithBanner(shop.branding, show) },
+        body: { branding: brandingWithBanner(shop.branding, show) },
       }).unwrap();
       toast.success(t(show ? 'shops.bannerShownSaved' : 'shops.bannerHiddenSaved'));
       refetch();
@@ -404,8 +404,8 @@ export function ShopSettingsPage() {
         generateUploadUrl: (contentType) =>
           generateShopCoverImageUploadUrl({
             shopId: shopId!,
-            generateShopCoverImageUploadUrlRequest: { contentType },
-          }).unwrap(),
+            body: { contentType },
+          }).unwrap() as Promise<{ imageId: string; uploadUrl: string; blobUrl: string }>,
         putBlob: (uploadUrl, file, contentType) =>
           fetch(uploadUrl, {
             method: 'PUT',
@@ -415,7 +415,7 @@ export function ShopSettingsPage() {
         setCoverImage: (imageId, url) =>
           setShopCoverImage({
             shopId: shopId!,
-            setShopCoverImageRequest: { imageId, url },
+            body: { imageId, url },
           }).unwrap(),
       });
       setCoverFile(null);

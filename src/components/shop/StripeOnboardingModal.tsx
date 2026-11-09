@@ -24,7 +24,7 @@ export function StripeOnboardingModal({ shopId, purpose = 'onboarding', onClose 
     return loadConnectAndInitialize({
       publishableKey: import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string,
       fetchClientSecret: async () => {
-        const result = await createSession({ shopId, purpose }).unwrap();
+        const result = await createSession({ shopId, body: { purpose } }).unwrap();
         return result.clientSecret;
       },
     });

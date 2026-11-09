@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ShopResponse } from '../../services/api';
+import type { GetShopResultDto } from '../../services/api';
 import { useUpdateOrderSettingsMutation } from '../../services/ordersApi';
 import { kitchenTimingBody, kitchenTimingOf } from '../../features/shops/kitchenSettings';
 import { Section } from '../layout/Page';
@@ -8,7 +8,7 @@ import { MyButton } from '../ui/MyButton';
 import { MyInput } from '../ui/MyInput';
 
 interface Props {
-  shop: ShopResponse;
+  shop: GetShopResultDto;
   onRefetch: () => void;
 }
 

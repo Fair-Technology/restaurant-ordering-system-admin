@@ -95,13 +95,13 @@ export function CategoryEditor({ shopId, categoryId, onSaved, onCancel, onDelete
       await updateCategory({
         shopId,
         categoryId,
-        updateCategoryRequest: {
+        body: {
           name,
           ...(extraLanguage ? { nameTranslations } : {}),
           icon: icon ?? undefined,
           ...(taxClassId ? { taxClassId } : {}),
           isAvailable: shown,
-          schedule,
+          schedule: schedule ?? undefined,
         },
       }).unwrap();
       toast.success(t('categories.saved'));

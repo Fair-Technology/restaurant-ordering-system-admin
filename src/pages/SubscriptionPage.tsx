@@ -5,14 +5,14 @@ import { CheckCircle2 } from 'lucide-react';
 import {
   useGetShopByIdQuery,
   useGetShopSubscriptionQuery,
-  useGetVisiblePlansQuery,
+  useGetPlansQuery,
   useGetPlanPricingQuery,
   useCreateSubscriptionCheckoutMutation,
   useCancelShopSubscriptionMutation,
   useResumeShopSubscriptionMutation,
   useListStaffQuery,
 } from '../services/api';
-import type { PlanResponse } from '../services/api';
+import type { Plan } from '../services/api';
 import {
   useGetOrderLimitQuery,
   useConfirmSubscriptionCheckoutMutation,
@@ -66,7 +66,7 @@ function formatPrice(cents: number, currency: string): string {
 }
 
 interface PlanCardProps {
-  plan: PlanResponse;
+  plan: Plan;
   index: number;
   currency: string;
   interval: BillingInterval;
@@ -74,7 +74,7 @@ interface PlanCardProps {
   action: PlanAction;
   isCancelPending: boolean;
   isOwner: boolean;
-  onChoose: (plan: PlanResponse, action: PlanAction) => void;
+  onChoose: (plan: Plan, action: PlanAction) => void;
   isBusy: boolean;
 }
 
@@ -251,7 +251,7 @@ export function SubscriptionPage() {
     { shopId: shopId! },
     { refetchOnMountOrArgChange: true },
   );
-  const { data: plansData, isLoading: plansLoading } = useGetVisiblePlansQuery();
+  const { data: plansData, isLoading: plansLoading } = useGetPlansQuery();
   const [createSubscriptionCheckout] = useCreateSubscriptionCheckoutMutation();
   const [cancelShopSubscription] = useCancelShopSubscriptionMutation();
   const [resumeShopSubscription] = useResumeShopSubscriptionMutation();
@@ -303,7 +303,7 @@ export function SubscriptionPage() {
   const subscription = subscriptionData?.subscription;
   const { data: limit } = useGetOrderLimitQuery({ shopId: shopId! });
 
-  async function handleChoose(plan: PlanResponse, action: PlanAction) {
+  async function handleChoose(plan: Plan, action: PlanAction) {
     if (!shopId) return;
     setUpgradeError(null);
     setActionMessage(null);
@@ -314,7 +314,7 @@ export function SubscriptionPage() {
         setActionMessage({ type: 'success', text: t('subscription.cancelSuccess') });
         return;
       }
-      const result = await createSubscriptionCheckout({ shopId, planId: plan.id, billingInterval: interval }).unwrap();
+      const result = await createSubscriptionCheckout({ shopId, body: { planId: plan.id, billingInterval: interval } }).unwrap();
       if (result.kind === 'checkout') {
         window.location.href = result.url;
         return;

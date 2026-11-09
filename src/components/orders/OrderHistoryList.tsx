@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatCents } from '../../utils/money';
 import { useGetOrdersByShopQuery, useGetShopByIdQuery } from '../../services/api';
-import { useGetOrderDocumentMutation, type IntakeOrder } from '../../services/ordersApi';
+import { useLazyGetOrderDocumentQuery } from '../../services/api';
+import { type IntakeOrder } from '../../services/ordersApi';
 import { canRefund, chargedCents } from '../../features/orders/refunds';
 import { downloadBase64File } from '../../features/files/downloadBase64';
 import { useToast } from '../../contexts/ToastContext';
@@ -40,7 +41,7 @@ interface OrderRowProps {
 function OrderRow({ shopId, order, permissions }: OrderRowProps) {
   const { t, i18n } = useTranslation();
   const toast = useToast();
-  const [getDocument] = useGetOrderDocumentMutation();
+  const [getDocument] = useLazyGetOrderDocumentQuery();
   const formatCurrency = (cents: number, currency: string) => formatCents(cents, currency, i18n.language);
   const [expanded, setExpanded] = useState(false);
 

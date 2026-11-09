@@ -15,7 +15,7 @@ describe('kitchen settings helpers', () => {
   it('reads the auto-accept choice', () => {
     expect(autoAcceptChoiceOf(undefined)).toBe('always');
     expect(autoAcceptChoiceOf({ autoRejectMinutes: 10, alertEmail: null, autoAccept: false })).toBe('never');
-    expect(autoAcceptChoiceOf({ autoRejectMinutes: 10, alertEmail: null, autoAccept: true, autoAcceptHours: null })).toBe('always');
+    expect(autoAcceptChoiceOf({ autoRejectMinutes: 10, alertEmail: null, autoAccept: true, autoAcceptHours: undefined })).toBe('always');
     expect(autoAcceptChoiceOf({ autoRejectMinutes: 10, alertEmail: null, autoAccept: true, autoAcceptHours: W })).toBe('scheduled');
     expect(autoAcceptChoiceOf({ autoRejectMinutes: 10, alertEmail: null })).toBe('always');
   });
@@ -38,7 +38,7 @@ describe('kitchen settings helpers', () => {
       kitchenTimingOf({
         autoRejectMinutes: 10,
         alertEmail: null,
-        prepMinutes: { collection: 25 },
+        prepMinutes: { collection: 25, delivery: 45, dine_in: 20 },
         lastOrdersMinutes: 0,
         busyExtraMinutes: 30,
       }),
