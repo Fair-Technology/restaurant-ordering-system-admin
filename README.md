@@ -71,3 +71,19 @@ export default defineConfig([
   },
 ])
 ```
+
+## Where the product spec is
+
+The Restaurant Ordering System is one product across several repositories, and almost every rule that
+matters — how money is represented, how orders move, who may see what — cuts
+across all of them. Keeping one copy of the spec is what stops several copies
+drifting apart.
+
+The spec is shared and lives in the **rs-backend** repo:
+
+- in a checkout with the standard layout: `rs-backend/docs/spec.md` (sibling checkout)
+- on GitHub: https://github.com/Fair-Technology/restaurant-ordering-system-backend/blob/main/docs/spec.md
+
+Don't restate product rules here — a frontend only hides controls a user cannot
+use; the rules are enforced in the backend. If you learn something new about how
+the product behaves, edit the spec, not this file.
