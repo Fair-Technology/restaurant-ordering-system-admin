@@ -1,7 +1,7 @@
-import type { GetShopSubscriptionApiResponse, PlanResponse } from '../../services/api';
+import type { GetShopSubscriptionApiResponse, Plan } from '../../services/api';
 
 /** The free plan is the one flagged as the default, never one matched by name. */
-export function isFreePlan(plan: Pick<PlanResponse, 'isDefault'>): boolean {
+export function isFreePlan(plan: Pick<Plan, 'isDefault'>): boolean {
   return plan.isDefault;
 }
 

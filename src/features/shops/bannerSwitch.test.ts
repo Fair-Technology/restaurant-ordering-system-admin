@@ -21,6 +21,13 @@ describe('brandingWithBanner', () => {
   });
 
   it('works for a shop with no branding yet', () => {
-    expect(brandingWithBanner(undefined, false)).toEqual({ showHero: false });
+    // The generated ShopBranding makes these three required `string | null`, so a save now
+    // sends explicit nulls rather than omitting the keys (a save replaces the whole branding).
+    expect(brandingWithBanner(undefined, false)).toEqual({
+      logoUrl: null,
+      heroImageUrl: null,
+      accentColor: null,
+      showHero: false,
+    });
   });
 });

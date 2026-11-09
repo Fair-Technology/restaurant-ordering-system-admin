@@ -30,7 +30,7 @@ export function StaffLoginPage() {
     setError(null);
     try {
       const result = await staffLogin({
-        staffLoginRequest: { shopSlug: slug ?? '', username, password },
+        staffLoginRequestDto: { shopSlug: slug ?? '', username, password },
       }).unwrap();
       startStaffSession(dispatch, result);
       navigate(`/shops/${result.shopId}/orders`, { replace: true });

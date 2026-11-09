@@ -1,4 +1,4 @@
-import type { FulfilmentModeKey, LocalizedLabel, ReferenceListsResponse, SpiceLevel } from '../../services/api';
+import type { FulfilmentMode, LocalizedLabel, GetReferenceListsApiResponse, SpiceLevel } from '../../services/api';
 
 export interface FoodInfo {
   allergenIds: string[] | null;
@@ -7,7 +7,7 @@ export interface FoodInfo {
   spiceLevel: SpiceLevel | null;
   prepMinutes: number | null;
   taxClassId: string | null;
-  unavailableModes: FulfilmentModeKey[];
+  unavailableModes: FulfilmentMode[];
 }
 
 export const EMPTY_FOOD_INFO: FoodInfo = {
@@ -27,7 +27,7 @@ export function foodInfoFromProduct(p: {
   spiceLevel?: SpiceLevel | null;
   prepMinutes?: number | null;
   taxClassId?: string | null;
-  unavailableModes?: FulfilmentModeKey[];
+  unavailableModes?: FulfilmentMode[];
 }): FoodInfo {
   return {
     allergenIds: Array.isArray(p.allergenIds) ? p.allergenIds : null,
@@ -40,16 +40,16 @@ export function foodInfoFromProduct(p: {
   };
 }
 
-export const MODE_ORDER: readonly FulfilmentModeKey[] = ['collection', 'delivery', 'dine_in'];
+export const MODE_ORDER: readonly FulfilmentMode[] = ['collection', 'delivery', 'dine_in'];
 
 /** Toggles a way of ordering in the list of modes a dish is hidden for, keeping the fixed order. */
-export function toggleMode(list: readonly FulfilmentModeKey[], mode: FulfilmentModeKey): FulfilmentModeKey[] {
+export function toggleMode(list: readonly FulfilmentMode[], mode: FulfilmentMode): FulfilmentMode[] {
   const next = list.includes(mode) ? list.filter((m) => m !== mode) : [...list, mode];
   return MODE_ORDER.filter((m) => next.includes(m));
 }
 
 /** The ways of ordering a dish is hidden for, in the fixed display order. */
-export function unavailableModesInOrder(modes: readonly FulfilmentModeKey[]): FulfilmentModeKey[] {
+export function unavailableModesInOrder(modes: readonly FulfilmentMode[]): FulfilmentMode[] {
   return MODE_ORDER.filter((m) => modes.includes(m));
 }
 
@@ -111,7 +111,7 @@ export function formatRate(bp: number | null): string {
 export function taxClassOptionLabel(
   name: string,
   taxClassId: string,
-  refs: Pick<ReferenceListsResponse, 'currentTaxRates' | 'taxRatesUniformAcrossModes'> | undefined,
+  refs: Pick<GetReferenceListsApiResponse, 'currentTaxRates' | 'taxRatesUniformAcrossModes'> | undefined,
   language: string,
 ): string {
   if (!refs?.taxRatesUniformAcrossModes) return name;

@@ -1,4 +1,4 @@
-import type { ProductResponse, TranslationMap } from '../../services/api';
+import type { ProductDto, TranslationMap } from '../../services/api';
 import type { AddonGroup, VariantGroup, VariantOption } from '../../pages/ProductWizardSteps';
 
 /** An option as the API returns it; every field is untrusted. */
@@ -21,7 +21,7 @@ export function optionFromApi(o: ApiOption): VariantOption {
 }
 
 export function optionGroupsFromProduct(
-  p: Pick<ProductResponse, 'variantGroups' | 'addonGroups'>,
+  p: Pick<ProductDto, 'variantGroups' | 'addonGroups'>,
 ): { variantGroups: VariantGroup[]; addonGroups: AddonGroup[] } {
   return {
     variantGroups: (p.variantGroups ?? []).map((g) => ({

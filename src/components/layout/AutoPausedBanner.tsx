@@ -1,11 +1,11 @@
 import { useTranslation } from 'react-i18next';
-import { useUpdateShopMutation, type ShopResponse } from '../../services/api';
+import { useUpdateShopMutation, type GetShopResultDto } from '../../services/api';
 import { autoPausedCount } from '../../features/shops/shopStatus';
 import { useNow } from '../../features/orders/useNow';
 import { useToast } from '../../contexts/ToastContext';
 
 /** Tells the owner that orders were paused automatically after missed orders, with a one-click way back. */
-export function AutoPausedBanner({ shop }: { shop: ShopResponse }) {
+export function AutoPausedBanner({ shop }: { shop: GetShopResultDto }) {
   const { t } = useTranslation();
   const toast = useToast();
   const nowMs = useNow(30_000);
@@ -17,7 +17,7 @@ export function AutoPausedBanner({ shop }: { shop: ShopResponse }) {
   const canManage = (shop.callerPermissions ?? []).includes('manage_shop');
   const resume = async () => {
     try {
-      await updateShop({ shopId: shop.id!, updateShopRequest: { ordersPaused: false } }).unwrap();
+      await updateShop({ shopId: shop.id!, body: { ordersPaused: false } }).unwrap();
     } catch {
       toast.error(t('shops.statusFailedToSave'));
     }

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNow } from '../../features/orders/useNow';
-import type { ShopResponse } from '../../services/api';
+import type { GetShopResultDto } from '../../services/api';
 import { useLazyGetGoLiveStatusQuery, useUpdateShopMutation } from '../../services/api';
 import {
   ORDERS_PAUSED_MESSAGE_MAX,
@@ -22,7 +22,7 @@ import { GoLiveCriteriaModal, TakeShopOfflineModal } from './GoLiveModal';
 import { PauseOrdersDialog } from './PauseOrdersDialog';
 
 interface Props {
-  shop: ShopResponse;
+  shop: GetShopResultDto;
   onRefetch: () => void;
 }
 
@@ -46,9 +46,9 @@ export function ShopStatusCard({ shop, onRefetch }: Props) {
   const message = messageState ?? shop.ordersPausedMessage ?? '';
   const busy = saving || goLiveChecking;
 
-  const save = async (updateShopRequest: Parameters<typeof updateShop>[0]['updateShopRequest'], saved?: string) => {
+  const save = async (updateShopRequest: Parameters<typeof updateShop>[0]['body'], saved?: string) => {
     try {
-      await updateShop({ shopId, updateShopRequest }).unwrap();
+      await updateShop({ shopId, body: updateShopRequest }).unwrap();
       onRefetch();
       if (saved) toast.success(saved);
       return true;

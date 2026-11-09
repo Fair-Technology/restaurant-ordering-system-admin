@@ -1,4 +1,4 @@
-import type { ReferenceListsResponse, ShopResponse } from '../../services/api';
+import type { GetReferenceListsApiResponse, GetShopResultDto } from '../../services/api';
 import type { DeliveryZoneDto, UpdateOrderSettingsBody, WeeklyHoursDto } from '../../services/ordersApi';
 import { DELIVERY_TAX_CLASS_ID, formatRate, labelFor } from '../menu/foodInfo';
 import { weekOf } from './kitchenSettings';
@@ -16,7 +16,7 @@ export function normalisePostcode(raw: string): string {
   return raw.replace(/\s+/g, '').toUpperCase();
 }
 
-export function deliveryFormOf(s: ShopResponse['orderSettings']): DeliveryForm {
+export function deliveryFormOf(s: Partial<GetShopResultDto['orderSettings']> | undefined): DeliveryForm {
   return {
     delivery: s?.delivery ?? false,
     ownHours: !!s?.deliveryHours,
@@ -53,7 +53,7 @@ export function invalidZoneRows(zones: readonly DeliveryZoneDto[], countryCode: 
 
 /** The tax class delivery fees are charged at: the active Delivery class, else the country default class. */
 export function defaultDeliveryFeeTaxClassId(
-  refs: Pick<ReferenceListsResponse, 'taxClasses' | 'defaultTaxClassId'>,
+  refs: Pick<GetReferenceListsApiResponse, 'taxClasses' | 'defaultTaxClassId'>,
 ): string | null {
   return refs.taxClasses.some((c) => c.id === DELIVERY_TAX_CLASS_ID && c.isActive)
     ? DELIVERY_TAX_CLASS_ID
@@ -62,7 +62,7 @@ export function defaultDeliveryFeeTaxClassId(
 
 /** Class name and delivery rate for the read-only "Delivery fee VAT" line; null when the lists name no fee class. */
 export function deliveryFeeVat(
-  refs: Pick<ReferenceListsResponse, 'taxClasses' | 'defaultTaxClassId' | 'currentTaxRates'>,
+  refs: Pick<GetReferenceListsApiResponse, 'taxClasses' | 'defaultTaxClassId' | 'currentTaxRates'>,
   language: string,
 ): { name: string; rate: string } | null {
   const id = defaultDeliveryFeeTaxClassId(refs);

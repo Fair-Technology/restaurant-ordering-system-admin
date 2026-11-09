@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CheckCircle, AlertCircle, Circle } from 'lucide-react';
-import type { ShopResponse } from '../../services/api';
+import type { GetShopResultDto } from '../../services/api';
 import {
   useLazyGetGoLiveStatusQuery,
   useDisconnectStripeAccountMutation,
@@ -14,7 +14,7 @@ import { StripeOnboardingModal } from './StripeOnboardingModal';
 const PENDING_RECHECK_MS = 30_000;
 
 interface Props {
-  shop: ShopResponse;
+  shop: GetShopResultDto;
   onRefetch: () => void;
 }
 

@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import type { ShopResponse } from '../../services/api';
+import type { GetShopResultDto } from '../../services/api';
 import { useUpdateOrderSettingsMutation } from '../../services/ordersApi';
 import { Section } from '../layout/Page';
 import { MyButton } from '../ui/MyButton';
 
 interface Props {
-  shop: ShopResponse;
+  shop: GetShopResultDto;
   onRefetch: () => void;
 }
 

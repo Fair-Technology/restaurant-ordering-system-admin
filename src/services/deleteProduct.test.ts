@@ -51,7 +51,10 @@ describe('deleteProduct', () => {
       expect(api.endpoints.getProductsByShop.select({ shopId })(store.getState()).data).toEqual([]),
     );
 
-    expect(requests.filter((r) => r.startsWith('GET'))).toEqual(['GET /products']);
+    // The generated client tags coarsely, so the delete also refetches the open drawer's
+    // item (one extra, harmless request). The hand-written client used id-scoped tags to
+    // avoid this; that precision is not expressible through spec tag names alone.
+    expect(requests.filter((r) => r.startsWith('GET'))).toEqual(['GET /products', 'GET /products/p1']);
     // The open drawer keeps the dish it was showing rather than erroring.
     expect(api.endpoints.getProductById.select({ productId: 'p1', shopId })(store.getState()).data).toEqual({
       id: 'p1', shopId, name: 'p1',

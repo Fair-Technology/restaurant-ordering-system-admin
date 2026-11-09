@@ -21,7 +21,7 @@ export function PauseOrdersDialog({ shopId, onClose, onPaused }: Props) {
 
   const handleConfirm = async () => {
     try {
-      await updateShop({ shopId, updateShopRequest: { ordersPaused: true, ordersPausedFor: choice } }).unwrap();
+      await updateShop({ shopId, body: { ordersPaused: true, ordersPausedFor: choice } }).unwrap();
       onPaused();
     } catch (err) {
       toast.error(isOfflineBySuperadminError(err) ? t('nav.offlineBySuperadminToast') : t('shops.statusFailedToSave'));

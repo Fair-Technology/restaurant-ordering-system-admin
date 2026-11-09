@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
-import type { ProductResponse } from '../../services/api';
+import type { ProductDto } from '../../services/api';
 import { useUpdateProductMutation } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
 import { MyButton } from '../ui/MyButton';
@@ -16,7 +16,7 @@ export function ScheduleOfferModal({
   currencySymbol,
   onClose,
 }: {
-  product: ProductResponse;
+  product: ProductDto;
   currencySymbol: string;
   onClose: () => void;
 }) {
@@ -81,7 +81,7 @@ export function ScheduleOfferModal({
     try {
       await updateProduct({
         productId: product.id!,
-        updateProductRequest: { shopId: product.shopId!, schedule: schedulePayload },
+        body: { shopId: product.shopId!, schedule: schedulePayload ?? undefined },
       }).unwrap();
       toast.success(t('products.saved'));
       onClose();

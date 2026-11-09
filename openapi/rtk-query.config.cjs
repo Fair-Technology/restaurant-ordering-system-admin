@@ -5,5 +5,6 @@ module.exports = {
   apiImport: 'baseApi',
   outputFile: '../src/services/api.ts',
   exportName: 'api',
-  hooks: { queries: true, lazyQueries: false, mutations: true },
+  tag: true,
+  hooks: { queries: true, lazyQueries: true, mutations: true },
 };

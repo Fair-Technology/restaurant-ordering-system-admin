@@ -1,9 +1,9 @@
-import type { ShopResponse } from '../../services/api';
+import type { GetShopResultDto } from '../../services/api';
 
 export const SLOT_CAPACITY_MAX = 50;
 
 /** What the field shows for the stored limit: '' when there is none. */
-export function slotCapacityInputOf(s: ShopResponse['orderSettings']): string {
+export function slotCapacityInputOf(s: Partial<GetShopResultDto['orderSettings']> | undefined): string {
   const v = s?.slotCapacity;
   return typeof v === 'number' ? String(v) : '';
 }

@@ -8,7 +8,7 @@ import {
   useCreateShopMutation,
   useUpdateShopMutation,
 } from '../services/api';
-import type { CreateShopRequest, MenuLanguage, ShopResponse } from '../services/api';
+import type { CreateShopRequestDto, MenuLanguage, ShopSummaryDto } from '../services/api';
 import { TakeShopOfflineModal } from '../components/shop/GoLiveModal';
 import { isOfflineBySuperadminError } from '../features/shops/shopStatus';
 import { visibleShops } from '../features/shops/deleteShop';
@@ -79,7 +79,7 @@ function CreateShopModal({ onClose }: { onClose: () => void }) {
   const dpaLang = i18n.language.startsWith('de') ? 'de' : 'en';
 
   const [industryOther, setIndustryOther] = useState('');
-  const [form, setForm] = useState<Partial<CreateShopRequest>>({
+  const [form, setForm] = useState<Partial<CreateShopRequestDto>>({
     name: '',
     countryCode: 'AU',
     menuLanguage: defaultMenuLanguageForUiLanguage(i18n.language),
@@ -116,11 +116,11 @@ function CreateShopModal({ onClose }: { onClose: () => void }) {
     if (!dpaTicked || !dpa) return;
     try {
       const shop = await createShop({
-        createShopRequest: {
+        createShopRequestDto: {
           ...form,
           industry: resolvedIndustry,
           acceptDpaVersion: dpa.version,
-        } as CreateShopRequest,
+        } as CreateShopRequestDto,
       }).unwrap();
       toast.success(t('shops.created'));
       onClose();
@@ -281,7 +281,7 @@ function ShopAvailabilityToggle({
   isPaused,
   setIsPaused,
 }: {
-  shop: ShopResponse;
+  shop: ShopSummaryDto;
   isPaused: boolean;
   setIsPaused: (paused: boolean) => void;
 }) {
@@ -301,7 +301,7 @@ function ShopAvailabilityToggle({
     }
     setIsPaused(false);
     try {
-      await updateShop({ shopId: shop.id!, updateShopRequest: { isPaused: false } }).unwrap();
+      await updateShop({ shopId: shop.id!, body: { isPaused: false } }).unwrap();
     } catch (err) {
       setIsPaused(true);
       toast.error(isOfflineBySuperadminError(err) ? t('nav.offlineBySuperadminToast') : t('shops.statusFailedToSave'));
@@ -372,7 +372,7 @@ function ShopPlanBadge({ shopId }: { shopId: string }) {
 }
 
 /** One shop: logo, name, plan, what diners see, the online switch and a button to open it. */
-function ShopRow({ shop }: { shop: ShopResponse }) {
+function ShopRow({ shop }: { shop: ShopSummaryDto }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [isPaused, setIsPaused] = useState(shop.isPaused ?? true);

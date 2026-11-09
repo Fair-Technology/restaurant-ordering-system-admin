@@ -8,7 +8,7 @@ import { MyButton } from '../components/ui/MyButton';
 import { MyInput, MyTextarea } from '../components/ui/MyInput';
 import { CurrencyInput } from '../components/ui/CurrencyInput';
 import { useCreateCategoryMutation } from '../services/api';
-import type { MenuLanguage, ReferenceEntry, ReferenceListsResponse, SpiceLevel, TranslationMap } from '../services/api';
+import type { MenuLanguage, TaxClassDef, GetReferenceListsApiResponse, SpiceLevel, TranslationMap } from '../services/api';
 import { hasOriginalText } from '../features/menu/translations';
 import { categoryWithOtherTaxClass, dishTaxClasses, effectiveTaxClassId, MODE_ORDER, isFoodInfoDeclared, labelFor, taxClassOptionLabel, toggleId, toggleMode, unavailableModesInOrder } from '../features/menu/foodInfo';
 import type { FoodInfo } from '../features/menu/foodInfo';
@@ -180,7 +180,7 @@ export function Step1Basics({ form, setForm, imageFile, setImageFile, currencySy
 interface StepFoodInfoProps {
   foodInfo: FoodInfo;
   setFoodInfo: (f: FoodInfo) => void;
-  refs: ReferenceListsResponse | undefined;
+  refs: GetReferenceListsApiResponse | undefined;
   showOptional: boolean;
 }
 
@@ -349,8 +349,8 @@ interface Step2CategoriesProps {
   categories: { id: string; name: string; taxClassId?: string | null }[];
   selectedCategoryIds: string[];
   setSelectedCategoryIds: (ids: string[]) => void;
-  taxClasses: ReferenceEntry[];
-  taxRefs?: Pick<ReferenceListsResponse, 'currentTaxRates' | 'taxRatesUniformAcrossModes'>;
+  taxClasses: TaxClassDef[];
+  taxRefs?: Pick<GetReferenceListsApiResponse, 'currentTaxRates' | 'taxRatesUniformAcrossModes'>;
   taxClassOverride: string | null;
   setTaxClassOverride: (id: string | null) => void;
   categoryError: boolean;
@@ -404,7 +404,7 @@ export function StepCategories({
     try {
       const created = await createCategory({
         shopId,
-        createCategoryRequest: { name, sortOrder: categories.length },
+        body: { name, sortOrder: categories.length },
       }).unwrap();
       if (created.id) setSelectedCategoryIds([...selectedCategoryIds, created.id]);
       setNewName('');
@@ -558,7 +558,7 @@ interface Step4Props {
   addAddonOption: (groupId: string) => void;
   removeAddonOption: (groupId: string, optionId: string) => void;
   updateAddonOption: (groupId: string, optionId: string, patch: Partial<AddonOption>) => void;
-  refs: ReferenceListsResponse | undefined;
+  refs: GetReferenceListsApiResponse | undefined;
   /** Present only while the translation tab is active: the fields then edit this language's text. */
   translation?: {
     language: MenuLanguage;
@@ -925,7 +925,7 @@ interface Step6Props {
   addonGroups: AddonGroup[];
   currencySymbol: string;
   foodInfo: FoodInfo;
-  refs: ReferenceListsResponse | undefined;
+  refs: GetReferenceListsApiResponse | undefined;
   effectiveTaxClassLabel: string;
 }
 

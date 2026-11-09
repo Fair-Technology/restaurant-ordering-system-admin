@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { IntakeOrder } from '../../services/ordersApi';
+import type { OrderHistoryEntry } from '../../services/api';
 import { enteredStateAt, itemSummary, liveGroups, matchesOrderSearch, orderTiming, parseOrderFilter } from './orderView';
 
 const NOW = Date.parse('2026-10-12T12:00:00Z');
@@ -110,7 +111,7 @@ describe('enteredStateAt', () => {
       { from: null, to: 'PLACED' as const, at: min(-20), actor: { type: 'customer' as const } },
       { from: 'PLACED' as const, to: 'ACCEPTED' as const, at: min(-18), actor: { type: 'system' as const } },
       { from: 'ACCEPTED' as const, to: 'READY' as const, at: min(-3), actor: { type: 'system' as const } },
-    ];
+    ] as unknown as OrderHistoryEntry[];  // the spec declares `from` non-nullable; the initial entry stores null
     expect(enteredStateAt({ state: 'READY', history })).toBe(min(-3));
     expect(enteredStateAt({ state: 'COMPLETED', history })).toBeNull();
   });

@@ -1,5 +1,5 @@
 import { api } from './api';
-import type { OrderResponse } from './api';
+import type { OrderDto } from './api';
 
 export type RejectReason = 'too_busy' | 'item_unavailable' | 'closing_soon' | 'other' | 'no_response' | 'payment_failed' | 'shop_unavailable';
 
@@ -38,9 +38,29 @@ export interface DeliveryAddressDto {
   city: string;
 }
 
-export type IntakeOrder = Omit<OrderResponse, 'items'> & {
+export type IntakeOrder = Omit<
+  OrderDto,
+  | 'items'
+  | 'totalCents'
+  | 'deliveryFeeCents'
+  | 'deliveryAddress'
+  | 'autoRejectAt'
+  | 'acceptedAt'
+  | 'prepMinutes'
+  | 'taxBreakdown'
+  | 'rejectionNote'
+  | 'customerAddress'
+  | 'refundedCents'
+  | 'refunds'
+  | 'releaseFailure'
+  | 'documents'
+  | 'autoAccepted'
+  | 'scheduledFor'
+  | 'discount'
+  | 'loyaltyVoucherSent'
+> & {
   // Lines sharing combo.line are the dishes of one combo; absent/null on dish lines and on an older backend
-  items: Array<OrderResponse['items'][number] & { combo?: { line: number; productId: string; name: string } | null }>;
+  items: Array<OrderDto['items'][number] & { combo?: { line: number; productId: string; name: string } | null }>;
   // Absent when talking to a backend from before delivery
   totalCents?: number;
   deliveryFeeCents?: number | null;
@@ -74,7 +94,7 @@ export type IntakeOrder = Omit<OrderResponse, 'items'> & {
 
 export type UpcomingOrder = IntakeOrder & { outsideHours: boolean };
 
-export type FulfilmentModeKey = 'collection' | 'delivery' | 'dine_in';
+export type FulfilmentMode = 'collection' | 'delivery' | 'dine_in';
 
 export type WeekDayKey = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 export type WeeklyHoursDto = Record<WeekDayKey, { open: string; close: string }[]>;
@@ -98,7 +118,7 @@ export interface OrdersPauseDto {
 export interface OrderQueueDto {
   serverTime: string;
   timezone: string;
-  defaultPrepMinutes: Record<FulfilmentModeKey, number>;
+  defaultPrepMinutes: Record<FulfilmentMode, number>;
   // Absent when talking to a backend from before busy mode
   busy?: BusyStateDto;
   orders: IntakeOrder[];
@@ -116,7 +136,7 @@ export interface OrderSettingsDto {
   autoAccept: boolean;
   dineIn: boolean;
   autoAcceptHours: WeeklyHoursDto | null;
-  prepMinutes: Record<FulfilmentModeKey, number>;
+  prepMinutes: Record<FulfilmentMode, number>;
   lastOrdersMinutes: number | null;
   busyExtraMinutes: number;
   delivery: boolean;
@@ -129,7 +149,7 @@ export interface OrderSettingsDto {
 
 // Every field is optional: the server keeps whatever is not sent
 export type UpdateOrderSettingsBody = Partial<Omit<OrderSettingsDto, 'prepMinutes'>> & {
-  prepMinutes?: Partial<Record<FulfilmentModeKey, number>>;
+  prepMinutes?: Partial<Record<FulfilmentMode, number>>;
 };
 
 interface OrderActionArg {
@@ -221,11 +241,6 @@ export const ordersApi = api.injectEndpoints({
       ],
       onQueryStarted: applyActionToQueue,
     }),
-    getOrderDocument: build.mutation<InvoiceFileDto, OrderActionArg & { documentId: string }>({
-      query: ({ shopId, orderId, documentId }) => ({
-        url: `/shops/${shopId}/orders/${orderId}/documents/${documentId}`,
-      }),
-    }),
     updateOrderSettings: build.mutation<OrderSettingsDto, { shopId: string; body: UpdateOrderSettingsBody }>({
       query: ({ shopId, body }) => ({
         url: `/shops/${shopId}/order-settings`,
@@ -264,7 +279,6 @@ export const {
   useDispatchOrderMutation,
   useCompleteOrderMutation,
   useRefundOrderMutation,
-  useGetOrderDocumentMutation,
   useUpdateOrderSettingsMutation,
   useSetBusyModeMutation,
 } = ordersApi;

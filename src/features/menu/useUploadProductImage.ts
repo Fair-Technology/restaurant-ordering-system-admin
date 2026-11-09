@@ -11,14 +11,14 @@ export function useUploadProductImage(): (shopId: string, productId: string, fil
         generateUploadUrl({
           shopId,
           productId,
-          generateImageUploadUrlRequest: { contentType, fileName },
+          body: { contentType, fileName },
         }).unwrap(),
       putBlob: putBlobToStorage,
       addProductImage: (imageId, url) =>
         addProductImage({
           shopId,
           productId,
-          addProductImageRequest: { imageId, url },
+          body: { imageId, url },
         }).unwrap(),
     });
 }

@@ -1,11 +1,11 @@
-import type { ShopResponse } from '../../services/api';
+import type { GetShopResultDto } from '../../services/api';
 
 /** Round shop logo, or its first letter when no logo is uploaded (same look as the sidebar). */
 export function ShopLogoBadge({
   shop,
   size = 40,
 }: {
-  shop: Pick<ShopResponse, 'name' | 'branding'> | undefined;
+  shop: { name: string; branding?: GetShopResultDto['branding'] } | undefined;
   size?: number;
 }) {
   const logo = shop?.branding?.logoUrl;

@@ -44,7 +44,7 @@ describe('planDisplay', () => {
       entitlements: { planId: 'plan-pro', limits: {}, limitOverrideActive: false, planOverrideExpired: false },
     } as unknown as GetShopSubscriptionApiResponse;
     expect(currentPlanIdOf(data)).toBe('plan-pro');
-    expect(currentPlanIdOf({ ...data, entitlements: undefined })).toBe('plan-max');
+    expect(currentPlanIdOf({ ...data, entitlements: undefined } as unknown as GetShopSubscriptionApiResponse)).toBe('plan-max');
     expect(currentPlanIdOf(undefined)).toBeUndefined();
   });
 });

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ShopResponse } from '../../services/api';
+import type { GetShopResultDto } from '../../services/api';
 import { useUpdateLoyaltyMutation, type LoyaltyRuleDto } from '../../services/promotionsApi';
 import { useToast } from '../../contexts/ToastContext';
 import { parseAmountToCents } from '../../features/orders/refunds';
@@ -11,7 +11,7 @@ import { MyInput } from '../ui/MyInput';
 
 interface LoyaltyCardProps {
   shopId: string;
-  shop: ShopResponse;
+  shop: GetShopResultDto;
   loyalty: LoyaltyRuleDto;
 }
 

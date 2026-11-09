@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import type { MenuLanguage, ProductResponse } from '../services/api';
+import type { CategoryDto, MenuLanguage, ProductDto } from '../services/api';
 import {
   useGetProductsByShopQuery,
   useGetCategoriesByShopQuery,
@@ -56,7 +56,7 @@ function AddProductModal({ shopId, onClose }: AddProductModalProps) {
   const { refs } = useShopReferenceLists(shopId);
 
   const categoriesList = (categories ?? []).filter(
-    (c): c is { id: string; name: string; taxClassId?: string | null } => !!c.id && !!c.name,
+    (c): c is CategoryDto => !!c.id && !!c.name,
   );
 
   const [mode, setMode] = useState<'simple' | 'extended'>('simple');
@@ -140,7 +140,7 @@ function AddProductModal({ shopId, onClose }: AddProductModalProps) {
         existingProductId: createdProductId,
         createDish: async () => {
           const product = await createProduct({
-            createProductRequest: {
+            createProductRequestDto: {
               shopId,
               name: form.name,
               description: form.description,
@@ -151,7 +151,7 @@ function AddProductModal({ shopId, onClose }: AddProductModalProps) {
               allergenIds: foodInfo.allergenIds,
               additiveIds: foodInfo.additiveIds,
               dietaryTagIds: foodInfo.dietaryTagIds,
-              spiceLevel: foodInfo.spiceLevel,
+              spiceLevel: foodInfo.spiceLevel ?? undefined,
               prepMinutes: foodInfo.prepMinutes,
               // The dish owns its class: the one picked by hand, else its category's suggestion
           taxClassId: effectiveTaxClassId(selectedCategoryIds, categoriesList, foodInfo.taxClassId),
@@ -353,7 +353,7 @@ function BulkImportModal({ shopId, onClose }: { shopId: string; onClose: () => v
       setProgress(i + 1);
       try {
         await createProduct({
-          createProductRequest: importRowToCreateRequest(shopId, row),
+          createProductRequestDto: importRowToCreateRequest(shopId, row),
         }).unwrap();
       } catch {
         errs.push({ name: row.name, error: 'Failed to create' });
@@ -501,11 +501,11 @@ function BulkImportModal({ shopId, onClose }: { shopId: string; onClose: () => v
 type DishFilter = 'all' | 'onMenu' | 'off' | 'incomplete';
 
 /** A dish still missing something before it can be on the menu: allergens declared, a photo, a category. */
-function isIncomplete(p: ProductResponse): boolean {
+function isIncomplete(p: ProductDto): boolean {
   return p.isDeclared === false || !p.images?.length || !p.categories?.length;
 }
 
-function passes(p: ProductResponse, filter: DishFilter, available: boolean): boolean {
+function passes(p: ProductDto, filter: DishFilter, available: boolean): boolean {
   if (filter === 'onMenu') return available && p.isDeclared !== false;
   if (filter === 'off') return !available;
   if (filter === 'incomplete') return isIncomplete(p);
@@ -521,7 +521,7 @@ function DishRow({
   onOpen,
   onToggle,
 }: {
-  product: ProductResponse;
+  product: ProductDto;
   available: boolean;
   toggling: boolean;
   selected: boolean;
@@ -648,12 +648,12 @@ export function ProductsPage() {
   }, [selectedId]);
 
   const categoriesList = (categories ?? []).filter(
-    (c): c is { id: string; name: string; taxClassId?: string | null } => !!c.id && !!c.name,
+    (c): c is CategoryDto => !!c.id && !!c.name,
   );
 
-  const availableOf = (p: ProductResponse) => optimistic[p.id!] ?? p.isAvailable !== false;
+  const availableOf = (p: ProductDto) => optimistic[p.id!] ?? p.isAvailable !== false;
 
-  const toggle = async (product: ProductResponse) => {
+  const toggle = async (product: ProductDto) => {
     const id = product.id!;
     if (toggling.has(id)) return;
     const current = availableOf(product);
@@ -665,7 +665,7 @@ export function ProductsPage() {
     setOptimistic((o) => ({ ...o, [id]: next }));
     setToggling((s) => new Set(s).add(id));
     try {
-      await updateProduct({ productId: id, updateProductRequest: { shopId: shopId!, isAvailable: next } }).unwrap();
+      await updateProduct({ productId: id, body: { shopId: shopId!, isAvailable: next } }).unwrap();
       setRefreshKey((k) => k + 1);
     } catch {
       setOptimistic((o) => ({ ...o, [id]: current }));

@@ -1,4 +1,4 @@
-import type { ShopResponse } from '../../services/api';
+import type { GetShopResultDto } from '../../services/api';
 import type { OrdersPauseDto } from '../../services/ordersApi';
 
 /** How long a pause lasts; the server works out the end time. */
@@ -10,12 +10,14 @@ export type ShopLiveState = 'offline' | 'ordersPaused' | 'online';
 
 export const ORDERS_PAUSED_MESSAGE_MAX = 280;
 
-type StatusFields = Pick<ShopResponse, 'isPaused' | 'ordersPaused' | 'offlineBySuperadmin' | 'ordersPausedUntil'>;
-type PauseFields = Pick<ShopResponse, 'ordersPaused' | 'ordersPausedUntil' | 'ordersAutoPaused'>;
+// Partial: these helpers read only a few fields, and a shop payload can legitimately arrive
+// without them (the API grew these over time), so callers pass partial objects.
+type StatusFields = Partial<Pick<GetShopResultDto, 'isPaused' | 'ordersPaused' | 'offlineBySuperadmin' | 'ordersPausedUntil'>>;
+type PauseFields = Partial<Pick<GetShopResultDto, 'ordersPaused' | 'ordersPausedUntil' | 'ordersAutoPaused'>>;
 
 /** A timed pause is over once its end time has passed; an unreadable end counts as still paused. */
 export function isOrdersPausedAt(
-  shop: Pick<ShopResponse, 'ordersPaused' | 'ordersPausedUntil'> | undefined,
+  shop: Partial<Pick<GetShopResultDto, 'ordersPaused' | 'ordersPausedUntil'>> | undefined,
   nowMs: number,
 ): boolean {
   if (!shop?.ordersPaused) return false;

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { XCircle, X } from 'lucide-react';
-import type { GoLiveStatusResponse } from '../../services/api';
+import type { GetGoLiveStatusApiResponse } from '../../services/api';
 import { useUpdateShopMutation } from '../../services/api';
 import { goLiveFixLink } from '../../features/shops/goLiveFixLink';
 import { MyButton } from '../ui/MyButton';
@@ -10,7 +10,7 @@ import { MyButton } from '../ui/MyButton';
 
 interface CriteriaProps {
   shopId: string;
-  status: GoLiveStatusResponse;
+  status: GetGoLiveStatusApiResponse;
   onClose: () => void;
 }
 
@@ -85,7 +85,7 @@ export function TakeShopOfflineModal({ shopId, onClose, onSuccess }: TakeOffline
     try {
       await updateShop({
         shopId,
-        updateShopRequest: { isPaused: true },
+        body: { isPaused: true },
       }).unwrap();
       onSuccess();
     } catch {
