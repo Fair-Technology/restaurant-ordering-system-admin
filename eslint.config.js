@@ -6,7 +6,9 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  // `src/services/api.ts` is generated (see openapi/rtk-query.config.cjs) and is rewritten
+  // wholesale on every regeneration, so it is not linted: any fix here would be lost.
+  globalIgnores(['dist', 'src/services/api.ts']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
