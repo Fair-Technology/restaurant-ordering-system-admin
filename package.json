@@ -10,7 +10,10 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "generate": "npx @rtk-query/codegen-openapi openapi/rtk-query.config.cjs"
+    "generate": "npx @rtk-query/codegen-openapi openapi/rtk-query.config.cjs",
+    "check:api-types": "sh scripts/check-api-types.sh",
+    "hooks:install": "git config core.hooksPath .githooks",
+    "prepare": "git config core.hooksPath .githooks || true"
   },
   "dependencies": {
     "@azure/msal-browser": "^5.23.0",

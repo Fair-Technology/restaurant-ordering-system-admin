@@ -87,3 +87,16 @@ The spec is shared and lives in the **rs-backend** repo:
 Don't restate product rules here — a frontend only hides controls a user cannot
 use; the rules are enforced in the backend. If you learn something new about how
 the product behaves, edit the spec, not this file.
+
+## API drift gate
+
+`src/services/api.ts` is generated from `openapi/swagger.json` (`npm run generate`).
+`npm run check:api-types` regenerates to a temp file and diffs it against the committed client; it fails if they differ.
+
+Enable the pre-push hook that runs it (once per clone; `npm install` also does this via `prepare`):
+
+```
+npm run hooks:install
+```
+
+It is intentionally not part of `npm run build`.

@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+# Fails the push if the generated API client is stale relative to openapi/swagger.json.
+# This lives in a pre-push hook, NOT in `build`: build must stay hermetic so CI/deploys
+# never break on a check that depends on a spec snapshot being refreshed (cs-admin learned this).
+# Enable once per clone: npm run hooks:install   (git config core.hooksPath .githooks)
+npm run --silent check:api-types
