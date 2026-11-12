@@ -6,10 +6,13 @@
 #   git tag v0.1.0 && git push origin v0.1.0
 #   or Actions -> "Promote artifact to production" -> Run workflow
 #
-# Requires a secret named AZURE_STATIC_WEB_APPS_API_TOKEN holding the PRODUCTION app's
-# deployment token (Static Web App -> Overview -> Manage deployment token). Put it on the
-# `production` environment (repo Settings -> Environments) so it cannot be confused with
-# the dev token that lives under the same name.
+# Requires a secret named AZURE_STATIC_WEB_APPS_API_TOKEN_PROD holding the PRODUCTION app's
+# deployment token (Static Web App -> Overview -> Manage deployment token). It deliberately
+# does NOT share a name with the dev token (AZURE_STATIC_WEB_APPS_API_TOKEN): GitHub falls
+# back to a repo-level secret of the same name when an environment has none, which would
+# deploy to DEV. With a distinct name, a missing secret fails closed. Add it as an
+# environment secret on `production` (repo Settings -> Environments -> production).
+# Until it exists, this workflow is EXPECTED TO FAIL at the guard step.
 
 name: Promote artifact to production
 
@@ -35,6 +38,15 @@ jobs:
     environment: production # required reviewer / approval rule lives here
 
     steps:
+      - name: Guard - production deployment token must exist
+        env:
+          PROD_TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_PROD }}
+        run: |
+          if [ -z "$PROD_TOKEN" ]; then
+            echo "::error title=Missing production secret::AZURE_STATIC_WEB_APPS_API_TOKEN_PROD is empty or not set. Add it as a secret on the 'production' environment (Settings -> Environments -> production) with the PRODUCTION Static Web App deployment token. Refusing to deploy: this is fail-closed by design so production never falls back to the dev token."
+            exit 1
+          fi
+
       - name: Find the dev run that built this commit
         id: source
         env:
@@ -75,5 +87,5 @@ jobs:
       - name: Deploy to production
         env:
           # swa deploy reads the token from this variable when --deployment-token is absent
-          SWA_CLI_DEPLOYMENT_TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          SWA_CLI_DEPLOYMENT_TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_PROD }}
         run: npx --yes @azure/static-web-apps-cli@2 deploy ./dist --env production

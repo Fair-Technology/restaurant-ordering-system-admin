@@ -100,3 +100,19 @@ npm run hooks:install
 ```
 
 It is intentionally not part of `npm run build`.
+
+## Production promotion secret
+
+The `Promote artifact to production` workflow (`.github/workflows/promote.yml`, runs on a `v*` tag after
+approval on the `production` environment) deploys with a secret named **`AZURE_STATIC_WEB_APPS_API_TOKEN_PROD`**.
+It must hold the **production** Static Web App's deployment token (Azure portal -> the production Static Web App
+-> Overview -> Manage deployment token).
+
+- **Where to add it:** GitHub repo -> Settings -> Environments -> `production` -> Environment secrets.
+- **Dev is unaffected:** the dev workflow (`azure-static-web-apps.yml`) keeps using `AZURE_STATIC_WEB_APPS_API_TOKEN`.
+- **Why a different name:** GitHub falls back to the repo-level secret when an environment has none of that name, so
+  reusing the dev name would silently deploy production promotions to the DEV app.
+
+> **Production promotion is EXPECTED TO FAIL until `AZURE_STATIC_WEB_APPS_API_TOKEN_PROD` exists.**
+> A guard step fails the run with a message naming the secret. This is fail-closed by design, not a fault.
+> The owner supplies the secret value; it is never committed or handled by tooling.
