@@ -2,7 +2,13 @@
 # Nothing is installed and nothing is rebuilt: the dist folder is downloaded from the
 # dev workflow run and uploaded as-is.
 #
+# Triggered automatically when the dev workflow (azure-static-web-apps.yml) succeeds on
+# `main` — a release is `dev` merged into `main` (spec §21-5a) — and promotes that run's
+# output. The commit is taken from the triggering run's head_sha, because a workflow_run
+# job runs on the default branch's latest commit, not on the commit that was built.
+#
 # Usage:
+#   merge dev -> main (automatic)
 #   git tag v0.1.0 && git push origin v0.1.0
 #   or Actions -> "Promote artifact to production" -> Run workflow
 #
@@ -17,6 +23,13 @@
 name: Promote artifact to production
 
 on:
+  # A release is `dev` merged into `main` (spec §21-5a). Once the dev workflow has built and
+  # tested that main commit, this workflow ships the same output — still behind the
+  # `production` environment's required reviewer.
+  workflow_run:
+    workflows: ['Azure Static Web Apps CI/CD']
+    types: [completed]
+    branches: [main]
   push:
     tags:
       - 'v*'
@@ -35,7 +48,12 @@ jobs:
   promote:
     name: Deploy promoted artifact to production
     runs-on: ubuntu-latest
+    # Only a successful dev run on main may start a workflow_run promotion; tag and manual runs pass.
+    if: github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
     environment: production # required reviewer / approval rule lives here
+    env:
+      # workflow_run executes on the default branch's latest commit, so take the built commit from the event.
+      RELEASE_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
 
     steps:
       - name: Guard - production deployment token must exist
@@ -55,26 +73,29 @@ jobs:
         run: |
           set -euo pipefail
           RUN_ID="${{ inputs.run_id }}"
+          if [ -z "$RUN_ID" ] && [ "${{ github.event_name }}" = "workflow_run" ]; then
+            RUN_ID="${{ github.event.workflow_run.id }}"
+          fi
           if [ -z "$RUN_ID" ]; then
             RUN_ID=$(gh run list \
               --workflow azure-static-web-apps.yml \
-              --commit "$GITHUB_SHA" \
+              --commit "$RELEASE_SHA" \
               --status success \
               --limit 1 \
               --json databaseId \
               --jq '.[0].databaseId')
           fi
           if [ -z "$RUN_ID" ] || [ "$RUN_ID" = "null" ]; then
-            echo "::error::No successful dev run found for $GITHUB_SHA. Deploy this commit to dev first, or pass run_id explicitly."
+            echo "::error::No successful dev run found for $RELEASE_SHA. Deploy this commit to dev first, or pass run_id explicitly."
             exit 1
           fi
           echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
-          echo "Promoting dist-$GITHUB_SHA from dev run $RUN_ID"
+          echo "Promoting dist-$RELEASE_SHA from dev run $RUN_ID"
 
       - name: Download the dev-built output
         uses: actions/download-artifact@v4
         with:
-          name: dist-${{ github.sha }}
+          name: dist-${{ env.RELEASE_SHA }}
           run-id: ${{ steps.source.outputs.run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: dist
