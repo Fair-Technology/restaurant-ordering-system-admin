@@ -254,9 +254,21 @@ export function StaffPage() {
   const { shopId } = useParams<{ shopId: string }>();
   const { t } = useTranslation();
   const { data: shop } = useGetShopByIdQuery({ shopId: shopId! });
-  const { data, isLoading, isError } = useListStaffQuery({ shopId: shopId! });
+  const canManage = (shop?.callerPermissions ?? []).includes('manage_staff');
+  const { data, isLoading, isError } = useListStaffQuery({ shopId: shopId! }, { skip: !canManage });
   // null: open the form only while there are no logins yet
   const [showForm, setShowForm] = useState<boolean | null>(null);
+
+  if (shop && !canManage) {
+    return (
+      <div>
+        <PageHeader eyebrow={t('nav.group.business')} title={t('staff.title')} />
+        <Section padded>
+          <p className="text-sm text-[#4a413b]">{t('staff.accessDenied')}</p>
+        </Section>
+      </div>
+    );
+  }
 
   if (isLoading) return <MySpinner label={t('staff.title')} />;
   if (isError || !data) return <p className="text-sm text-[#b42318]">{t('staff.loadError')}</p>;

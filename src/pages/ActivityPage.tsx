@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useGetAuditEntriesQuery } from '../services/api';
+import { useGetAuditEntriesQuery, useGetShopByIdQuery } from '../services/api';
 import type { AuditEntry } from '../services/api';
 import { EmptyNote, PageHeader, Pager, Row, Section } from '../components/layout/Page';
 import { MySpinner } from '../components/ui/MySpinner';
@@ -53,11 +53,23 @@ export function ActivityPage() {
     setPage(1);
   }
 
-  const { data, isLoading, isError } = useGetAuditEntriesQuery({
-    shopId: shopId!,
-    page,
-    pageSize: PAGE_SIZE,
-  });
+  const { data: shop } = useGetShopByIdQuery({ shopId: shopId! });
+  const canView = (shop?.callerPermissions ?? []).includes('view_audit');
+  const { data, isLoading, isError } = useGetAuditEntriesQuery(
+    { shopId: shopId!, page, pageSize: PAGE_SIZE },
+    { skip: !canView },
+  );
+
+  if (shop && !canView) {
+    return (
+      <div>
+        <PageHeader eyebrow={t('nav.group.business')} title={t('activity.title')} />
+        <Section padded>
+          <p className="text-sm text-[#4a413b]">{t('activity.accessDenied')}</p>
+        </Section>
+      </div>
+    );
+  }
 
   if (isLoading) return <MySpinner label={t('activity.title')} />;
   if (isError) return <p className="text-sm text-[#b42318]">{t('activity.loadError')}</p>;

@@ -32,6 +32,7 @@ import { importRowToCreateRequest, type MenuImportRow } from '../features/menu/m
 import type { PreviewDish } from '../features/menu/previewBridge';
 import { DishEditor } from '../components/menu/DishEditor';
 import { LivePreview } from '../components/menu/LivePreview';
+import { PageHeader, Section, SplitPage } from '../components/layout/Page';
 
 // ── Bulk import types ──────────────────────────────────────────────────────────
 
@@ -609,10 +610,14 @@ export function ProductsPage() {
   const { t, i18n } = useTranslation();
   const toast = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { data: products, isLoading, isFetching, isError } = useGetProductsByShopQuery({ shopId: shopId! });
-  const isRefreshing = isListRefreshing({ isLoading, isFetching });
   const { data: shop } = useGetShopByIdQuery({ shopId: shopId! });
-  const { data: categories } = useGetCategoriesByShopQuery({ shopId: shopId! });
+  const canManage = (shop?.callerPermissions ?? []).includes('manage_menu');
+  const { data: products, isLoading, isFetching, isError } = useGetProductsByShopQuery(
+    { shopId: shopId! },
+    { skip: !canManage },
+  );
+  const isRefreshing = isListRefreshing({ isLoading, isFetching });
+  const { data: categories } = useGetCategoriesByShopQuery({ shopId: shopId! }, { skip: !canManage });
   const [updateProduct] = useUpdateProductMutation();
   const currencySymbol = shop?.currency ? getCurrencySymbol(shop.currency) : '€';
   const money = (cents: number) => formatCents(cents, shop?.currency ?? 'EUR', i18n.language);
@@ -646,6 +651,19 @@ export function ProductsPage() {
     setPreviewOpen(!!selectedId);
     if (!selectedId) setPreviewDish(null);
   }, [selectedId]);
+
+  if (shop && !canManage) {
+    return (
+      <SplitPage>
+        <div className="px-7 pt-[22px]">
+          <PageHeader eyebrow={t('nav.group.menu')} title={t('nav.dishes')} />
+          <Section padded>
+            <p className="text-sm text-[#4a413b]">{t('products.accessDenied')}</p>
+          </Section>
+        </div>
+      </SplitPage>
+    );
+  }
 
   const categoriesList = (categories ?? []).filter(
     (c): c is CategoryDto => !!c.id && !!c.name,

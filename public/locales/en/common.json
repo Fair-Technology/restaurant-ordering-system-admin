@@ -46,6 +46,7 @@
     "waitingOrders": "{{count}} new orders"
   },
   "subscription": {
+    "accessDenied": "You don't have permission to manage this restaurant's subscription.",
     "currentPlan": "Current Plan",
     "monthly": "Monthly",
     "yearly": "Yearly",
@@ -540,6 +541,7 @@
     "saveFailed": "The image could not be cropped. Please try again."
   },
   "products": {
+    "accessDenied": "You don't have permission to manage this restaurant's menu.",
     "addProduct": "+ Add Product",
     "newProduct": "New Product",
     "loading": "Loading products...",
@@ -890,6 +892,7 @@
     }
   },
   "activity": {
+    "accessDenied": "You don't have permission to view this restaurant's activity log.",
     "title": "Activity",
     "empty": "No activity yet.",
     "loadError": "Could not load activity.",
@@ -898,6 +901,7 @@
     "listTitle": "History"
   },
   "staff": {
+    "accessDenied": "You don't have permission to manage staff for this restaurant.",
     "title": "Staff logins",
     "usage": "{{count}} of {{limit}} logins in use",
     "username": "Username",
@@ -1002,6 +1006,7 @@
     "nothingToTranslate": "Nothing to translate on this step."
   },
   "legal": {
+    "accessDenied": "You don't have permission to manage the legal settings for this restaurant.",
     "title": "Legal & data",
     "loading": "Loading legal settings…",
     "loadError": "Could not load the legal settings.",

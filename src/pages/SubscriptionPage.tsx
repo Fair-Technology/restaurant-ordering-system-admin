@@ -247,9 +247,11 @@ export function SubscriptionPage() {
   const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const { data: shop, isLoading: shopLoading } = useGetShopByIdQuery({ shopId: shopId! });
+  const canManage = (shop?.callerPermissions ?? []).includes('manage_billing');
+  const canManageStaff = (shop?.callerPermissions ?? []).includes('manage_staff');
   const { data: subscriptionData, isLoading: subLoading } = useGetShopSubscriptionQuery(
     { shopId: shopId! },
-    { refetchOnMountOrArgChange: true },
+    { refetchOnMountOrArgChange: true, skip: !canManage },
   );
   const { data: plansData, isLoading: plansLoading } = useGetPlansQuery();
   const [createSubscriptionCheckout] = useCreateSubscriptionCheckoutMutation();
@@ -259,7 +261,7 @@ export function SubscriptionPage() {
   const [cancelScheduledChange] = useCancelScheduledChangeMutation();
   const [createBillingPortalSession] = useCreateBillingPortalSessionMutation();
   const [retrySubscriptionPayment] = useRetrySubscriptionPaymentMutation();
-  const { data: staffData } = useListStaffQuery({ shopId: shopId! });
+  const { data: staffData } = useListStaffQuery({ shopId: shopId! }, { skip: !canManage || !canManageStaff });
 
   const paymentParam = searchParams.get('payment');
   const sessionId = searchParams.get('session_id');
@@ -379,6 +381,17 @@ export function SubscriptionPage() {
     } finally {
       setIsResuming(false);
     }
+  }
+
+  if (shop && !canManage) {
+    return (
+      <div>
+        <PageHeader eyebrow={t('nav.group.business')} title={t('nav.subscription')} />
+        <Section padded>
+          <p className="text-sm text-[#4a413b]">{t('subscription.accessDenied')}</p>
+        </Section>
+      </div>
+    );
   }
 
   if (shopLoading || subLoading || plansLoading) {
