@@ -251,6 +251,7 @@ const injectedRtkApi = api
           url: `/products`,
           params: {
             shopId: queryArg.shopId,
+            includeUncategorized: queryArg.includeUncategorized,
           },
         }),
         providesTags: ["Products"],
@@ -1169,6 +1170,8 @@ export type GetProductsByShopApiResponse =
 export type GetProductsByShopApiArg = {
   /** Shop ID to filter products */
   shopId: string;
+  /** Include products that have no category (e.g. dishes created by the bulk menu import) */
+  includeUncategorized?: boolean;
 };
 export type DeleteProductApiResponse =
   /** status 200 Product deleted successfully */ DeleteProductResultDto;
