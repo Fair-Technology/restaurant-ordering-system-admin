@@ -609,7 +609,7 @@ export function ProductsPage() {
   const { t, i18n } = useTranslation();
   const toast = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { data: products, isLoading, isFetching, isError } = useGetProductsByShopQuery({ shopId: shopId! });
+  const { data: products, isLoading, isFetching, isError } = useGetProductsByShopQuery({ shopId: shopId!, includeUncategorized: true });
   const isRefreshing = isListRefreshing({ isLoading, isFetching });
   const { data: shop } = useGetShopByIdQuery({ shopId: shopId! });
   const { data: categories } = useGetCategoriesByShopQuery({ shopId: shopId! });
