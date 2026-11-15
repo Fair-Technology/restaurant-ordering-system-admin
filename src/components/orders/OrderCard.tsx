@@ -24,6 +24,8 @@ import { chargedCents } from '../../features/orders/refunds';
 import { formatCents } from '../../utils/money';
 import { MyButton } from '../ui/MyButton';
 import { ModeBadge, StateBadge } from './OrderBadges';
+import { SoldOutTodayButton } from '../menu/SoldOutTodayButton';
+import { useSoldOutToday } from '../../features/menu/useSoldOutToday';
 
 interface Props {
   shopId: string;
@@ -32,6 +34,8 @@ interface Props {
   defaultPrepMinutes: number;
   timeZone: string;
   pendingAccept: boolean;
+  /** The caller may mark dishes sold out for today (manage_stock OR manage_menu). */
+  canStock?: boolean;
   onAcceptStart: (orderId: string, prepMinutes: number) => void;
   onAcceptFailed: (orderId: string) => void;
   onFailed: () => void;
@@ -50,6 +54,7 @@ export function OrderCard({
   defaultPrepMinutes,
   timeZone,
   pendingAccept,
+  canStock = false,
   onAcceptStart,
   onAcceptFailed,
   onFailed,
@@ -57,6 +62,17 @@ export function OrderCard({
   const { t, i18n } = useTranslation();
   const toast = useToast();
   const [panel, setPanel] = useState<Panel>('none');
+  const { markSoldOutToday, clearSoldOut, isPending: soldOutPending } = useSoldOutToday(shopId, timeZone);
+  const [soldOutOverride, setSoldOutOverride] = useState<Record<string, boolean>>({});
+  const toggleSoldOut = (productId: string) => {
+    const next = !soldOutOverride[productId];
+    setSoldOutOverride((o) => ({ ...o, [productId]: next }));
+    const done = (ok: boolean) => {
+      if (!ok) setSoldOutOverride((o) => ({ ...o, [productId]: !next }));
+    };
+    if (next) markSoldOutToday(productId, done);
+    else clearSoldOut(productId, done);
+  };
   const [acceptOrder, { isLoading: accepting }] = useAcceptOrderMutation();
   const [rejectOrder, { isLoading: rejecting }] = useRejectOrderMutation();
   const [markReady, { isLoading: marking }] = useMarkOrderReadyMutation();
@@ -158,6 +174,14 @@ export function OrderCard({
                 <span className="text-[13px] text-muted">+ {item.selectedAddonOptionNames.join(', ')}</span>
               )}
             </span>
+            {canStock && !item.combo && (
+              <SoldOutTodayButton
+                name={item.productName}
+                soldOut={!!soldOutOverride[item.productId]}
+                busy={soldOutPending(item.productId)}
+                onToggle={() => toggleSoldOut(item.productId)}
+              />
+            )}
           </li>
         ))}
       </ul>

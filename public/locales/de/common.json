@@ -1220,6 +1220,12 @@
     "optionGroups_other": "{{count}} Gruppen",
     "availableFor": "{{name}} auf der Karte",
     "noMatch": "Keine Gerichte passen zu diesem Filter.",
+    "soldOutToday": "Heute ausverkauft",
+    "soldOutBack": "Wieder da",
+    "soldOutFor": "{{name}} für heute als ausverkauft melden",
+    "soldOutBackFor": "{{name}} wieder auf die Karte nehmen",
+    "soldOutBadge": "Heute ausverkauft",
+    "soldOutFailed": "Verfügbarkeit konnte nicht geändert werden.",
     "preview": {
       "title": "Live-Vorschau",
       "subtitle": "So sehen Gäste Ihren Shop",

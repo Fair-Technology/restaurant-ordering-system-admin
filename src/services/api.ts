@@ -1036,6 +1036,17 @@ const injectedRtkApi = api
         }),
         invalidatesTags: ["Webhooks"],
       }),
+      updateProductAvailability: build.mutation<
+        UpdateProductAvailabilityApiResponse,
+        UpdateProductAvailabilityApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/products/${queryArg.productId}/availability`,
+          method: "PATCH",
+          body: queryArg.body,
+        }),
+        invalidatesTags: ["Products"],
+      }),
     }),
     overrideExisting: false,
   });
@@ -1812,6 +1823,16 @@ export type StripeConnectWebhookApiArg = {
     connectAccountId?: any;
   };
 };
+export type UpdateProductAvailabilityApiResponse =
+  /** status 200 Dish availability updated */ UpdateProductAvailabilityResultDto;
+export type UpdateProductAvailabilityApiArg = {
+  productId: string;
+  body: {
+    shopId: string;
+    isAvailable?: boolean;
+    unavailableUntil?: string | null;
+  };
+};
 export type MenuLanguage = "de" | "en";
 export type StoredOrderState =
   | "PLACED"
@@ -2300,6 +2321,7 @@ export type ReferenceListsResultDto = {
 export type ShopPermission =
   | "view_orders"
   | "manage_menu"
+  | "manage_stock"
   | "manage_shop"
   | "manage_staff"
   | "manage_billing"
@@ -2436,6 +2458,7 @@ export type ProductDto = {
   addonGroups?: ProductAddonGroup[];
   schedule?: ProductSchedule | null;
   isAvailable: boolean;
+  unavailableUntil: string | null;
   isDeleted: boolean;
   createdAt: string;
   updatedAt: string;
@@ -2461,6 +2484,7 @@ export type GetProductResultDto = {
   description: string;
   price: number;
   isAvailable: boolean;
+  unavailableUntil: string | null;
   isDeleted: boolean;
   createdAt: string;
   updatedAt: string;
@@ -2492,6 +2516,7 @@ export type UpdateProductResultDto = {
   description: string;
   price: number;
   isAvailable: boolean;
+  unavailableUntil: string | null;
   isDeleted: boolean;
   schedule?: ProductSchedule | null;
   createdAt: string;
@@ -2886,6 +2911,8 @@ export type CatalogProductDto = {
   variants: CatalogVariantGroupDto[];
   addons: CatalogAddonGroupDto[];
   isAvailable: boolean;
+  unavailableUntil: string | null;
+  soldOut: boolean;
   allergens: CatalogLabelDto[];
   additives: CatalogAdditiveDto[];
   dietaryTags: CatalogLabelDto[];
@@ -3080,6 +3107,7 @@ export type Product = {
   schedule?: ProductSchedule | null;
   combo?: ProductCombo | null;
   isAvailable: boolean;
+  unavailableUntil?: string | null;
   isDeleted: boolean;
   createdAt: string;
   updatedAt: string;
@@ -4020,6 +4048,14 @@ export type HandleCheckoutSessionCompletedInput = {
   billingSubscriptionId: string;
   billingCustomerId: string;
 };
+export type UpdateProductAvailabilityResultDto = {
+  id: string;
+  shopId: string;
+  isAvailable: boolean;
+  unavailableUntil: string | null;
+  soldOut: boolean;
+  updatedAt: string;
+};
 export const {
   useCancelCustomerOrderMutation,
   useViewCustomerDocumentMutation,
@@ -4169,4 +4205,5 @@ export const {
   useLazyGetMeQuery,
   useStripeWebhookMutation,
   useStripeConnectWebhookMutation,
+  useUpdateProductAvailabilityMutation,
 } = injectedRtkApi;

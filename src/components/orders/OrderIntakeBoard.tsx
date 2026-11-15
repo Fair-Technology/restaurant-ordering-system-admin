@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Bell, Volume2, VolumeX, Wifi, WifiOff } from 'lucide-react';
 import { groupQueue, PHONE_TABS, visibleColumns, type BoardVariant, type PhoneTab } from '../../features/orders/intake';
 import { useLiveQueue } from '../../features/orders/useLiveQueue';
+import { useGetShopByIdQuery } from '../../services/api';
 import { MySpinner } from '../ui/MySpinner';
 import { OrderCard } from './OrderCard';
 import { UpcomingOrders } from './UpcomingOrders';
@@ -16,6 +17,10 @@ interface Props {
 export function OrderIntakeBoard({ shopId, variant = 'board' }: Props) {
   const { t } = useTranslation();
   const [tab, setTab] = useState<PhoneTab>('waiting');
+  const { data: shop } = useGetShopByIdQuery({ shopId });
+  const canStock = (shop?.callerPermissions ?? []).some(
+    (p) => p === 'manage_stock' || p === 'manage_menu',
+  );
   const {
     data, orders, isLoading, isError, refetch, nowMs, startAccept, failAccept, isPendingAccept, soundOn, turnOn, wakeLock, connection,
   } = useLiveQueue(shopId);
@@ -138,6 +143,7 @@ export function OrderIntakeBoard({ shopId, variant = 'board' }: Props) {
                   defaultPrepMinutes={data?.defaultPrepMinutes[order.fulfilmentMode] ?? 20}
                   timeZone={data?.timezone ?? 'Europe/Berlin'}
                   pendingAccept={isPendingAccept(order)}
+                  canStock={canStock}
                   onAcceptStart={startAccept}
                   onAcceptFailed={failAccept}
                   onFailed={() => void refetch()}

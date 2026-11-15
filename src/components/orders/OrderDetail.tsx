@@ -12,6 +12,8 @@ import { useToast } from '../../contexts/ToastContext';
 import { formatCents } from '../../utils/money';
 import { ModeBadge, StateBadge } from './OrderBadges';
 import { RefundPanel } from './RefundPanel';
+import { SoldOutTodayButton } from '../menu/SoldOutTodayButton';
+import { useSoldOutToday } from '../../features/menu/useSoldOutToday';
 
 export type DetailKind = 'live' | 'upcoming' | 'history';
 
@@ -53,6 +55,8 @@ interface Line {
   name: string;
   detail: string;
   cents: number;
+  /** The dish this line is, when it is a plain dish — combos have no single one. */
+  productId?: string;
 }
 
 /** Order lines as the kitchen reads them: a combo is one line with its dishes underneath. */
@@ -76,7 +80,7 @@ function linesOf(items: IntakeOrder['items']): Line[] {
       lines.push(line);
       return;
     }
-    lines.push({ key: `i${i}`, quantity: item.quantity, name: item.productName, detail: extra, cents: item.lineTotalCents });
+    lines.push({ key: `i${i}`, quantity: item.quantity, name: item.productName, detail: extra, cents: item.lineTotalCents, productId: item.productId });
   });
   return lines;
 }
@@ -105,6 +109,22 @@ export function OrderDetail({
   const [prep, setPrep] = useState(defaultPrepMinutes);
   const [rejecting, setRejecting] = useState(false);
   const [reason, setReason] = useState<RejectReason | null>(null);
+
+  // "Sold out today" from the board: one tap hides the dish for the rest of the
+  // shop's day. The board has no product fetch, so the state it shows is what the
+  // staffer set here; the dish list is the place to see the true window.
+  const canStock = permissions.includes('manage_stock') || permissions.includes('manage_menu');
+  const { markSoldOutToday, clearSoldOut, isPending: soldOutPending } = useSoldOutToday(shopId, timeZone);
+  const [soldOutOverride, setSoldOutOverride] = useState<Record<string, boolean>>({});
+  const toggleSoldOut = (productId: string) => {
+    const next = !soldOutOverride[productId];
+    setSoldOutOverride((o) => ({ ...o, [productId]: next }));
+    const done = (ok: boolean) => {
+      if (!ok) setSoldOutOverride((o) => ({ ...o, [productId]: !next }));
+    };
+    if (next) markSoldOutToday(productId, done);
+    else clearSoldOut(productId, done);
+  };
 
   const money = (cents: number) => formatCents(cents, order.currency, i18n.language);
   const time = (iso: string) => new Date(iso).toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit', timeZone });
@@ -234,6 +254,14 @@ export function OrderDetail({
               <span className="text-base font-bold">{line.name}</span>
               {line.detail && <span className="text-[13px] text-muted">{line.detail}</span>}
             </span>
+            {canStock && kind !== 'history' && line.productId && (
+              <SoldOutTodayButton
+                name={line.name}
+                soldOut={!!soldOutOverride[line.productId]}
+                busy={soldOutPending(line.productId)}
+                onToggle={() => toggleSoldOut(line.productId!)}
+              />
+            )}
             <span className="text-sm font-semibold whitespace-nowrap">{money(line.cents)}</span>
           </li>
         ))}

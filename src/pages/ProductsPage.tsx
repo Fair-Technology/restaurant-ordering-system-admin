@@ -7,7 +7,6 @@ import {
   useGetCategoriesByShopQuery,
   useGetShopByIdQuery,
   useCreateProductMutation,
-  useUpdateProductMutation,
 } from '../services/api';
 import { MyButton } from '../components/ui/MyButton';
 import { MySpinner } from '../components/ui/MySpinner';
@@ -27,6 +26,9 @@ import { useShopReferenceLists } from '../features/menu/useShopReferenceLists';
 import { EMPTY_FOOD_INFO, effectiveTaxClassId, labelFor, taxClassOptionLabel } from '../features/menu/foodInfo';
 import type { FoodInfo } from '../features/menu/foodInfo';
 import { isListRefreshing } from '../features/menu/productListStatus';
+import { isSoldOutUntil } from '../features/menu/soldOut';
+import { useSoldOutToday } from '../features/menu/useSoldOutToday';
+import { SoldOutTodayButton } from '../components/menu/SoldOutTodayButton';
 import { wizardBackAction, wizardStepSequence } from '../features/menu/wizardSteps';
 import { importRowToCreateRequest, type MenuImportRow } from '../features/menu/menuImport';
 import type { PreviewDish } from '../features/menu/previewBridge';
@@ -517,18 +519,24 @@ function DishRow({
   product,
   available,
   toggling,
+  soldOut,
+  soldOutBusy,
   selected,
   currencyMoney,
   onOpen,
   onToggle,
+  onToggleSoldOut,
 }: {
   product: ProductDto;
   available: boolean;
   toggling: boolean;
+  soldOut: boolean;
+  soldOutBusy: boolean;
   selected: boolean;
   currencyMoney: (cents: number) => string;
   onOpen: () => void;
   onToggle: () => void;
+  onToggleSoldOut: () => void;
 }) {
   const { t } = useTranslation();
   const imageUrl = product.images?.length ? product.images[product.images.length - 1].url : undefined;
@@ -565,6 +573,11 @@ function DishRow({
               {offer.offerLabel || t('products.offerBadge')} · {currencyMoney(offer.offerPrice!)}
             </span>
           )}
+          {soldOut && (
+            <span className="rounded-full bg-[#fdeceb] px-2 py-0.5 text-[11px] font-bold text-[#8f1c13]">
+              {t('dishes.soldOutBadge')}
+            </span>
+          )}
         </div>
         {product.description && <span className="truncate text-[13px] text-[#6b6058]">{product.description}</span>}
         {product.isDeclared === false ? (
@@ -577,6 +590,12 @@ function DishRow({
         {groups > 0 ? t('dishes.optionGroups', { count: groups }) : '–'}
       </span>
       <span className="w-20 text-right text-[15px] font-bold">{currencyMoney(product.price ?? 0)}</span>
+      <SoldOutTodayButton
+        name={product.name ?? ''}
+        soldOut={soldOut}
+        busy={soldOutBusy}
+        onToggle={onToggleSoldOut}
+      />
       <button
         type="button"
         role="switch"
@@ -618,7 +637,8 @@ export function ProductsPage() {
   );
   const isRefreshing = isListRefreshing({ isLoading, isFetching });
   const { data: categories } = useGetCategoriesByShopQuery({ shopId: shopId! }, { skip: !canManage });
-  const [updateProduct] = useUpdateProductMutation();
+  const timeZone = shop?.timezone ?? 'UTC';
+  const { markSoldOutToday, clearSoldOut, setAvailable, isPending: soldOutPending } = useSoldOutToday(shopId!, timeZone);
   const currencySymbol = shop?.currency ? getCurrencySymbol(shop.currency) : '€';
   const money = (cents: number) => formatCents(cents, shop?.currency ?? 'EUR', i18n.language);
 
@@ -644,6 +664,7 @@ export function ProductsPage() {
   const [query, setQuery] = useState('');
   const [toggling, setToggling] = useState<Set<string>>(new Set());
   const [optimistic, setOptimistic] = useState<Record<string, boolean>>({});
+  const [soldOutOverride, setSoldOutOverride] = useState<Record<string, boolean>>({});
 
   // Live preview state
   const [previewDish, setPreviewDish] = useState<PreviewDish | null>(null);
@@ -672,8 +693,9 @@ export function ProductsPage() {
   );
 
   const availableOf = (p: ProductDto) => optimistic[p.id!] ?? p.isAvailable !== false;
+  const soldOutOf = (p: ProductDto) => soldOutOverride[p.id!] ?? isSoldOutUntil(p.unavailableUntil);
 
-  const toggle = async (product: ProductDto) => {
+  const toggle = (product: ProductDto) => {
     const id = product.id!;
     if (toggling.has(id)) return;
     const current = availableOf(product);
@@ -684,19 +706,33 @@ export function ProductsPage() {
     }
     setOptimistic((o) => ({ ...o, [id]: next }));
     setToggling((s) => new Set(s).add(id));
-    try {
-      await updateProduct({ productId: id, body: { shopId: shopId!, isAvailable: next } }).unwrap();
-      setRefreshKey((k) => k + 1);
-    } catch {
-      setOptimistic((o) => ({ ...o, [id]: current }));
-      toast.error(t('products.failedToUpdate'));
-    } finally {
+    void setAvailable(id, next, (ok) => {
       setToggling((s) => {
         const n = new Set(s);
         n.delete(id);
         return n;
       });
-    }
+      if (ok) {
+        setRefreshKey((k) => k + 1);
+      } else {
+        setOptimistic((o) => ({ ...o, [id]: current }));
+        toast.error(t('products.failedToUpdate'));
+      }
+    });
+  };
+
+  // "Sold out today": hide the dish for the rest of the shop's day, or bring it
+  // back. Writes the sold-out window only — the dish stays on the menu.
+  const toggleSoldOut = (product: ProductDto) => {
+    const id = product.id!;
+    const next = !soldOutOf(product);
+    setSoldOutOverride((o) => ({ ...o, [id]: next }));
+    const done = (ok: boolean) => {
+      if (ok) setRefreshKey((k) => k + 1);
+      else setSoldOutOverride((o) => ({ ...o, [id]: !next }));
+    };
+    if (next) markSoldOutToday(id, done);
+    else clearSoldOut(id, done);
   };
 
   const all = products ?? [];
@@ -786,10 +822,13 @@ export function ProductsPage() {
                 product={p}
                 available={availableOf(p)}
                 toggling={toggling.has(p.id!)}
+                soldOut={soldOutOf(p)}
+                soldOutBusy={soldOutPending(p.id!)}
                 selected={p.id === selectedId}
                 currencyMoney={money}
                 onOpen={() => setParam('dish', p.id!)}
-                onToggle={() => void toggle(p)}
+                onToggle={() => toggle(p)}
+                onToggleSoldOut={() => toggleSoldOut(p)}
               />
             ))}
           </section>
