@@ -1848,7 +1848,11 @@ export type OrderDiscountKind = "code" | "voucher";
 export type StaffRejectReason =
   "too_busy" | "item_unavailable" | "closing_soon" | "other";
 export type RejectReason =
-  StaffRejectReason | "no_response" | "payment_failed" | "shop_unavailable";
+  | StaffRejectReason
+  | "no_response"
+  | "payment_failed"
+  | "payment_unavailable"
+  | "shop_unavailable";
 export type CustomerOrderDto = {
   orderId: string;
   orderRef: string;
@@ -1889,6 +1893,7 @@ export type CustomerOrderDto = {
   currency: string;
   createdAt: string;
   canCancel: boolean;
+  paymentHeld: boolean;
   rejectionReason: RejectReason | null;
 };
 export type ErrorResponse = {
@@ -3161,6 +3166,10 @@ export type PaymentReleaseFailure = {
   notifiedAt: string | null;
   attempts?: number;
 };
+export type CaptureConfigFailure = {
+  at: string;
+  attempts: number;
+};
 export type OrderHistoryEntry = {
   from: StoredOrderState | null;
   to: StoredOrderState;
@@ -3168,7 +3177,7 @@ export type OrderHistoryEntry = {
   actor: OrderActor;
   reason?: string;
 };
-export type PickOrderExcludeIdShopIdOrderRefSt3A0C561D = {
+export type PickOrderExcludeIdShopIdOrderRefSt08D1799A = {
   id: string;
   shopId: string;
   orderRef: string;
@@ -3196,6 +3205,7 @@ export type PickOrderExcludeIdShopIdOrderRefSt3A0C561D = {
   queuedAt?: string;
   refunds?: OrderRefund[];
   releaseFailure?: PaymentReleaseFailure;
+  captureConfigFailure?: CaptureConfigFailure;
   invoiceNumber?: string;
   invoiceEmailedAt?: string;
   captureStartedAt?: string;
@@ -3278,7 +3288,7 @@ export type ShopDataExportDto = {
   };
   categories: Category[];
   products: Product[];
-  orders: PickOrderExcludeIdShopIdOrderRefSt3A0C561D[];
+  orders: PickOrderExcludeIdShopIdOrderRefSt08D1799A[];
   customers: ExportCustomer[];
 };
 export type DiscountCodeKind = "percent" | "amount";
