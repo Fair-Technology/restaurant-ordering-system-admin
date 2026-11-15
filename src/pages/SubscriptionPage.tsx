@@ -239,7 +239,7 @@ export function SubscriptionPage() {
   const [upgradeError, setUpgradeError] = useState<string | null>(null);
   const [busyPlanId, setBusyPlanId] = useState<string | null>(null);
   const [isResuming, setIsResuming] = useState(false);
-  const [interval, setBillingInterval] = useState<BillingInterval>('monthly');
+  const [intervalOverride, setIntervalOverride] = useState<BillingInterval | null>(null);
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
   const [isKeepingChange, setIsKeepingChange] = useState(false);
   const [isPayingNow, setIsPayingNow] = useState(false);
@@ -274,11 +274,10 @@ export function SubscriptionPage() {
     });
   }
 
-  // Start the toggle on the interval the shop already pays, so its own plan reads as current.
+  // Start the toggle on the interval the shop already pays, so its own plan reads as current; the
+  // user's own pick overrides that.
   const paidInterval = subscriptionData?.subscription.billingInterval ?? null;
-  useEffect(() => {
-    if (paidInterval) setBillingInterval(paidInterval);
-  }, [paidInterval]);
+  const interval = intervalOverride ?? paidInterval ?? 'monthly';
 
   // Back from Stripe Checkout: ask the server to read the session so the plan changes without waiting for the webhook.
   useEffect(() => {
@@ -556,7 +555,7 @@ export function SubscriptionPage() {
               key={value}
               type="button"
               aria-pressed={interval === value}
-              onClick={() => setBillingInterval(value)}
+              onClick={() => setIntervalOverride(value)}
               className={chipClass(interval === value)}
             >
               {t(`subscription.${value}`)}
