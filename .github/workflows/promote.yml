@@ -6,13 +6,14 @@
 # holds (docs/specs.md §20: "Front-ends bake their configuration in at build time"). This job
 # therefore REBUILDS the released commit under `environment: production` and deploys that output.
 #
-# Triggered automatically when the dev workflow (azure-static-web-apps.yml) succeeds on `main` — a
-# release is `dev` merged into `main` (spec §21-5a) — and also by a v* tag or a manual run. The
+# Triggered automatically when the dev workflow (azure-static-web-apps.yml) succeeds on `main`. This
+# repo has no `dev` branch, so that dev run on `main` is the one promoted to production
+# (spec §20 "Release pipeline", §21-5a). Also triggered by a v* tag or a manual run. The
 # commit is taken from the triggering run's head_sha, because a workflow_run job runs on the
 # default branch's latest commit, not on the commit that was built.
 #
 # Usage:
-#   merge dev -> main (automatic)
+#   push or merge to main (automatic)
 #   git tag v0.1.0 && git push origin v0.1.0
 #   or Actions -> "Promote commit to production" -> Run workflow
 #
@@ -33,9 +34,11 @@
 name: Promote commit to production
 
 on:
-  # A release is `dev` merged into `main` (spec §21-5a). Once the dev workflow has built and tested
-  # that main commit, this workflow ships a production build of the same commit — still behind the
-  # `production` environment's required reviewer.
+  # This repo has no `dev` branch: `main` is the only integration branch, a `main` push runs
+  # the dev workflow (which deploys the dev Static Web App), and this workflow promotes that
+  # same successful `main` run to production (spec §20 "Release pipeline", §21-5a). Once the
+  # dev workflow has built and tested that main commit, this workflow ships a production build
+  # of the same commit — still behind the `production` environment's required reviewer.
   workflow_run:
     workflows: ['Azure Static Web Apps CI/CD']
     types: [completed]
