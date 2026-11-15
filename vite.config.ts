@@ -10,5 +10,17 @@ export default defineConfig({
     // Tests must not depend on a developer's .env.local: RTK Query needs an absolute
     // base URL to build Request objects. Fake host; fetch is stubbed in every test.
     env: { VITE_API_BASE_URL: 'http://api.test' },
+    // Nested git worktrees under `.worktrees/` are full copies of this repo and must not be
+    // collected: they inflate the file/test counts and can carry their own stale configs.
+    // Vitest replaces its defaults when `exclude` is set, so the standard defaults are
+    // spelled out here alongside the worktree pattern.
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/cypress/**',
+      '**/.{idea,git,cache,output,temp}/**',
+      '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build,eslint,prettier}.config.*',
+      '**/.worktrees/**',
+    ],
   },
 })

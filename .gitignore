@@ -26,3 +26,6 @@ src/services/api.gen.check.ts
 
 # Claude Code personal overrides (not shared config)
 .claude/settings.local.json
+
+# Git worktrees created inside the repo (other agents' working copies)
+.worktrees/
