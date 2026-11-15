@@ -18,7 +18,10 @@
 # back to a repo-level secret of the same name when an environment has none, which would
 # deploy to DEV. With a distinct name, a missing secret fails closed. Add it as an
 # environment secret on `production` (repo Settings -> Environments -> production).
-# Until it exists, this workflow is EXPECTED TO FAIL at the guard step.
+# Until prod is provisioned this promotion is SKIPPED, not failed: an automatic workflow_run
+# promotion only runs when the repository variable PROD_DEPLOY_ENABLED is set to 'true'
+# (set it together with the environment secret when prod is provisioned). Tag pushes and
+# manual runs always run, and still fail loudly at the guard below if the token is missing.
 
 name: Promote artifact to production
 
@@ -49,7 +52,11 @@ jobs:
     name: Deploy promoted artifact to production
     runs-on: ubuntu-latest
     # Only a successful dev run on main may start a workflow_run promotion; tag and manual runs pass.
-    if: github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+    if: |
+      github.event_name != 'workflow_run'
+      || (github.event.workflow_run.conclusion == 'success'
+          && github.event.workflow_run.head_branch == 'main'
+          && vars.PROD_DEPLOY_ENABLED == 'true')
     environment: production # required reviewer / approval rule lives here
     env:
       # workflow_run executes on the default branch's latest commit, so take the built commit from the event.
