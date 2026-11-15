@@ -805,6 +805,16 @@
       "correction": "Correction invoice {{number}}"
     },
     "documentDownloadFailed": "Could not download the document.",
+    "receipts": {
+      "title": "Receipts",
+      "month": "Month",
+      "download": "Download ZIP",
+      "downloading": "Preparing download…",
+      "hint": "Every invoice and correction invoice issued that month, one PDF each, in a ZIP.",
+      "empty": "No invoices or correction invoices were issued in that month.",
+      "forbidden": "Only the owner can download the receipts.",
+      "downloadFailed": "The download didn't work. Please try again."
+    },
     "refund": "Refund",
     "refundAmount": "Amount",
     "refundReason": "Reason (for your records)",

@@ -805,6 +805,16 @@
       "correction": "Rechnungskorrektur {{number}}"
     },
     "documentDownloadFailed": "Dokument konnte nicht heruntergeladen werden.",
+    "receipts": {
+      "title": "Belege",
+      "month": "Monat",
+      "download": "ZIP herunterladen",
+      "downloading": "Download wird vorbereitet …",
+      "hint": "Alle in diesem Monat ausgestellten Rechnungen und Rechnungskorrekturen, je als PDF, in einer ZIP-Datei.",
+      "empty": "In diesem Monat wurden keine Rechnungen oder Rechnungskorrekturen ausgestellt.",
+      "forbidden": "Nur der Inhaber kann die Belege herunterladen.",
+      "downloadFailed": "Der Download hat nicht funktioniert. Bitte versuchen Sie es erneut."
+    },
     "refund": "Erstatten",
     "refundAmount": "Betrag",
     "refundReason": "Grund (für Ihre Unterlagen)",
