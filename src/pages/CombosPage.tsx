@@ -28,7 +28,7 @@ export function CombosPage() {
   const { data: shop, isLoading, isError } = useGetShopByIdQuery({ shopId: shopId! });
   const canManage = (shop?.callerPermissions ?? []).includes('manage_menu');
   const combos = useGetCombosQuery({ shopId: shopId! }, { skip: !canManage });
-  const products = useGetProductsByShopQuery({ shopId: shopId! }, { skip: !canManage });
+  const products = useGetProductsByShopQuery({ shopId: shopId!, includeUncategorized: true }, { skip: !canManage });
   const categories = useGetCategoriesByShopQuery({ shopId: shopId! }, { skip: !canManage });
   const [updateCombo, { isLoading: switching }] = useUpdateComboMutation();
   const [deleteProduct, { isLoading: deleting }] = useDeleteProductMutation();

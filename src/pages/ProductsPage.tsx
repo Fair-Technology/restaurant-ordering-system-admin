@@ -613,7 +613,7 @@ export function ProductsPage() {
   const { data: shop } = useGetShopByIdQuery({ shopId: shopId! });
   const canManage = (shop?.callerPermissions ?? []).includes('manage_menu');
   const { data: products, isLoading, isFetching, isError } = useGetProductsByShopQuery(
-    { shopId: shopId! },
+    { shopId: shopId!, includeUncategorized: true },
     { skip: !canManage },
   );
   const isRefreshing = isListRefreshing({ isLoading, isFetching });
