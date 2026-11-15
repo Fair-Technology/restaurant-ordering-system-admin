@@ -32,7 +32,7 @@ export function LanguageTabs({ languages, active, onChange }: { languages: MenuL
 
 /** One translated field: an input for the other language with the original text shown beneath as a grey hint. Hidden when the original is empty. */
 export function TranslationField({
-  original, value, onChange, multiline, placeholder, label, className,
+  original, value, onChange, multiline, placeholder, label, className, maxLength,
 }: {
   original: string;
   value: string;
@@ -41,15 +41,16 @@ export function TranslationField({
   placeholder?: string;
   label?: string;
   className?: string;
+  maxLength?: number;
 }) {
   const { t } = useTranslation();
   if (!hasOriginalText(original)) return null;
   return (
     <div className={className}>
       {multiline ? (
-        <MyTextarea label={label} placeholder={placeholder} rows={3} value={value} onChange={(e) => onChange(e.target.value)} />
+        <MyTextarea label={label} placeholder={placeholder} rows={3} maxLength={maxLength} value={value} onChange={(e) => onChange(e.target.value)} />
       ) : (
-        <MyInput label={label} placeholder={placeholder} value={value} onChange={(e) => onChange(e.target.value)} />
+        <MyInput label={label} placeholder={placeholder} maxLength={maxLength} value={value} onChange={(e) => onChange(e.target.value)} />
       )}
       <p className="mt-1 text-xs text-gray-400 break-words whitespace-pre-wrap">{t('translationFields.original', { text: original })}</p>
     </div>

@@ -514,7 +514,7 @@ export function DishEditor({ productId, shopId, currencySymbol, categoriesList, 
         </button>
       </div>
 
-      {scheduleOpen && <ScheduleOfferModal product={product} currencySymbol={currencySymbol} onClose={() => setScheduleOpen(false)} />}
+      {scheduleOpen && <ScheduleOfferModal product={product} currencySymbol={currencySymbol} languages={languages} onClose={() => setScheduleOpen(false)} />}
     </div>
   );
 }

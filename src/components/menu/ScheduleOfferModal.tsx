@@ -1,23 +1,28 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
-import type { ProductDto } from '../../services/api';
+import type { MenuLanguage, ProductDto, TranslationMap } from '../../services/api';
 import { useUpdateProductMutation } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
 import { MyButton } from '../ui/MyButton';
 import { CurrencyInput } from '../ui/CurrencyInput';
 import { Step5Schedule, type ScheduleState } from '../../pages/ProductWizardSteps';
 import { initialScheduleDays } from '../../features/menu/foodInfo';
+import { withTranslation } from '../../features/menu/translations';
+import { buildSchedulePayload } from '../../features/menu/scheduleOffer';
+import { TranslationField } from './LanguageTabs';
 
 // ── Schedule + Offer modal ─────────────────────────────────────────────────────
 
 export function ScheduleOfferModal({
   product,
   currencySymbol,
+  languages = [],
   onClose,
 }: {
   product: ProductDto;
   currencySymbol: string;
+  languages?: MenuLanguage[];
   onClose: () => void;
 }) {
   const { t } = useTranslation();
@@ -39,6 +44,10 @@ export function ScheduleOfferModal({
     offerPrice: product.schedule?.offerPrice ?? 0,
     offerLabel: product.schedule?.offerLabel ?? '',
   });
+  const [offerLabelTranslations, setOfferLabelTranslations] = useState<TranslationMap>(
+    product.schedule?.offerLabelTranslations ?? {},
+  );
+  const extraLanguage = languages[1];
   const [scheduleError, setScheduleError] = useState<string | null>(null);
   const [offerError, setOfferError] = useState<string | null>(null);
 
@@ -69,19 +78,25 @@ export function ScheduleOfferModal({
 
   const handleSave = async () => {
     if (!validate()) return;
-    const schedulePayload = scheduleEnabled ? {
+    const payload = buildSchedulePayload({
+      enabled: scheduleEnabled,
       startDate: schedule.startDate,
-      endDate: noEndDate ? null : (schedule.endDate || null),
-      startTime: timeWindowEnabled ? (schedule.startTime || null) : null,
-      endTime: timeWindowEnabled ? (schedule.endTime || null) : null,
+      endDate: schedule.endDate,
+      startTime: schedule.startTime,
+      endTime: schedule.endTime,
       daysOfWeek: schedule.daysOfWeek,
-      offerPrice: schedule.offerEnabled ? schedule.offerPrice : null,
-      offerLabel: schedule.offerEnabled ? (schedule.offerLabel || null) : null,
-    } : null;
+      timeWindowEnabled,
+      noEndDate,
+      offerEnabled: schedule.offerEnabled,
+      offerPrice: schedule.offerPrice,
+      offerLabel: schedule.offerLabel,
+      extraLanguage,
+      offerLabelTranslations,
+    });
     try {
       await updateProduct({
         productId: product.id!,
-        body: { shopId: product.shopId!, schedule: schedulePayload ?? undefined },
+        body: { shopId: product.shopId!, schedule: payload ?? undefined },
       }).unwrap();
       toast.success(t('products.saved'));
       onClose();
@@ -155,6 +170,15 @@ export function ScheduleOfferModal({
                         className="w-full border border-gray-200 rounded-lg bg-white text-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400"
                       />
                     </div>
+                    {extraLanguage && (
+                      <TranslationField
+                        original={schedule.offerLabel}
+                        value={offerLabelTranslations[extraLanguage] ?? ''}
+                        onChange={(v) => setOfferLabelTranslations((m) => withTranslation(m, extraLanguage, v))}
+                        label={t('products.offerLabelTranslated', { language: t('shops.languageName.' + extraLanguage) })}
+                        maxLength={50}
+                      />
+                    )}
                     {offerError && <p className="text-xs text-red-500">{offerError}</p>}
                   </div>
                 )}
