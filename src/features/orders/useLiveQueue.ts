@@ -12,19 +12,28 @@ import {
 import { useOrderAlarm } from './useOrderAlarm';
 import { useWakeLock } from './useWakeLock';
 import { useNow } from './useNow';
+import { useLiveChannel } from './useLiveChannel';
+import { useOrderPush } from './useOrderPush';
+import { pollingIntervalFor } from './liveChannel';
 
 const NO_ORDERS: IntakeOrder[] = [];
 
 /**
- * The live order queue, shared by the orders page and the phone view: polls every 10 s, shows an
+ * The live order queue, shared by the orders page and the phone view: listens on the live channel (polling every 10 s whenever it is not connected), shows an
  * order as accepted from the first tap (while the server takes the payment), rings while orders
  * wait, chimes once for each auto-accepted order and keeps the screen on while the sound is on.
  */
 export function useLiveQueue(shopId: string) {
+  // Declared first so the channel's onSignal can refetch; the poll interval depends on the channel status.
+  const refetchRef = useRef<() => unknown>(() => undefined);
+  const channel = useLiveChannel({ shopId, onSignal: () => void refetchRef.current() });
   const { data, isLoading, isError, fulfilledTimeStamp, refetch } = useGetOrderQueueQuery(
     { shopId },
-    { pollingInterval: 10000, refetchOnReconnect: true },
+    { pollingInterval: pollingIntervalFor(channel.status), refetchOnReconnect: true },
   );
+  useEffect(() => {
+    refetchRef.current = refetch;
+  });
   const nowMs = useNow(1000);
 
   const [pending, setPending] = useState<ReadonlyMap<string, PendingAccept>>(() => new Map());
@@ -43,7 +52,14 @@ export function useLiveQueue(shopId: string) {
     [livePending],
   );
 
-  const { soundOn, turnOn, chime } = useOrderAlarm(hasWaitingOrders(orders));
+  const { soundOn, turnOn: turnOnAlarm, chime } = useOrderAlarm(hasWaitingOrders(orders));
+  const push = useOrderPush(shopId);
+  const enablePush = push.enable;
+  const turnOn = useCallback(async () => {
+    const pushAttempt = enablePush(); // must be called synchronously: it starts with requestPermission()
+    await turnOnAlarm();
+    await pushAttempt;
+  }, [enablePush, turnOnAlarm]);
   // Ids of auto-accepted orders already shown; null until the first data arrives, which only seeds it.
   const seenRef = useRef<Set<string> | null>(null);
   useEffect(() => {
@@ -55,7 +71,7 @@ export function useLiveQueue(shopId: string) {
     if (!isFirstData && fresh.length > 0) chime();
   }, [data, chime]);
   const wakeLock = useWakeLock(soundOn);
-  const connection = connectionState({ lastSuccessAt: fulfilledTimeStamp, isError, nowMs });
+  const connection = connectionState({ lastSuccessAt: fulfilledTimeStamp, isError, nowMs, liveChannel: channel.status });
 
   return {
     data,
@@ -71,5 +87,6 @@ export function useLiveQueue(shopId: string) {
     turnOn,
     wakeLock,
     connection,
+    pushState: push.pushState,
   };
 }

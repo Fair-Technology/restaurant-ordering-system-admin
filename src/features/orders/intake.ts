@@ -1,3 +1,4 @@
+import type { LiveStatus } from './liveChannel';
 import type { IntakeOrder, SlotCapacityDto, UpcomingOrder } from '../../services/ordersApi';
 
 export const REJECT_REASONS = ['too_busy', 'item_unavailable', 'closing_soon', 'other'] as const;
@@ -139,8 +140,10 @@ export function connectionState(input: {
   lastSuccessAt: number | undefined;
   isError: boolean;
   nowMs: number;
+  liveChannel?: LiveStatus;
 }): ConnectionState {
   if (input.isError) return 'offline';
+  if (input.liveChannel === 'connected') return 'connected';
   if (input.lastSuccessAt === undefined) return 'connecting';
   return input.nowMs - input.lastSuccessAt > 30000 ? 'offline' : 'connected';
 }

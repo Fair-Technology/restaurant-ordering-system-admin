@@ -165,6 +165,26 @@ export type RefundRequest = { shopId: string; orderId: string; reason: string } 
 
 export const ordersApi = api.injectEndpoints({
   endpoints: (build) => ({
+    negotiateRealtime: build.query<{ url: string | null; accessToken: string | null }, { shopId: string }>({
+      query: ({ shopId }) => ({ url: `/shops/${shopId}/realtime/negotiate` }),
+    }),
+    getPushPublicKey: build.query<{ publicKey: string | null }, { shopId: string }>({
+      query: ({ shopId }) => ({ url: `/shops/${shopId}/push/public-key` }),
+    }),
+    subscribePush: build.mutation<{ id: string }, { shopId: string; endpoint: string; keys: { p256dh: string; auth: string } }>({
+      query: ({ shopId, endpoint, keys }) => ({
+        url: `/shops/${shopId}/push/subscriptions`,
+        method: 'POST',
+        body: { endpoint, keys },
+      }),
+    }),
+    unsubscribePush: build.mutation<{ ok: boolean }, { shopId: string; endpoint: string }>({
+      query: ({ shopId, endpoint }) => ({
+        url: `/shops/${shopId}/push/subscriptions`,
+        method: 'DELETE',
+        body: { endpoint },
+      }),
+    }),
     getOrderQueue: build.query<OrderQueueDto, { shopId: string }>({
       query: ({ shopId }) => ({ url: `/shops/${shopId}/order-queue` }),
       providesTags: (_r, _e, { shopId }) => [{ type: 'Orders' as const, id: `QUEUE-${shopId}` }],
@@ -278,6 +298,10 @@ export const ordersApi = api.injectEndpoints({
 
 export const {
   useGetOrderQueueQuery,
+  useNegotiateRealtimeQuery,
+  useGetPushPublicKeyQuery,
+  useSubscribePushMutation,
+  useUnsubscribePushMutation,
   useAcceptOrderMutation,
   useRejectOrderMutation,
   useMarkOrderReadyMutation,

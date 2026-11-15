@@ -175,3 +175,20 @@ describe('intake helpers', () => {
     expect(visibleColumns(cols, 'phone', 'ready')).toEqual([{ key: 'ready' }]);
   });
 });
+
+describe('connectionState with the live channel', () => {
+  it('lets a connected live channel beat a stale or missing poll timestamp', () => {
+    expect(connectionState({ lastSuccessAt: 1000, isError: false, nowMs: 99999, liveChannel: 'connected' })).toBe('connected');
+    expect(connectionState({ lastSuccessAt: undefined, isError: false, nowMs: 2000, liveChannel: 'connected' })).toBe('connected');
+  });
+  it('still reports a query error as offline', () => {
+    expect(connectionState({ lastSuccessAt: 1000, isError: true, nowMs: 2000, liveChannel: 'connected' })).toBe('offline');
+  });
+  it('falls through to the poll timestamp for every other live status', () => {
+    for (const liveChannel of ['disabled', 'offline', 'connecting'] as const) {
+      expect(connectionState({ lastSuccessAt: 1000, isError: false, nowMs: 20000, liveChannel })).toBe('connected');
+      expect(connectionState({ lastSuccessAt: 1000, isError: false, nowMs: 31001, liveChannel })).toBe('offline');
+      expect(connectionState({ lastSuccessAt: undefined, isError: false, nowMs: 2000, liveChannel })).toBe('connecting');
+    }
+  });
+});
