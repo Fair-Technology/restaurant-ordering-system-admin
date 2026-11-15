@@ -1,4 +1,4 @@
-import { useState, useEffect, useId } from 'react';
+import { useState, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   useApplyCategoryTaxClassMutation,
@@ -7,7 +7,7 @@ import {
   useGetShopByIdQuery,
   useUpdateCategoryMutation,
 } from '../../services/api';
-import type { CategorySchedule, MenuLanguage, TranslationMap } from '../../services/api';
+import type { CategoryDto, CategorySchedule, MenuLanguage, TranslationMap } from '../../services/api';
 import { Section } from '../layout/Page';
 import { MyButton } from '../ui/MyButton';
 import { MyInput } from '../ui/MyInput';
@@ -35,6 +35,53 @@ const errorBox = 'mb-[18px] rounded-2xl border border-[#f5c2bd] bg-[#fdeceb] px-
 
 /** The category form (name, tax class, visibility, times) and its danger zone, as white sections. */
 export function CategoryEditor({ shopId, categoryId, onSaved, onCancel, onDeleted }: CategoryEditorProps) {
+  const { t } = useTranslation();
+  const { data: category, isLoading, isError } = useGetCategoryByIdQuery(
+    { shopId, categoryId },
+    { refetchOnMountOrArgChange: true },
+  );
+
+  if (isLoading) return <MySpinner label={t('categories.loadingCategory')} />;
+  if (isError || !category) return <p className="text-sm text-[#b42318]">{t('categories.failedToLoad')}</p>;
+
+  return (
+    <CategoryForm
+      key={categoryFormKey(category)}
+      shopId={shopId}
+      categoryId={categoryId}
+      category={category}
+      onSaved={onSaved}
+      onCancel={onCancel}
+      onDeleted={onDeleted}
+    />
+  );
+}
+
+/**
+ * Identity of the values the form is seeded from. Remounting the form on any change to them re-seeds
+ * its state from the loaded category, which is what the old sync effect did (including after a
+ * background refetch of the same category).
+ */
+function categoryFormKey(category: CategoryDto): string {
+  return JSON.stringify([
+    category.id,
+    category.name,
+    category.icon,
+    category.taxClassId,
+    category.nameTranslations,
+    category.isAvailable,
+    category.schedule,
+  ]);
+}
+
+function CategoryForm({
+  shopId,
+  categoryId,
+  category,
+  onSaved,
+  onCancel,
+  onDeleted,
+}: CategoryEditorProps & { category: CategoryDto }) {
   const { t, i18n } = useTranslation();
   const toast = useToast();
   const uid = useId();
@@ -43,44 +90,26 @@ export function CategoryEditor({ shopId, categoryId, onSaved, onCancel, onDelete
   const taxSelectId = `${uid}-tax`;
 
   const { data: shop } = useGetShopByIdQuery({ shopId });
-  const { data: category, isLoading, isError } = useGetCategoryByIdQuery(
-    { shopId, categoryId },
-    { refetchOnMountOrArgChange: true },
-  );
   const [updateCategory, { isLoading: isUpdating, isError: isUpdateError }] = useUpdateCategoryMutation();
   const [deleteCategory, { isLoading: isDeleting, isError: isDeleteError }] = useDeleteCategoryMutation();
   const { refs } = useShopReferenceLists(shopId);
   const [applyTaxClass, { isLoading: isApplying }] = useApplyCategoryTaxClassMutation();
   const [confirmingApply, setConfirmingApply] = useState(false);
 
-  const [name, setName] = useState('');
-  const [icon, setIcon] = useState<string | null>(null);
-  const [taxClassId, setTaxClassId] = useState('');
-  const [nameTranslations, setNameTranslations] = useState<TranslationMap>({});
-  const [shown, setShown] = useState(true);
-  const [schedule, setSchedule] = useState<CategorySchedule | null>(null);
+  const [name, setName] = useState(category.name ?? '');
+  const icon = category.icon ?? null;
+  const [taxClassId, setTaxClassId] = useState(category.taxClassId ?? '');
+  const [nameTranslations, setNameTranslations] = useState<TranslationMap>(category.nameTranslations ?? {});
+  const [shown, setShown] = useState(category.isAvailable !== false);
+  const [schedule, setSchedule] = useState<CategorySchedule | null>(category.schedule ?? null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleteConfirmName, setDeleteConfirmName] = useState('');
-
-  useEffect(() => {
-    if (category) {
-      setName(category.name ?? '');
-      setIcon(category.icon ?? null);
-      setTaxClassId(category.taxClassId ?? '');
-      setNameTranslations(category.nameTranslations ?? {});
-      setShown(category.isAvailable !== false);
-      setSchedule(category.schedule ?? null);
-    }
-  }, [category]);
 
   const [pickedLanguage, setPickedLanguage] = useState<MenuLanguage | undefined>();
   const languages = shop ? menuLanguagesOf(shop) : [];
   const extraLanguage = languages[1];
   const activeLanguage = resolveActiveLanguage(languages, pickedLanguage);
   const translating = extraLanguage !== undefined && activeLanguage === extraLanguage;
-
-  if (isLoading) return <MySpinner label={t('categories.loadingCategory')} />;
-  if (isError || !category) return <p className="text-sm text-[#b42318]">{t('categories.failedToLoad')}</p>;
 
   const scheduleInvalid = schedule !== null && !isScheduleValid(schedule);
   const toggleDay = (day: number) =>

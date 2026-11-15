@@ -783,6 +783,7 @@
     "deliverTo": "Lieferadresse",
     "inclDeliveryFee": "inkl. Liefergebühr {{amount}}",
     "actionFailed": "Das hat nicht geklappt – die Bestellung hat sich evtl. geändert. Die Liste wurde aktualisiert.",
+    "paymentConfigUnavailable": "Die Zahlung ist gerade nicht möglich – das liegt an unserer Zahlungs-Einrichtung, nicht an dieser Bestellung. Die Bestellung wartet weiter und es wurde nichts abgebucht. Sie müssen nichts tun: Sie wird automatisch abgelehnt, wenn die Wartezeit abläuft. Wir kümmern uns darum.",
     "busyOff": "Hochbetrieb? +{{minutes}} Min.",
     "busyOn": "Hochbetrieb: +{{minutes}} Min. – zum Beenden tippen",
     "busyBanner": "Hochbetrieb: Jede neue Bestellung wird {{minutes}} Minuten später zugesagt. Endet automatisch über Nacht.",

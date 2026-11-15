@@ -1,6 +1,7 @@
 # Builds the app once and deploys that same build output:
 #   push to main -> lint, typecheck, test, build, deploy to the dev Static Web App
 #   pull request -> the same, into a temporary preview environment
+#   workflow_dispatch (ref: main) -> the same, for a commit whose main deploy run was cancelled
 # Production is never built here: see promote.yml.
 
 name: Azure Static Web Apps CI/CD
@@ -13,18 +14,27 @@ on:
     types: [opened, synchronize, reopened, closed]
     branches:
       - main
+  # Manual re-deploy of the selected ref (use --ref main): recovers a push to main whose
+  # deploy run was cancelled, without pushing an empty commit. No SHA input on purpose:
+  # a free-form SHA would let an unreviewed commit onto dev.
+  workflow_dispatch:
 
 env:
   NODE_VERSION: '22'
   ARTIFACT_NAME: dist-${{ github.sha }}
 
+# One deploy at a time per ref, and the NEWEST run wins. cancel-in-progress: true means a
+# later push to main cancels the in-flight older run and runs itself to completion, so dev
+# converges on the newest commit. Keying the group per commit instead would let two
+# concurrent deploys to the same dev app finish out of order and land the older commit
+# last: green history, stale site. See .github/workflows/promote.yml for production.
 concurrency:
   group: swa-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   test:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
     name: Lint, typecheck and test
     permissions:
@@ -41,7 +51,7 @@ jobs:
       - run: npm test
 
   build:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     needs: test
     runs-on: ubuntu-latest
     name: Build the artifact
@@ -74,7 +84,7 @@ jobs:
           retention-days: 90
 
   deploy_dev:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
     name: Deploy to dev

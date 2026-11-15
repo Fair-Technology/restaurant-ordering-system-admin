@@ -1,6 +1,40 @@
-# React + TypeScript + Vite
+# restaurant-ordering-system-admin
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Owner and staff admin app for the restaurant ordering system (React + TypeScript + Vite).
+
+## Running locally
+
+```bash
+npm ci
+cp .env.example .env.local   # then fill in the values (see below)
+npm run dev
+```
+
+`.env.local` holds the Vite build-time variables. The dev values come from this repo's
+`dev` environment Actions variables (Settings -> Environments -> dev). They are
+compile-time values and end up in the shipped bundle, so they are public — still, do
+not commit `.env.local`.
+
+| Variable | What it is |
+| --- | --- |
+| `VITE_API_BASE_URL` | dev API base including `/api`, e.g. `https://<dev-api-host>/api` |
+| `VITE_MSAL_CLIENT_ID` | Entra External ID application (client) id |
+| `VITE_MSAL_TENANT_ID` | Entra External ID tenant id |
+| `VITE_MSAL_TENANT_NAME` | Entra External ID tenant subdomain (`https://<name>.ciamlogin.com`) |
+| `VITE_MSAL_API_SCOPE` | API scope the access token is requested for |
+| `VITE_SHOP_BASE_URL` | customer storefront base, used for preview/QR links |
+| `VITE_STRIPE_PUBLISHABLE_KEY` | Stripe publishable key, used by Connect onboarding |
+
+Without the `VITE_MSAL_*` values the app throws inside `msalInstance.initialize()` and
+renders a blank page. There is no local or test sign-in: the admin portal signs in
+through the Entra External ID tenant, and staff tablets sign in at `/<shopSlug>/staff`
+with a shop staff account.
+
+Gates before a PR: `npm run lint` -> `npm run typecheck` -> `npm test` -> `npm run build`.
+
+## Template notes
+
+This app was scaffolded from the Vite React + TypeScript template; the notes it shipped with follow.
 
 Currently, two official plugins are available:
 

@@ -19,6 +19,7 @@ import {
   scheduledReadyMs,
   secondsUntil,
 } from '../../features/orders/intake';
+import { isPaymentConfigConflict } from '../../features/orders/paymentErrors';
 import { chargedCents } from '../../features/orders/refunds';
 import { formatCents } from '../../utils/money';
 import { MyButton } from '../ui/MyButton';
@@ -71,8 +72,8 @@ export function OrderCard({
     try {
       await action();
       setPanel('none');
-    } catch {
-      toast.error(t('orders.actionFailed'));
+    } catch (error) {
+      toast.error(t(isPaymentConfigConflict(error) ? 'orders.paymentConfigUnavailable' : 'orders.actionFailed'));
       onFailed();
     }
   };
@@ -84,9 +85,9 @@ export function OrderCard({
     try {
       await acceptOrder({ shopId, orderId: order.id, prepMinutes: minutes }).unwrap();
       setPanel('none');
-    } catch {
+    } catch (error) {
       onAcceptFailed(order.id);
-      toast.error(t('orders.actionFailed'));
+      toast.error(t(isPaymentConfigConflict(error) ? 'orders.paymentConfigUnavailable' : 'orders.actionFailed'));
       onFailed();
     }
   };
