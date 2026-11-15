@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useRejectOrderMutation, type RejectReason, type SlotCapacityDto, type UpcomingOrder } from '../../services/ordersApi';
 import { useToast } from '../../contexts/ToastContext';
 import { REJECT_REASONS, slotLoadOf, upcomingByDay } from '../../features/orders/intake';
+import { isPaymentConfigConflict } from '../../features/orders/paymentErrors';
 import { chargedCents } from '../../features/orders/refunds';
 import { formatCents } from '../../utils/money';
 import { MyButton } from '../ui/MyButton';
@@ -28,8 +29,8 @@ export function UpcomingOrders({ shopId, orders, capacity, timeZone, onFailed }:
     try {
       await rejectOrder({ shopId, orderId: order.id, reason }).unwrap();
       setOpenId(null);
-    } catch {
-      toast.error(t('orders.actionFailed'));
+    } catch (error) {
+      toast.error(t(isPaymentConfigConflict(error) ? 'orders.paymentConfigUnavailable' : 'orders.actionFailed'));
       onFailed();
     }
   };

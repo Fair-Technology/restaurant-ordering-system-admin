@@ -11,6 +11,7 @@ import {
 } from '../../services/ordersApi';
 import { useToast } from '../../contexts/ToastContext';
 import { nextActionFor } from './intake';
+import { isPaymentConfigConflict } from './paymentErrors';
 
 interface Options {
   /** The list shows the order as accepted from the first tap */
@@ -37,8 +38,8 @@ export function useOrderActions(shopId: string, { onAcceptStart, onAcceptFailed,
     try {
       await action();
       return true;
-    } catch {
-      toast.error(t('orders.actionFailed'));
+    } catch (error) {
+      toast.error(t(isPaymentConfigConflict(error) ? 'orders.paymentConfigUnavailable' : 'orders.actionFailed'));
       onFailed();
       return false;
     } finally {
