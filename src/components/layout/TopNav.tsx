@@ -8,7 +8,7 @@ import { useGetMyShopsQuery, useGetShopByIdQuery, useUpdateShopMutation, type Ge
 import { useGetOrderQueueQuery } from '../../services/ordersApi';
 import { baseApi } from '../../services/baseApi';
 import { useNow } from '../../features/orders/useNow';
-import { navGroups } from '../../features/shops/shopNav';
+import { navGroups, navPath, type ShopNavKey } from '../../features/shops/shopNav';
 import { formatPauseEnd, isOfflineBySuperadminError, isOrdersPausedAt, shopLiveState, shopPauseOutOfDate } from '../../features/shops/shopStatus';
 import { clearStaffSession, readStaffSession } from '../../features/staff/staffSession';
 import { useToast } from '../../contexts/ToastContext';
@@ -234,7 +234,7 @@ export function TopNav() {
   }
 
   const labelOf = (key: string) => (key === 'products' ? t('nav.dishes') : t(`nav.${key}`));
-  const pathOf = (key: string) => (key === 'products' ? `/shops/${shopId}` : `/shops/${shopId}/${key}`);
+  const pathOf = (key: string) => navPath(shopId!, key as ShopNavKey);
 
   const navContent = shopId ? (
     <div className="flex flex-col gap-3.5">

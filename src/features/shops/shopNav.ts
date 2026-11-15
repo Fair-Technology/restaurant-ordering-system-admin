@@ -2,6 +2,7 @@ export type ShopNavKey =
   | 'orders'
   | 'reports'
   | 'products'
+  | 'optionGroups'
   | 'combos'
   | 'categories'
   | 'tables'
@@ -16,6 +17,7 @@ const RULES: Array<[ShopNavKey, string]> = [
   ['orders', 'view_orders'],
   ['reports', 'view_reports'],
   ['products', 'manage_menu'],
+  ['optionGroups', 'manage_menu'],
   ['combos', 'manage_menu'],
   ['categories', 'manage_menu'],
   ['tables', 'manage_menu'],
@@ -33,9 +35,21 @@ export function shopNavItems(permissions: readonly string[]): ShopNavKey[] {
 
 export type NavGroupKey = 'service' | 'menu' | 'shop' | 'business';
 
+/** Nav keys whose URL segment is not the key itself. */
+const PATHS: Partial<Record<ShopNavKey, string>> = {
+  products: '',
+  optionGroups: 'option-groups',
+};
+
+/** The shop-relative URL segment for a nav item (`''` is the shop's index route). */
+export function navPath(shopId: string, key: ShopNavKey): string {
+  const segment = PATHS[key] ?? key;
+  return segment === '' ? `/shops/${shopId}` : `/shops/${shopId}/${segment}`;
+}
+
 const GROUPS: Array<[NavGroupKey, ShopNavKey[]]> = [
   ['service', ['orders']],
-  ['menu', ['products', 'combos', 'categories']],
+  ['menu', ['products', 'optionGroups', 'combos', 'categories']],
   ['shop', ['settings', 'tables', 'promotions', 'legal']],
   ['business', ['reports', 'subscription', 'staff', 'activity']],
 ];

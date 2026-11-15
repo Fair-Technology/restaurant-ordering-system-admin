@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Check, ChevronLeft } from 'lucide-react';
 import type { MenuLanguage, ProductDto, ProductImage, TranslationMap } from '../../services/api';
 import {
   useDeleteProductMutation,
+  useGetOptionGroupsQuery,
   useGetProductByIdQuery,
   useGetShopByIdQuery,
   useUpdateProductMutation,
@@ -32,6 +34,7 @@ import { optionGroupsFromProduct } from '../../features/menu/optionFoodInfo';
 import { EMPTY_FOOD_INFO, effectiveTaxClassId, foodInfoFromProduct, type FoodInfo } from '../../features/menu/foodInfo';
 import { menuLanguagesOf, resolveActiveLanguage, withTranslation } from '../../features/menu/translations';
 import type { PreviewDish } from '../../features/menu/previewBridge';
+import { libraryGroupsForPicker, withToggledRef } from '../../features/menu/optionGroupLibrary';
 import { formatCents } from '../../utils/money';
 
 export const DESCRIPTION_SOFT_LIMIT = 160;
@@ -56,6 +59,7 @@ interface EditState {
   foodInfo: FoodInfo;
   variantGroups: VariantGroup[];
   addonGroups: AddonGroup[];
+  optionGroupRefs: string[];
   isAvailable: boolean;
 }
 
@@ -67,6 +71,7 @@ function stateFromProduct(product: ProductDto): EditState {
     categoryIds: product.categories?.map((c) => c.id!).filter(Boolean) ?? [],
     foodInfo: foodInfoFromProduct(product),
     isAvailable: product.isAvailable !== false,
+    optionGroupRefs: product.optionGroupRefs ?? [],
     ...optionGroupsFromProduct(product),
   };
 }
@@ -85,6 +90,7 @@ export function DishEditor({ productId, shopId, currencySymbol, categoriesList, 
   const { data: product, isLoading } = useGetProductByIdQuery({ productId, shopId }, { refetchOnMountOrArgChange: true });
   const { data: shop } = useGetShopByIdQuery({ shopId });
   const { refs } = useShopReferenceLists(shopId);
+  const { data: libraryGroups } = useGetOptionGroupsQuery({ shopId });
   const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
   const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation();
   const uploadProductImage = useUploadProductImage();
@@ -191,6 +197,7 @@ export function DishEditor({ productId, shopId, currencySymbol, categoriesList, 
           taxClassId: effectiveTaxClassId(edit.categoryIds, categoriesList, edit.foodInfo.taxClassId),
           unavailableModes: edit.foodInfo.unavailableModes,
           isAvailable: edit.isAvailable,
+          optionGroupRefs: edit.optionGroupRefs,
         },
       }).unwrap();
 
@@ -405,6 +412,56 @@ export function DishEditor({ productId, shopId, currencySymbol, categoriesList, 
               translation={translatingLanguage ? { language: translatingLanguage, setGroup: setGroupTranslation, setOption: setOptionTranslation } : undefined}
             />
           </section>
+
+          {!translatingLanguage && (
+            <section className={section}>
+              <h2 className={sectionTitle}>{t('dishes.editor.libraryGroups')}</h2>
+              <p className="mb-3 text-[13px] text-[#6b6058]">
+                {t('dishes.editor.libraryGroupsHelp')}{' '}
+                <Link to={`/shops/${shopId}/option-groups`} className="font-semibold text-ink underline">
+                  {t('dishes.editor.manageLibrary')}
+                </Link>
+              </p>
+              {(libraryGroups?.length ?? 0) === 0 ? (
+                <p className="text-sm text-[#8a7f77]">{t('dishes.editor.noLibraryGroups')}</p>
+              ) : (
+                (['variant', 'addon'] as const).map((kind) => {
+                  const items = libraryGroupsForPicker(libraryGroups ?? []).filter((g) => g.kind === kind);
+                  if (items.length === 0) return null;
+                  return (
+                    <div key={kind} className="mb-3 last:mb-0">
+                      <h3 className="mb-1.5 text-[13px] font-semibold text-[#4a413b]">
+                        {t(kind === 'variant' ? 'variants.title' : 'addons.title')}
+                      </h3>
+                      <div className="flex flex-wrap gap-2">
+                        {items.map((g) => {
+                          const on = edit.optionGroupRefs.includes(g.id);
+                          return (
+                            <button
+                              key={g.id}
+                              type="button"
+                              role="checkbox"
+                              aria-checked={on}
+                              onClick={() => patch({ optionGroupRefs: withToggledRef(edit.optionGroupRefs, g.id) })}
+                              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-semibold transition-colors ${
+                                on ? 'border-ink bg-ink text-white' : 'border-[#e3d9ce] bg-white text-ink hover:bg-cream'
+                              }`}
+                            >
+                              {on && <Check size={14} aria-hidden="true" />}
+                              {g.name}
+                              <span className={`text-xs font-normal ${on ? 'text-white/70' : 'text-[#8a7f77]'}`}>
+                                {t('optionGroups.optionCount', { count: g.optionCount })}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </section>
+          )}
 
           {!translatingLanguage && (
             <section className={section}>

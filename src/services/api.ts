@@ -23,6 +23,7 @@ export const addTagTypes = [
   "Subscriptions",
   "Users",
   "Webhooks",
+  "OptionGroups",
 ] as const;
 const injectedRtkApi = api
   .enhanceEndpoints({
@@ -1047,6 +1048,67 @@ const injectedRtkApi = api
         }),
         invalidatesTags: ["Products"],
       }),
+      createOptionGroup: build.mutation<
+        CreateOptionGroupApiResponse,
+        CreateOptionGroupApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/shops/${queryArg.shopId}/option-groups`,
+          method: "POST",
+          body: queryArg.body,
+        }),
+        invalidatesTags: ["OptionGroups"],
+      }),
+      getOptionGroups: build.query<
+        GetOptionGroupsApiResponse,
+        GetOptionGroupsApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/shops/${queryArg.shopId}/option-groups`,
+        }),
+        providesTags: ["OptionGroups"],
+      }),
+      deleteOptionGroup: build.mutation<
+        DeleteOptionGroupApiResponse,
+        DeleteOptionGroupApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/shops/${queryArg.shopId}/option-groups/${queryArg.groupId}`,
+          method: "DELETE",
+        }),
+        invalidatesTags: ["OptionGroups"],
+      }),
+      getOptionGroup: build.query<
+        GetOptionGroupApiResponse,
+        GetOptionGroupApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/shops/${queryArg.shopId}/option-groups/${queryArg.groupId}`,
+        }),
+        providesTags: ["OptionGroups"],
+      }),
+      updateOptionGroup: build.mutation<
+        UpdateOptionGroupApiResponse,
+        UpdateOptionGroupApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/shops/${queryArg.shopId}/option-groups/${queryArg.groupId}`,
+          method: "PUT",
+          body: queryArg.body,
+        }),
+        invalidatesTags: ["OptionGroups"],
+      }),
+      setOptionAvailability: build.mutation<
+        SetOptionAvailabilityApiResponse,
+        SetOptionAvailabilityApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/shops/${queryArg.shopId}/option-groups/${queryArg.groupId}/options/${queryArg.optionId}`,
+          method: "PATCH",
+          body: queryArg.body,
+        }),
+        invalidatesTags: ["OptionGroups"],
+      }),
     }),
     overrideExisting: false,
   });
@@ -1219,6 +1281,7 @@ export type UpdateProductApiArg = {
     unavailableModes?: FulfilmentMode[];
     taxClassId?: string | null;
     variantGroups?: ProductVariantGroup[];
+    optionGroupRefs?: string[];
     addonGroups?: ProductAddonGroup[];
     isAvailable?: boolean;
     schedule?: ProductSchedule | null;
@@ -1833,6 +1896,59 @@ export type UpdateProductAvailabilityApiArg = {
     unavailableUntil?: string | null;
   };
 };
+export type CreateOptionGroupApiResponse =
+  /** status 200 Option group created successfully */ ShopOptionGroupDto;
+export type CreateOptionGroupApiArg = {
+  shopId: string;
+  body: {
+    kind: "variant" | "addon";
+    name: string;
+    nameTranslations?: TranslationMap;
+    minSelectable?: number;
+    maxSelectable?: number;
+    options: ShopOptionGroupOptionInputDto[];
+  };
+};
+export type GetOptionGroupsApiResponse =
+  /** status 200 Option groups retrieved successfully */ GetOptionGroupsResultDto;
+export type GetOptionGroupsApiArg = {
+  shopId: string;
+};
+export type DeleteOptionGroupApiResponse =
+  /** status 200 Option group deleted successfully */ DeleteOptionGroupResultDto;
+export type DeleteOptionGroupApiArg = {
+  shopId: string;
+  groupId: string;
+};
+export type GetOptionGroupApiResponse =
+  /** status 200 Option group retrieved successfully */ ShopOptionGroupDto;
+export type GetOptionGroupApiArg = {
+  shopId: string;
+  groupId: string;
+};
+export type UpdateOptionGroupApiResponse =
+  /** status 200 Option group updated successfully */ ShopOptionGroupDto;
+export type UpdateOptionGroupApiArg = {
+  shopId: string;
+  groupId: string;
+  body: {
+    name: string;
+    nameTranslations?: TranslationMap;
+    minSelectable?: number;
+    maxSelectable?: number;
+    options: ShopOptionGroupOptionInputDto[];
+  };
+};
+export type SetOptionAvailabilityApiResponse =
+  /** status 200 Option availability updated */ ShopOptionGroupDto;
+export type SetOptionAvailabilityApiArg = {
+  shopId: string;
+  groupId: string;
+  optionId: string;
+  body: {
+    isAvailable: boolean;
+  };
+};
 export type MenuLanguage = "de" | "en";
 export type StoredOrderState =
   | "PLACED"
@@ -2369,6 +2485,7 @@ export type CreateProductResultDto = {
   unavailableModes: FulfilmentMode[];
   taxClassId: string | null;
   isDeclared: boolean;
+  optionGroupRefs: string[];
   id: string;
   shopId: string;
   name: string;
@@ -2427,6 +2544,7 @@ export type CreateProductRequestDto = {
   unavailableModes?: FulfilmentMode[];
   taxClassId?: string | null;
   variantGroups?: ProductVariantGroup[];
+  optionGroupRefs?: string[];
   addonGroups?: ProductAddonGroup[];
   isAvailable?: boolean;
   schedule?: ProductSchedule | null;
@@ -2442,6 +2560,7 @@ export type ProductDto = {
   unavailableModes: FulfilmentMode[];
   taxClassId: string | null;
   isDeclared: boolean;
+  optionGroupRefs: string[];
   id: string;
   shopId: string;
   name: string;
@@ -2478,6 +2597,7 @@ export type GetProductResultDto = {
   unavailableModes: FulfilmentMode[];
   taxClassId: string | null;
   isDeclared: boolean;
+  optionGroupRefs: string[];
   id: string;
   shopId: string;
   name: string;
@@ -2510,6 +2630,7 @@ export type UpdateProductResultDto = {
   unavailableModes: FulfilmentMode[];
   taxClassId: string | null;
   isDeclared: boolean;
+  optionGroupRefs: string[];
   id: string;
   shopId: string;
   name: string;
@@ -3096,6 +3217,7 @@ export type Product = {
   categoryIds: string[];
   images: ProductImage[];
   variantGroups?: ProductVariantGroup[];
+  optionGroupRefs?: string[];
   addonGroups?: ProductAddonGroup[];
   allergenIds: string[] | null;
   additiveIds: string[] | null;
@@ -4056,6 +4178,44 @@ export type UpdateProductAvailabilityResultDto = {
   soldOut: boolean;
   updatedAt: string;
 };
+export type ShopOptionGroupOption = {
+  id: string;
+  name: string;
+  nameTranslations?: TranslationMap;
+  priceDelta: number;
+  isAvailable: boolean;
+  allergenIds?: string[];
+  additiveIds?: string[];
+};
+export type ShopOptionGroupDto = {
+  id: string;
+  shopId: string;
+  kind: "variant" | "addon";
+  name: string;
+  nameTranslations: TranslationMap;
+  minSelectable: number;
+  maxSelectable: number;
+  options: ShopOptionGroupOption[];
+  createdAt: string;
+  updatedAt: string;
+};
+export type ShopOptionGroupOptionInputDto = {
+  id?: string;
+  name: string;
+  nameTranslations?: TranslationMap;
+  priceDelta: number;
+  isAvailable?: boolean;
+  allergenIds?: string[];
+  additiveIds?: string[];
+};
+export type GetOptionGroupsResultDto = ShopOptionGroupDto[];
+export type DeleteOptionGroupResultDto = {
+  id: string;
+  shopId: string;
+  name: string;
+  isDeleted: boolean;
+  updatedAt: string;
+};
 export const {
   useCancelCustomerOrderMutation,
   useViewCustomerDocumentMutation,
@@ -4206,4 +4366,12 @@ export const {
   useStripeWebhookMutation,
   useStripeConnectWebhookMutation,
   useUpdateProductAvailabilityMutation,
+  useCreateOptionGroupMutation,
+  useGetOptionGroupsQuery,
+  useLazyGetOptionGroupsQuery,
+  useDeleteOptionGroupMutation,
+  useGetOptionGroupQuery,
+  useLazyGetOptionGroupQuery,
+  useUpdateOptionGroupMutation,
+  useSetOptionAvailabilityMutation,
 } = injectedRtkApi;
