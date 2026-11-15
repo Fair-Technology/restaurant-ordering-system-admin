@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { CategoryDto, MenuLanguage, ProductDto } from '../services/api';
@@ -618,13 +618,20 @@ export function ProductsPage() {
   const money = (cents: number) => formatCents(cents, shop?.currency ?? 'EUR', i18n.language);
 
   const selectedId = searchParams.get('dish');
-  const setParam = (key: string, value: string | null) =>
+  // A dish selection opens the live preview; the user may still collapse it while `?dish=` stays set,
+  // so `previewOpen` is a derived value plus a per-selection dismiss override (cleared on any change
+  // to the `dish` param).
+  const [previewDismissedFor, setPreviewDismissedFor] = useState<string | null>(null);
+  const previewOpen = !!selectedId && previewDismissedFor !== selectedId;
+  const setParam = (key: string, value: string | null) => {
+    if (key === 'dish') setPreviewDismissedFor(null);
     setSearchParams((p) => {
       const n = new URLSearchParams(p);
       if (value === null) n.delete(key);
       else n.set(key, value);
       return n;
     });
+  };
   const showAddModal = searchParams.get('addProduct') === '1';
   const showImportModal = searchParams.get('importProducts') === '1';
 
@@ -636,16 +643,11 @@ export function ProductsPage() {
   // Live preview state
   const [previewDish, setPreviewDish] = useState<PreviewDish | null>(null);
   const [previewLanguage, setPreviewLanguage] = useState<MenuLanguage | undefined>();
-  const [previewOpen, setPreviewOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const onPreviewChange = useCallback((dish: PreviewDish | null, lang: MenuLanguage | undefined) => {
     setPreviewDish(dish);
     setPreviewLanguage(lang);
   }, []);
-  useEffect(() => {
-    setPreviewOpen(!!selectedId);
-    if (!selectedId) setPreviewDish(null);
-  }, [selectedId]);
 
   const categoriesList = (categories ?? []).filter(
     (c): c is CategoryDto => !!c.id && !!c.name,
@@ -807,10 +809,10 @@ export function ProductsPage() {
 
       <LivePreview
         slug={shop?.slug}
-        dish={previewDish}
+        dish={selectedId ? previewDish : null}
         focusId={selectedId}
         open={previewOpen}
-        onOpenChange={setPreviewOpen}
+        onOpenChange={(open) => setPreviewDismissedFor(open ? null : selectedId)}
         onSelect={(id) => setParam('dish', id)}
         language={previewLanguage}
         refreshKey={refreshKey}
