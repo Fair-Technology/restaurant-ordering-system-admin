@@ -46,6 +46,7 @@
     "waitingOrders": "{{count}} neue Bestellungen"
   },
   "subscription": {
+    "accessDenied": "Sie haben keine Berechtigung, das Abonnement dieses Restaurants zu verwalten.",
     "currentPlan": "Aktueller Plan",
     "monthly": "Monatlich",
     "yearly": "Jährlich",
@@ -540,6 +541,7 @@
     "saveFailed": "Das Bild konnte nicht zugeschnitten werden. Bitte versuchen Sie es erneut."
   },
   "products": {
+    "accessDenied": "Sie haben keine Berechtigung, die Speisekarte dieses Restaurants zu bearbeiten.",
     "addProduct": "+ Produkt hinzufügen",
     "newProduct": "Neues Produkt",
     "loading": "Produkte werden geladen...",
@@ -890,6 +892,7 @@
     }
   },
   "activity": {
+    "accessDenied": "Sie haben keine Berechtigung, das Aktivitätsprotokoll dieses Restaurants zu sehen.",
     "title": "Aktivität",
     "empty": "Noch keine Aktivität.",
     "loadError": "Aktivität konnte nicht geladen werden.",
@@ -898,6 +901,7 @@
     "listTitle": "Verlauf"
   },
   "staff": {
+    "accessDenied": "Sie haben keine Berechtigung, das Personal dieses Restaurants zu verwalten.",
     "title": "Mitarbeiter-Zugänge",
     "usage": "{{count}} von {{limit}} Zugängen belegt",
     "username": "Benutzername",
@@ -1002,6 +1006,7 @@
     "nothingToTranslate": "In diesem Schritt gibt es nichts zu übersetzen."
   },
   "legal": {
+    "accessDenied": "Sie haben keine Berechtigung, die rechtlichen Einstellungen dieses Restaurants zu verwalten.",
     "title": "Rechtliches & Daten",
     "loading": "Rechtliche Einstellungen werden geladen…",
     "loadError": "Die rechtlichen Einstellungen konnten nicht geladen werden.",

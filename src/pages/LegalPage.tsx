@@ -528,7 +528,8 @@ export function LegalPage() {
   const { shopId } = useParams<{ shopId: string }>();
   const { t, i18n } = useTranslation();
   const { data: shop } = useGetShopByIdQuery({ shopId: shopId! });
-  const { data: legal, isError } = useGetShopLegalQuery({ shopId: shopId! });
+  const canManage = (shop?.callerPermissions ?? []).includes('manage_shop');
+  const { data: legal, isError } = useGetShopLegalQuery({ shopId: shopId! }, { skip: !canManage });
   const lang: LegalLanguage = i18n.language.startsWith('de') ? 'de' : 'en';
 
   useEffect(() => {
@@ -537,6 +538,17 @@ export function LegalPage() {
     if (!hash) return;
     document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, [legal]);
+
+  if (shop && !canManage) {
+    return (
+      <div className="mx-auto w-full max-w-3xl">
+        <PageHeader eyebrow={t('nav.group.shop')} title={t('legal.title')} />
+        <Section padded>
+          <p className="text-sm text-[#4a413b]">{t('legal.accessDenied')}</p>
+        </Section>
+      </div>
+    );
+  }
 
   if (isError) return <p className="text-sm text-[#b42318]">{t('legal.loadError')}</p>;
   if (!legal || !shop) return <MySpinner label={t('legal.loading')} />;
