@@ -781,6 +781,7 @@
     "deliverTo": "Deliver to",
     "inclDeliveryFee": "incl. delivery fee {{amount}}",
     "actionFailed": "That didn't work — the order may have changed. The list has been refreshed.",
+    "paymentConfigUnavailable": "We can't take the payment right now — that is a problem with our payment setup, not with this order. The order is still waiting and nothing has been charged. You don't need to do anything: it will be declined automatically when the wait runs out. We are looking into it.",
     "busyOff": "Busy? Add {{minutes}} min",
     "busyOn": "Busy: +{{minutes}} min – tap to end",
     "busyBanner": "Busy mode: every new order is promised {{minutes}} minutes later. It ends by itself overnight.",
