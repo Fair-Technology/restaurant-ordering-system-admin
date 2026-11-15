@@ -269,6 +269,11 @@ export const ordersApi = api.injectEndpoints({
       },
     }),
   }),
+  // The generated client (api.ts) already registers these names with
+  // OpenAPI body shapes (queryArg.body / queryArg.<name>Body). Without
+  // overrideExisting RTK keeps the generated definition and our payloads
+  // are dropped, so the request goes out with an empty body.
+  overrideExisting: true,
 });
 
 export const {
