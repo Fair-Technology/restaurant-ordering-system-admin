@@ -6,6 +6,7 @@ import {
   useGetShopByIdQuery,
   useGenerateShopLogoUploadUrlMutation,
   useSetShopLogoMutation,
+  useRemoveShopLogoMutation,
   useGenerateShopCoverImageUploadUrlMutation,
   useSetShopCoverImageMutation,
   useRemoveShopCoverImageMutation,
@@ -90,6 +91,7 @@ export function ShopSettingsPage() {
   }, [shop]);
   const [generateShopLogoUploadUrl] = useGenerateShopLogoUploadUrlMutation();
   const [setShopLogo] = useSetShopLogoMutation();
+  const [removeShopLogo] = useRemoveShopLogoMutation();
   const [generateShopCoverImageUploadUrl] = useGenerateShopCoverImageUploadUrlMutation();
   const [setShopCoverImage] = useSetShopCoverImageMutation();
   const [removeShopCoverImage] = useRemoveShopCoverImageMutation();
@@ -101,6 +103,8 @@ export function ShopSettingsPage() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isRemovingLogo, setIsRemovingLogo] = useState(false);
+  const [logoRemoveError, setLogoRemoveError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
@@ -444,6 +448,20 @@ export function ShopSettingsPage() {
     }
   };
 
+  const handleLogoRemove = async () => {
+    setIsRemovingLogo(true);
+    setLogoRemoveError(null);
+    try {
+      await removeShopLogo({ shopId: shopId! }).unwrap();
+      toast.success(t('shops.logoRemoved'));
+      refetch();
+    } catch {
+      setLogoRemoveError(t('shops.failedToRemoveLogo'));
+    } finally {
+      setIsRemovingLogo(false);
+    }
+  };
+
   const previewSlug = shop.slug;
 
   const shopUrl = `${import.meta.env.VITE_SHOP_BASE_URL ?? 'https://www.example.com'}/shops/${previewSlug}`;
@@ -675,13 +693,14 @@ export function ShopSettingsPage() {
                 </div>
               )}
             </div>
-            {uploadError && <p className={`mt-3 ${ERROR_CLASS}`}>{uploadError}</p>}
+            {(uploadError || logoRemoveError) && <p className={`mt-3 ${ERROR_CLASS}`}>{uploadError ?? logoRemoveError}</p>}
             <form onSubmit={handleLogoUpload} className="mt-4">
               <div className="flex flex-col gap-1">
                 <input
                   ref={fileInputRef}
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
+                  disabled={isUploading || isRemovingLogo}
                   onChange={(e) => {
                     setLogoFile(e.target.files?.[0] ?? null);
                     setUploadError(null);
@@ -691,9 +710,21 @@ export function ShopSettingsPage() {
                 {logoFile && <p className="text-xs text-muted">{logoFile.name}</p>}
               </div>
               <div className={FOOTER_CLASS}>
-                <MyButton type="submit" disabled={!logoFile || isUploading}>
+                <MyButton type="submit" disabled={!logoFile || isUploading || isRemovingLogo}>
                   {isUploading ? t('shops.uploadingLogo') : t('shops.uploadLogo')}
                 </MyButton>
+                {currentLogoUrl && (
+                  <MyButton
+                    type="button"
+                    variant="danger"
+                    size="sm"
+                    className="ml-auto flex-shrink-0"
+                    onClick={handleLogoRemove}
+                    disabled={isRemovingLogo || isUploading}
+                  >
+                    {isRemovingLogo ? t('shops.removingLogo') : t('shops.removeLogo')}
+                  </MyButton>
+                )}
               </div>
             </form>
           </Section>

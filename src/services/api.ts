@@ -543,6 +543,16 @@ const injectedRtkApi = api
         }),
         invalidatesTags: ["Legal"],
       }),
+      removeShopLogo: build.mutation<
+        RemoveShopLogoApiResponse,
+        RemoveShopLogoApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/shops/${queryArg.shopId}/logo`,
+          method: "DELETE",
+        }),
+        invalidatesTags: ["Shop Logo"],
+      }),
       setShopLogo: build.mutation<SetShopLogoApiResponse, SetShopLogoApiArg>({
         query: (queryArg) => ({
           url: `/shops/${queryArg.shopId}/logo`,
@@ -1452,6 +1462,11 @@ export type UpdateShopLegalApiResponse =
 export type UpdateShopLegalApiArg = {
   shopId: string;
   updateShopLegalBody: UpdateShopLegalBody;
+};
+export type RemoveShopLogoApiResponse =
+  /** status 200 Shop logo removed successfully */ SetShopLogoResultDto;
+export type RemoveShopLogoApiArg = {
+  shopId: string;
 };
 export type SetShopLogoApiResponse =
   /** status 200 Shop logo updated successfully */ SetShopLogoResultDto;
@@ -4098,6 +4113,7 @@ export const {
   useGetShopLegalQuery,
   useLazyGetShopLegalQuery,
   useUpdateShopLegalMutation,
+  useRemoveShopLogoMutation,
   useSetShopLogoMutation,
   useGenerateShopLogoUploadUrlMutation,
   useUpdateLoyaltyMutation,
