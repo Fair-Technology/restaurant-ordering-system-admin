@@ -23,6 +23,7 @@ import { formatCents } from '../utils/money';
 import { MySpinner } from '../components/ui/MySpinner';
 import { ModeBadge, StateBadge } from '../components/orders/OrderBadges';
 import { OrderDetail, type DetailKind } from '../components/orders/OrderDetail';
+import { ReceiptsArchiveButton } from '../components/orders/ReceiptsArchiveButton';
 
 const HISTORY_PAGE_SIZE = 20;
 const WIDE_QUERY = '(min-width: 1280px)';
@@ -463,6 +464,11 @@ export function OrdersPage() {
               <p className="text-sm text-[#b42318]">{t('orders.loadError')}</p>
             ) : (
               <>
+                <ReceiptsArchiveButton
+                  shopId={shopId!}
+                  timeZone={shop?.timezone ?? 'Europe/Berlin'}
+                  callerRole={shop?.callerRole}
+                />
                 <Section dot="bg-[#8a7f77]" title={t('orders.live.filter.history')} hint={t('orders.live.historyHint')}>
                   {historyOrders.length === 0 ? (
                     <p className="p-4 text-sm text-[#8a7f77]">{query ? t('orders.live.noMatch') : t('orders.empty')}</p>

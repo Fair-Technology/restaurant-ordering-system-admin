@@ -21,6 +21,12 @@ export interface InvoiceFileDto {
   contentBase64: string;
 }
 
+export interface InvoiceArchiveDto {
+  fileName: string;
+  contentType: 'application/zip';
+  contentBase64: string;
+}
+
 export interface OrderRefundLine {
   lineIndex: number;
   quantity: number;
@@ -169,6 +175,12 @@ export const ordersApi = api.injectEndpoints({
       query: ({ shopId }) => ({ url: `/shops/${shopId}/order-queue` }),
       providesTags: (_r, _e, { shopId }) => [{ type: 'Orders' as const, id: `QUEUE-${shopId}` }],
     }),
+    getInvoiceArchive: build.query<InvoiceArchiveDto, { shopId: string; month: string }>({
+      query: ({ shopId, month }) => ({
+        url: `/shops/${shopId}/invoices/archive`,
+        params: { month },
+      }),
+    }),
     acceptOrder: build.mutation<IntakeOrder, OrderActionArg & { prepMinutes: number }>({
       query: ({ shopId, orderId, prepMinutes }) => ({
         url: `/shops/${shopId}/orders/${orderId}/accept`,
@@ -286,6 +298,7 @@ export const {
   useRefundOrderMutation,
   useUpdateOrderSettingsMutation,
   useSetBusyModeMutation,
+  useLazyGetInvoiceArchiveQuery,
 } = ordersApi;
 
 const BOARD_STATES = ['PLACED', 'ACCEPTED', 'READY', 'OUT_FOR_DELIVERY'];
