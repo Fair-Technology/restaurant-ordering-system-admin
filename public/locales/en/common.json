@@ -721,6 +721,13 @@
       "today": "Today",
       "yesterday": "Yesterday",
       "last7": "Last 7 days",
+      "thisWeek": "This week",
+      "lastWeek": "Last week",
+      "thisMonth": "This month",
+      "lastMonth": "Last month",
+      "customRange": "Custom range…",
+      "rangeStart": "Start date",
+      "rangeEnd": "End date",
       "pickDate": "Pick a date…",
       "title": "Orders on {{date}}"
     },
