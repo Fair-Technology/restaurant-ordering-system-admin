@@ -2372,6 +2372,7 @@ export type ProductSchedule = {
   daysOfWeek?: number[];
   offerPrice?: number | null;
   offerLabel?: string | null;
+  offerLabelTranslations?: TranslationMap;
 };
 export type CreateProductResultDto = {
   nameTranslations: TranslationMap;

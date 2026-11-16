@@ -662,6 +662,7 @@
     "offerPrice": "Special Price ({{symbol}})",
     "offerLabel": "Offer Label",
     "offerLabelPlaceholder": "e.g. Happy Hour, Weekend Special",
+    "offerLabelTranslated": "Offer label ({{language}})",
     "offerPriceRequired": "Special price must be greater than zero.",
     "offerPriceMustBeLess": "Special price must be less than the regular price.",
     "offerBadge": "Special price",
