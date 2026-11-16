@@ -118,7 +118,7 @@ describe('boardColumns', () => {
       order({ id: 'c', createdAt: min(-1) }),
       order({ id: 'a', createdAt: min(-9) }),
     ];
-    expect(ids(boardColumns(input, 'open'), 'new')).toEqual(['a', 'b', 'c']);
+    expect(ids(boardColumns(input), 'new')).toEqual(['a', 'b', 'c']);
   });
 
   it('lists in-progress orders by due time with no due time last', () => {
@@ -128,7 +128,7 @@ describe('boardColumns', () => {
       order({ id: 'late', ...work, readyAt: min(15) }),
       order({ id: 'soon', ...work, readyAt: min(4) }),
     ];
-    expect(ids(boardColumns(input, 'open'), 'work')).toEqual(['soon', 'late', 'none']);
+    expect(ids(boardColumns(input), 'work')).toEqual(['soon', 'late', 'none']);
   });
 
   it('lists ready orders longest waiting first, unknown last in input order', () => {
@@ -139,18 +139,25 @@ describe('boardColumns', () => {
       order({ id: 'n2', ...ready }),
       order({ id: 'old', state: 'OUT_FOR_DELIVERY', displayState: 'OUT_FOR_DELIVERY', history: [entry('OUT_FOR_DELIVERY', min(-12))] }),
     ];
-    expect(ids(boardColumns(input, 'open'), 'ready')).toEqual(['old', 'recent', 'n1', 'n2']);
+    expect(ids(boardColumns(input), 'ready')).toEqual(['old', 'recent', 'n1', 'n2']);
   });
 
-  it('returns all three columns for open and only the matching one otherwise', () => {
-    const input = [order({ id: 'n' }), order({ id: 'r', state: 'READY', displayState: 'READY' })];
-    expect(boardColumns(input, 'open').map((c) => c.key)).toEqual(['new', 'work', 'ready']);
-    expect(boardColumns(input, 'ready').map((c) => [c.key, c.orders.map((o) => o.id)])).toEqual([['ready', ['r']]]);
+  it('drops the New column while it is empty, and always draws In progress and Ready', () => {
+    const work = order({ id: 'w', state: 'ACCEPTED', displayState: 'IN_PREPARATION', readyAt: min(15) });
+    // In progress and Ready render even with nothing in them — an empty "In progress" is information.
+    expect(boardColumns([work]).map((c) => c.key)).toEqual(['work', 'ready']);
+    expect(boardColumns([]).map((c) => c.key)).toEqual(['work', 'ready']);
+    // One new order puts the column back, in the default order.
+    expect(boardColumns([order({ id: 'n' }), work]).map((c) => [c.key, c.orders.map((o) => o.id)])).toEqual([
+      ['new', ['n']],
+      ['work', ['w']],
+      ['ready', []],
+    ]);
   });
 
   it('does not reorder the input array', () => {
     const input = [order({ id: 'b', createdAt: min(-1) }), order({ id: 'a', createdAt: min(-9) })];
-    boardColumns(input, 'open');
+    boardColumns(input);
     expect(input.map((o) => o.id)).toEqual(['b', 'a']);
   });
 });
