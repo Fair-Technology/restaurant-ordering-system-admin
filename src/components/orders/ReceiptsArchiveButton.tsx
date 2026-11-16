@@ -63,7 +63,8 @@ export function ReceiptsArchiveButton({ shopId, timeZone, callerRole }: Props) {
         variant="secondary"
         size="sm"
         className="ml-auto gap-2"
-        disabled={isFetching || !month}
+        disabled={!month}
+        isPending={isFetching}
         onClick={() => void download()}
       >
         <Download size={16} aria-hidden="true" />

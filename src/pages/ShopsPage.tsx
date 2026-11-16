@@ -15,6 +15,7 @@ import { visibleShops } from '../features/shops/deleteShop';
 import { defaultMenuLanguageForUiLanguage } from '../features/menu/translations';
 import { useGetDpaDocumentQuery } from '../services/legalApi';
 import { MyButton } from '../components/ui/MyButton';
+import { PendingButton } from '../components/ui/PendingButton';
 import { MyInput } from '../components/ui/MyInput';
 import { MySpinner } from '../components/ui/MySpinner';
 import { useToast } from '../contexts/ToastContext';
@@ -262,7 +263,7 @@ function CreateShopModal({ onClose }: { onClose: () => void }) {
 
             {/* Footer */}
             <div className="flex items-center gap-2 border-t border-line-soft px-6 py-4">
-              <MyButton type="submit" disabled={isLoading || !dpaTicked || !dpa} className="flex-1">
+              <MyButton type="submit" isPending={isLoading} disabled={!dpaTicked || !dpa} className="flex-1">
                 {isLoading ? t('shops.creating') : t('shops.create')}
               </MyButton>
               <MyButton type="button" variant="secondary" onClick={onClose}>
@@ -310,21 +311,31 @@ function ShopAvailabilityToggle({
 
   return (
     <>
-      <button
+      <PendingButton
         type="button"
         role="switch"
         aria-checked={isOn}
         aria-label={`${t('shops.statusOnline')}: ${shop.name ?? ''}`}
         onClick={handleClick}
         onKeyDown={(e) => e.stopPropagation()}
-        disabled={isLoading || shop.offlineBySuperadmin === true}
+        isPending={isLoading}
+        // The knob is absolutely positioned; the spinner is drawn below, on the side the knob is not on
+        spinner={false}
+        disabled={shop.offlineBySuperadmin === true}
         title={t('shops.statusOnline')}
         className={`relative h-5 w-[34px] flex-shrink-0 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 disabled:opacity-50 ${
           isOn ? 'bg-[#2f8a4c]' : 'bg-[#d6cdc4]'
         }`}
       >
         <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${isOn ? 'right-0.5' : 'left-0.5'}`} />
-      </button>
+        {isLoading && (
+          <span
+            data-pending-spinner=""
+            aria-hidden="true"
+            className={`absolute top-1/2 -mt-[7px] h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent text-ink ${isOn ? 'left-0.5' : 'right-0.5'}`}
+          />
+        )}
+      </PendingButton>
       {confirmOffline && (
         <div onClick={(e) => e.stopPropagation()}>
           <TakeShopOfflineModal

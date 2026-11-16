@@ -76,7 +76,7 @@ export function StaffLoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
-            <MyButton type="submit" size="lg" className="mt-1 w-full" disabled={isLoading}>
+            <MyButton type="submit" size="lg" className="mt-1 w-full" isPending={isLoading}>
               {t('staffLogin.submit')}
             </MyButton>
           </form>

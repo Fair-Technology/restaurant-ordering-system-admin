@@ -154,7 +154,7 @@ function CreateCategoryModal({
               <MyButton type="button" variant="secondary" onClick={onClose}>
                 {t('products.cancel')}
               </MyButton>
-              <MyButton type="submit" disabled={isLoading}>
+              <MyButton type="submit" isPending={isLoading}>
                 {isLoading ? t('categories.creating') : t('categories.create')}
               </MyButton>
             </div>
@@ -180,7 +180,9 @@ const keepInside = (e: React.SyntheticEvent) => e.stopPropagation();
 function SortableCategoryItem({ cat, shopId, selected, onOpen }: SortableCategoryItemProps) {
   const { t, i18n } = useTranslation();
   const toast = useToast();
-  const [updateCategory, { isLoading: switching }] = useUpdateCategoryMutation();
+  const [updateCategory, { isLoading: updating, originalArgs }] = useUpdateCategoryMutation();
+  // The same hook also saves the icon, so only a visibility write counts as the switch waiting
+  const switching = updating && originalArgs?.body?.isAvailable !== undefined;
   // The switch moves at once; the server's answer replaces this when the list reloads
   const saved = cat.isAvailable !== false;
   const [pending, setPending] = useState<{ next: boolean; from: boolean } | null>(null);
@@ -202,12 +204,16 @@ function SortableCategoryItem({ cat, shopId, selected, onOpen }: SortableCategor
     opacity: isDragging ? 0.4 : 1,
   };
 
-  const handleIconChange = (icon: string | null) => {
-    updateCategory({
-      shopId,
-      categoryId: cat.id!,
-      body: { icon: icon ?? undefined },
-    });
+  const handleIconChange = async (icon: string | null) => {
+    try {
+      await updateCategory({
+        shopId,
+        categoryId: cat.id!,
+        body: { icon: icon ?? undefined },
+      }).unwrap();
+    } catch {
+      toast.error(t('common.genericError'));
+    }
   };
 
   // Switching saves at once; the list refreshes from the server
@@ -282,7 +288,8 @@ function SortableCategoryItem({ cat, shopId, selected, onOpen }: SortableCategor
         <MySwitch
           checked={shown}
           onChange={handleShownChange}
-          disabled={switching}
+          isPending={switching}
+          disabled={updating}
           labelledBy={`category-name-${cat.id}`}
         />
       </span>

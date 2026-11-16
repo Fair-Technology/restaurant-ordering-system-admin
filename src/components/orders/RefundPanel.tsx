@@ -45,7 +45,7 @@ export function RefundPanel({ shopId, order }: RefundPanelProps) {
 
   const total = mode === 'items' ? itemsTotal : (parsedAmount ?? 0);
   const canSubmit =
-    !isLoading && reason.trim() !== '' && (mode === 'items' ? itemsTotal > 0 && itemsTotal <= max : amountValid);
+    reason.trim() !== '' && (mode === 'items' ? itemsTotal > 0 && itemsTotal <= max : amountValid);
 
   // the confirmation step only counts while the total is the one the user was shown
   const confirming = canSubmit && confirmingCents === total;
@@ -58,7 +58,7 @@ export function RefundPanel({ shopId, order }: RefundPanelProps) {
     Math.min(...comboLineGroup(order.items, index).map((i) => left[i] ?? 0));
 
   const submit = async () => {
-    if (!canSubmit) return;
+    if (!canSubmit || isLoading) return;
     const base = { shopId, orderId: order.id, reason: reason.trim() };
     try {
       await refundOrder(
@@ -191,10 +191,10 @@ export function RefundPanel({ shopId, order }: RefundPanelProps) {
       <div className="flex gap-2">
         {confirming ? (
           <>
-            <MyButton size="sm" disabled={!canSubmit} onClick={submit}>
+            <MyButton size="sm" disabled={!canSubmit} isPending={isLoading} onClick={submit}>
               {t('orders.refundConfirmButton', { amount: formatMoney(total) })}
             </MyButton>
-            <MyButton variant="ghost" size="sm" onClick={() => setConfirmingCents(null)}>
+            <MyButton variant="ghost" size="sm" disabled={isLoading} onClick={() => setConfirmingCents(null)}>
               {t('orders.refundConfirmBack')}
             </MyButton>
           </>

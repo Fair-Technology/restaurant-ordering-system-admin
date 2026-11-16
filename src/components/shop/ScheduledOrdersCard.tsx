@@ -78,7 +78,7 @@ export function ScheduledOrdersCard({ shop, onRefetch }: Props) {
         <p className={`text-sm ${message.kind === 'saved' ? 'text-[#1d5a32]' : 'text-[#b42318]'}`}>{message.text}</p>
       )}
       <div className="flex flex-wrap items-center gap-2 border-t border-line-soft pt-4">
-        <MyButton onClick={handleSave} disabled={isLoading}>
+        <MyButton onClick={handleSave} isPending={isLoading}>
           {t('shops.scheduledSave')}
         </MyButton>
       </div>

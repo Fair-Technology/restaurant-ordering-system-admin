@@ -82,7 +82,7 @@ export function LoyaltyCard({ shopId, shop, loyalty }: LoyaltyCardProps) {
         </div>
         {since && <p className="text-xs text-muted">{t('promotions.loyaltySince', { date: since })}</p>}
         {invalid && <p className="text-sm text-[#b42318]">{t('promotions.loyaltyInvalid')}</p>}
-        <MyButton type="button" disabled={isLoading} onClick={save}>
+        <MyButton type="button" isPending={isLoading} onClick={save}>
           {t('promotions.loyaltySave')}
         </MyButton>
       </div>

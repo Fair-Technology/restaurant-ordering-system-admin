@@ -8,6 +8,12 @@ interface PendingButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
    * than this shows the dimmed button only — never a spinner that flashes for one frame.
    */
   spinnerDelayMs?: number;
+  /**
+   * Render the spinner glyph at all (default true). Pass false when the caller draws its own
+   * progress indicator, e.g. a fixed-size control where an in-flow spinner would shift the layout.
+   * Every other pending behaviour (disabled, dim, progress cursor, aria-busy, swallowed clicks) stays.
+   */
+  spinner?: boolean;
   children: ReactNode;
 }
 
@@ -20,6 +26,7 @@ interface PendingButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 export function PendingButton({
   isPending,
   spinnerDelayMs = 120,
+  spinner = true,
   children,
   className = '',
   disabled,
@@ -55,9 +62,10 @@ export function PendingButton({
         }
         onClick?.(e);
       }}
-      className={`inline-flex items-center justify-center gap-1.5 ${className}${isPending ? ' cursor-progress opacity-50' : ''}`}
+      // spinner={false}: the caller owns its layout and glyph, so no wrapper flex/gap/justify is injected.
+      className={`${spinner ? `inline-flex items-center justify-center gap-1.5 ${className}` : className}${isPending ? ' cursor-progress opacity-50' : ''}`}
     >
-      {isPending && spinning && (
+      {spinner && isPending && spinning && (
         <span
           data-pending-spinner=""
           aria-hidden="true"

@@ -13,6 +13,7 @@ import {
 import { useToast } from '../../contexts/ToastContext';
 import { MyInput, MyTextarea } from '../ui/MyInput';
 import { MySpinner } from '../ui/MySpinner';
+import { PendingButton } from '../ui/PendingButton';
 import { CurrencyInput } from '../ui/CurrencyInput';
 import { DishPhotoField } from './DishPhotoField';
 import { LanguageTabs, TranslationField } from './LanguageTabs';
@@ -515,14 +516,14 @@ export function DishEditor({ productId, shopId, currencySymbol, categoriesList, 
                   >
                     {t('products.cancel')}
                   </button>
-                  <button
+                  <PendingButton
                     type="button"
-                    disabled={isDeleting}
+                    isPending={isDeleting}
                     onClick={() => void remove()}
                     className="h-9 rounded-full bg-[#b42318] px-4 text-[13px] font-bold text-white hover:bg-[#981b14] disabled:opacity-50"
                   >
                     {isDeleting ? t('products.deleting') : t('products.confirmDelete')}
-                  </button>
+                  </PendingButton>
                 </div>
               ) : (
                 <div className="flex items-center justify-between gap-3">
@@ -561,14 +562,15 @@ export function DishEditor({ productId, shopId, currencySymbol, categoriesList, 
         >
           {t('dishes.editor.discard')}
         </button>
-        <button
+        <PendingButton
           type="button"
-          disabled={!dirty || isBusy}
+          isPending={isBusy}
+          disabled={!dirty}
           onClick={() => void save()}
           className="h-[42px] rounded-full bg-ink px-[22px] text-sm font-bold text-white hover:bg-black disabled:opacity-40"
         >
           {isUpdating ? t('products.saving') : isUploading ? t('products.uploadingImage') : t('dishes.editor.save')}
-        </button>
+        </PendingButton>
       </div>
 
       {scheduleOpen && <ScheduleOfferModal product={product} currencySymbol={currencySymbol} languages={languages} onClose={() => setScheduleOpen(false)} />}

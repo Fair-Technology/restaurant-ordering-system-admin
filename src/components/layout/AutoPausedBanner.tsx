@@ -3,6 +3,7 @@ import { useUpdateShopMutation, type GetShopResultDto } from '../../services/api
 import { autoPausedCount } from '../../features/shops/shopStatus';
 import { useNow } from '../../features/orders/useNow';
 import { useToast } from '../../contexts/ToastContext';
+import { PendingButton } from '../ui/PendingButton';
 
 /** Tells the owner that orders were paused automatically after missed orders, with a one-click way back. */
 export function AutoPausedBanner({ shop }: { shop: GetShopResultDto }) {
@@ -30,14 +31,14 @@ export function AutoPausedBanner({ shop }: { shop: GetShopResultDto }) {
     >
       <span>{t('shops.autoPausedBanner', { count })}</span>
       {canManage && (
-        <button
+        <PendingButton
           type="button"
           onClick={() => void resume()}
-          disabled={isLoading}
+          isPending={isLoading}
           className="shrink-0 px-4 py-2 rounded-xl text-sm font-semibold bg-gray-900 hover:bg-gray-800 text-white transition-all duration-150 disabled:opacity-50"
         >
           {t('shops.autoPausedResume')}
-        </button>
+        </PendingButton>
       )}
     </div>
   );

@@ -477,7 +477,7 @@ export function StepCategories({
                 onChange={(e) => setNewName(e.target.value)}
                 className="flex-1 border border-gray-200 rounded-lg bg-white text-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400"
               />
-              <MyButton type="submit" disabled={isCreating || !newName.trim()} className="shrink-0 text-sm py-2">
+              <MyButton type="submit" isPending={isCreating} disabled={!newName.trim()} className="shrink-0 text-sm py-2">
                 {isCreating ? 'Creating…' : 'Create'}
               </MyButton>
               <button

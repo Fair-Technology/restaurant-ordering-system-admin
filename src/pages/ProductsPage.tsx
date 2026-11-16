@@ -10,6 +10,7 @@ import {
 } from '../services/api';
 import { MyButton } from '../components/ui/MyButton';
 import { MySpinner } from '../components/ui/MySpinner';
+import { PendingButton } from '../components/ui/PendingButton';
 import { getCurrencySymbol } from '../utils/currency';
 import { formatCents } from '../utils/money';
 import { Plus, Search, X } from 'lucide-react';
@@ -286,7 +287,7 @@ function AddProductModal({ shopId, onClose }: AddProductModalProps) {
               <>
                 <MyButton type="button" variant="secondary" onClick={goBack}>← {t('products.wizardBack')}</MyButton>
                 <div className="flex-1" />
-                <MyButton type="button" disabled={isBusy} onClick={handleSubmit}>{submitLabel}</MyButton>
+                <MyButton type="button" isPending={isBusy} onClick={handleSubmit}>{submitLabel}</MyButton>
               </>
             )}
           </div>
@@ -596,12 +597,13 @@ function DishRow({
         busy={soldOutBusy}
         onToggle={onToggleSoldOut}
       />
-      <button
+      <PendingButton
         type="button"
         role="switch"
         aria-checked={available}
         aria-label={t('dishes.availableFor', { name: product.name })}
-        disabled={toggling}
+        isPending={toggling}
+        spinner={false}
         onClick={(e) => {
           e.stopPropagation();
           onToggle();
@@ -611,8 +613,16 @@ function DishRow({
           available ? 'bg-[#2f8a4c]' : 'bg-[#d6cdc4]'
         }`}
       >
-        <span className={`absolute top-[3px] h-[18px] w-[18px] rounded-full bg-white shadow transition-all ${available ? 'right-[3px]' : 'left-[3px]'}`} />
-      </button>
+        <span className={`absolute top-[3px] h-[18px] w-[18px] rounded-full bg-white shadow transition-all ${available ? 'right-[3px]' : 'left-[3px]'}`}>
+          {toggling && (
+            <span
+              data-pending-spinner=""
+              aria-hidden="true"
+              className="absolute inset-0 m-auto h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent text-ink"
+            />
+          )}
+        </span>
+      </PendingButton>
     </div>
   );
 }
