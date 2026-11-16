@@ -716,6 +716,14 @@
     "removeOption": "Remove"
   },
   "orders": {
+    "dayPicker": {
+      "label": "Today",
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "last7": "Last 7 days",
+      "pickDate": "Pick a date…",
+      "title": "Orders on {{date}}"
+    },
     "phoneView": "Phone view",
     "fullAdmin": "Full admin",
     "switchRestaurant": "Switch restaurant",
