@@ -879,8 +879,9 @@
       "search": "Bestellung suchen",
       "searchPlaceholder": "Nr. oder Name suchen",
       "filters": "Bestellungen filtern",
+      "views": "Weitere Ansichten",
       "filter": {
-        "open": "Offen",
+        "open": "Alle",
         "new": "Neu",
         "work": "In Arbeit",
         "ready": "Fertig",

@@ -1,9 +1,19 @@
 import type { IntakeOrder } from '../../services/ordersApi';
 import { groupQueue } from './intake';
 
-/** The chips above the orders list. */
+/**
+ * Every value `?filter=` accepts. 'open' is the All view (the default) and must stay valid for old links.
+ */
 export const ORDER_FILTERS = ['open', 'new', 'work', 'ready', 'upcoming', 'history'] as const;
 export type OrderFilter = (typeof ORDER_FILTERS)[number];
+
+/** The chips in the row: the three live states. */
+export const ORDER_STATE_FILTERS = ['new', 'work', 'ready'] as const;
+export type OrderStateFilter = (typeof ORDER_STATE_FILTERS)[number];
+
+/** The time-axis views: offered beside the chip row, never in it. */
+export const ORDER_SCOPE_FILTERS = ['upcoming', 'history'] as const;
+export type OrderScopeFilter = (typeof ORDER_SCOPE_FILTERS)[number];
 
 /** Reads the `?filter=` parameter; the old `?tab=history` still opens the history. */
 export function parseOrderFilter(params: URLSearchParams): OrderFilter {

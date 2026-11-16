@@ -7,7 +7,8 @@ import { useGetOrdersByShopQuery, useSetBusyModeMutation, type IntakeOrder, type
 import { useToast } from '../contexts/ToastContext';
 import { formatCountdown, slotLoadOf, upcomingByDay } from '../features/orders/intake';
 import {
-  ORDER_FILTERS,
+  ORDER_SCOPE_FILTERS,
+  ORDER_STATE_FILTERS,
   itemSummary,
   liveGroups,
   matchesOrderSearch,
@@ -216,6 +217,11 @@ const pill = (dark: boolean) =>
 const chip = (on: boolean) =>
   `inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-[13px] font-semibold transition-colors ${
     on ? 'border-ink bg-ink text-white' : 'border-[#e3d9ce] bg-white text-[#4a413b] hover:bg-sand'
+  }`;
+
+const scopeTab = (on: boolean) =>
+  `inline-flex h-9 items-center gap-1.5 rounded-md px-2.5 text-[13px] font-semibold underline-offset-4 transition-colors ${
+    on ? 'text-ink underline decoration-2' : 'text-[#6b625c] hover:bg-sand hover:text-ink'
   }`;
 
 /**
@@ -517,14 +523,28 @@ export function OrdersPage() {
             />
           </label>
           {isToday && (
-            <div role="group" aria-label={t('orders.live.filters')} className="flex flex-wrap gap-2">
-              {ORDER_FILTERS.map((f) => (
-                <button key={f} type="button" aria-pressed={filter === f} className={chip(filter === f)} onClick={() => pickFilter(f)}>
-                  {t(`orders.live.filter.${f}`)}
-                  {counts[f] !== null && <span className="text-xs opacity-70">{counts[f]}</span>}
+            <>
+              <div role="group" aria-label={t('orders.live.filters')} className="flex flex-wrap gap-2">
+                <button type="button" aria-pressed={filter === 'open'} className={chip(filter === 'open')} onClick={() => pickFilter('open')}>
+                  {t('orders.live.filter.open')}
                 </button>
-              ))}
-            </div>
+                {ORDER_STATE_FILTERS.map((f) => (
+                  <button key={f} type="button" aria-pressed={filter === f} className={chip(filter === f)} onClick={() => pickFilter(f)}>
+                    {t(`orders.live.filter.${f}`)}
+                    {counts[f] !== null && <span className="text-xs opacity-70">{counts[f]}</span>}
+                  </button>
+                ))}
+              </div>
+              <span className="h-6 w-px bg-[#e3d9ce]" aria-hidden="true" />
+              <div role="group" aria-label={t('orders.live.views')} className="flex items-center gap-1">
+                {ORDER_SCOPE_FILTERS.map((f) => (
+                  <button key={f} type="button" aria-pressed={filter === f} className={scopeTab(filter === f)} onClick={() => pickFilter(f)}>
+                    {t(`orders.live.filter.${f}`)}
+                    {counts[f] !== null && <span className="text-xs opacity-70">{counts[f]}</span>}
+                  </button>
+                ))}
+              </div>
+            </>
           )}
         </div>
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { IntakeOrder } from '../../services/ordersApi';
 import type { OrderHistoryEntry } from '../../services/api';
-import { enteredStateAt, itemSummary, liveGroups, matchesOrderSearch, orderTiming, parseOrderFilter } from './orderView';
+import { enteredStateAt, itemSummary, liveGroups, matchesOrderSearch, orderTiming, parseOrderFilter, ORDER_FILTERS, ORDER_SCOPE_FILTERS, ORDER_STATE_FILTERS } from './orderView';
 
 const NOW = Date.parse('2026-10-12T12:00:00Z');
 const min = (m: number) => new Date(NOW + m * 60000).toISOString();
@@ -57,6 +57,32 @@ describe('parseOrderFilter', () => {
 
   it('keeps old links to the history working', () => {
     expect(parseOrderFilter(new URLSearchParams('tab=history'))).toBe('history');
+  });
+});
+
+describe('order filter groupings', () => {
+  it('partition ORDER_FILTERS: All, the states, the scopes', () => {
+    const all = ['open', ...ORDER_STATE_FILTERS, ...ORDER_SCOPE_FILTERS];
+    expect(all.length).toBeGreaterThan(0);
+    expect([...all].sort()).toEqual([...ORDER_FILTERS].sort());
+    expect(new Set(all).size).toBe(all.length);
+  });
+
+  it('keeps All and the scopes out of the state chips', () => {
+    for (const f of ['open', 'upcoming', 'history']) {
+      expect((ORDER_STATE_FILTERS as readonly string[]).includes(f)).toBe(false);
+    }
+  });
+
+  it('treats All as the default and as a valid old link', () => {
+    expect(parseOrderFilter(new URLSearchParams('filter=open'))).toBe('open');
+    expect(parseOrderFilter(new URLSearchParams(''))).toBe('open');
+  });
+
+  it('round-trips every filter through the URL', () => {
+    for (const f of ORDER_FILTERS) {
+      expect(parseOrderFilter(new URLSearchParams('filter=' + f))).toBe(f);
+    }
   });
 });
 
