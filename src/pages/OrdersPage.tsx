@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { CalendarDays, Search, Smartphone, Volume2, VolumeX } from 'lucide-react';
+import { CalendarDays, Search, Volume2, VolumeX } from 'lucide-react';
 import { useGetShopByIdQuery } from '../services/api';
 import { useGetOrdersByShopQuery, useSetBusyModeMutation, type IntakeOrder, type UpcomingOrder } from '../services/ordersApi';
 import { useToast } from '../contexts/ToastContext';
@@ -480,13 +480,6 @@ export function OrdersPage() {
                 {data.busy.active ? t('orders.live.busyOn', { minutes: data.busy.extraMinutes }) : t('orders.live.busy')}
               </button>
             )}
-            <Link
-              to={`/shops/${shopId}/phone`}
-              className="inline-flex h-9 items-center gap-1.5 px-2 text-[13px] font-semibold text-[#4a413b] hover:text-ink"
-            >
-              <Smartphone size={15} aria-hidden="true" />
-              {t('orders.phoneView')}
-            </Link>
           </div>
         </div>
 
