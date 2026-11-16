@@ -121,7 +121,7 @@ export function TakeShopOfflineModal({ shopId, onClose, onSuccess }: TakeOffline
             variant="danger"
             size="sm"
             onClick={handleConfirm}
-            disabled={isLoading}
+            isPending={isLoading}
           >
             {isLoading ? t('shops.offlineTaking') : t('shops.offlineConfirm')}
           </MyButton>

@@ -14,6 +14,7 @@ import { clearStaffSession, readStaffSession } from '../../features/staff/staffS
 import { useToast } from '../../contexts/ToastContext';
 import { AccountSettingsModal } from './AccountSettingsModal';
 import { PauseOrdersDialog } from '../shop/PauseOrdersDialog';
+import { PendingButton } from '../ui/PendingButton';
 
 /** Round shop logo, or its first letter when no logo is uploaded. */
 function ShopBadge({ shop, size = 36 }: { shop: Pick<GetShopResultDto, 'name' | 'branding'> | undefined; size?: number }) {
@@ -90,12 +91,14 @@ function ShopStatusSwitch({ shop, canManage }: { shop: GetShopResultDto; canMana
             : t('nav.ordersPausedBadge')}
       </span>
       {canManage && (
-        <button
+        <PendingButton
           type="button"
           role="switch"
           aria-checked={taking}
           aria-labelledby="sidebar-status-label"
-          disabled={isLoading}
+          isPending={isLoading}
+          // The knob is absolutely positioned; the spinner is drawn below, on the side the knob is not on
+          spinner={false}
           onClick={() => void toggle()}
           className={`relative h-5 w-[34px] flex-shrink-0 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 disabled:opacity-50 ${
             taking ? 'bg-[#2f8a4c]' : 'bg-[#d6cdc4]'
@@ -104,7 +107,14 @@ function ShopStatusSwitch({ shop, canManage }: { shop: GetShopResultDto; canMana
           <span
             className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${taking ? 'right-0.5' : 'left-0.5'}`}
           />
-        </button>
+          {isLoading && (
+            <span
+              data-pending-spinner=""
+              aria-hidden="true"
+              className={`absolute top-1/2 -mt-[7px] h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent text-ink ${taking ? 'left-0.5' : 'right-0.5'}`}
+            />
+          )}
+        </PendingButton>
       )}
       {pausing && (
         <PauseOrdersDialog shopId={shop.id!} onClose={() => setPausing(false)} onPaused={() => setPausing(false)} />

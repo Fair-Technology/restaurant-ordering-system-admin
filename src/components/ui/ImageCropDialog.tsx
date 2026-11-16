@@ -77,6 +77,8 @@ export function ImageCropDialog({ file, rule, title, hint, safeAreaLabel, tooSma
   const [url, setUrl] = useState<string | null>(null);
   const [size, setSize] = useState<{ width: number; height: number } | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
+  // True while this dialog itself is rendering the crop and handing it to onConfirm (busy is the parent's own flag)
+  const [saving, setSaving] = useState(false);
   // A new file clears the previous file's load failure (adjusted during render, not in an effect).
   const [loadedFile, setLoadedFile] = useState(file);
   if (loadedFile !== file) {
@@ -154,11 +156,14 @@ export function ImageCropDialog({ file, rule, title, hint, safeAreaLabel, tooSma
   const handleSave = async () => {
     if (!ready || !imageRef.current || !pixels) return;
     setSaveFailed(false);
+    setSaving(true);
     try {
       const blob = await renderCrop(imageRef.current, pixels, rule);
       await onConfirm(blob);
     } catch {
       setSaveFailed(true);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -269,8 +274,8 @@ export function ImageCropDialog({ file, rule, title, hint, safeAreaLabel, tooSma
 
         <div className="flex justify-end gap-2 border-t border-gray-100 px-5 py-3">
           <MyButton type="button" variant="ghost" onClick={onCancel} disabled={busy}>{t('imageCrop.cancel')}</MyButton>
-          <MyButton type="button" onClick={handleSave} disabled={!ready || busy}>
-            {busy ? t('imageCrop.saving') : t('imageCrop.save')}
+          <MyButton type="button" onClick={handleSave} isPending={busy || saving} disabled={!ready}>
+            {busy || saving ? t('imageCrop.saving') : t('imageCrop.save')}
           </MyButton>
         </div>
       </div>

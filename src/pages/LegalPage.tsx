@@ -166,7 +166,7 @@ function DpaCard({ shopId, shopName, legal, lang }: {
                 />
                 {t('legal.dpaConfirm', { name: shopName })}
               </label>
-              <MyButton type="button" disabled={!confirmed || isLoading} onClick={handleAccept}>
+              <MyButton type="button" isPending={isLoading} disabled={!confirmed} onClick={handleAccept}>
                 {isLoading ? t('legal.dpaAccepting') : t('legal.dpaAccept')}
               </MyButton>
             </div>
@@ -265,7 +265,7 @@ function ImpressumCard({ shopId, legal, shopAddress }: {
           </p>
         )}
         {serverError && <p className="text-sm text-[#b42318]">{serverError}</p>}
-        <MyButton type="button" onClick={handleSave} disabled={isLoading}>
+        <MyButton type="button" onClick={handleSave} isPending={isLoading}>
           {isLoading ? t('legal.saving') : t('legal.impressumSave')}
         </MyButton>
       </div>
@@ -321,7 +321,7 @@ function TextEditor({ label, saved, max, minLength, onSave, saveLabel }: {
           </span>
         )}
       </div>
-      <MyButton type="button" onClick={handleSave} disabled={isSaving}>
+      <MyButton type="button" onClick={handleSave} isPending={isSaving}>
         {isSaving ? t('legal.saving') : saveLabel}
       </MyButton>
     </div>
@@ -436,11 +436,12 @@ function DataCard({ shopId, slug, legal }: { shopId: string; slug: string; legal
   const toast = useToast();
   const [fetchExport] = useLazyGetShopDataExportQuery();
   const [eraseCustomer, { isLoading: isErasing }] = useEraseCustomerMutation();
-  const [exporting, setExporting] = useState(false);
+  const [exportingKind, setExportingKind] = useState<'json' | 'orders' | 'customers' | null>(null);
+  const exporting = exportingKind !== null;
   const [email, setEmail] = useState('');
 
   const handleExport = async (kind: 'json' | 'orders' | 'customers') => {
-    setExporting(true);
+    setExportingKind(kind);
     try {
       const data = await fetchExport({ shopId }).unwrap();
       const day = new Date().toISOString().slice(0, 10);
@@ -454,7 +455,7 @@ function DataCard({ shopId, slug, legal }: { shopId: string; slug: string; legal
     } catch {
       toast.error(t('legal.exportFailed'));
     } finally {
-      setExporting(false);
+      setExportingKind(null);
     }
   };
 
@@ -492,6 +493,7 @@ function DataCard({ shopId, slug, legal }: { shopId: string; slug: string; legal
                     key={kind}
                     type="button"
                     variant="secondary"
+                    isPending={exportingKind === kind}
                     disabled={exporting}
                     onClick={() => handleExport(kind)}
                   >
@@ -511,7 +513,7 @@ function DataCard({ shopId, slug, legal }: { shopId: string; slug: string; legal
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
-              <MyButton type="button" variant="danger" disabled={isErasing || !email.trim()} onClick={handleErase}>
+              <MyButton type="button" variant="danger" isPending={isErasing} disabled={!email.trim()} onClick={handleErase}>
                 {t('legal.eraseButton')}
               </MyButton>
             </div>

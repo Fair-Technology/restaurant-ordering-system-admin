@@ -25,7 +25,7 @@ export function DashboardPage() {
     return (
       <div className="space-y-3">
         <p className="text-sm text-[#b42318]">{t('overview.loadError')}</p>
-        <MyButton variant="secondary" onClick={() => void refetch()}>
+        <MyButton variant="secondary" onClick={() => void refetch()} isPending={isFetching}>
           {t('overview.refresh')}
         </MyButton>
       </div>
@@ -41,7 +41,7 @@ export function DashboardPage() {
         title={t('overview.title')}
         description={t('overview.subtitle')}
         actions={
-          <MyButton variant="secondary" onClick={() => void refetch()} disabled={isFetching}>
+          <MyButton variant="secondary" onClick={() => void refetch()} isPending={isFetching}>
             {t('overview.refresh')}
           </MyButton>
         }

@@ -6,6 +6,7 @@ import { canDeleteShop, deleteShopErrorKind, isShopNameMatch } from '../../featu
 import type { DeleteShopErrorKind } from '../../features/shops/deleteShop';
 import { Section } from '../layout/Page';
 import { MyButton } from '../ui/MyButton';
+import { PendingButton } from '../ui/PendingButton';
 import { MyInput } from '../ui/MyInput';
 import { useToast } from '../../contexts/ToastContext';
 
@@ -93,14 +94,15 @@ export function DeleteShopCard({ shopId, shopName, callerRole }: Props) {
                 <MyButton variant="secondary" onClick={close} disabled={isLoading}>
                   {t('shops.deleteShop.cancel')}
                 </MyButton>
-                <button
+                <PendingButton
                   type="button"
                   onClick={handleDelete}
-                  disabled={!isShopNameMatch(typed, shopName) || isLoading}
+                  isPending={isLoading}
+                  disabled={!isShopNameMatch(typed, shopName)}
                   className="inline-flex h-10 items-center justify-center rounded-full border border-[#b42318] bg-[#b42318] px-4 text-sm font-semibold text-white hover:bg-[#912018] disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {isLoading ? t('shops.deleteShop.deleting') : t('shops.deleteShop.confirm')}
-                </button>
+                </PendingButton>
               </div>
             </div>
           </div>

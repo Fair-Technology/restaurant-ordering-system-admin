@@ -190,7 +190,7 @@ export function ScheduleOfferModal({
           <div className="flex items-center gap-2 px-6 py-4 border-t border-gray-200">
             <MyButton type="button" variant="secondary" onClick={onClose}>{t('products.cancel')}</MyButton>
             <div className="flex-1" />
-            <MyButton type="button" disabled={isSaving} onClick={handleSave}>
+            <MyButton type="button" isPending={isSaving} onClick={handleSave}>
               {isSaving ? t('products.saving') : t('products.saveChanges')}
             </MyButton>
           </div>

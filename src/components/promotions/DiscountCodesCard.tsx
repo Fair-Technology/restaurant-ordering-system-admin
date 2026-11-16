@@ -11,6 +11,7 @@ import { formatCents } from '../../utils/money';
 import { codeFormToBody, codeStatus, codeValueLabel, shopToday, type CodeForm, type CodeFormError } from '../../features/promotions/promotions';
 import { STATUS_TONE } from './statusTone';
 import { MyButton } from '../ui/MyButton';
+import { PendingButton } from '../ui/PendingButton';
 import { EmptyNote, Row, Section } from '../layout/Page';
 import { badgeClass, chipClass, pillClass } from '../layout/pageStyles';
 import { MyInput } from '../ui/MyInput';
@@ -44,7 +45,7 @@ export function DiscountCodesCard({ shopId, shop, data }: DiscountCodesCardProps
   const { t, i18n } = useTranslation();
   const toast = useToast();
   const [createDiscountCode, { isLoading: creating }] = useCreateDiscountCodeMutation();
-  const [setDiscountCodeActive, { isLoading: switching }] = useSetDiscountCodeActiveMutation();
+  const [setDiscountCodeActive, { isLoading: switching, originalArgs: switchingArgs }] = useSetDiscountCodeActiveMutation();
   const [form, setForm] = useState<CodeForm>(EMPTY_FORM);
   const [formError, setFormError] = useState<CodeFormError | null>(null);
 
@@ -114,14 +115,15 @@ export function DiscountCodesCard({ shopId, shop, data }: DiscountCodesCardProps
                   {c.perEmailLimit !== null && <span>{t('promotions.perDiner', { n: c.perEmailLimit })}</span>}
                 </div>
               </div>
-              <button
+              <PendingButton
                 type="button"
                 className={pillClass(false)}
+                isPending={switching && switchingArgs?.codeId === c.id}
                 disabled={switching}
                 onClick={() => toggle(c.id, !c.active)}
               >
                 {c.active ? t('promotions.switchOff') : t('promotions.switchOn')}
-              </button>
+              </PendingButton>
             </Row>
           );
         })
@@ -185,7 +187,7 @@ export function DiscountCodesCard({ shopId, shop, data }: DiscountCodesCardProps
           />
         </div>
         {formError && <p className="text-sm text-[#b42318]">{t(`promotions.formError.${formError}`)}</p>}
-        <MyButton type="button" disabled={creating} onClick={submit}>
+        <MyButton type="button" isPending={creating} onClick={submit}>
           {t('promotions.create')}
         </MyButton>
       </div>

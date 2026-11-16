@@ -241,7 +241,7 @@ function GroupDialog({
               <MyButton type="button" variant="secondary" onClick={onClose}>
                 {t('optionGroups.cancel')}
               </MyButton>
-              <MyButton type="submit" disabled={busy}>
+              <MyButton type="submit" isPending={busy}>
                 {busy ? t('optionGroups.saving') : t('optionGroups.save')}
               </MyButton>
             </div>
@@ -325,7 +325,7 @@ function GroupCard({
           <MyButton variant="secondary" size="sm" onClick={() => setConfirming(false)} disabled={deleting}>
             {t('optionGroups.cancel')}
           </MyButton>
-          <MyButton variant="danger" size="sm" onClick={remove} disabled={deleting}>
+          <MyButton variant="danger" size="sm" onClick={remove} isPending={deleting}>
             {t('optionGroups.confirmDelete')}
           </MyButton>
         </div>
@@ -345,7 +345,7 @@ function GroupCard({
               <MySwitch
                 checked={o.isAvailable}
                 onChange={() => toggle(o.id, o.isAvailable)}
-                disabled={inFlight.has(o.id)}
+                isPending={inFlight.has(o.id)}
                 labelledBy={labelId}
               />
             </li>
@@ -361,7 +361,7 @@ function GroupCard({
 export function OptionGroupsPage() {
   const { shopId } = useParams<{ shopId: string }>();
   const { t } = useTranslation();
-  const { data, isLoading, isError, refetch } = useGetOptionGroupsQuery({ shopId: shopId! });
+  const { data, isLoading, isFetching, isError, refetch } = useGetOptionGroupsQuery({ shopId: shopId! });
   const { data: shop } = useGetShopByIdQuery({ shopId: shopId! });
   const currency = shop?.currency ?? 'EUR';
   const groups = data ?? [];
@@ -390,7 +390,7 @@ export function OptionGroupsPage() {
       ) : isError ? (
         <div role="alert" className="flex flex-wrap items-center gap-3 rounded-2xl border border-[#f5c2bd] bg-[#fdeceb] px-4 py-3 text-sm text-[#b42318]">
           <span>{t('optionGroups.failedToLoad')}</span>
-          <MyButton variant="secondary" size="sm" onClick={() => refetch()}>
+          <MyButton variant="secondary" size="sm" isPending={isFetching} onClick={() => refetch()}>
             {t('optionGroups.retry')}
           </MyButton>
         </div>

@@ -18,6 +18,7 @@ import { EmptyNote, PageHeader, Row, Section, SideCard, SideColumn, SplitPage } 
 import { badgeClass, pillClass } from '../components/layout/pageStyles';
 import { MyButton } from '../components/ui/MyButton';
 import { MySpinner } from '../components/ui/MySpinner';
+import { PendingButton } from '../components/ui/PendingButton';
 
 export function CombosPage() {
   const { shopId } = useParams<{ shopId: string }>();
@@ -30,7 +31,7 @@ export function CombosPage() {
   const combos = useGetCombosQuery({ shopId: shopId! }, { skip: !canManage });
   const products = useGetProductsByShopQuery({ shopId: shopId!, includeUncategorized: true }, { skip: !canManage });
   const categories = useGetCategoriesByShopQuery({ shopId: shopId! }, { skip: !canManage });
-  const [updateCombo, { isLoading: switching }] = useUpdateComboMutation();
+  const [updateCombo, { isLoading: switching, originalArgs: switchingArgs }] = useUpdateComboMutation();
   const [deleteProduct, { isLoading: deleting }] = useDeleteProductMutation();
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
@@ -184,9 +185,15 @@ export function CombosPage() {
             <button type="button" className={pillClass(false)} onClick={() => setEditing(c)}>
               {t('combos.edit')}
             </button>
-            <button type="button" className={pillClass(false)} disabled={switching} onClick={() => toggle(c)}>
+            <PendingButton
+              type="button"
+              className={pillClass(false)}
+              isPending={switching && switchingArgs?.comboId === c.id}
+              disabled={switching}
+              onClick={() => toggle(c)}
+            >
               {c.isAvailable ? t('combos.switchOff') : t('combos.switchOn')}
-            </button>
+            </PendingButton>
             <button
               type="button"
               className={`${pillClass(false)} !text-[#b42318]`}
@@ -199,14 +206,14 @@ export function CombosPage() {
         {confirmingId === c.id && (
           <div className="flex flex-wrap items-center gap-3 border-b border-[#f5c2bd] bg-[#fdeceb] px-4 py-2.5">
             <span className="min-w-0 flex-1 text-sm text-[#b42318]">{t('combos.deleteConfirm', { name: c.name })}</span>
-            <button
+            <PendingButton
               type="button"
-              disabled={deleting}
+              isPending={deleting}
               onClick={() => remove(c)}
               className="h-[34px] rounded-full bg-[#b42318] px-3.5 text-[13px] font-bold text-white hover:bg-[#912018] disabled:opacity-40"
             >
               {deleting ? '…' : t('combos.delete')}
-            </button>
+            </PendingButton>
             <button type="button" className={pillClass(false)} onClick={() => setConfirmingId(null)}>
               {t('combos.cancel')}
             </button>

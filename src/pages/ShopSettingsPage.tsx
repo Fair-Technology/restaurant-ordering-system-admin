@@ -97,7 +97,7 @@ export function ShopSettingsPage() {
   const [removeShopCoverImage] = useRemoveShopCoverImageMutation();
   const [updateShop] = useUpdateShopMutation();
   const [requestShopNameChange] = useRequestShopNameChangeMutation();
-  const [cancelShopNameChange] = useRejectShopNameChangeMutation();
+  const [cancelShopNameChange, { isLoading: isCancellingNameChange }] = useRejectShopNameChangeMutation();
   const { refs } = useShopReferenceLists(shopId!);
 
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -556,7 +556,7 @@ export function ShopSettingsPage() {
                 <p className="text-sm text-[#8a5a00]">
                   {t('shops.nameChangePending', { name: shop.pendingNameChange.requestedName })}
                 </p>
-                <MyButton variant="secondary" size="sm" onClick={handleCancelNameChange}>
+                <MyButton variant="secondary" size="sm" isPending={isCancellingNameChange} onClick={handleCancelNameChange}>
                   {t('shops.nameChangeCancelRequest')}
                 </MyButton>
               </div>
@@ -579,7 +579,8 @@ export function ShopSettingsPage() {
                   <MyButton
                     size="sm"
                     onClick={handleRequestNameChange}
-                    disabled={isRequestingNameChange || nameChangeState.requestedName.trim().length < 3}
+                    isPending={isRequestingNameChange}
+                    disabled={nameChangeState.requestedName.trim().length < 3}
                   >
                     {isRequestingNameChange ? t('shops.nameChangeSubmitting') : t('shops.nameChangeSubmit')}
                   </MyButton>
@@ -604,7 +605,7 @@ export function ShopSettingsPage() {
             </div>
             {detailsError && <p className={`mt-3 ${ERROR_CLASS}`}>{detailsError}</p>}
             <div className={FOOTER_CLASS}>
-              <MyButton onClick={handleSaveDetails} disabled={isSavingDetails}>
+              <MyButton onClick={handleSaveDetails} isPending={isSavingDetails}>
                 {isSavingDetails ? t('shops.detailsSaving') : t('shops.detailsSave')}
               </MyButton>
               {detailsState && (
@@ -655,7 +656,7 @@ export function ShopSettingsPage() {
             </div>
             {addressError && <p className={`mt-3 ${ERROR_CLASS}`}>{addressError}</p>}
             <div className={FOOTER_CLASS}>
-              <MyButton onClick={handleSaveAddress} disabled={isSavingAddress}>
+              <MyButton onClick={handleSaveAddress} isPending={isSavingAddress}>
                 {isSavingAddress ? t('shops.addressSaving') : t('shops.addressSave')}
               </MyButton>
             </div>
@@ -710,7 +711,7 @@ export function ShopSettingsPage() {
                 {logoFile && <p className="text-xs text-muted">{logoFile.name}</p>}
               </div>
               <div className={FOOTER_CLASS}>
-                <MyButton type="submit" disabled={!logoFile || isUploading || isRemovingLogo}>
+                <MyButton type="submit" isPending={isUploading} disabled={!logoFile || isRemovingLogo}>
                   {isUploading ? t('shops.uploadingLogo') : t('shops.uploadLogo')}
                 </MyButton>
                 {currentLogoUrl && (
@@ -720,7 +721,8 @@ export function ShopSettingsPage() {
                     size="sm"
                     className="ml-auto flex-shrink-0"
                     onClick={handleLogoRemove}
-                    disabled={isRemovingLogo || isUploading}
+                    isPending={isRemovingLogo}
+                    disabled={isUploading}
                   >
                     {isRemovingLogo ? t('shops.removingLogo') : t('shops.removeLogo')}
                   </MyButton>
@@ -737,7 +739,7 @@ export function ShopSettingsPage() {
               </span>
               <MySwitch
                 checked={bannerShown}
-                disabled={isSavingBanner}
+                isPending={isSavingBanner}
                 onChange={handleBannerSwitch}
                 labelledBy="banner-switch-label"
                 describedBy="banner-switch-help"
@@ -787,7 +789,8 @@ export function ShopSettingsPage() {
                   size="sm"
                   className="flex-shrink-0 self-start sm:self-auto"
                   onClick={handleCoverRemove}
-                  disabled={isRemovingCover || isUploadingCover}
+                  isPending={isRemovingCover}
+                  disabled={isUploadingCover}
                 >
                   {isRemovingCover ? t('shops.removingCoverImage') : t('shops.removeCoverImage')}
                 </MyButton>
@@ -850,7 +853,7 @@ export function ShopSettingsPage() {
             )}
             {colorsError && <p className={`mt-3 ${ERROR_CLASS}`}>{colorsError}</p>}
             <div className={FOOTER_CLASS}>
-              <MyButton onClick={handleSaveColors} disabled={isSavingColors || !accentCheck?.ok}>
+              <MyButton onClick={handleSaveColors} isPending={isSavingColors} disabled={!accentCheck?.ok}>
                 {isSavingColors ? t('shops.colorsSaving') : t('shops.colorsSave')}
               </MyButton>
             </div>
@@ -884,7 +887,7 @@ export function ShopSettingsPage() {
               {t('shops.menuLanguagesHelp', { original: t(`shops.languageName.${originalLanguage}`) })}
             </p>
             <div className={FOOTER_CLASS}>
-              <MyButton onClick={handleSaveLanguages} disabled={isSavingLanguages}>
+              <MyButton onClick={handleSaveLanguages} isPending={isSavingLanguages}>
                 {isSavingLanguages ? t('shops.menuLanguagesSaving') : t('shops.menuLanguagesSave')}
               </MyButton>
             </div>
@@ -962,7 +965,7 @@ export function ShopSettingsPage() {
           </div>
           <div className="border-t border-line-soft p-4 sm:px-5">
             {hoursError && <p className={`mb-3 ${ERROR_CLASS}`}>{hoursError}</p>}
-            <MyButton onClick={handleSaveHours} disabled={isSavingHours}>
+            <MyButton onClick={handleSaveHours} isPending={isSavingHours}>
               {isSavingHours ? t('shops.ohSavingHours') : t('shops.ohSaveHours')}
             </MyButton>
           </div>

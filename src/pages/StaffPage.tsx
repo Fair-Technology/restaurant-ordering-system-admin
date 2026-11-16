@@ -16,6 +16,7 @@ import { badgeClass, pillClass } from '../components/layout/pageStyles';
 import { MyButton } from '../components/ui/MyButton';
 import { MyInput } from '../components/ui/MyInput';
 import { MySpinner } from '../components/ui/MySpinner';
+import { PendingButton } from '../components/ui/PendingButton';
 import { useToast } from '../contexts/ToastContext';
 
 function serverErrorText(err: unknown): string {
@@ -100,7 +101,7 @@ function AddStaffForm({ shopId, canGrantManager, onClose }: { shopId: string; ca
           </label>
         </div>
         <div className="flex flex-wrap gap-2">
-          <MyButton type="submit" disabled={isLoading}>
+          <MyButton type="submit" isPending={isLoading}>
             {t('staff.add')}
           </MyButton>
           {onClose && (
@@ -119,9 +120,9 @@ function AddStaffForm({ shopId, canGrantManager, onClose }: { shopId: string; ca
 function StaffRow({ acc, shopId }: { acc: StaffAccountDto; shopId: string }) {
   const { t } = useTranslation();
   const toast = useToast();
-  const [updateStaff] = useUpdateStaffMutation();
+  const [updateStaff, { isLoading: toggling }] = useUpdateStaffMutation();
   const [resetStaffPassword] = useResetStaffPasswordMutation();
-  const [deleteStaff] = useDeleteStaffMutation();
+  const [deleteStaff, { isLoading: deleting }] = useDeleteStaffMutation();
   const [error, setError] = useState<string | null>(null);
 
   const handleToggleActive = async () => {
@@ -210,16 +211,17 @@ function StaffRow({ acc, shopId }: { acc: StaffAccountDto; shopId: string }) {
           >
             {t('staff.resetPassword')}
           </button>
-          <button type="button" className={pillClass(false)} onClick={handleToggleActive}>
+          <PendingButton type="button" className={pillClass(false)} isPending={toggling} onClick={handleToggleActive}>
             {acc.isActive ? t('staff.deactivate') : t('staff.activate')}
-          </button>
-          <button
+          </PendingButton>
+          <PendingButton
             type="button"
             className="h-[34px] rounded-full border border-[#f5c2bd] bg-white px-3.5 text-[13px] font-bold whitespace-nowrap text-[#b42318] hover:bg-[#fdeceb]"
+            isPending={deleting}
             onClick={handleDelete}
           >
             {t('staff.delete')}
-          </button>
+          </PendingButton>
         </div>
       </div>
       {resetOpen && (
@@ -235,9 +237,9 @@ function StaffRow({ acc, shopId }: { acc: StaffAccountDto; shopId: string }) {
               onChange={(e) => setNewPassword(e.target.value)}
             />
           </div>
-          <button type="submit" disabled={resetting || !newPassword} className={pillClass(true)}>
+          <PendingButton type="submit" isPending={resetting} disabled={!newPassword} className={pillClass(true)}>
             {t('staff.savePassword')}
-          </button>
+          </PendingButton>
           <button type="button" className={pillClass(false)} onClick={() => setResetOpen(false)}>
             {t('common.cancel')}
           </button>

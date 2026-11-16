@@ -194,7 +194,7 @@ export function ComboEditor({ shop, shopId, combo, products, categories, onDone 
           <p className="text-sm text-muted">{t('translationFields.nothingToTranslate')}</p>
         )}
         <div className="flex flex-wrap gap-2 border-t border-line-soft pt-4">
-          <MyButton type="button" disabled={busy} onClick={submit}>
+          <MyButton type="button" isPending={busy} onClick={submit}>
             {saveLabel}
           </MyButton>
           <MyButton type="button" variant="secondary" onClick={onDone}>
@@ -330,7 +330,7 @@ export function ComboEditor({ shop, shopId, combo, products, categories, onDone 
       )}
 
       <div className="flex flex-wrap gap-2 border-t border-line-soft pt-4">
-        <MyButton type="button" disabled={busy} onClick={submit}>
+        <MyButton type="button" isPending={busy} onClick={submit}>
           {saveLabel}
         </MyButton>
         <MyButton type="button" variant="secondary" onClick={onDone}>

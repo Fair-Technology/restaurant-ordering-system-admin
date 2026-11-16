@@ -44,13 +44,17 @@ function OrderRow({ shopId, order, permissions }: OrderRowProps) {
   const [getDocument] = useLazyGetOrderDocumentQuery();
   const formatCurrency = (cents: number, currency: string) => formatCents(cents, currency, i18n.language);
   const [expanded, setExpanded] = useState(false);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const downloadDocument = async (documentId: string) => {
+    setDownloadingId(documentId);
     try {
       const file = await getDocument({ shopId, orderId: order.id, documentId }).unwrap();
       downloadBase64File(file.fileName, file.contentBase64, file.contentType);
     } catch {
       toast.error(t('orders.documentDownloadFailed'));
+    } finally {
+      setDownloadingId(null);
     }
   };
   const address = order.customerAddress;
@@ -163,7 +167,13 @@ function OrderRow({ shopId, order, permissions }: OrderRowProps) {
           {order.documents.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-2">
               {order.documents.map((doc) => (
-                <MyButton key={doc.id} variant="secondary" size="sm" onClick={() => downloadDocument(doc.id)}>
+                <MyButton
+                  key={doc.id}
+                  variant="secondary"
+                  size="sm"
+                  isPending={downloadingId === doc.id}
+                  onClick={() => downloadDocument(doc.id)}
+                >
                   {t(`orders.document.${doc.kind}`, { number: doc.number })}
                 </MyButton>
               ))}

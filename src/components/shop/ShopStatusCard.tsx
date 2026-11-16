@@ -64,9 +64,13 @@ export function ShopStatusCard({ shop, onRefetch }: Props) {
       setModal('offline');
       return;
     }
-    const result = await fetchGoLiveStatus({ shopId }).unwrap();
-    if (result.allMet) await save({ isPaused: false });
-    else setModal('criteria');
+    try {
+      const result = await fetchGoLiveStatus({ shopId }).unwrap();
+      if (result.allMet) await save({ isPaused: false });
+      else setModal('criteria');
+    } catch {
+      toast.error(t('shops.statusFailedToSave'));
+    }
   };
 
   return (
@@ -90,7 +94,8 @@ export function ShopStatusCard({ shop, onRefetch }: Props) {
         <MySwitch
           checked={online}
           onChange={changeOnline}
-          disabled={busy || !canGoOnline(shop)}
+          disabled={!canGoOnline(shop)}
+          isPending={busy}
           labelledBy="shop-online-label"
           describedBy="shop-online-help"
         />
@@ -116,7 +121,8 @@ export function ShopStatusCard({ shop, onRefetch }: Props) {
           <MySwitch
             checked={isOrdersPausedAt(shop, nowMs)}
             onChange={(next) => (next ? setModal('pauseOrders') : save({ ordersPaused: false }))}
-            disabled={busy || !canToggleOrdersPause(shop, nowMs)}
+            disabled={!canToggleOrdersPause(shop, nowMs)}
+            isPending={busy}
             labelledBy="orders-paused-label"
             describedBy="orders-paused-help"
           />
@@ -132,7 +138,8 @@ export function ShopStatusCard({ shop, onRefetch }: Props) {
             />
             <MyButton
               size="sm"
-              disabled={busy || messageState === null}
+              disabled={messageState === null}
+              isPending={busy}
               onClick={async () => {
                 if (await save({ ordersPausedMessage: cleanOrdersPausedMessage(message) }, t('shops.statusSaved'))) {
                   setMessageState(null);

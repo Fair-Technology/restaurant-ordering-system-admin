@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useDispatch } from 'react-redux';
 import { CheckCircle2 } from 'lucide-react';
 import {
   useGetShopByIdQuery,
@@ -23,7 +24,9 @@ import {
 import { planActionFor, staffCapOf } from '../features/subscription/planAction';
 import type { BillingInterval, PlanAction } from '../features/subscription/planAction';
 import { currentPlanIdOf, isFreePlan } from '../features/subscription/planDisplay';
+import { baseApi } from '../services/baseApi';
 import { MySpinner } from '../components/ui/MySpinner';
+import { PendingButton } from '../components/ui/PendingButton';
 import { PageHeader, Section } from '../components/layout/Page';
 import { badgeClass, chipClass } from '../components/layout/pageStyles';
 
@@ -176,19 +179,19 @@ function PlanCard({
           </div>
         ) : action === 'downgrade' || action === 'cancel_to_free' ? (
           isCancelPending ? null : (
-            <button
+            <PendingButton
               type="button"
-              disabled={isBusy}
+              isPending={isBusy}
               onClick={() => onChoose(plan, action)}
               className="h-10 w-full rounded-full border border-[#f5c2bd] bg-white text-sm font-bold text-[#b42318] transition-colors hover:bg-[#fdeceb] disabled:cursor-not-allowed disabled:opacity-40"
             >
               {isBusy ? t('subscription.cancellingSubscription') : `${t('subscription.downgrade')} to ${plan.name}`}
-            </button>
+            </PendingButton>
           )
         ) : (
-          <button
+          <PendingButton
             type="button"
-            disabled={isBusy}
+            isPending={isBusy}
             onClick={() => onChoose(plan, action)}
             className="h-10 w-full rounded-full bg-ink text-sm font-bold text-white transition-colors hover:bg-black disabled:cursor-not-allowed disabled:opacity-40"
           >
@@ -197,7 +200,7 @@ function PlanCard({
               : action === 'switch_interval'
                 ? `${t('subscription.billingInterval')}: ${t(interval === 'yearly' ? 'subscription.yearly' : 'subscription.monthly')}`
                 : `${t('subscription.upgrade')} to ${plan.name}`}
-          </button>
+          </PendingButton>
         )}
       </div>
     </div>
@@ -235,6 +238,7 @@ function UsageMeter({ label, used, limit, fill, unlimitedText }: { label: string
 export function SubscriptionPage() {
   const { shopId } = useParams<{ shopId: string }>();
   const { t } = useTranslation();
+  const dispatch = useDispatch();
   const [searchParams, setSearchParams] = useSearchParams();
   const [upgradeError, setUpgradeError] = useState<string | null>(null);
   const [busyPlanId, setBusyPlanId] = useState<string | null>(null);
@@ -259,7 +263,7 @@ export function SubscriptionPage() {
   const [resumeShopSubscription] = useResumeShopSubscriptionMutation();
   const [confirmSubscriptionCheckout] = useConfirmSubscriptionCheckoutMutation();
   const [cancelScheduledChange] = useCancelScheduledChangeMutation();
-  const [createBillingPortalSession] = useCreateBillingPortalSessionMutation();
+  const [createBillingPortalSession, { isLoading: isOpeningPortal }] = useCreateBillingPortalSessionMutation();
   const [retrySubscriptionPayment] = useRetrySubscriptionPaymentMutation();
   const { data: staffData } = useListStaffQuery({ shopId: shopId! }, { skip: !canManage || !canManageStaff });
 
@@ -287,7 +291,11 @@ export function SubscriptionPage() {
     confirmedSessionRef.current = sessionId;
     confirmSubscriptionCheckout({ shopId, sessionId })
       .unwrap()
-      .then(() => setPaymentConfirmed(true))
+      .then(() => {
+        // The confirm only invalidates id-specific tags, which the subscription query (providing the bare tag) ignores
+        dispatch(baseApi.util.invalidateTags(['Subscriptions']));
+        setPaymentConfirmed(true);
+      })
       .catch(() => setActionMessage({ type: 'error', text: t('subscription.upgradeError') }))
       .finally(() =>
         setSearchParams((prev) => {
@@ -297,7 +305,7 @@ export function SubscriptionPage() {
           return next;
         }),
       );
-  }, [shopId, paymentParam, sessionId, confirmSubscriptionCheckout, setSearchParams, t]);
+  }, [shopId, paymentParam, sessionId, confirmSubscriptionCheckout, dispatch, setSearchParams, t]);
 
   const isOwner = (shop?.callerPermissions ?? []).includes('manage_billing');
 
@@ -334,6 +342,8 @@ export function SubscriptionPage() {
     setActionMessage(null);
     try {
       await cancelScheduledChange({ shopId }).unwrap();
+      // Its tags are id-specific, which the subscription query (providing the bare tag) ignores
+      dispatch(baseApi.util.invalidateTags(['Subscriptions']));
     } catch {
       setActionMessage({ type: 'error', text: t('subscription.upgradeError') });
     } finally {
@@ -358,6 +368,8 @@ export function SubscriptionPage() {
     setActionMessage(null);
     try {
       await retrySubscriptionPayment({ shopId }).unwrap();
+      // Same as above: the page's subscription query would not see the paid invoice
+      dispatch(baseApi.util.invalidateTags(['Subscriptions']));
     } catch (err) {
       setActionMessage({
         type: 'error',
@@ -469,9 +481,9 @@ export function SubscriptionPage() {
             })}
           </span>
           {isOwner && (
-            <button type="button" disabled={isKeepingChange} onClick={handleKeepCurrentPlan} className={bannerBtn(false)}>
+            <PendingButton type="button" isPending={isKeepingChange} onClick={handleKeepCurrentPlan} className={bannerBtn(false)}>
               {t('subscription.keepCurrentPlan')}
-            </button>
+            </PendingButton>
           )}
         </div>
       )}
@@ -486,12 +498,12 @@ export function SubscriptionPage() {
           </span>
           {isOwner && (
             <div className="flex flex-shrink-0 gap-2">
-              <button type="button" onClick={handleUpdateCard} className={bannerBtn(false)}>
+              <PendingButton type="button" isPending={isOpeningPortal} onClick={handleUpdateCard} className={bannerBtn(false)}>
                 {t('subscription.updateCard')}
-              </button>
-              <button type="button" disabled={isPayingNow} onClick={handlePayNow} className={bannerBtn(true)}>
+              </PendingButton>
+              <PendingButton type="button" isPending={isPayingNow} onClick={handlePayNow} className={bannerBtn(true)}>
                 {t('subscription.payNow')}
-              </button>
+              </PendingButton>
             </div>
           )}
         </div>
@@ -506,9 +518,9 @@ export function SubscriptionPage() {
             })}
           </span>
           {isOwner && (
-            <button type="button" disabled={isResuming} onClick={handleResume} className={bannerBtn(false)}>
+            <PendingButton type="button" isPending={isResuming} onClick={handleResume} className={bannerBtn(false)}>
               {isResuming ? t('subscription.resuming') : t('subscription.keepPlan')}
-            </button>
+            </PendingButton>
           )}
         </div>
       )}

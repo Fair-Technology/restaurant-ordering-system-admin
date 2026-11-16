@@ -221,7 +221,7 @@ function CategoryForm({
                         {t('categories.applyTaxClassConfirm', { name: category.name, label: savedTaxLabel })}
                       </p>
                       <div className="flex flex-wrap gap-2">
-                        <MyButton type="button" size="sm" disabled={isApplying} onClick={handleApplyTaxClass}>
+                        <MyButton type="button" size="sm" isPending={isApplying} onClick={handleApplyTaxClass}>
                           {t('categories.applyTaxClassYes')}
                         </MyButton>
                         <MyButton type="button" size="sm" variant="ghost" disabled={isApplying} onClick={() => setConfirmingApply(false)}>
@@ -325,7 +325,7 @@ function CategoryForm({
           <MyButton type="button" variant="secondary" disabled={isUpdating} onClick={onCancel}>
             {t('categories.cancel')}
           </MyButton>
-          <MyButton type="submit" disabled={isUpdating || scheduleInvalid}>
+          <MyButton type="submit" isPending={isUpdating} disabled={scheduleInvalid}>
             {isUpdating ? t('categories.saving') : t('categories.saveChanges')}
           </MyButton>
         </div>
@@ -347,7 +347,8 @@ function CategoryForm({
                 <MyButton
                   type="button"
                   variant="danger"
-                  disabled={isDeleting || deleteConfirmName !== category.name}
+                  isPending={isDeleting}
+                  disabled={deleteConfirmName !== category.name}
                   onClick={handleDelete}
                 >
                   {isDeleting ? t('categories.deleting') : t('categories.confirmDelete')}

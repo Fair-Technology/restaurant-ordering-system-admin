@@ -6,6 +6,7 @@ import {
   useLazyGetGoLiveStatusQuery,
   useDisconnectStripeAccountMutation,
 } from '../../services/api';
+import { useToast } from '../../contexts/ToastContext';
 import { Section } from '../layout/Page';
 import { badgeClass } from '../layout/pageStyles';
 import { MyButton } from '../ui/MyButton';
@@ -20,6 +21,7 @@ interface Props {
 
 export function PaymentsCard({ shop, onRefetch }: Props) {
   const { t } = useTranslation();
+  const toast = useToast();
   const [modalOpen, setModalOpen] = useState(false);
   const [modalPurpose, setModalPurpose] = useState<'onboarding' | 'management'>('onboarding');
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
@@ -59,7 +61,12 @@ export function PaymentsCard({ shop, onRefetch }: Props) {
 
   const handleDisconnect = async () => {
     if (!shop.id) return;
-    await disconnectStripe({ shopId: shop.id });
+    try {
+      await disconnectStripe({ shopId: shop.id }).unwrap();
+    } catch {
+      toast.error(t('common.genericError'));
+      return;
+    }
     setConfirmDisconnect(false);
     onRefetch();
   };
@@ -146,7 +153,7 @@ export function PaymentsCard({ shop, onRefetch }: Props) {
                 variant="danger"
                 size="sm"
                 onClick={handleDisconnect}
-                disabled={isDisconnecting}
+                isPending={isDisconnecting}
               >
                 {isDisconnecting ? '…' : t('shops.paymentsDisconnectConfirmYes')}
               </MyButton>

@@ -64,7 +64,7 @@ export function PauseOrdersDialog({ shopId, onClose, onPaused }: Props) {
           <MyButton variant="secondary" size="sm" onClick={onClose} disabled={isLoading}>
             {t('common.cancel')}
           </MyButton>
-          <MyButton size="sm" onClick={handleConfirm} disabled={isLoading}>
+          <MyButton size="sm" onClick={handleConfirm} isPending={isLoading}>
             {isLoading ? t('shops.pauseOrdersBusy') : t('shops.pauseOrdersConfirm')}
           </MyButton>
         </div>

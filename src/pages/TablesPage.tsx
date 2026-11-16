@@ -6,6 +6,7 @@ import { useGetShopByIdQuery } from '../services/api';
 import { MyButton } from '../components/ui/MyButton';
 import { MyInput } from '../components/ui/MyInput';
 import { MySpinner } from '../components/ui/MySpinner';
+import { PendingButton } from '../components/ui/PendingButton';
 import { Download } from 'lucide-react';
 import { EmptyNote, PageHeader, Row, Section } from '../components/layout/Page';
 import { pillClass } from '../components/layout/pageStyles';
@@ -21,6 +22,8 @@ export function TablesPage() {
   const toast = useToast();
   const { data: shop, isLoading, isError } = useGetShopByIdQuery({ shopId: shopId! });
   const [input, setInput] = useState('');
+  // Which download is being built right now (a PDF or PNG is made in the browser, not fetched)
+  const [building, setBuilding] = useState<string | null>(null);
 
   if (isLoading) return <MySpinner />;
   if (isError || !shop) return <p className="text-[#b42318]">{t('shops.failedToLoadShop')}</p>;
@@ -43,15 +46,18 @@ export function TablesPage() {
   const slug = shop.slug ?? '';
   const shopName = shop.name ?? '';
 
-  const run = async (download: () => Promise<void>) => {
+  const run = async (download: () => Promise<void>, key?: string) => {
+    if (key) setBuilding(key);
     try {
       await download();
     } catch {
       toast.error(t('tables.downloadFailed'));
+    } finally {
+      if (key) setBuilding(null);
     }
   };
 
-  const downloadCards = (labels: string[], fileName: string) =>
+  const downloadCards = (labels: string[], fileName: string, key: string) =>
     run(async () => {
       const pdf = await buildTableCardsPdf({
         shopName,
@@ -59,13 +65,13 @@ export function TablesPage() {
         cards: labels.map((label) => ({ label, url: tableUrl(base, slug, label) })),
       });
       downloadBase64File(fileName, pdf, 'application/pdf');
-    });
+    }, key);
 
   const downloadPng = (label: string, url: string) =>
     run(async () => {
       const dataUrl = await qrPngDataUrl(url);
       downloadBase64File(`${slug}-tisch-${label}.png`, dataUrl.slice(PNG_DATA_URL_PREFIX.length), 'image/png');
-    });
+    }, `png:${label}`);
 
   const copyLink = (url: string) =>
     run(async () => {
@@ -85,8 +91,9 @@ export function TablesPage() {
             type="button"
             size="lg"
             className="gap-2"
+            isPending={building === 'all'}
             disabled={parsed.valid.length === 0}
-            onClick={() => downloadCards(parsed.valid, `${slug}-tische.pdf`)}
+            onClick={() => downloadCards(parsed.valid, `${slug}-tische.pdf`, 'all')}
           >
             <Download size={16} strokeWidth={2.4} aria-hidden="true" />
             {t('tables.downloadAll')}
@@ -132,16 +139,22 @@ export function TablesPage() {
                     <button type="button" className={pillClass(false)} onClick={() => copyLink(url)}>
                       {t('tables.copyLink')}
                     </button>
-                    <button type="button" className={pillClass(false)} onClick={() => downloadPng(label, url)}>
+                    <PendingButton
+                      type="button"
+                      className={pillClass(false)}
+                      isPending={building === `png:${label}`}
+                      onClick={() => downloadPng(label, url)}
+                    >
                       {t('tables.downloadPng')}
-                    </button>
-                    <button
+                    </PendingButton>
+                    <PendingButton
                       type="button"
                       className={pillClass(true)}
-                      onClick={() => downloadCards([label], `${slug}-tisch-${label}.pdf`)}
+                      isPending={building === `pdf:${label}`}
+                      onClick={() => downloadCards([label], `${slug}-tisch-${label}.pdf`, `pdf:${label}`)}
                     >
                       {t('tables.downloadPdf')}
-                    </button>
+                    </PendingButton>
                   </div>
                 </div>
               </Row>

@@ -1,4 +1,5 @@
 import { type ButtonHTMLAttributes } from 'react';
+import { PendingButton } from './PendingButton';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 type Size = 'sm' | 'md' | 'lg';
@@ -6,6 +7,8 @@ type Size = 'sm' | 'md' | 'lg';
 interface MyButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
   size?: Size;
+  /** A request for this button is in flight: renders the shared PendingButton */
+  isPending?: boolean;
 }
 
 // Same family as the storefront: pill buttons, near-black primary, warm hairline borders
@@ -30,11 +33,20 @@ export function MyButton({
   size = 'md',
   className = '',
   children,
+  isPending,
   ...props
 }: MyButtonProps) {
+  const composed = `${BASE} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`;
+  if (isPending) {
+    return (
+      <PendingButton isPending className={composed} {...props}>
+        {children}
+      </PendingButton>
+    );
+  }
   return (
     <button
-      className={`${BASE} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
+      className={composed}
       {...props}
     >
       {children}
