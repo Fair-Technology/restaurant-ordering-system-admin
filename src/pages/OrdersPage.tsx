@@ -125,9 +125,24 @@ function DayPicker({ label, selection, onPick }: { label: string; selection: Day
       document.removeEventListener('keydown', onKey);
     };
   }, [open]);
+  const rangeSel = typeof selection === 'object' && 'from' in selection ? selection : null;
+  const [rangeFrom, setRangeFrom] = useState(rangeSel?.from ?? '');
+  const [rangeTo, setRangeTo] = useState(rangeSel?.to ?? '');
   const choose = (day: string | null) => {
+    if (day === null || !day.includes('..')) {
+      setRangeFrom('');
+      setRangeTo('');
+    }
     onPick(day);
     setOpen(false);
+  };
+  /** Emits `YYYY-MM-DD..YYYY-MM-DD` once BOTH ends are set; the pair is sorted so a reversed pick still applies. */
+  const applyRange = (from: string, to: string) => {
+    setRangeFrom(from);
+    setRangeTo(to);
+    if (!from || !to) return;
+    const [a, b] = from <= to ? [from, to] : [to, from];
+    choose(`${a}..${b}`);
   };
   const option = (key: string, day: string | null, active: boolean) => (
     <button
@@ -156,12 +171,34 @@ function DayPicker({ label, selection, onPick }: { label: string; selection: Day
           {option('today', null, selection === 'today')}
           {option('yesterday', 'yesterday', selection === 'yesterday')}
           {option('last7', 'last7', selection === 'last7')}
+          {option('thisWeek', 'thisWeek', selection === 'thisWeek')}
+          {option('lastWeek', 'lastWeek', selection === 'lastWeek')}
+          {option('thisMonth', 'thisMonth', selection === 'thisMonth')}
+          {option('lastMonth', 'lastMonth', selection === 'lastMonth')}
           <label className="mt-1 flex flex-col gap-1 border-t border-line-soft px-3 pt-2 pb-1.5 text-[13px] text-muted">
             {t('orders.dayPicker.pickDate')}
             <input
               type="date"
-              value={typeof selection === 'object' ? selection.date : ''}
+              aria-label={t('orders.dayPicker.pickDate')}
+              value={typeof selection === 'object' && 'date' in selection ? selection.date : ''}
               onChange={(e) => e.target.value && choose(e.target.value)}
+              className="h-9 rounded-lg border border-[#e3d9ce] px-2 text-sm text-ink"
+            />
+          </label>
+          <label className="mt-1 flex flex-col gap-1 border-t border-line-soft px-3 pt-2 pb-1.5 text-[13px] text-muted">
+            {t('orders.dayPicker.customRange')}
+            <input
+              type="date"
+              aria-label={t('orders.dayPicker.rangeStart')}
+              value={rangeFrom}
+              onChange={(e) => applyRange(e.target.value, rangeTo)}
+              className="h-9 rounded-lg border border-[#e3d9ce] px-2 text-sm text-ink"
+            />
+            <input
+              type="date"
+              aria-label={t('orders.dayPicker.rangeEnd')}
+              value={rangeTo}
+              onChange={(e) => applyRange(rangeFrom, e.target.value)}
               className="h-9 rounded-lg border border-[#e3d9ce] px-2 text-sm text-ink"
             />
           </label>
@@ -252,25 +289,41 @@ export function OrdersPage() {
   );
   const dayTitle = (() => {
     if (!range) return '';
-    // The first local day of the range, rendered in the shop's zone
-    const first = new Date(new Date(range.fromIso).getTime() + 12 * 3600_000);
-    const fmt = (d: Date) =>
-      d.toLocaleDateString(i18n.language, {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long',
-        timeZone,
-      });
-    if (daySelection === 'last7') return t('orders.dayPicker.last7');
-    return fmt(first);
+    const fmt = (ms: number) =>
+      new Date(ms).toLocaleDateString(i18n.language, { weekday: 'long', day: 'numeric', month: 'long', timeZone });
+    const half = 12 * 3600_000;
+    const firstMs = Date.parse(range.fromIso) + half; // midday on the first local day
+    const lastMs = Date.parse(range.toIso) - half; // midday on the last local day (`to` is exclusive)
+    if (
+      daySelection === 'last7' ||
+      daySelection === 'thisWeek' ||
+      daySelection === 'lastWeek' ||
+      daySelection === 'thisMonth' ||
+      daySelection === 'lastMonth'
+    ) {
+      return t(`orders.dayPicker.${daySelection}`);
+    }
+    if (typeof daySelection === 'object' && 'from' in daySelection) {
+      const a = fmt(firstMs);
+      const b = fmt(lastMs);
+      return a === b ? a : `${a} – ${b}`;
+    }
+    return fmt(firstMs); // yesterday and a single picked date — unchanged formatting
   })();
   const dayLabel = isToday
     ? t('orders.dayPicker.label')
     : daySelection === 'yesterday'
       ? t('orders.dayPicker.yesterday')
-      : daySelection === 'last7'
-        ? t('orders.dayPicker.last7')
-        : dayTitle;
+      : typeof daySelection === 'string'
+        ? t(`orders.dayPicker.${daySelection}`) // last7 + the four new presets
+        : dayTitle; // custom range span, or a single picked date
+  const plainTitle =
+    daySelection === 'last7' ||
+    daySelection === 'thisWeek' ||
+    daySelection === 'lastWeek' ||
+    daySelection === 'thisMonth' ||
+    daySelection === 'lastMonth' ||
+    (typeof daySelection === 'object' && 'from' in daySelection);
 
   // What the detail column can show for the current chip
   const kind: DetailKind = !isToday ? 'history' : filter === 'upcoming' ? 'upcoming' : filter === 'history' ? 'history' : 'live';
@@ -485,7 +538,7 @@ export function OrdersPage() {
             ) : (
               <Section
                 dot="bg-[#8a7f77]"
-                title={daySelection === 'last7' ? dayTitle : t('orders.dayPicker.title', { date: dayTitle })}
+                title={plainTitle ? dayTitle : t('orders.dayPicker.title', { date: dayTitle })}
                 count={dayOrders.length}
               >
                 {dayOrders.length === 0 ? (

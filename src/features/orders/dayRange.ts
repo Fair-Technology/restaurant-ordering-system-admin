@@ -1,16 +1,37 @@
-export type DaySelection = 'today' | 'yesterday' | 'last7' | { date: string };
+export type DaySelection =
+  | 'today'
+  | 'yesterday'
+  | 'last7'
+  | 'thisWeek'
+  | 'lastWeek'
+  | 'thisMonth'
+  | 'lastMonth'
+  | { date: string }
+  | { from: string; to: string };
 
 const DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
+/** Custom range in the `?day=` param: `YYYY-MM-DD..YYYY-MM-DD`, both ends INCLUSIVE local dates. */
+const RANGE_RE = /^(\d{4}-\d{2}-\d{2})\.\.(\d{4}-\d{2}-\d{2})$/;
+const RANGE_PRESETS = ['thisWeek', 'lastWeek', 'thisMonth', 'lastMonth'];
 
-/** `?day=` → a selection. Anything unrecognised (or an impossible date) falls back to today. */
+/** True only for a real calendar date (`2026-02-30` is rejected). */
+function isRealDate(s: string): boolean {
+  const m = DATE_RE.exec(s);
+  if (!m) return false;
+  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const probe = new Date(Date.UTC(y, mo - 1, d));
+  return probe.getUTCFullYear() === y && probe.getUTCMonth() === mo - 1 && probe.getUTCDate() === d;
+}
+
+/**
+ * `?day=` → a selection. Anything unrecognised — including an impossible date or a REVERSED
+ * custom range (`from > to`) — falls back to today.
+ */
 export function parseDaySelection(raw: string | null): DaySelection {
-  if (raw === 'yesterday' || raw === 'last7') return raw;
-  const m = raw ? DATE_RE.exec(raw) : null;
-  if (m) {
-    const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
-    const probe = new Date(Date.UTC(y, mo - 1, d));
-    if (probe.getUTCFullYear() === y && probe.getUTCMonth() === mo - 1 && probe.getUTCDate() === d) return { date: raw! };
-  }
+  if (raw === 'yesterday' || raw === 'last7' || (raw !== null && RANGE_PRESETS.includes(raw))) return raw as DaySelection;
+  const rm = raw ? RANGE_RE.exec(raw) : null;
+  if (rm && isRealDate(rm[1]) && isRealDate(rm[2]) && rm[1] <= rm[2]) return { from: rm[1], to: rm[2] };
+  if (raw && isRealDate(raw)) return { date: raw };
   return 'today';
 }
 
@@ -49,26 +70,68 @@ function localDate(instant: number, timeZone: string): { y: number; m: number; d
   };
 }
 
-/** The local day(s) in `timeZone` as UTC instants: [from, to) — `to` is exclusive. */
+type LocalDate = { y: number; m: number; d: number };
+
+/** Shift a local calendar date by whole days; month/year overflow is normalised by Date.UTC. */
+function addDays(date: LocalDate, days: number): LocalDate {
+  const t = new Date(Date.UTC(date.y, date.m - 1, date.d + days));
+  return { y: t.getUTCFullYear(), m: t.getUTCMonth() + 1, d: t.getUTCDate() };
+}
+
+/** Monday of the local week containing `date` (weeks start Monday). */
+function mondayOf(date: LocalDate): LocalDate {
+  const dow = new Date(Date.UTC(date.y, date.m - 1, date.d)).getUTCDay(); // 0=Sun .. 6=Sat
+  return addDays(date, -((dow + 6) % 7));
+}
+
+/**
+ * The local day(s) in `timeZone` as UTC instants: [from, to) — `to` is EXCLUSIVE.
+ *
+ * Ranges resolve on the shop's LOCAL calendar and are then converted to UTC:
+ *  - weeks start Monday, months start on the 1st;
+ *  - `thisWeek` = this Monday → next Monday, `lastWeek` = previous Monday → this Monday;
+ *  - `thisMonth` = 1st of this month → 1st of next month, `lastMonth` = 1st of last month → 1st of this month;
+ *  - a custom range = start of the first picked local date → start of the day after the last picked date.
+ * Boundaries are local midnights, so every range is a whole number of local days and a 23h/25h DST day
+ * still counts as exactly one day.
+ */
 export function dayRange(sel: DaySelection, timeZone: string, now: Date): { fromIso: string; toIso: string } {
-  let start: { y: number; m: number; d: number };
-  let days = 1;
-  if (typeof sel === 'object') {
+  const today = localDate(now.getTime(), timeZone);
+  let from: LocalDate;
+  let to: LocalDate;
+  if (typeof sel === 'object' && 'date' in sel) {
     const [y, m, d] = sel.date.split('-').map(Number);
-    start = { y, m, d };
+    from = { y, m, d };
+    to = addDays(from, 1);
+  } else if (typeof sel === 'object') {
+    const [fy, fm, fd] = sel.from.split('-').map(Number);
+    const [ty, tm, td] = sel.to.split('-').map(Number);
+    from = { y: fy, m: fm, d: fd };
+    to = { y: ty, m: tm, d: td + 1 }; // the day after the last picked date
+  } else if (sel === 'today') {
+    from = today;
+    to = addDays(today, 1);
+  } else if (sel === 'yesterday') {
+    from = addDays(today, -1);
+    to = today;
+  } else if (sel === 'last7') {
+    from = addDays(today, -6);
+    to = addDays(today, 1);
+  } else if (sel === 'thisWeek') {
+    from = mondayOf(today);
+    to = addDays(from, 7);
+  } else if (sel === 'lastWeek') {
+    const monday = mondayOf(today);
+    from = addDays(monday, -7);
+    to = monday;
+  } else if (sel === 'thisMonth') {
+    from = { y: today.y, m: today.m, d: 1 };
+    to = { y: today.y, m: today.m + 1, d: 1 };
   } else {
-    const today = localDate(now.getTime(), timeZone);
-    if (sel === 'today') start = today;
-    else if (sel === 'yesterday') start = { ...today, d: today.d - 1 };
-    else {
-      start = { ...today, d: today.d - 6 };
-      days = 7;
-    }
+    from = { y: today.y, m: today.m - 1, d: 1 };
+    to = { y: today.y, m: today.m, d: 1 };
   }
-  const from = localMidnight(start.y, start.m, start.d, timeZone);
-  const to = localMidnight(start.y, start.m, start.d + days, timeZone);
-  return {
-    fromIso: new Date(from).toISOString(),
-    toIso: new Date(to).toISOString(),
-  };
+  const fromMs = localMidnight(from.y, from.m, from.d, timeZone);
+  const toMs = localMidnight(to.y, to.m, to.d, timeZone);
+  return { fromIso: new Date(fromMs).toISOString(), toIso: new Date(toMs).toISOString() };
 }

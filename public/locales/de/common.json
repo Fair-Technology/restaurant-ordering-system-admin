@@ -721,6 +721,13 @@
       "today": "Heute",
       "yesterday": "Gestern",
       "last7": "Letzte 7 Tage",
+      "thisWeek": "Diese Woche",
+      "lastWeek": "Letzte Woche",
+      "thisMonth": "Dieser Monat",
+      "lastMonth": "Letzter Monat",
+      "customRange": "Eigener Zeitraum …",
+      "rangeStart": "Startdatum",
+      "rangeEnd": "Enddatum",
       "pickDate": "Datum wählen …",
       "title": "Bestellungen am {{date}}"
     },
