@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { CalendarDays, Search, Volume2, VolumeX } from 'lucide-react';
@@ -10,6 +10,7 @@ import {
   ORDER_SCOPE_FILTERS,
   ORDER_STATE_FILTERS,
   itemSummary,
+  boardColumns,
   liveGroups,
   matchesOrderSearch,
   orderTiming,
@@ -18,30 +19,18 @@ import {
   type OrderFilter,
 } from '../features/orders/orderView';
 import { dayRange, parseDaySelection, type DaySelection } from '../features/orders/dayRange';
+import { useMediaQuery } from '../features/orders/mediaQuery';
 import { useLiveQueue } from '../features/orders/useLiveQueue';
 import { nextActionLabelKey, useOrderActions } from '../features/orders/useOrderActions';
 import { chargedCents } from '../features/orders/refunds';
 import { formatCents } from '../utils/money';
 import { MySpinner } from '../components/ui/MySpinner';
 import { ModeBadge, StateBadge } from '../components/orders/OrderBadges';
+import { OrderBoard } from '../components/orders/OrderBoard';
 import { OrderDetail, type DetailKind } from '../components/orders/OrderDetail';
 import { ReceiptsArchiveButton } from '../components/orders/ReceiptsArchiveButton';
 
 const HISTORY_PAGE_SIZE = 20;
-const WIDE_QUERY = '(min-width: 1280px)';
-
-/** True from Tailwind's `xl` up, where the detail column sits next to the list. */
-function useIsWide(): boolean {
-  return useSyncExternalStore(
-    (onChange) => {
-      const mql = window.matchMedia(WIDE_QUERY);
-      mql.addEventListener('change', onChange);
-      return () => mql.removeEventListener('change', onChange);
-    },
-    () => window.matchMedia(WIDE_QUERY).matches,
-    () => true,
-  );
-}
 
 const GROUP_DOT: Record<LiveGroupKey, string> = { new: 'bg-[#c2410c]', work: 'bg-ink', ready: 'bg-[#2f8a4c]' };
 
@@ -225,9 +214,10 @@ const scopeTab = (on: boolean) =>
   }`;
 
 /**
- * OrdersPage — "Bestellungen": the live queue as one list in three sections (new, in progress,
- * ready/out), with the selected order in the right column. Pre-orders and the history use the same
- * list and the same detail column.
+ * OrdersPage — "Bestellungen": the live queue as a three-column board (new, in progress, ready/out)
+ * from `lg` up, with a Board | List toggle, and as one list in three sections below that. The
+ * selected order opens in a floating panel at every width; nothing is selected until one is clicked.
+ * Pre-orders and the history always use the list and the same panel.
  */
 export function OrdersPage() {
   const { shopId } = useParams<{ shopId: string }>();
@@ -238,7 +228,8 @@ export function OrdersPage() {
   const selectedParam = searchParams.get('order');
   const [query, setQuery] = useState('');
   const [historyPage, setHistoryPage] = useState(1);
-  const wide = useIsWide();
+  const board = useMediaQuery('(min-width: 1024px)');
+  const [boardView, setBoardView] = useState<'board' | 'list'>('board');
 
   const { data: shop } = useGetShopByIdQuery({ shopId: shopId! });
   const permissions = shop?.callerPermissions ?? [];
@@ -341,8 +332,10 @@ export function OrdersPage() {
           ? historyOrders
           : dayOrders
         : groups.flatMap((g) => g.orders);
-  // On a wide screen the first order is open from the start; on smaller ones only after a tap
-  const selected = listed.find((o) => o.id === selectedParam) ?? (wide ? listed[0] : undefined);
+  // Nothing is open until an order is clicked
+  const selected = listed.find((o) => o.id === selectedParam);
+  const showBoard = board && boardView === 'board' && isToday && kind === 'live';
+  const columns = boardColumns(shown, filter);
 
   const update = (changes: Record<string, string | null>) => {
     const next = new URLSearchParams(searchParams);
@@ -434,7 +427,7 @@ export function OrdersPage() {
       pendingAccept={kind === 'live' && queue.isPendingAccept(selected)}
       slotLoad={selectedUpcoming ? slotLoadOf(data?.capacity, selectedUpcoming.scheduledFor) : null}
       outsideHours={selectedUpcoming?.outsideHours}
-      onClose={wide ? undefined : () => update({ order: null })}
+      onClose={() => update({ order: null })}
     />
   ) : null;
 
@@ -539,9 +532,46 @@ export function OrdersPage() {
               </div>
             </>
           )}
+          {board && isToday && kind === 'live' && (
+            <div
+              role="group"
+              aria-label={t('orders.live.viewLabel')}
+              className="ml-auto hidden items-center gap-0.5 rounded-full border border-[#e3d9ce] bg-white p-0.5 lg:inline-flex"
+            >
+              {(['board', 'list'] as const).map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  aria-pressed={boardView === v}
+                  onClick={() => setBoardView(v)}
+                  className={`h-8 rounded-full px-3 text-[13px] font-bold ${boardView === v ? 'bg-ink text-white' : 'text-[#4a413b] hover:bg-sand'}`}
+                >
+                  {t(`orders.live.view.${v}`)}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* The list */}
+        {/* The list, or the board for the live view at lg+ */}
+        {showBoard ? (
+          <div className="flex min-h-0 flex-1 px-4 pb-4 sm:px-7">
+            {queue.isLoading ? (
+              <MySpinner label={t('orders.queueLoading')} />
+            ) : queue.isError && !data ? (
+              <p className="text-sm text-[#b42318]">{t('orders.queueLoadError')}</p>
+            ) : (
+              <OrderBoard
+                columns={columns.map((c) => ({ ...c, title: groupText[c.key].title, empty: query ? t('orders.live.noMatch') : groupText[c.key].empty }))}
+                selectedId={selected?.id}
+                onSelect={select}
+                timeOf={liveTime}
+                moneyOf={money}
+                actionFor={rowAction}
+              />
+            )}
+          </div>
+        ) : (
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-7 sm:px-7">
           {!isToday &&
             (dayQuery.isLoading ? (
@@ -716,37 +746,22 @@ export function OrdersPage() {
               </>
             ))}
         </div>
+        )}
       </div>
 
-      {/* Detail: a column on wide screens, a sheet over the list on smaller ones */}
-      {wide ? (
-        <aside aria-label={t('orders.live.detail')} className="flex w-[452px] flex-shrink-0 flex-col border-l border-line bg-[#efebe6]">
-          <div className="flex items-center gap-2.5 px-[18px] py-3.5">
-            <span className="text-[13px] font-bold">{t('orders.live.detail')}</span>
-            <span className="text-xs text-muted">{t('orders.live.detailHint')}</span>
+      {/* Detail: a floating panel over the page at every width, opened by clicking an order */}
+      {detail && (
+        <div className="fixed inset-0 z-40 flex justify-end bg-ink/30" onClick={() => update({ order: null })}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={t('orders.live.detail')}
+            className="flex h-full w-full max-w-[452px] flex-col bg-[#efebe6] p-3"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {detail}
           </div>
-          <div className="flex min-h-0 flex-1 px-[18px] pb-[18px]">
-            {detail ?? (
-              <p className="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-[#e3d9ce] p-6 text-center text-sm text-muted">
-                {t('orders.live.nothingSelected')}
-              </p>
-            )}
-          </div>
-        </aside>
-      ) : (
-        detail && (
-          <div className="fixed inset-0 z-40 flex justify-end bg-ink/30" onClick={() => update({ order: null })}>
-            <div
-              role="dialog"
-              aria-modal="true"
-              aria-label={t('orders.live.detail')}
-              className="flex h-full w-full max-w-[452px] flex-col bg-[#efebe6] p-3"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {detail}
-            </div>
-          </div>
-        )
+        </div>
       )}
     </div>
   );

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { IntakeOrder } from '../../services/ordersApi';
 import type { OrderHistoryEntry } from '../../services/api';
-import { enteredStateAt, itemSummary, liveGroups, matchesOrderSearch, orderTiming, parseOrderFilter, ORDER_FILTERS, ORDER_SCOPE_FILTERS, ORDER_STATE_FILTERS } from './orderView';
+import { boardColumns, enteredStateAt, itemSummary, liveGroups, matchesOrderSearch, orderTiming, parseOrderFilter, ORDER_FILTERS, ORDER_SCOPE_FILTERS, ORDER_STATE_FILTERS } from './orderView';
 
 const NOW = Date.parse('2026-10-12T12:00:00Z');
 const min = (m: number) => new Date(NOW + m * 60000).toISOString();
@@ -104,6 +104,54 @@ describe('liveGroups', () => {
 
   it('shows only the chosen section', () => {
     expect(liveGroups([placed, late], 'work').map((g) => g.key)).toEqual(['work']);
+  });
+});
+
+describe('boardColumns', () => {
+  const entry = (to: 'READY' | 'OUT_FOR_DELIVERY', at: string) =>
+    ({ from: 'ACCEPTED', to, at, actor: { type: 'system' } }) as unknown as OrderHistoryEntry;
+  const ids = (cols: ReturnType<typeof boardColumns>, key: string) => cols.find((c) => c.key === key)!.orders.map((o) => o.id);
+
+  it('lists new orders oldest first', () => {
+    const input = [
+      order({ id: 'b', createdAt: min(-5) }),
+      order({ id: 'c', createdAt: min(-1) }),
+      order({ id: 'a', createdAt: min(-9) }),
+    ];
+    expect(ids(boardColumns(input, 'open'), 'new')).toEqual(['a', 'b', 'c']);
+  });
+
+  it('lists in-progress orders by due time with no due time last', () => {
+    const work = { state: 'ACCEPTED' as const, displayState: 'IN_PREPARATION' as const };
+    const input = [
+      order({ id: 'none', ...work, readyAt: null }),
+      order({ id: 'late', ...work, readyAt: min(15) }),
+      order({ id: 'soon', ...work, readyAt: min(4) }),
+    ];
+    expect(ids(boardColumns(input, 'open'), 'work')).toEqual(['soon', 'late', 'none']);
+  });
+
+  it('lists ready orders longest waiting first, unknown last in input order', () => {
+    const ready = { state: 'READY' as const, displayState: 'READY' as const };
+    const input = [
+      order({ id: 'n1', ...ready }),
+      order({ id: 'recent', ...ready, history: [entry('READY', min(-2))] }),
+      order({ id: 'n2', ...ready }),
+      order({ id: 'old', state: 'OUT_FOR_DELIVERY', displayState: 'OUT_FOR_DELIVERY', history: [entry('OUT_FOR_DELIVERY', min(-12))] }),
+    ];
+    expect(ids(boardColumns(input, 'open'), 'ready')).toEqual(['old', 'recent', 'n1', 'n2']);
+  });
+
+  it('returns all three columns for open and only the matching one otherwise', () => {
+    const input = [order({ id: 'n' }), order({ id: 'r', state: 'READY', displayState: 'READY' })];
+    expect(boardColumns(input, 'open').map((c) => c.key)).toEqual(['new', 'work', 'ready']);
+    expect(boardColumns(input, 'ready').map((c) => [c.key, c.orders.map((o) => o.id)])).toEqual([['ready', ['r']]]);
+  });
+
+  it('does not reorder the input array', () => {
+    const input = [order({ id: 'b', createdAt: min(-1) }), order({ id: 'a', createdAt: min(-9) })];
+    boardColumns(input, 'open');
+    expect(input.map((o) => o.id)).toEqual(['b', 'a']);
   });
 });
 

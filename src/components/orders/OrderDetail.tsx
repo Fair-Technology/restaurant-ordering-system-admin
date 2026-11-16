@@ -177,7 +177,7 @@ export function OrderDetail({
               type="button"
               onClick={onClose}
               aria-label={t('orders.live.closeDetail')}
-              className="-mr-1 rounded-full p-1.5 text-muted hover:bg-sand xl:hidden"
+              className="-mr-1 rounded-full p-1.5 text-muted hover:bg-sand"
             >
               <X size={18} />
             </button>
