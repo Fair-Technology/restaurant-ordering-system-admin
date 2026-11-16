@@ -541,7 +541,7 @@ export function LegalPage() {
 
   if (shop && !canManage) {
     return (
-      <div className="mx-auto w-full max-w-3xl">
+      <div>
         <PageHeader eyebrow={t('nav.group.shop')} title={t('legal.title')} />
         <Section padded>
           <p className="text-sm text-[#4a413b]">{t('legal.accessDenied')}</p>
@@ -559,7 +559,7 @@ export function LegalPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-3xl">
+    <div>
       <PageHeader eyebrow={t('nav.group.shop')} title={t('legal.title')} />
       <nav aria-label={t('legal.jumpLabel')} className="mb-3.5 flex flex-wrap items-center gap-2">
         {LEGAL_PARTS.map((part) => (
