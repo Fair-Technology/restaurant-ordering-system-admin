@@ -3,7 +3,7 @@ import { useDispatch } from 'react-redux';
 import { Link, NavLink, useNavigate, useParams } from 'react-router-dom';
 import { useMsal } from '@azure/msal-react';
 import { useTranslation } from 'react-i18next';
-import { ChevronsUpDown, LayoutDashboard, LogOut, Menu, Store, X } from 'lucide-react';
+import { ChevronsUpDown, LayoutDashboard, LogOut, Menu, PanelLeftClose, Store, X } from 'lucide-react';
 import { useGetMyShopsQuery, useGetShopByIdQuery, useUpdateShopMutation, type GetShopResultDto } from '../../services/api';
 import { useGetOrderQueueQuery } from '../../services/ordersApi';
 import { baseApi } from '../../services/baseApi';
@@ -195,7 +195,7 @@ const linkClass = (isActive: boolean) =>
  * Service / Speisekarte / Shop / Geschäft (only those the user may open), and the user at the bottom.
  * Outside a shop: overview and the shop list.
  */
-export function TopNav() {
+export function TopNav({ sidebarHidden, onToggleSidebar }: { sidebarHidden: boolean; onToggleSidebar: () => void }) {
   const { shopId } = useParams<{ shopId?: string }>();
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -314,16 +314,30 @@ export function TopNav() {
         </div>
       )}
       <nav className="flex-1 overflow-y-auto px-2.5 pb-4 pt-2.5">{navContent}</nav>
-      <div className="border-t border-line-soft px-3 py-3">{userRow}</div>
+      <div className="flex items-center gap-1 border-t border-line-soft px-3 py-3">
+        <div className="min-w-0 flex-1">{userRow}</div>
+        {/* Only the desktop panel can be hidden; below `lg` this button stays unrendered so the drawer is unchanged. */}
+        <button
+          type="button"
+          onClick={onToggleSidebar}
+          aria-label={t('nav.hideSidebar')}
+          title={t('nav.hideSidebar')}
+          className="hidden flex-shrink-0 items-center justify-center rounded-lg p-1.5 text-[#8a7f77] hover:bg-sand hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-ink lg:inline-flex"
+        >
+          <PanelLeftClose size={18} aria-hidden="true" />
+        </button>
+      </div>
     </div>
   );
 
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="sticky top-0 hidden h-screen w-[236px] flex-shrink-0 flex-col overflow-hidden border-r border-line bg-white lg:flex">
-        {sidebarContent}
-      </aside>
+      {!sidebarHidden && (
+        <aside className="sticky top-0 hidden h-screen w-[236px] flex-shrink-0 flex-col overflow-hidden border-r border-line bg-white lg:flex">
+          {sidebarContent}
+        </aside>
+      )}
 
       {/* Phones and tablets: top bar + drawer */}
       <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-line bg-white px-4 lg:hidden">

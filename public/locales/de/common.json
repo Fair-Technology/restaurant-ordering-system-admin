@@ -44,6 +44,8 @@
     "allShops": "Alle Shops",
     "openMenu": "Menü öffnen",
     "closeMenu": "Menü schließen",
+    "hideSidebar": "Seitenleiste ausblenden",
+    "showSidebar": "Seitenleiste einblenden",
     "waitingOrders": "{{count}} neue Bestellungen"
   },
   "subscription": {
