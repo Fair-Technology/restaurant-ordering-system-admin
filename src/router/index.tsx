@@ -11,6 +11,7 @@ import { EditCategoryPage } from '../pages/EditCategoryPage';
 import { TablesPage } from '../pages/TablesPage';
 import { PromotionsPage } from '../pages/PromotionsPage';
 import { ProductsPage } from '../pages/ProductsPage';
+import { OptionGroupsPage } from '../pages/OptionGroupsPage';
 import { CombosPage } from '../pages/CombosPage';
 import { OrdersPage } from '../pages/OrdersPage';
 import { ReportsPage } from '../pages/ReportsPage';
@@ -44,6 +45,7 @@ export const router = createBrowserRouter([
             children: [
               { index: true, element: <ProductsPage /> },
               { path: 'combos', element: <CombosPage /> },
+              { path: 'option-groups', element: <OptionGroupsPage /> },
               { path: 'orders', element: <OrdersPage /> },
               { path: 'reports', element: <ReportsPage /> },
               { path: 'categories', element: <CategoriesPage /> },

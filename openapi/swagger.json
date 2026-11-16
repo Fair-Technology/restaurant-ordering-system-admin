@@ -1505,6 +1505,12 @@
                       "$ref": "#/components/schemas/ProductVariantGroup"
                     }
                   },
+                  "optionGroupRefs": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
                   "addonGroups": {
                     "type": "array",
                     "items": {
@@ -6803,6 +6809,437 @@
           }
         }
       }
+    },
+    "/shops/{shopId}/option-groups": {
+      "post": {
+        "summary": "Create a shop-wide option group",
+        "operationId": "createOptionGroup",
+        "tags": [
+          "OptionGroups"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "shopId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "variant",
+                      "addon"
+                    ]
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "nameTranslations": {
+                    "$ref": "#/components/schemas/TranslationMap"
+                  },
+                  "minSelectable": {
+                    "type": "number"
+                  },
+                  "maxSelectable": {
+                    "type": "number"
+                  },
+                  "options": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/ShopOptionGroupOptionInputDto"
+                    }
+                  }
+                },
+                "required": [
+                  "kind",
+                  "name",
+                  "options"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Option group created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateOptionGroupResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      },
+      "get": {
+        "summary": "List the shop's option-group library",
+        "operationId": "getOptionGroups",
+        "tags": [
+          "OptionGroups"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "shopId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Option groups retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetOptionGroupsResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/shops/{shopId}/option-groups/{groupId}": {
+      "delete": {
+        "summary": "Delete an option group (soft delete)",
+        "operationId": "deleteOptionGroup",
+        "tags": [
+          "OptionGroups"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "shopId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Option group deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteOptionGroupResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get an option group by ID",
+        "operationId": "getOptionGroup",
+        "tags": [
+          "OptionGroups"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "shopId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Option group retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetOptionGroupResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      },
+      "put": {
+        "summary": "Replace an option group (kind is immutable)",
+        "operationId": "updateOptionGroup",
+        "tags": [
+          "OptionGroups"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "shopId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "nameTranslations": {
+                    "$ref": "#/components/schemas/TranslationMap"
+                  },
+                  "minSelectable": {
+                    "type": "number"
+                  },
+                  "maxSelectable": {
+                    "type": "number"
+                  },
+                  "options": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/ShopOptionGroupOptionInputDto"
+                    }
+                  }
+                },
+                "required": [
+                  "name",
+                  "options"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Option group updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOptionGroupResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/shops/{shopId}/option-groups/{groupId}/options/{optionId}": {
+      "patch": {
+        "summary": "Switch one option on or off everywhere it is used",
+        "operationId": "setOptionAvailability",
+        "tags": [
+          "OptionGroups"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "shopId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "optionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "isAvailable": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "isAvailable"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Option availability updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetOptionAvailabilityResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -7715,6 +8152,12 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ProductVariantGroup"
+            }
+          },
+          "optionGroupRefs": {
+            "type": "array",
+            "items": {
+              "type": "string"
             }
           },
           "addonGroups": {
@@ -10012,6 +10455,12 @@
           "isDeclared": {
             "type": "boolean"
           },
+          "optionGroupRefs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "id": {
             "type": "string"
           },
@@ -10111,6 +10560,7 @@
           "isDeleted",
           "name",
           "nameTranslations",
+          "optionGroupRefs",
           "prepMinutes",
           "price",
           "shopId",
@@ -14371,6 +14821,12 @@
           "isDeclared": {
             "type": "boolean"
           },
+          "optionGroupRefs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "id": {
             "type": "string"
           },
@@ -14420,6 +14876,7 @@
           "isDeleted",
           "name",
           "nameTranslations",
+          "optionGroupRefs",
           "prepMinutes",
           "price",
           "shopId",
@@ -14509,6 +14966,12 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ProductVariantGroup"
+            }
+          },
+          "optionGroupRefs": {
+            "type": "array",
+            "items": {
+              "type": "string"
             }
           },
           "addonGroups": {
@@ -14669,6 +15132,12 @@
           "isDeclared": {
             "type": "boolean"
           },
+          "optionGroupRefs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "id": {
             "type": "string"
           },
@@ -14768,6 +15237,7 @@
           "isDeleted",
           "name",
           "nameTranslations",
+          "optionGroupRefs",
           "prepMinutes",
           "price",
           "shopId",
@@ -14867,6 +15337,12 @@
           "isDeclared": {
             "type": "boolean"
           },
+          "optionGroupRefs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "id": {
             "type": "string"
           },
@@ -14920,6 +15396,7 @@
           "isDeleted",
           "name",
           "nameTranslations",
+          "optionGroupRefs",
           "prepMinutes",
           "price",
           "shopId",
@@ -15046,6 +15523,12 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ProductVariantGroup"
+            }
+          },
+          "optionGroupRefs": {
+            "type": "array",
+            "items": {
+              "type": "string"
             }
           },
           "addonGroups": {
@@ -17755,6 +18238,183 @@
           "maxShops"
         ],
         "additionalProperties": false
+      },
+      "ShopOptionGroupDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "shopId": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "variant",
+              "addon"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "nameTranslations": {
+            "$ref": "#/components/schemas/TranslationMap"
+          },
+          "minSelectable": {
+            "type": "number"
+          },
+          "maxSelectable": {
+            "type": "number"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ShopOptionGroupOption"
+            }
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "shopId",
+          "kind",
+          "name",
+          "nameTranslations",
+          "minSelectable",
+          "maxSelectable",
+          "options",
+          "createdAt",
+          "updatedAt"
+        ],
+        "additionalProperties": false
+      },
+      "ShopOptionGroupOption": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "nameTranslations": {
+            "$ref": "#/components/schemas/TranslationMap"
+          },
+          "priceDelta": {
+            "type": "number"
+          },
+          "isAvailable": {
+            "type": "boolean"
+          },
+          "allergenIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "additiveIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "priceDelta",
+          "isAvailable"
+        ],
+        "additionalProperties": false
+      },
+      "ShopOptionGroupOptionInputDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "nameTranslations": {
+            "$ref": "#/components/schemas/TranslationMap"
+          },
+          "priceDelta": {
+            "type": "number"
+          },
+          "isAvailable": {
+            "type": "boolean"
+          },
+          "allergenIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "additiveIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "name",
+          "priceDelta"
+        ],
+        "additionalProperties": false
+      },
+      "CreateOptionGroupResultDto": {
+        "$ref": "#/components/schemas/ShopOptionGroupDto"
+      },
+      "DeleteOptionGroupResultDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "shopId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "isDeleted": {
+            "type": "boolean"
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "shopId",
+          "name",
+          "isDeleted",
+          "updatedAt"
+        ],
+        "additionalProperties": false
+      },
+      "GetOptionGroupResultDto": {
+        "$ref": "#/components/schemas/ShopOptionGroupDto"
+      },
+      "GetOptionGroupsResultDto": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ShopOptionGroupDto"
+        }
+      },
+      "SetOptionAvailabilityResultDto": {
+        "$ref": "#/components/schemas/ShopOptionGroupDto"
+      },
+      "UpdateOptionGroupResultDto": {
+        "$ref": "#/components/schemas/ShopOptionGroupDto"
       }
     }
   }
