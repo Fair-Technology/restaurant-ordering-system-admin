@@ -3,7 +3,7 @@
     "title": "Account"
   },
   "nav": {
-    "reports": "Reports",
+    "reports": "Dashboard",
     "overview": "Overview",
     "combos": "Combos",
     "tables": "Tables & QR codes",
@@ -1196,7 +1196,7 @@
     "paymentDropped": "Payment still missing: your shop is on the free plan. Pay to restore everything at once."
   },
   "reports": {
-    "title": "Reports",
+    "title": "Dashboard",
     "accessDenied": "You can't see reports for this restaurant.",
     "presetToday": "Today",
     "presetYesterday": "Yesterday",

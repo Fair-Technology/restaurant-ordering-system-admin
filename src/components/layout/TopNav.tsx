@@ -8,7 +8,7 @@ import { useGetMyShopsQuery, useGetShopByIdQuery, useUpdateShopMutation, type Ge
 import { useGetOrderQueueQuery } from '../../services/ordersApi';
 import { baseApi } from '../../services/baseApi';
 import { useNow } from '../../features/orders/useNow';
-import { navGroups, navPath, type ShopNavKey } from '../../features/shops/shopNav';
+import { navGroups, navPath, topNavItems, type ShopNavKey } from '../../features/shops/shopNav';
 import { formatPauseEnd, isOfflineBySuperadminError, isOrdersPausedAt, shopLiveState, shopPauseOutOfDate } from '../../features/shops/shopStatus';
 import { clearStaffSession, readStaffSession } from '../../features/staff/staffSession';
 import { useToast } from '../../contexts/ToastContext';
@@ -219,6 +219,7 @@ export function TopNav({ sidebarHidden, onToggleSidebar }: { sidebarHidden: bool
   const dispatch = useDispatch();
   const { data: currentShop, fulfilledTimeStamp: shopAt } = useGetShopByIdQuery({ shopId: shopId! }, { skip: !shopId });
   const perms = currentShop?.callerPermissions ?? [];
+  const topItems = topNavItems(perms);
   const groups = navGroups(perms);
   const canSeeOrders = groups.some((g) => g.items.includes('orders'));
 
@@ -243,29 +244,32 @@ export function TopNav({ sidebarHidden, onToggleSidebar }: { sidebarHidden: bool
     setDrawerOpen(false);
   }
 
-  const labelOf = (key: string) => (key === 'products' ? t('nav.dishes') : t(`nav.${key}`));
-  const pathOf = (key: string) => navPath(shopId!, key as ShopNavKey);
+  const labelOf = (key: ShopNavKey) => (key === 'products' ? t('nav.dishes') : t(`nav.${key}`));
+  const pathOf = (key: ShopNavKey) => navPath(shopId!, key);
+
+  const renderItem = (key: ShopNavKey) => (
+    <NavLink key={key} to={pathOf(key)} end={key === 'products'} className={({ isActive }) => linkClass(isActive)}>
+      <span>{labelOf(key)}</span>
+      {key === 'orders' && waiting > 0 && (
+        <span
+          className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#b23a0c] px-1.5 text-[11px] font-bold text-white"
+          aria-label={t('nav.waitingOrders', { count: waiting })}
+        >
+          {waiting}
+        </span>
+      )}
+    </NavLink>
+  );
 
   const navContent = shopId ? (
     <div className="flex flex-col gap-3.5">
+      {topItems.length > 0 && <div className="flex flex-col gap-px">{topItems.map(renderItem)}</div>}
       {groups.map((group) => (
         <div key={group.key} className="flex flex-col gap-px">
           <div className="px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.07em] text-[#9a8f86]">
             {t(`nav.group.${group.key}`)}
           </div>
-          {group.items.map((key) => (
-            <NavLink key={key} to={pathOf(key)} end={key === 'products'} className={({ isActive }) => linkClass(isActive)}>
-              <span>{labelOf(key)}</span>
-              {key === 'orders' && waiting > 0 && (
-                <span
-                  className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#b23a0c] px-1.5 text-[11px] font-bold text-white"
-                  aria-label={t('nav.waitingOrders', { count: waiting })}
-                >
-                  {waiting}
-                </span>
-              )}
-            </NavLink>
-          ))}
+          {group.items.map(renderItem)}
         </div>
       ))}
     </div>

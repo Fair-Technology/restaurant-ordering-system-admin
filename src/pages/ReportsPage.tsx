@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Navigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Download } from 'lucide-react';
 import { useGetShopByIdQuery } from '../services/api';
 import { useGetSalesReportQuery, type SalesReportDto } from '../services/reportsApi';
 import { useGetOrderLimitQuery } from '../services/subscriptionApi';
+import { shopLandingPath } from '../features/auth/redirects';
 import { buildReportCsv, rateText, reportFileName } from '../features/reports/reportCsv';
 import { isValidRange, rangeFor, REPORT_PRESETS, todayIn, type ReportPreset } from '../features/reports/reportRange';
 import { MyButton } from '../components/ui/MyButton';
@@ -67,7 +68,8 @@ export function ReportsPage() {
   const { data: limit } = useGetOrderLimitQuery({ shopId: shopId! }, { skip: !allowed });
 
   if (!shop) return <MySpinner label={t('reports.loading')} />;
-  if (!allowed) return <p className="text-sm text-muted">{t('reports.accessDenied')}</p>;
+  // Not allowed here: land on the first page this user can open (never `reports`, so no loop)
+  if (!allowed) return <Navigate to={shopLandingPath(shopId!, shop.callerPermissions ?? [])} replace />;
 
   const choosePreset = (p: ReportPreset) => {
     setPreset(p);
@@ -114,7 +116,6 @@ export function ReportsPage() {
   return (
     <div>
       <PageHeader
-        eyebrow={t('nav.group.business')}
         title={t('reports.title')}
         actions={
           valid &&

@@ -22,7 +22,7 @@ export function StaffLoginPage() {
 
   const existingSession = readStaffSession();
   if (existingSession && existingSession.shopSlug === slug) {
-    return <Navigate to={`/shops/${existingSession.shopId}/orders`} replace />;
+    return <Navigate to={`/shops/${existingSession.shopId}/reports`} replace />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -33,7 +33,7 @@ export function StaffLoginPage() {
         staffLoginRequestDto: { shopSlug: slug ?? '', username, password },
       }).unwrap();
       startStaffSession(dispatch, result);
-      navigate(`/shops/${result.shopId}/orders`, { replace: true });
+      navigate(`/shops/${result.shopId}/reports`, { replace: true });
     } catch (err) {
       const code = (err as { data?: { error?: string } })?.data?.error;
       setError(

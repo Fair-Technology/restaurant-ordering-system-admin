@@ -1,6 +1,7 @@
 import { createBrowserRouter } from 'react-router-dom';
 import { Layout } from '../components/layout/Layout';
 import { ShopLayout } from '../components/layout/ShopLayout';
+import { ShopIndexRedirect } from '../components/layout/ShopIndexRedirect';
 import { RequireAuth } from '../components/auth/RequireAuth';
 import { LoginPage } from '../pages/LoginPage';
 import { DashboardPage } from '../pages/DashboardPage';
@@ -43,7 +44,8 @@ export const router = createBrowserRouter([
             path: '/shops/:shopId',
             element: <ShopLayout />,
             children: [
-              { index: true, element: <ProductsPage /> },
+              { index: true, element: <ShopIndexRedirect /> },
+              { path: 'products', element: <ProductsPage /> },
               { path: 'combos', element: <CombosPage /> },
               { path: 'option-groups', element: <OptionGroupsPage /> },
               { path: 'orders', element: <OrdersPage /> },
