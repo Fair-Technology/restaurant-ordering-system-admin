@@ -850,6 +850,11 @@
     "refundDiscountHint": "This order had the code {{code}}: ticked items are refunded at what the customer paid after the discount.",
     "served": "Served",
     "live": {
+      "viewLabel": "View",
+      "view": {
+        "board": "Board",
+        "list": "List"
+      },
       "openCount_one": "{{count}} open",
       "openCount_other": "{{count}} open",
       "connection": {

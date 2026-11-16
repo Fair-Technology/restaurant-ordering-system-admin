@@ -850,6 +850,11 @@
     "refundDiscountHint": "Diese Bestellung hatte den Code {{code}}: angehakte Artikel werden zu dem Betrag erstattet, den der Gast nach Rabatt bezahlt hat.",
     "served": "Serviert",
     "live": {
+      "viewLabel": "Ansicht",
+      "view": {
+        "board": "Spaltenansicht",
+        "list": "Listenansicht"
+      },
       "openCount_one": "{{count}} offen",
       "openCount_other": "{{count}} offen",
       "connection": {

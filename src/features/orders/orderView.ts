@@ -43,6 +43,37 @@ export function liveGroups(orders: IntakeOrder[], filter: OrderFilter): LiveGrou
   return all.filter((g) => g.key === filter);
 }
 
+export interface BoardColumn {
+  key: LiveGroupKey;
+  orders: IntakeOrder[];
+}
+
+/** New = oldest first; in progress = by due time (as today); ready/on the way = longest waiting first. */
+export function boardColumns(orders: IntakeOrder[], filter: OrderFilter): BoardColumn[] {
+  const { waiting, inProgress, ready } = groupQueue(orders);
+  const waitingSince = (o: IntakeOrder) => {
+    const at = enteredStateAt(o);
+    return at === null ? null : Date.parse(at);
+  };
+  const all: BoardColumn[] = [
+    { key: 'new', orders: [...waiting].sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt)) },
+    { key: 'work', orders: [...inProgress].sort((a, b) => due(a) - due(b)) },
+    {
+      key: 'ready',
+      orders: [...ready].sort((a, b) => {
+        const x = waitingSince(a);
+        const y = waitingSince(b);
+        if (x === null && y === null) return 0;
+        if (x === null) return 1;
+        if (y === null) return -1;
+        return x - y;
+      }),
+    },
+  ];
+  if (filter === 'open') return all;
+  return all.filter((c) => c.key === filter);
+}
+
 /** Search by order number (with or without #), guest name or table. */
 export function matchesOrderSearch(order: IntakeOrder, query: string): boolean {
   const q = query.trim().toLowerCase().replace(/^#/, '');
