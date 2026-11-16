@@ -731,7 +731,8 @@
       "rangeStart": "Start date",
       "rangeEnd": "End date",
       "pickDate": "Pick a date…",
-      "title": "Orders on {{date}}"
+      "title": "Orders on {{date}}",
+      "rangeCapped": "Range capped at {{months}} months"
     },
     "fullAdmin": "Full admin",
     "switchRestaurant": "Switch restaurant",
@@ -874,8 +875,7 @@
         "new": "New",
         "work": "In progress",
         "ready": "Ready",
-        "upcoming": "Pre-orders",
-        "history": "History"
+        "upcoming": "Pre-orders"
       },
       "groupNew": "New",
       "groupNewHint": "please accept",
@@ -886,7 +886,6 @@
       "emptyWork": "Nothing in progress right now.",
       "emptyReady": "Nothing waiting to be picked up.",
       "noMatch": "No order matches your search.",
-      "historyHint": "newest first",
       "rejectIn": "Rejected in {{time}}",
       "readyIn": "Ready in {{minutes}} min",
       "deliverIn": "Delivery in {{minutes}} min",

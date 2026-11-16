@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dayRange, parseDaySelection } from './dayRange';
+import { clampDayRange, dayRange, parseDaySearch, parseDaySelection } from './dayRange';
 
 const BERLIN = 'Europe/Berlin';
 const NOW = new Date('2026-11-16T12:00:00Z');
@@ -122,6 +122,43 @@ describe('dayRange', () => {
     expect(dayRange('today', BERLIN, new Date('2026-03-29T12:00:00Z'))).toEqual({
       fromIso: '2026-03-28T23:00:00.000Z',
       toIso: '2026-03-29T22:00:00.000Z',
+    });
+  });
+});
+
+describe('6-month cap', () => {
+  it('leaves short ranges and exactly 6 months alone', () => {
+    expect(clampDayRange('2026-11-01', '2026-11-15')).toEqual({ from: '2026-11-01', to: '2026-11-15', capped: false });
+    expect(clampDayRange('2026-01-15', '2026-07-15')).toEqual({ from: '2026-01-15', to: '2026-07-15', capped: false });
+  });
+  it('clamps longer ranges, keeping the end', () => {
+    expect(clampDayRange('2026-01-01', '2026-08-01')).toEqual({ from: '2026-02-01', to: '2026-08-01', capped: true });
+    expect(clampDayRange('2020-01-01', '2026-12-31')).toEqual({ from: '2026-07-01', to: '2026-12-31', capped: true });
+  });
+  it('parseDaySearch clamps hand-edited ranges and reports it', () => {
+    expect(parseDaySearch('2026-11-01..2026-11-15')).toEqual({
+      selection: { from: '2026-11-01', to: '2026-11-15' },
+      rangeCapped: false,
+    });
+    expect(parseDaySearch('2026-01-01..2026-08-01')).toEqual({
+      selection: { from: '2026-02-01', to: '2026-08-01' },
+      rangeCapped: true,
+    });
+    expect(parseDaySearch('2020-01-01..2026-12-31')).toEqual({
+      selection: { from: '2026-07-01', to: '2026-12-31' },
+      rangeCapped: true,
+    });
+    expect(parseDaySearch(null)).toEqual({ selection: 'today', rangeCapped: false });
+    expect(parseDaySelection('2020-01-01..2026-12-31')).toEqual({ from: '2026-07-01', to: '2026-12-31' });
+  });
+  it('resolves the clamped and the exactly-6-month windows to UTC', () => {
+    expect(dayRange({ from: '2026-02-01', to: '2026-08-01' }, BERLIN, NOW)).toEqual({
+      fromIso: '2026-01-31T23:00:00.000Z',
+      toIso: '2026-08-01T22:00:00.000Z',
+    });
+    expect(dayRange({ from: '2026-01-15', to: '2026-07-15' }, BERLIN, NOW)).toEqual({
+      fromIso: '2026-01-14T23:00:00.000Z',
+      toIso: '2026-07-15T22:00:00.000Z',
     });
   });
 });

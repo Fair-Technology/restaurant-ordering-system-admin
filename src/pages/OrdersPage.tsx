@@ -18,7 +18,7 @@ import {
   type LiveGroupKey,
   type OrderFilter,
 } from '../features/orders/orderView';
-import { dayRange, parseDaySelection, type DaySelection } from '../features/orders/dayRange';
+import { dayRange, clampDayRange, parseDaySearch, MAX_RANGE_MONTHS, type DaySelection } from '../features/orders/dayRange';
 import { useMediaQuery } from '../features/orders/mediaQuery';
 import { useLiveQueue } from '../features/orders/useLiveQueue';
 import { nextActionLabelKey, useOrderActions } from '../features/orders/useOrderActions';
@@ -30,7 +30,7 @@ import { OrderBoard } from '../components/orders/OrderBoard';
 import { OrderDetail, type DetailKind } from '../components/orders/OrderDetail';
 import { ReceiptsArchiveButton } from '../components/orders/ReceiptsArchiveButton';
 
-const HISTORY_PAGE_SIZE = 20;
+const DAY_PAGE_SIZE = 100;
 
 const GROUP_DOT: Record<LiveGroupKey, string> = { new: 'bg-[#c2410c]', work: 'bg-ink', ready: 'bg-[#2f8a4c]' };
 
@@ -98,7 +98,17 @@ function OrderRow({ order, selected, onSelect, time, urgent = false, money, acti
   );
 }
 
-function DayPicker({ label, selection, onPick }: { label: string; selection: DaySelection; onPick: (day: string | null) => void }) {
+function DayPicker({
+  label,
+  selection,
+  rangeCapped,
+  onPick,
+}: {
+  label: string;
+  selection: DaySelection;
+  rangeCapped: boolean;
+  onPick: (day: string | null) => void;
+}) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -124,7 +134,10 @@ function DayPicker({ label, selection, onPick }: { label: string; selection: Day
       setRangeTo('');
     }
     onPick(day);
-    setOpen(false);
+    // An over-cap range keeps the menu open so the message under the inputs is seen.
+    const parts = typeof day === 'string' && day.includes('..') ? day.split('..') : null;
+    const cappedPick = parts !== null && clampDayRange(parts[0], parts[1]).capped;
+    if (!cappedPick) setOpen(false);
   };
   /** Emits `YYYY-MM-DD..YYYY-MM-DD` once BOTH ends are set; the pair is sorted so a reversed pick still applies. */
   const applyRange = (from: string, to: string) => {
@@ -191,6 +204,11 @@ function DayPicker({ label, selection, onPick }: { label: string; selection: Day
               onChange={(e) => applyRange(rangeFrom, e.target.value)}
               className="h-9 rounded-lg border border-[#e3d9ce] px-2 text-sm text-ink"
             />
+            {rangeCapped && (
+              <p role="status" className="mt-1 text-[12px] font-semibold text-[#8a5a00]">
+                {t('orders.dayPicker.rangeCapped', { months: MAX_RANGE_MONTHS })}
+              </p>
+            )}
           </label>
         </div>
       )}
@@ -217,7 +235,7 @@ const scopeTab = (on: boolean) =>
  * OrdersPage — "Bestellungen": the live queue as a three-column board (new, in progress, ready/out)
  * from `lg` up, with a Board | List toggle, and as one list in three sections below that. The
  * selected order opens in a floating panel at every width; nothing is selected until one is clicked.
- * Pre-orders and the history always use the list and the same panel.
+ * Pre-orders and past days always use the list and the same panel.
  */
 export function OrdersPage() {
   const { shopId } = useParams<{ shopId: string }>();
@@ -227,7 +245,7 @@ export function OrdersPage() {
   const filter = parseOrderFilter(searchParams);
   const selectedParam = searchParams.get('order');
   const [query, setQuery] = useState('');
-  const [historyPage, setHistoryPage] = useState(1);
+  const [dayPage, setDayPage] = useState(1);
   const board = useMediaQuery('(min-width: 1024px)');
   const [boardView, setBoardView] = useState<'board' | 'list'>('board');
 
@@ -241,12 +259,27 @@ export function OrdersPage() {
     onFailed: () => void queue.refetch(),
   });
   const [setBusyMode, { isLoading: busySwitching }] = useSetBusyModeMutation();
-  const daySelection = parseDaySelection(searchParams.get('day'));
-  const isToday = daySelection === 'today';
-  const history = useGetOrdersByShopQuery(
-    { shopId: shopId!, page: historyPage, pageSize: HISTORY_PAGE_SIZE },
-    { skip: filter !== 'history' || !isToday },
+  // History is gone. An old `?filter=history` / `?tab=history` link lands on the last 7 days: the day
+  // the page shows is derived from the legacy param, so the FIRST render is already the dated list (no
+  // blank frame), and the effect below then rewrites the address to `?day=last7`.
+  const legacyHistoryLink = searchParams.get('filter') === 'history' || searchParams.get('tab') === 'history';
+  const { selection: daySelection, rangeCapped } = parseDaySearch(
+    searchParams.get('day') ?? (legacyHistoryLink ? 'last7' : null),
   );
+  useEffect(() => {
+    if (!legacyHistoryLink) return;
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete('filter');
+        next.delete('tab');
+        if (!next.get('day')) next.set('day', 'last7');
+        return next;
+      },
+      { replace: true },
+    );
+  }, [legacyHistoryLink, setSearchParams]);
+  const isToday = daySelection === 'today';
 
   const timeZone = data?.timezone ?? 'Europe/Berlin';
   // Computed once per selection: a ticking `now` would change the query arg and refetch constantly
@@ -258,19 +291,24 @@ export function OrdersPage() {
   const dayQuery = useGetOrdersByShopQuery(
     {
       shopId: shopId!,
-      page: 1,
-      pageSize: 100,
+      page: dayPage,
+      pageSize: DAY_PAGE_SIZE,
       from: range?.fromIso,
       to: range?.toIso,
     },
     { skip: isToday },
   );
+  // A new window starts on its first page, however it was reached (picker, preset, hand-edited URL).
+  const dayKey = JSON.stringify(daySelection);
+  useEffect(() => {
+    setDayPage(1);
+  }, [dayKey]);
   const money = (order: IntakeOrder) => formatCents(chargedCents(order), order.currency, i18n.language);
   const clock = (iso: string) => new Date(iso).toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit', timeZone });
   const prepFor = (order: IntakeOrder) => data?.defaultPrepMinutes[order.fulfilmentMode] ?? 20;
 
   // What the detail column can show for the current chip
-  const kind: DetailKind = !isToday ? 'history' : filter === 'upcoming' ? 'upcoming' : filter === 'history' ? 'history' : 'live';
+  const kind: DetailKind = !isToday ? 'history' : filter === 'upcoming' ? 'upcoming' : 'live';
   const showBoard = board && boardView === 'board' && isToday && kind === 'live';
   // On the board the columns ARE the stages, so the stage filter is ignored there: a stale
   // `?filter=new|work|ready` link must not leave the board drawn from one stage only (the pills that
@@ -282,11 +320,6 @@ export function OrdersPage() {
     () => (data?.upcoming ?? []).filter((o) => matchesOrderSearch(o, query)),
     [data?.upcoming, query],
   );
-  const historyOrders = useMemo(
-    () => ((history.data?.orders ?? []) as IntakeOrder[]).filter((o) => matchesOrderSearch(o, query)),
-    [history.data, query],
-  );
-
   const dayOrders = useMemo(
     () => ((dayQuery.data?.orders ?? []) as IntakeOrder[]).filter((o) => matchesOrderSearch(o, query)),
     [dayQuery.data, query],
@@ -333,9 +366,7 @@ export function OrdersPage() {
     kind === 'upcoming'
       ? upcomingByDay(upcoming, timeZone).flatMap((d) => d.orders)
       : kind === 'history'
-        ? isToday
-          ? historyOrders
-          : dayOrders
+        ? dayOrders
         : groups.flatMap((g) => g.orders);
   // Nothing is open until an order is clicked
   const selected = listed.find((o) => o.id === selectedParam);
@@ -351,7 +382,6 @@ export function OrdersPage() {
     setSearchParams(next, { replace: true });
   };
   const pickFilter = (f: OrderFilter) => {
-    if (f === 'history') setHistoryPage(1);
     update({ filter: f === 'open' ? null : f, order: null });
   };
   const select = (order: IntakeOrder) => update({ order: order.id });
@@ -371,7 +401,6 @@ export function OrdersPage() {
     work: liveGroups(orders, 'work')[0].orders.length,
     ready: liveGroups(orders, 'ready')[0].orders.length,
     upcoming: data?.upcoming?.length ?? null,
-    history: null,
   };
 
   const liveTime = (order: IntakeOrder): { text: string; urgent: boolean } => {
@@ -414,7 +443,8 @@ export function OrdersPage() {
     ready: { title: t('orders.live.groupReady'), hint: '', empty: t('orders.live.emptyReady') },
   };
 
-  const historyTotalPages = history.data ? Math.max(1, Math.ceil(history.data.total / HISTORY_PAGE_SIZE)) : 1;
+  const dayTotal = dayQuery.data?.total ?? dayOrders.length;
+  const dayTotalPages = Math.max(1, Math.ceil(dayTotal / DAY_PAGE_SIZE));
   const selectedUpcoming = kind === 'upcoming' && selected ? (selected as UpcomingOrder) : null;
 
   const detail = selected ? (
@@ -501,7 +531,7 @@ export function OrdersPage() {
 
         {/* Search and chips */}
         <div className="flex flex-wrap items-center gap-2 px-4 pb-3.5 sm:px-7">
-          <DayPicker label={dayLabel} selection={daySelection} onPick={(day) => update({ day, order: null })} />
+          <DayPicker label={dayLabel} selection={daySelection} rangeCapped={rangeCapped} onPick={(day) => update({ day, order: null })} />
           <label className="flex h-10 w-full items-center gap-2 rounded-[10px] border border-[#e3d9ce] bg-white px-3 sm:w-[220px]">
             <Search size={16} className="text-[#8a7f77]" aria-hidden="true" />
             <input
@@ -584,33 +614,56 @@ export function OrdersPage() {
             ) : dayQuery.isError ? (
               <p className="text-sm text-[#b42318]">{t('orders.loadError')}</p>
             ) : (
-              <Section
-                dot="bg-[#8a7f77]"
-                title={plainTitle ? dayTitle : t('orders.dayPicker.title', { date: dayTitle })}
-                count={dayOrders.length}
-              >
-                {dayOrders.length === 0 ? (
-                  <p className="p-4 text-sm text-[#8a7f77]">{query ? t('orders.live.noMatch') : t('orders.empty')}</p>
-                ) : (
-                  dayOrders.map((order) => (
-                    <OrderRow
-                      key={order.id}
-                      order={order}
-                      selected={selected?.id === order.id}
-                      onSelect={() => select(order)}
-                      time={new Date(order.createdAt).toLocaleString(i18n.language, {
-                        day: 'numeric',
-                        month: 'short',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        timeZone,
-                      })}
-                      money={money}
-                      action={<StateBadge order={order} />}
-                    />
-                  ))
+              <>
+                <ReceiptsArchiveButton
+                  shopId={shopId!}
+                  timeZone={shop?.timezone ?? 'Europe/Berlin'}
+                  callerRole={shop?.callerRole}
+                />
+                <Section
+                  dot="bg-[#8a7f77]"
+                  title={plainTitle ? dayTitle : t('orders.dayPicker.title', { date: dayTitle })}
+                  count={dayOrders.length}
+                >
+                  {dayOrders.length === 0 ? (
+                    <p className="p-4 text-sm text-[#8a7f77]">{query ? t('orders.live.noMatch') : t('orders.empty')}</p>
+                  ) : (
+                    dayOrders.map((order) => (
+                      <OrderRow
+                        key={order.id}
+                        order={order}
+                        selected={selected?.id === order.id}
+                        onSelect={() => select(order)}
+                        time={new Date(order.createdAt).toLocaleString(i18n.language, {
+                          day: 'numeric',
+                          month: 'short',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          timeZone,
+                        })}
+                        money={money}
+                        action={<StateBadge order={order} />}
+                      />
+                    ))
+                  )}
+                </Section>
+                {dayTotalPages > 1 && (
+                  <div className="flex items-center justify-between gap-3">
+                    <button type="button" className={pill(false)} disabled={dayPage === 1} onClick={() => setDayPage((p) => p - 1)}>
+                      {t('orders.previousPage')}
+                    </button>
+                    <span className="text-[13px] text-muted">{t('orders.pageInfo', { page: dayPage, total: dayTotalPages })}</span>
+                    <button
+                      type="button"
+                      className={pill(false)}
+                      disabled={dayPage >= dayTotalPages}
+                      onClick={() => setDayPage((p) => p + 1)}
+                    >
+                      {t('orders.nextPage')}
+                    </button>
+                  </div>
                 )}
-              </Section>
+              </>
             ))}
 
           {isToday &&
@@ -689,66 +742,6 @@ export function OrdersPage() {
                   })}
                 </Section>
               ))
-            ))}
-
-          {isToday &&
-            kind === 'history' &&
-            (history.isLoading ? (
-              <MySpinner label={t('orders.loading')} />
-            ) : history.isError ? (
-              <p className="text-sm text-[#b42318]">{t('orders.loadError')}</p>
-            ) : (
-              <>
-                <ReceiptsArchiveButton
-                  shopId={shopId!}
-                  timeZone={shop?.timezone ?? 'Europe/Berlin'}
-                  callerRole={shop?.callerRole}
-                />
-                <Section dot="bg-[#8a7f77]" title={t('orders.live.filter.history')} hint={t('orders.live.historyHint')}>
-                  {historyOrders.length === 0 ? (
-                    <p className="p-4 text-sm text-[#8a7f77]">{query ? t('orders.live.noMatch') : t('orders.empty')}</p>
-                  ) : (
-                    historyOrders.map((order) => (
-                      <OrderRow
-                        key={order.id}
-                        order={order}
-                        selected={selected?.id === order.id}
-                        onSelect={() => select(order)}
-                        time={new Date(order.createdAt).toLocaleString(i18n.language, {
-                          day: 'numeric',
-                          month: 'short',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                          timeZone,
-                        })}
-                        money={money}
-                        action={<StateBadge order={order} />}
-                      />
-                    ))
-                  )}
-                </Section>
-                {historyTotalPages > 1 && (
-                  <div className="flex items-center justify-between gap-3">
-                    <button type="button" className={pill(false)} disabled={historyPage === 1} onClick={() => setHistoryPage((p) => p - 1)}>
-                      {t('orders.previousPage')}
-                    </button>
-                    <span className="text-[13px] text-muted">
-                      {t('orders.pageInfo', {
-                        page: historyPage,
-                        total: historyTotalPages,
-                      })}
-                    </span>
-                    <button
-                      type="button"
-                      className={pill(false)}
-                      disabled={historyPage >= historyTotalPages}
-                      onClick={() => setHistoryPage((p) => p + 1)}
-                    >
-                      {t('orders.nextPage')}
-                    </button>
-                  </div>
-                )}
-              </>
             ))}
         </div>
         )}

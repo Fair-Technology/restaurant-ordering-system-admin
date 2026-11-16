@@ -731,7 +731,8 @@
       "rangeStart": "Startdatum",
       "rangeEnd": "Enddatum",
       "pickDate": "Datum wählen …",
-      "title": "Bestellungen am {{date}}"
+      "title": "Bestellungen am {{date}}",
+      "rangeCapped": "Zeitraum auf {{months}} Monate begrenzt"
     },
     "fullAdmin": "Volle Ansicht",
     "switchRestaurant": "Restaurant wechseln",
@@ -874,8 +875,7 @@
         "new": "Neu",
         "work": "In Arbeit",
         "ready": "Fertig",
-        "upcoming": "Vorbestellungen",
-        "history": "Verlauf"
+        "upcoming": "Vorbestellungen"
       },
       "groupNew": "Neu",
       "groupNewHint": "bitte annehmen",
@@ -886,7 +886,6 @@
       "emptyWork": "Gerade nichts in Arbeit.",
       "emptyReady": "Nichts wartet auf Abholung.",
       "noMatch": "Keine Bestellung passt zu Ihrer Suche.",
-      "historyHint": "neueste zuerst",
       "rejectIn": "Ablehnung in {{time}}",
       "readyIn": "Fertig in {{minutes}} Min.",
       "deliverIn": "Lieferung in {{minutes}} Min.",
