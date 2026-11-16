@@ -43,7 +43,7 @@ export function useLiveQueue(shopId: string) {
     [livePending],
   );
 
-  const { soundOn, turnOn, chime } = useOrderAlarm(hasWaitingOrders(orders));
+  const { soundOn, enabling: soundEnabling, turnOn, chime } = useOrderAlarm(hasWaitingOrders(orders));
   // Ids of auto-accepted orders already shown; null until the first data arrives, which only seeds it.
   const seenRef = useRef<Set<string> | null>(null);
   useEffect(() => {
@@ -68,6 +68,7 @@ export function useLiveQueue(shopId: string) {
     failAccept,
     isPendingAccept,
     soundOn,
+    soundEnabling,
     turnOn,
     wakeLock,
     connection,

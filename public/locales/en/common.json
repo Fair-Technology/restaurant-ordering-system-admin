@@ -773,6 +773,7 @@
     "queueLoadError": "Could not load live orders.",
     "offline": "Connection lost — retrying. New orders will not appear until it is back.",
     "soundOn": "Sound on",
+    "soundUnavailable": "The sound could not be turned on. Check that this browser is allowed to play sound, then try again.",
     "wakeLockUnsupported": "This browser may let the screen sleep. Set the tablet's auto-lock to Never.",
     "placedAgo": "{{minutes}} min ago",
     "notes": "Kitchen request",
