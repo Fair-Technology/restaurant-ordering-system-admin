@@ -1,9 +1,9 @@
-import { useMemo, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Search, Smartphone } from 'lucide-react';
-import { useGetOrdersByShopQuery, useGetShopByIdQuery } from '../services/api';
-import { useSetBusyModeMutation, type IntakeOrder, type UpcomingOrder } from '../services/ordersApi';
+import { CalendarDays, Search, Smartphone, Volume2, VolumeX } from 'lucide-react';
+import { useGetShopByIdQuery } from '../services/api';
+import { useGetOrdersByShopQuery, useSetBusyModeMutation, type IntakeOrder, type UpcomingOrder } from '../services/ordersApi';
 import { useToast } from '../contexts/ToastContext';
 import { formatCountdown, slotLoadOf, upcomingByDay } from '../features/orders/intake';
 import {
@@ -16,6 +16,7 @@ import {
   type LiveGroupKey,
   type OrderFilter,
 } from '../features/orders/orderView';
+import { dayRange, parseDaySelection, type DaySelection } from '../features/orders/dayRange';
 import { useLiveQueue } from '../features/orders/useLiveQueue';
 import { nextActionLabelKey, useOrderActions } from '../features/orders/useOrderActions';
 import { chargedCents } from '../features/orders/refunds';
@@ -107,6 +108,69 @@ function OrderRow({ order, selected, onSelect, time, urgent = false, money, acti
   );
 }
 
+function DayPicker({ label, selection, onPick }: { label: string; selection: DaySelection; onPick: (day: string | null) => void }) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+  const choose = (day: string | null) => {
+    onPick(day);
+    setOpen(false);
+  };
+  const option = (key: string, day: string | null, active: boolean) => (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={() => choose(day)}
+      className={`flex h-9 w-full items-center rounded-lg px-3 text-left text-sm hover:bg-sand ${active ? 'font-bold' : ''}`}
+    >
+      {t(`orders.dayPicker.${key}`)}
+    </button>
+  );
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        aria-haspopup="true"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+        className="flex h-10 items-center gap-2 rounded-[10px] border border-[#e3d9ce] bg-white px-3 text-sm whitespace-nowrap hover:bg-sand"
+      >
+        <CalendarDays size={16} className="text-[#8a7f77]" aria-hidden="true" />
+        {label}
+      </button>
+      {open && (
+        <div className="absolute left-0 z-30 mt-1.5 w-[220px] rounded-xl border border-[#e3d9ce] bg-white p-1.5 shadow-lg">
+          {option('today', null, selection === 'today')}
+          {option('yesterday', 'yesterday', selection === 'yesterday')}
+          {option('last7', 'last7', selection === 'last7')}
+          <label className="mt-1 flex flex-col gap-1 border-t border-line-soft px-3 pt-2 pb-1.5 text-[13px] text-muted">
+            {t('orders.dayPicker.pickDate')}
+            <input
+              type="date"
+              value={typeof selection === 'object' ? selection.date : ''}
+              onChange={(e) => e.target.value && choose(e.target.value)}
+              className="h-9 rounded-lg border border-[#e3d9ce] px-2 text-sm text-ink"
+            />
+          </label>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const pill = (dark: boolean) =>
   `h-[34px] rounded-full px-3.5 text-[13px] font-bold whitespace-nowrap disabled:opacity-50 ${
     dark ? 'bg-ink text-white' : 'border border-[#e3d9ce] bg-white text-ink hover:bg-sand'
@@ -143,12 +207,30 @@ export function OrdersPage() {
     onFailed: () => void queue.refetch(),
   });
   const [setBusyMode, { isLoading: busySwitching }] = useSetBusyModeMutation();
+  const daySelection = parseDaySelection(searchParams.get('day'));
+  const isToday = daySelection === 'today';
   const history = useGetOrdersByShopQuery(
     { shopId: shopId!, page: historyPage, pageSize: HISTORY_PAGE_SIZE },
-    { skip: filter !== 'history' },
+    { skip: filter !== 'history' || !isToday },
   );
 
   const timeZone = data?.timezone ?? 'Europe/Berlin';
+  // Computed once per selection: a ticking `now` would change the query arg and refetch constantly
+  const range = useMemo(
+    () => (isToday ? null : dayRange(daySelection, timeZone, new Date())),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isToday, JSON.stringify(daySelection), timeZone],
+  );
+  const dayQuery = useGetOrdersByShopQuery(
+    {
+      shopId: shopId!,
+      page: 1,
+      pageSize: 100,
+      from: range?.fromIso,
+      to: range?.toIso,
+    },
+    { skip: isToday },
+  );
   const money = (order: IntakeOrder) => formatCents(chargedCents(order), order.currency, i18n.language);
   const clock = (iso: string) => new Date(iso).toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit', timeZone });
   const prepFor = (order: IntakeOrder) => data?.defaultPrepMinutes[order.fulfilmentMode] ?? 20;
@@ -164,10 +246,42 @@ export function OrdersPage() {
     [history.data, query],
   );
 
+  const dayOrders = useMemo(
+    () => ((dayQuery.data?.orders ?? []) as IntakeOrder[]).filter((o) => matchesOrderSearch(o, query)),
+    [dayQuery.data, query],
+  );
+  const dayTitle = (() => {
+    if (!range) return '';
+    // The first local day of the range, rendered in the shop's zone
+    const first = new Date(new Date(range.fromIso).getTime() + 12 * 3600_000);
+    const fmt = (d: Date) =>
+      d.toLocaleDateString(i18n.language, {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        timeZone,
+      });
+    if (daySelection === 'last7') return t('orders.dayPicker.last7');
+    return fmt(first);
+  })();
+  const dayLabel = isToday
+    ? t('orders.dayPicker.label')
+    : daySelection === 'yesterday'
+      ? t('orders.dayPicker.yesterday')
+      : daySelection === 'last7'
+        ? t('orders.dayPicker.last7')
+        : dayTitle;
+
   // What the detail column can show for the current chip
-  const kind: DetailKind = filter === 'upcoming' ? 'upcoming' : filter === 'history' ? 'history' : 'live';
+  const kind: DetailKind = !isToday ? 'history' : filter === 'upcoming' ? 'upcoming' : filter === 'history' ? 'history' : 'live';
   const listed: IntakeOrder[] =
-    kind === 'upcoming' ? upcomingByDay(upcoming, timeZone).flatMap((d) => d.orders) : kind === 'history' ? historyOrders : groups.flatMap((g) => g.orders);
+    kind === 'upcoming'
+      ? upcomingByDay(upcoming, timeZone).flatMap((d) => d.orders)
+      : kind === 'history'
+        ? isToday
+          ? historyOrders
+          : dayOrders
+        : groups.flatMap((g) => g.orders);
   // On a wide screen the first order is open from the start; on smaller ones only after a tap
   const selected = listed.find((o) => o.id === selectedParam) ?? (wide ? listed[0] : undefined);
 
@@ -272,34 +386,27 @@ export function OrdersPage() {
         <div className="flex flex-wrap items-end justify-between gap-4 px-4 pt-[22px] pb-3.5 sm:px-7">
           <div>
             <div className="text-[13px] text-muted">{t('nav.group.service')}</div>
-            <h1 className="mt-0.5 font-display text-[30px] font-semibold">
-              {t('nav.orders')}{' '}
-              <span className="font-sans text-[15px] font-medium text-muted">{t('orders.live.openCount', { count: orders.length })}</span>
+            <h1 className="mt-0.5 flex items-center gap-2.5 font-display text-[30px] font-semibold">
+              {t('nav.orders')}
+              <span
+                title={t(`orders.live.connection.${queue.connection}`)}
+                className={`inline-block h-2.5 w-2.5 rounded-full ${
+                  queue.connection === 'connected' ? 'bg-[#2f8a4c]' : queue.connection === 'offline' ? 'bg-[#b42318]' : 'bg-[#8a7f77]'
+                }`}
+              >
+                <span className="sr-only">{t(`orders.live.connection.${queue.connection}`)}</span>
+              </span>
             </h1>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <span
-              title={t(`orders.${queue.connection}`)}
-              className={`inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-[13px] font-bold ${
-                queue.connection === 'connected'
-                  ? 'bg-[#e6f3ea] text-[#1d5a32]'
-                  : queue.connection === 'offline'
-                    ? 'bg-[#fdeceb] text-[#b42318]'
-                    : 'bg-sand text-[#4a413b]'
-              }`}
-            >
-              <span
-                className={`h-[7px] w-[7px] rounded-full ${
-                  queue.connection === 'connected' ? 'bg-[#2f8a4c]' : queue.connection === 'offline' ? 'bg-[#b42318]' : 'bg-[#8a7f77]'
-                }`}
-                aria-hidden="true"
-              />
-              {t(`orders.live.connection.${queue.connection}`)}
-            </span>
             {queue.soundOn ? (
-              <span className={chip(false)}>{t('orders.soundOn')}</span>
+              <span className={chip(false)}>
+                <Volume2 size={15} aria-hidden="true" />
+                {t('orders.soundOn')}
+              </span>
             ) : (
               <button type="button" className={`${chip(false)} border-[#f5c2bd] text-[#b42318]`} onClick={() => void queue.turnOn()}>
+                <VolumeX size={15} aria-hidden="true" />
                 {t('orders.live.soundOff')}
               </button>
             )}
@@ -325,22 +432,6 @@ export function OrdersPage() {
         </div>
 
         {/* Things the kitchen must know */}
-        {!queue.soundOn && (
-          <div
-            role="alert"
-            className="mx-4 mb-3 flex flex-wrap items-center gap-2.5 rounded-xl border border-[#f5c2bd] bg-[#fdeceb] px-3.5 py-2.5 text-sm font-semibold text-[#8f1c13] sm:mx-7"
-          >
-            <span className="h-2 w-2 rounded-full bg-[#b42318]" aria-hidden="true" />
-            {t('orders.soundOff')}
-            <button
-              type="button"
-              onClick={() => void queue.turnOn()}
-              className="ml-auto h-8 rounded-full bg-[#b42318] px-3.5 text-[13px] font-bold text-white"
-            >
-              {t('orders.enableSound')}
-            </button>
-          </div>
-        )}
         {queue.connection === 'offline' && (
           <div role="alert" className="mx-4 mb-3 rounded-xl border border-[#f5c2bd] bg-[#fdeceb] px-3.5 py-2.5 text-sm text-[#8f1c13] sm:mx-7">
             {t('orders.offline')}
@@ -361,6 +452,7 @@ export function OrdersPage() {
 
         {/* Search and chips */}
         <div className="flex flex-wrap items-center gap-2 px-4 pb-3.5 sm:px-7">
+          <DayPicker label={dayLabel} selection={daySelection} onPick={(day) => update({ day, order: null })} />
           <label className="flex h-10 w-full items-center gap-2 rounded-[10px] border border-[#e3d9ce] bg-white px-3 sm:w-[220px]">
             <Search size={16} className="text-[#8a7f77]" aria-hidden="true" />
             <input
@@ -371,19 +463,57 @@ export function OrdersPage() {
               className="min-w-0 flex-1 bg-transparent text-sm outline-none"
             />
           </label>
-          <div role="group" aria-label={t('orders.live.filters')} className="flex flex-wrap gap-2">
-            {ORDER_FILTERS.map((f) => (
-              <button key={f} type="button" aria-pressed={filter === f} className={chip(filter === f)} onClick={() => pickFilter(f)}>
-                {t(`orders.live.filter.${f}`)}
-                {counts[f] !== null && <span className="text-xs opacity-70">{counts[f]}</span>}
-              </button>
-            ))}
-          </div>
+          {isToday && (
+            <div role="group" aria-label={t('orders.live.filters')} className="flex flex-wrap gap-2">
+              {ORDER_FILTERS.map((f) => (
+                <button key={f} type="button" aria-pressed={filter === f} className={chip(filter === f)} onClick={() => pickFilter(f)}>
+                  {t(`orders.live.filter.${f}`)}
+                  {counts[f] !== null && <span className="text-xs opacity-70">{counts[f]}</span>}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* The list */}
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-7 sm:px-7">
-          {kind === 'live' &&
+          {!isToday &&
+            (dayQuery.isLoading ? (
+              <MySpinner label={t('orders.loading')} />
+            ) : dayQuery.isError ? (
+              <p className="text-sm text-[#b42318]">{t('orders.loadError')}</p>
+            ) : (
+              <Section
+                dot="bg-[#8a7f77]"
+                title={daySelection === 'last7' ? dayTitle : t('orders.dayPicker.title', { date: dayTitle })}
+                count={dayOrders.length}
+              >
+                {dayOrders.length === 0 ? (
+                  <p className="p-4 text-sm text-[#8a7f77]">{query ? t('orders.live.noMatch') : t('orders.empty')}</p>
+                ) : (
+                  dayOrders.map((order) => (
+                    <OrderRow
+                      key={order.id}
+                      order={order}
+                      selected={selected?.id === order.id}
+                      onSelect={() => select(order)}
+                      time={new Date(order.createdAt).toLocaleString(i18n.language, {
+                        day: 'numeric',
+                        month: 'short',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        timeZone,
+                      })}
+                      money={money}
+                      action={<StateBadge order={order} />}
+                    />
+                  ))
+                )}
+              </Section>
+            ))}
+
+          {isToday &&
+            kind === 'live' &&
             (queue.isLoading ? (
               <MySpinner label={t('orders.queueLoading')} />
             ) : queue.isError && !data ? (
@@ -420,7 +550,8 @@ export function OrdersPage() {
               ))
             ))}
 
-          {kind === 'upcoming' &&
+          {isToday &&
+            kind === 'upcoming' &&
             (upcoming.length === 0 ? (
               <Section dot="bg-[#8a7f77]" title={t('orders.live.filter.upcoming')}>
                 <p className="p-4 text-sm text-[#8a7f77]">{query ? t('orders.live.noMatch') : t('orders.upcomingEmpty')}</p>
@@ -446,7 +577,9 @@ export function OrdersPage() {
                         order={order}
                         selected={selected?.id === order.id}
                         onSelect={() => select(order)}
-                        time={t('orders.live.at', { time: clock(order.scheduledFor!) })}
+                        time={t('orders.live.at', {
+                          time: clock(order.scheduledFor!),
+                        })}
                         urgent={order.outsideHours || !!load?.full}
                         money={money}
                         action={<StateBadge order={order} />}
@@ -457,7 +590,8 @@ export function OrdersPage() {
               ))
             ))}
 
-          {kind === 'history' &&
+          {isToday &&
+            kind === 'history' &&
             (history.isLoading ? (
               <MySpinner label={t('orders.loading')} />
             ) : history.isError ? (
@@ -497,7 +631,12 @@ export function OrdersPage() {
                     <button type="button" className={pill(false)} disabled={historyPage === 1} onClick={() => setHistoryPage((p) => p - 1)}>
                       {t('orders.previousPage')}
                     </button>
-                    <span className="text-[13px] text-muted">{t('orders.pageInfo', { page: historyPage, total: historyTotalPages })}</span>
+                    <span className="text-[13px] text-muted">
+                      {t('orders.pageInfo', {
+                        page: historyPage,
+                        total: historyTotalPages,
+                      })}
+                    </span>
                     <button
                       type="button"
                       className={pill(false)}

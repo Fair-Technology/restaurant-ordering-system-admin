@@ -1,5 +1,5 @@
 import { api } from './api';
-import type { OrderDto } from './api';
+import type { OrderDto, GetOrdersByShopResultDto } from './api';
 
 export type RejectReason = 'too_busy' | 'item_unavailable' | 'closing_soon' | 'other' | 'no_response' | 'payment_failed' | 'shop_unavailable';
 
@@ -175,6 +175,14 @@ export const ordersApi = api.injectEndpoints({
       query: ({ shopId }) => ({ url: `/shops/${shopId}/order-queue` }),
       providesTags: (_r, _e, { shopId }) => [{ type: 'Orders' as const, id: `QUEUE-${shopId}` }],
     }),
+    // Overrides the generated endpoint to also forward the optional [from, to) day range.
+    getOrdersByShop: build.query<GetOrdersByShopResultDto, { shopId: string; page?: number; pageSize?: number; from?: string; to?: string }>({
+      query: ({ shopId, page, pageSize, from, to }) => ({
+        url: `/shops/${shopId}/orders`,
+        params: { page, pageSize, from, to },
+      }),
+      providesTags: (_r, _e, { shopId }) => ['Orders' as const, { type: 'Orders' as const, id: `LIST-${shopId}` }],
+    }),
     getInvoiceArchive: build.query<InvoiceArchiveDto, { shopId: string; month: string }>({
       query: ({ shopId, month }) => ({
         url: `/shops/${shopId}/invoices/archive`,
@@ -290,6 +298,7 @@ export const ordersApi = api.injectEndpoints({
 
 export const {
   useGetOrderQueueQuery,
+  useGetOrdersByShopQuery,
   useAcceptOrderMutation,
   useRejectOrderMutation,
   useMarkOrderReadyMutation,

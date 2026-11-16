@@ -716,6 +716,14 @@
     "removeOption": "Entfernen"
   },
   "orders": {
+    "dayPicker": {
+      "label": "Heute",
+      "today": "Heute",
+      "yesterday": "Gestern",
+      "last7": "Letzte 7 Tage",
+      "pickDate": "Datum wählen …",
+      "title": "Bestellungen am {{date}}"
+    },
     "phoneView": "Handy-Ansicht",
     "fullAdmin": "Volle Ansicht",
     "switchRestaurant": "Restaurant wechseln",
