@@ -4,7 +4,7 @@ import { groupQueue } from './intake';
 /**
  * Every value `?filter=` accepts. 'open' is the All view (the default) and must stay valid for old links.
  */
-export const ORDER_FILTERS = ['open', 'new', 'work', 'ready', 'upcoming', 'history'] as const;
+export const ORDER_FILTERS = ['open', 'new', 'work', 'ready', 'upcoming'] as const;
 export type OrderFilter = (typeof ORDER_FILTERS)[number];
 
 /** The chips in the row: the three live states. */
@@ -12,14 +12,15 @@ export const ORDER_STATE_FILTERS = ['new', 'work', 'ready'] as const;
 export type OrderStateFilter = (typeof ORDER_STATE_FILTERS)[number];
 
 /** The time-axis views: offered beside the chip row, never in it. */
-export const ORDER_SCOPE_FILTERS = ['upcoming', 'history'] as const;
+export const ORDER_SCOPE_FILTERS = ['upcoming'] as const;
 export type OrderScopeFilter = (typeof ORDER_SCOPE_FILTERS)[number];
 
-/** Reads the `?filter=` parameter; the old `?tab=history` still opens the history. */
+/** Reads the `?filter=` parameter. 'history' no longer exists, so an old link falls back to All; the
+ *  page then sends it on to `?day=last7` (see OrdersPage). */
 export function parseOrderFilter(params: URLSearchParams): OrderFilter {
   const value = params.get('filter');
   if ((ORDER_FILTERS as readonly string[]).includes(value ?? '')) return value as OrderFilter;
-  return params.get('tab') === 'history' ? 'history' : 'open';
+  return 'open';
 }
 
 export type LiveGroupKey = 'new' | 'work' | 'ready';

@@ -23,16 +23,55 @@ function isRealDate(s: string): boolean {
   return probe.getUTCFullYear() === y && probe.getUTCMonth() === mo - 1 && probe.getUTCDate() === d;
 }
 
+/** The longest window one selection may cover: a custom range is clamped to this many months. */
+export const MAX_RANGE_MONTHS = 6;
+
+/** Calendar-month shift of a `YYYY-MM-DD` local date; an overflowing day rolls forward (Date.UTC). */
+function addMonths(iso: string, months: number): string {
+  const [y, m, d] = iso.split('-').map(Number);
+  const t = new Date(Date.UTC(y, m - 1 + months, d));
+  return `${t.getUTCFullYear()}-${String(t.getUTCMonth() + 1).padStart(2, '0')}-${String(t.getUTCDate()).padStart(2, '0')}`;
+}
+
 /**
- * `?day=` → a selection. Anything unrecognised — including an impossible date or a REVERSED
- * custom range (`from > to`) — falls back to today.
+ * Clamp a custom range to MAX_RANGE_MONTHS. The END is kept and the START moves forward, so a window
+ * that is too long shows the most recent MAX_RANGE_MONTHS up to the last day picked. A window of
+ * exactly MAX_RANGE_MONTHS is allowed unchanged (`capped: false`); the test is
+ * `to <= addMonths(from, MAX_RANGE_MONTHS)`. When a day overflows a shorter month the shift can only
+ * make the window a few days SHORTER, never longer.
  */
-export function parseDaySelection(raw: string | null): DaySelection {
-  if (raw === 'yesterday' || raw === 'last7' || (raw !== null && RANGE_PRESETS.includes(raw))) return raw as DaySelection;
+export function clampDayRange(from: string, to: string): { from: string; to: string; capped: boolean } {
+  if (to <= addMonths(from, MAX_RANGE_MONTHS)) return { from, to, capped: false };
+  return { from: addMonths(to, -MAX_RANGE_MONTHS), to, capped: true };
+}
+
+export interface ParsedDaySearch {
+  selection: DaySelection;
+  /** True when a picked/edited custom range was longer than MAX_RANGE_MONTHS and had to be clamped. */
+  rangeCapped: boolean;
+}
+
+/**
+ * `?day=` → the selection the page shows, plus whether a custom range had to be clamped. Anything
+ * unrecognised — including an impossible date or a REVERSED custom range (`from > to`) — falls back to
+ * today. The CLAMP lives here, so a hand-edited URL is clamped exactly like a picked range.
+ */
+export function parseDaySearch(raw: string | null): ParsedDaySearch {
+  if (raw === 'yesterday' || raw === 'last7' || (raw !== null && RANGE_PRESETS.includes(raw))) {
+    return { selection: raw as DaySelection, rangeCapped: false };
+  }
   const rm = raw ? RANGE_RE.exec(raw) : null;
-  if (rm && isRealDate(rm[1]) && isRealDate(rm[2]) && rm[1] <= rm[2]) return { from: rm[1], to: rm[2] };
-  if (raw && isRealDate(raw)) return { date: raw };
-  return 'today';
+  if (rm && isRealDate(rm[1]) && isRealDate(rm[2]) && rm[1] <= rm[2]) {
+    const { from, to, capped } = clampDayRange(rm[1], rm[2]);
+    return { selection: { from, to }, rangeCapped: capped };
+  }
+  if (raw && isRealDate(raw)) return { selection: { date: raw }, rangeCapped: false };
+  return { selection: 'today', rangeCapped: false };
+}
+
+/** `?day=` → a selection (the clamped one). Kept for callers/tests that do not need the cap flag. */
+export function parseDaySelection(raw: string | null): DaySelection {
+  return parseDaySearch(raw).selection;
 }
 
 /** Offset (ms) of `timeZone` from UTC at the given instant. */

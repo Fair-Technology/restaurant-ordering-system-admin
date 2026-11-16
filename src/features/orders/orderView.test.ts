@@ -55,8 +55,9 @@ describe('parseOrderFilter', () => {
     expect(parseOrderFilter(new URLSearchParams('filter=nonsense'))).toBe('open');
   });
 
-  it('keeps old links to the history working', () => {
-    expect(parseOrderFilter(new URLSearchParams('tab=history'))).toBe('history');
+  it('no longer knows History: old links fall back to All (the page redirects them to ?day=last7)', () => {
+    expect(parseOrderFilter(new URLSearchParams('filter=history'))).toBe('open');
+    expect(parseOrderFilter(new URLSearchParams('tab=history'))).toBe('open');
   });
 });
 
@@ -69,7 +70,7 @@ describe('order filter groupings', () => {
   });
 
   it('keeps All and the scopes out of the state chips', () => {
-    for (const f of ['open', 'upcoming', 'history']) {
+    for (const f of ['open', 'upcoming']) {
       expect((ORDER_STATE_FILTERS as readonly string[]).includes(f)).toBe(false);
     }
   });
