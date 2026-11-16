@@ -773,6 +773,7 @@
     "queueLoadError": "Live-Bestellungen konnten nicht geladen werden.",
     "offline": "Verbindung unterbrochen – neuer Versuch läuft. Neue Bestellungen erscheinen erst danach.",
     "soundOn": "Ton an",
+    "soundUnavailable": "Der Ton konnte nicht eingeschaltet werden. Prüfen Sie, ob dieser Browser Ton abspielen darf, und versuchen Sie es erneut.",
     "wakeLockUnsupported": "Dieser Browser kann den Bildschirm ausschalten. Stellen Sie die automatische Sperre des Tablets auf „Nie“.",
     "placedAgo": "vor {{minutes}} Min.",
     "notes": "Küchenwunsch",

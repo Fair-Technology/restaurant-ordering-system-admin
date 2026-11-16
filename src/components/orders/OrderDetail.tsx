@@ -10,6 +10,7 @@ import { canRefund, chargedCents } from '../../features/orders/refunds';
 import { downloadBase64File } from '../../features/files/downloadBase64';
 import { useToast } from '../../contexts/ToastContext';
 import { formatCents } from '../../utils/money';
+import { PendingButton } from '../ui/PendingButton';
 import { ModeBadge, StateBadge } from './OrderBadges';
 import { RefundPanel } from './RefundPanel';
 import { SoldOutTodayButton } from '../menu/SoldOutTodayButton';
@@ -336,16 +337,15 @@ export function OrderDetail({
         {live && order.state === 'PLACED' && actions && !rejecting && (
           <div className="flex flex-col gap-2.5">
             {order.scheduledFor ? (
-              <button
-                type="button"
-                disabled={working}
+              <PendingButton
+                isPending={working}
                 onClick={() => void actions.accept(order, defaultPrepMinutes)}
                 className="h-12 rounded-full bg-ink text-[15px] font-bold text-white disabled:opacity-50"
               >
                 {t('orders.acceptScheduled', {
                   time: time(new Date(scheduledReadyMs(order.scheduledFor, nowMs, defaultPrepMinutes)).toISOString()),
                 })}
-              </button>
+              </PendingButton>
             ) : (
               <>
                 <span className="text-[13px] font-semibold text-[#4a413b]">{t('orders.live.readyInLabel')}</span>
@@ -368,14 +368,13 @@ export function OrderDetail({
                 {t('orders.reject')}
               </button>
               {!order.scheduledFor && (
-                <button
-                  type="button"
-                  disabled={working}
+                <PendingButton
+                  isPending={working}
                   onClick={() => void actions.accept(order, prep)}
                   className="h-12 flex-1 rounded-full bg-ink text-[15px] font-bold text-white disabled:opacity-50"
                 >
                   {t('orders.live.acceptReadyIn', { minutes: prep })}
-                </button>
+                </PendingButton>
               )}
             </div>
           </div>
@@ -405,28 +404,27 @@ export function OrderDetail({
                   {t('orders.cancel')}
                 </button>
               )}
-              <button
-                type="button"
-                disabled={!reason || working}
+              <PendingButton
+                isPending={working}
+                disabled={!reason}
                 onClick={() => void confirmReject()}
                 className="h-12 flex-1 rounded-full bg-[#b42318] text-[15px] font-bold text-white disabled:opacity-40"
               >
                 {t('orders.live.rejectOrder')}
-              </button>
+              </PendingButton>
             </div>
           </div>
         )}
 
         {pendingAccept && <p className="text-[13px] text-muted">{t('orders.acceptPending')}</p>}
         {nextKey && actions && (
-          <button
-            type="button"
-            disabled={working || pendingAccept}
+          <PendingButton
+            isPending={working || pendingAccept}
             onClick={() => void actions.advance(order)}
             className="h-12 rounded-full bg-ink text-[15px] font-bold text-white disabled:opacity-50"
           >
             {t(nextKey)}
-          </button>
+          </PendingButton>
         )}
 
         {(order.documents.length > 0 || order.customerPhone) && (

@@ -19,10 +19,12 @@ interface Options {
   onAcceptFailed: (orderId: string) => void;
   /** Something failed: reload the queue, the order may have changed meanwhile */
   onFailed: () => void;
+  /** A request succeeded: refresh the queue now so the card moves at once */
+  onSucceeded?: () => Promise<unknown> | void;
 }
 
 /** The kitchen's buttons for an order: accept, reject and the next step (ready, out, handed over). */
-export function useOrderActions(shopId: string, { onAcceptStart, onAcceptFailed, onFailed }: Options) {
+export function useOrderActions(shopId: string, { onAcceptStart, onAcceptFailed, onFailed, onSucceeded }: Options) {
   const { t } = useTranslation();
   const toast = useToast();
   const [acceptOrder] = useAcceptOrderMutation();
@@ -37,6 +39,14 @@ export function useOrderActions(shopId: string, { onAcceptStart, onAcceptFailed,
     setWorking((s) => new Set(s).add(orderId));
     try {
       await action();
+      // The card must leave its column the moment the request lands, not on the next 10 s poll.
+      // A failed refresh is not a failed action: the order did change, so the toast must stay quiet
+      // and the queue's own poll is the backstop.
+      try {
+        await onSucceeded?.();
+      } catch {
+        // keep the queue's last state; the poll catches up
+      }
       return true;
     } catch (error) {
       toast.error(t(isPaymentConfigConflict(error) ? 'orders.paymentConfigUnavailable' : 'orders.actionFailed'));
@@ -49,7 +59,7 @@ export function useOrderActions(shopId: string, { onAcceptStart, onAcceptFailed,
         return next;
       });
     }
-  }, [onFailed, t, toast]);
+  }, [onFailed, onSucceeded, t, toast]);
 
   const accept = useCallback(
     async (order: IntakeOrder, prepMinutes: number) => {

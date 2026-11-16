@@ -25,6 +25,7 @@ import { nextActionLabelKey, useOrderActions } from '../features/orders/useOrder
 import { chargedCents } from '../features/orders/refunds';
 import { formatCents } from '../utils/money';
 import { MySpinner } from '../components/ui/MySpinner';
+import { PendingButton } from '../components/ui/PendingButton';
 import { ModeBadge, StateBadge } from '../components/orders/OrderBadges';
 import { OrderBoard } from '../components/orders/OrderBoard';
 import { OrderDetail, type DetailKind } from '../components/orders/OrderDetail';
@@ -222,7 +223,7 @@ const pill = (dark: boolean) =>
   }`;
 
 const chip = (on: boolean) =>
-  `inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-[13px] font-semibold transition-colors ${
+  `inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-[13px] font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
     on ? 'border-ink bg-ink text-white' : 'border-[#e3d9ce] bg-white text-[#4a413b] hover:bg-sand'
   }`;
 
@@ -257,6 +258,7 @@ export function OrdersPage() {
     onAcceptStart: queue.startAccept,
     onAcceptFailed: queue.failAccept,
     onFailed: () => void queue.refetch(),
+    onSucceeded: () => queue.refetch(),
   });
   const [setBusyMode, { isLoading: busySwitching }] = useSetBusyModeMutation();
   // History is gone. An old `?filter=history` / `?tab=history` link lands on the last 7 days: the day
@@ -395,6 +397,11 @@ export function OrdersPage() {
     }
   };
 
+  const turnSoundOn = async () => {
+    // A blocked audio unlock is a real outcome, not a no-op: say so instead of doing nothing.
+    if (!(await queue.turnOn())) toast.error(t('orders.soundUnavailable'));
+  };
+
   const counts: Record<OrderFilter, number | null> = {
     open: orders.length,
     new: liveGroups(orders, 'new')[0].orders.length,
@@ -423,17 +430,17 @@ export function OrdersPage() {
     };
     if (order.state === 'PLACED') {
       return (
-        <button type="button" className={pill(true)} disabled={working} onClick={stop(() => void actions.accept(order, prepFor(order)))}>
+        <PendingButton isPending={working} className={pill(true)} onClick={stop(() => void actions.accept(order, prepFor(order)))}>
           {t('orders.accept')}
-        </button>
+        </PendingButton>
       );
     }
     const key = nextActionLabelKey(order);
     if (!key) return null;
     return (
-      <button type="button" className={pill(false)} disabled={working} onClick={stop(() => void actions.advance(order))}>
+      <PendingButton isPending={working} className={pill(false)} onClick={stop(() => void actions.advance(order))}>
         {t(key)}
-      </button>
+      </PendingButton>
     );
   };
 
@@ -491,21 +498,24 @@ export function OrdersPage() {
                 {t('orders.soundOn')}
               </span>
             ) : (
-              <button type="button" className={`${chip(false)} border-[#f5c2bd] text-[#b42318]`} onClick={() => void queue.turnOn()}>
+              <PendingButton
+                isPending={queue.soundEnabling}
+                className={`${chip(false)} border-[#f5c2bd] text-[#b42318]`}
+                onClick={() => void turnSoundOn()}
+              >
                 <VolumeX size={15} aria-hidden="true" />
                 {t('orders.live.soundOff')}
-              </button>
+              </PendingButton>
             )}
             {data?.busy && (
-              <button
-                type="button"
+              <PendingButton
+                isPending={busySwitching}
                 aria-pressed={data.busy.active}
-                disabled={busySwitching}
                 className={chip(data.busy.active)}
                 onClick={() => void toggleBusy()}
               >
                 {data.busy.active ? t('orders.live.busyOn', { minutes: data.busy.extraMinutes }) : t('orders.live.busy')}
-              </button>
+              </PendingButton>
             )}
           </div>
         </div>
