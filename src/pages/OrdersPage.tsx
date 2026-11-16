@@ -269,8 +269,15 @@ export function OrdersPage() {
   const clock = (iso: string) => new Date(iso).toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit', timeZone });
   const prepFor = (order: IntakeOrder) => data?.defaultPrepMinutes[order.fulfilmentMode] ?? 20;
 
+  // What the detail column can show for the current chip
+  const kind: DetailKind = !isToday ? 'history' : filter === 'upcoming' ? 'upcoming' : filter === 'history' ? 'history' : 'live';
+  const showBoard = board && boardView === 'board' && isToday && kind === 'live';
+  // On the board the columns ARE the stages, so the stage filter is ignored there: a stale
+  // `?filter=new|work|ready` link must not leave the board drawn from one stage only (the pills that
+  // would clear it are not rendered while the board shows), and a card in any column must still open.
+  const stageFilter: OrderFilter = showBoard ? 'open' : filter;
   const shown = useMemo(() => orders.filter((o) => matchesOrderSearch(o, query)), [orders, query]);
-  const groups = liveGroups(shown, filter);
+  const groups = liveGroups(shown, stageFilter);
   const upcoming: UpcomingOrder[] = useMemo(
     () => (data?.upcoming ?? []).filter((o) => matchesOrderSearch(o, query)),
     [data?.upcoming, query],
@@ -322,8 +329,6 @@ export function OrdersPage() {
     daySelection === 'lastMonth' ||
     (typeof daySelection === 'object' && 'from' in daySelection);
 
-  // What the detail column can show for the current chip
-  const kind: DetailKind = !isToday ? 'history' : filter === 'upcoming' ? 'upcoming' : filter === 'history' ? 'history' : 'live';
   const listed: IntakeOrder[] =
     kind === 'upcoming'
       ? upcomingByDay(upcoming, timeZone).flatMap((d) => d.orders)
@@ -334,8 +339,7 @@ export function OrdersPage() {
         : groups.flatMap((g) => g.orders);
   // Nothing is open until an order is clicked
   const selected = listed.find((o) => o.id === selectedParam);
-  const showBoard = board && boardView === 'board' && isToday && kind === 'live';
-  const columns = boardColumns(shown, filter);
+  const columns = boardColumns(shown);
 
   const update = (changes: Record<string, string | null>) => {
     const next = new URLSearchParams(searchParams);
@@ -511,15 +515,16 @@ export function OrdersPage() {
           {isToday && (
             <>
               <div role="group" aria-label={t('orders.live.filters')} className="flex flex-wrap gap-2">
-                <button type="button" aria-pressed={filter === 'open'} className={chip(filter === 'open')} onClick={() => pickFilter('open')}>
+                <button type="button" aria-pressed={stageFilter === 'open'} className={chip(stageFilter === 'open')} onClick={() => pickFilter('open')}>
                   {t('orders.live.filter.open')}
                 </button>
-                {ORDER_STATE_FILTERS.map((f) => (
-                  <button key={f} type="button" aria-pressed={filter === f} className={chip(filter === f)} onClick={() => pickFilter(f)}>
-                    {t(`orders.live.filter.${f}`)}
-                    {counts[f] !== null && <span className="text-xs opacity-70">{counts[f]}</span>}
-                  </button>
-                ))}
+                {!showBoard &&
+                  ORDER_STATE_FILTERS.map((f) => (
+                    <button key={f} type="button" aria-pressed={filter === f} className={chip(filter === f)} onClick={() => pickFilter(f)}>
+                      {t(`orders.live.filter.${f}`)}
+                      {counts[f] !== null && <span className="text-xs opacity-70">{counts[f]}</span>}
+                    </button>
+                  ))}
               </div>
               <span className="h-6 w-px bg-[#e3d9ce]" aria-hidden="true" />
               <div role="group" aria-label={t('orders.live.views')} className="flex items-center gap-1">

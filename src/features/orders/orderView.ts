@@ -48,15 +48,28 @@ export interface BoardColumn {
   orders: IntakeOrder[];
 }
 
-/** New = oldest first; in progress = by due time (as today); ready/on the way = longest waiting first. */
-export function boardColumns(orders: IntakeOrder[], filter: OrderFilter): BoardColumn[] {
+/**
+ * The board's columns, in the default order.
+ *
+ * The board IS the stage view, so it never narrows to one stage: a leftover `?filter=new|work|ready`
+ * link from the list is ignored, and every order in `orders` is grouped by stage.
+ *
+ * `new` is dropped while it is empty — an empty New column is dead width, and a new order must never
+ * arrive into a narrower board than the one the staffer is looking at. `work` and `ready` are always
+ * drawn, because an empty "In progress" is itself information.
+ */
+export function boardColumns(orders: IntakeOrder[]): BoardColumn[] {
   const { waiting, inProgress, ready } = groupQueue(orders);
   const waitingSince = (o: IntakeOrder) => {
     const at = enteredStateAt(o);
     return at === null ? null : Date.parse(at);
   };
-  const all: BoardColumn[] = [
-    { key: 'new', orders: [...waiting].sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt)) },
+  const newColumn: BoardColumn = {
+    key: 'new',
+    orders: [...waiting].sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt)),
+  };
+  return [
+    ...(newColumn.orders.length > 0 ? [newColumn] : []),
     { key: 'work', orders: [...inProgress].sort((a, b) => due(a) - due(b)) },
     {
       key: 'ready',
@@ -70,8 +83,6 @@ export function boardColumns(orders: IntakeOrder[], filter: OrderFilter): BoardC
       }),
     },
   ];
-  if (filter === 'open') return all;
-  return all.filter((c) => c.key === filter);
 }
 
 /** Search by order number (with or without #), guest name or table. */
