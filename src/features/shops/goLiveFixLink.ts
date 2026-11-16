@@ -3,7 +3,7 @@ export function goLiveFixLink(shopId: string, key: string): string {
     case 'stripe_connected':
       return `/shops/${shopId}/settings#payments`;
     case 'has_products':
-      return `/shops/${shopId}`;
+      return `/shops/${shopId}/products`;
     case 'has_categories':
       return `/shops/${shopId}/categories`;
     case 'dpa_accepted':

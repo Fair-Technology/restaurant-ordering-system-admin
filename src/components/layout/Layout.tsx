@@ -13,7 +13,7 @@ import { readSidebarHidden, writeSidebarHidden } from '../../features/layout/sid
  */
 export function Layout() {
   // Pages with a list and a column on the right (they lay themselves out with SplitPage)
-  const dishes = useMatch('/shops/:shopId');
+  const dishes = useMatch('/shops/:shopId/products');
   const orders = useMatch('/shops/:shopId/orders');
   const combos = useMatch('/shops/:shopId/combos');
   const categories = useMatch('/shops/:shopId/categories');

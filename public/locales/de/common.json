@@ -3,7 +3,7 @@
     "title": "Konto"
   },
   "nav": {
-    "reports": "Berichte",
+    "reports": "Dashboard",
     "overview": "Übersicht",
     "combos": "Menüs",
     "tables": "Tische & QR-Codes",
@@ -1196,7 +1196,7 @@
     "paymentDropped": "Zahlung fehlt weiterhin: Ihr Shop ist im kostenlosen Tarif. Nach der Zahlung ist alles sofort wieder da."
   },
   "reports": {
-    "title": "Berichte",
+    "title": "Dashboard",
     "accessDenied": "Sie können die Berichte dieses Restaurants nicht sehen.",
     "presetToday": "Heute",
     "presetYesterday": "Gestern",

@@ -29,32 +29,48 @@ const RULES: Array<[ShopNavKey, string]> = [
   ['activity', 'view_audit'],
 ];
 
-export function shopNavItems(permissions: readonly string[]): ShopNavKey[] {
-  return RULES.filter(([, perm]) => permissions.includes(perm)).map(([key]) => key);
-}
-
 export type NavGroupKey = 'service' | 'menu' | 'shop' | 'business';
 
-/** Nav keys whose URL segment is not the key itself. */
-const PATHS: Partial<Record<ShopNavKey, string>> = {
-  products: '',
-  optionGroups: 'option-groups',
-};
-
-/** The shop-relative URL segment for a nav item (`''` is the shop's index route). */
-export function navPath(shopId: string, key: ShopNavKey): string {
-  const segment = PATHS[key] ?? key;
-  return segment === '' ? `/shops/${shopId}` : `/shops/${shopId}/${segment}`;
-}
+/** Entries above the first group header, in order (the Dashboard). */
+const TOP: ShopNavKey[] = ['reports'];
 
 const GROUPS: Array<[NavGroupKey, ShopNavKey[]]> = [
   ['service', ['orders']],
   ['menu', ['products', 'optionGroups', 'combos', 'categories']],
   ['shop', ['settings', 'tables', 'promotions', 'legal']],
-  ['business', ['reports', 'subscription', 'staff', 'activity']],
+  ['business', ['subscription', 'staff', 'activity']],
 ];
 
-/** The sidebar's groups (Service, Speisekarte, Shop, Geschäft) with only the pages the user may open; empty groups left out. */
+/** The one authoritative sidebar order: the top entries, then each group's items. */
+const ORDER: ShopNavKey[] = [...TOP, ...GROUPS.flatMap(([, items]) => items)];
+
+export function shopNavItems(permissions: readonly string[]): ShopNavKey[] {
+  const allowed = new Set(RULES.filter(([, perm]) => permissions.includes(perm)).map(([key]) => key));
+  return ORDER.filter((key) => allowed.has(key));
+}
+
+/** The ungrouped entries above the groups that the user may open, in order. */
+export function topNavItems(permissions: readonly string[]): ShopNavKey[] {
+  const allowed = new Set(shopNavItems(permissions));
+  return TOP.filter((key) => allowed.has(key));
+}
+
+/** The first page in sidebar order the user may open, or undefined when they may open none. */
+export function firstNavKey(permissions: readonly string[]): ShopNavKey | undefined {
+  return shopNavItems(permissions)[0];
+}
+
+/** Nav keys whose URL segment is not the key itself. */
+const PATHS: Partial<Record<ShopNavKey, string>> = {
+  optionGroups: 'option-groups',
+};
+
+/** The shop-relative URL for a nav item. A key is not always the segment: the library lives at /option-groups. */
+export function navPath(shopId: string, key: ShopNavKey): string {
+  return `/shops/${shopId}/${PATHS[key] ?? key}`;
+}
+
+/** The sidebar's groups (Service, Speisekarte, Shop, Geschäft) with only the pages the user may open; empty groups left out. Top entries are not drawn here. */
 export function navGroups(permissions: readonly string[]): Array<{ key: NavGroupKey; items: ShopNavKey[] }> {
   const allowed = new Set(shopNavItems(permissions));
   return GROUPS.map(([key, items]) => ({ key, items: items.filter((i) => allowed.has(i)) })).filter(

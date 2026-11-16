@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { navGroups, navPath, shopNavItems } from './shopNav';
+import { firstNavKey, navGroups, navPath, shopNavItems, topNavItems } from './shopNav';
 
 describe('shopNavItems', () => {
   it('staff sees only orders', () => {
@@ -23,11 +23,11 @@ describe('shopNavItems', () => {
         'manage_billing',
         'view_audit',
       ]),
-    ).toEqual(['orders', 'products', 'optionGroups', 'combos', 'categories', 'tables', 'promotions', 'subscription', 'settings', 'legal', 'staff', 'activity']);
+    ).toEqual(['orders', 'products', 'optionGroups', 'combos', 'categories', 'settings', 'tables', 'promotions', 'legal', 'subscription', 'staff', 'activity']);
   });
 
   it('reports for anyone with view_reports', () => {
-    expect(shopNavItems(['view_orders', 'view_reports'])).toEqual(['orders', 'reports']);
+    expect(shopNavItems(['view_orders', 'view_reports'])).toEqual(['reports', 'orders']);
   });
 });
 
@@ -43,21 +43,49 @@ describe('navGroups', () => {
       { key: 'service', items: ['orders'] },
       { key: 'menu', items: ['products', 'optionGroups', 'combos', 'categories'] },
       { key: 'shop', items: ['settings', 'tables', 'promotions', 'legal'] },
-      { key: 'business', items: ['reports', 'subscription', 'staff', 'activity'] },
+      { key: 'business', items: ['subscription', 'staff', 'activity'] },
     ]);
   });
 
-  it('every page appears in exactly one group', () => {
-    const all = navGroups(['view_orders', 'view_reports', 'manage_menu', 'manage_shop', 'manage_staff', 'manage_billing', 'view_audit']).flatMap((g) => g.items);
-    expect([...all].sort()).toEqual([...shopNavItems(['view_orders', 'view_reports', 'manage_menu', 'manage_shop', 'manage_staff', 'manage_billing', 'view_audit'])].sort());
+  it('every grouped page appears in exactly one group, and top entries never in a group', () => {
+    const all = ['view_orders', 'view_reports', 'manage_menu', 'manage_shop', 'manage_staff', 'manage_billing', 'view_audit'];
+    const grouped = navGroups(all).flatMap((g) => g.items);
+    expect(new Set(grouped).size).toBe(grouped.length);
+    expect([...topNavItems(all), ...grouped].sort()).toEqual([...shopNavItems(all)].sort());
+    for (const key of topNavItems(all)) expect(grouped).not.toContain(key);
+    expect(grouped).not.toContain('reports');
+  });
+});
+
+describe('topNavItems', () => {
+  it('lists the dashboard for view_reports', () => {
+    expect(topNavItems(['view_orders', 'view_reports'])).toEqual(['reports']);
+  });
+
+  it('is empty without view_reports', () => {
+    expect(topNavItems(['view_orders'])).toEqual([]);
+  });
+});
+
+describe('firstNavKey', () => {
+  it('is the dashboard when allowed', () => {
+    expect(firstNavKey(['view_reports', 'view_orders'])).toBe('reports');
+  });
+
+  it('is orders without view_reports, even though reports comes first', () => {
+    expect(firstNavKey(['view_orders'])).toBe('orders');
+  });
+
+  it('is undefined when nothing is allowed', () => {
+    expect(firstNavKey([])).toBeUndefined();
   });
 });
 
 describe('navPath', () => {
-  // A key is not an URL segment: the dish list is the shop index and the library
-  // lives at /option-groups. A keyed path sent the sidebar link to /optionGroups, a 404.
-  it('maps the dish list to the shop index', () => {
-    expect(navPath('s1', 'products')).toBe('/shops/s1');
+  // A key is not always an URL segment: the library lives at /option-groups.
+  // A keyed path sent the sidebar link to /optionGroups, a 404.
+  it('maps the dish list to its own products route', () => {
+    expect(navPath('s1', 'products')).toBe('/shops/s1/products');
   });
 
   it('maps the option-group library to its hyphenated route', () => {

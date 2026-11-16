@@ -34,7 +34,7 @@ export function FloatingActionButton() {
       {
         label: 'New product',
         icon: <Package size={15} />,
-        onClick: () => { navigate(`/shops/${shopId}?addProduct=1`); setOpen(false); },
+        onClick: () => { navigate(`/shops/${shopId}/products?addProduct=1`); setOpen(false); },
       },
       {
         label: 'New category',
