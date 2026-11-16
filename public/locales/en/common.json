@@ -879,8 +879,9 @@
       "search": "Search orders",
       "searchPlaceholder": "Search number or name",
       "filters": "Filter orders",
+      "views": "Other views",
       "filter": {
-        "open": "Open",
+        "open": "All",
         "new": "New",
         "work": "In progress",
         "ready": "Ready",
