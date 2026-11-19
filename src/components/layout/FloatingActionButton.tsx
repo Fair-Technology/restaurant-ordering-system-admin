@@ -14,6 +14,14 @@ export function FloatingActionButton() {
   const navigate = useNavigate();
   const ref = useRef<HTMLDivElement>(null);
 
+  // A disclosure, not a modal: Escape just collapses it (no focus trap / focus return needed)
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [open]);
+
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
@@ -72,6 +80,7 @@ export function FloatingActionButton() {
         }`}
         style={{ width: 52, height: 52 }}
         aria-label="Quick actions"
+        aria-expanded={open}
       >
         <Plus size={22} strokeWidth={2.5} />
       </button>

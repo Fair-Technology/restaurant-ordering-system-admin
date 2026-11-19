@@ -3,6 +3,7 @@ import Cropper from 'react-easy-crop';
 import { useTranslation } from 'react-i18next';
 import { Minus, Plus, X } from 'lucide-react';
 import { MyButton } from './MyButton';
+import { useModalA11y } from '../../hooks/useModalA11y';
 import { meetsMinimumSize } from '../../features/images/imageRules';
 import type { ImageRule } from '../../features/images/imageRules';
 import { previewArea, renderCrop, safeAreaFraction } from '../../features/images/cropMath';
@@ -115,34 +116,7 @@ export function ImageCropDialog({ file, rule, title, hint, safeAreaLabel, tooSma
     };
   }, [file]);
 
-  // Focus the dialog on open, give focus back to what opened it on close.
-  useEffect(() => {
-    const previous = document.activeElement as HTMLElement | null;
-    dialogRef.current?.focus();
-    return () => previous?.focus?.();
-  }, []);
-
-  const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'Escape') {
-      e.stopPropagation();
-      if (!busy) onCancel();
-      return;
-    }
-    if (e.key !== 'Tab' || !dialogRef.current) return;
-    const focusable = Array.from(
-      dialogRef.current.querySelectorAll<HTMLElement>('button:not([disabled]), [tabindex="0"], input:not([disabled])'),
-    );
-    if (focusable.length === 0) return;
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    if (e.shiftKey && document.activeElement === first) {
-      e.preventDefault();
-      last.focus();
-    } else if (!e.shiftKey && document.activeElement === last) {
-      e.preventDefault();
-      first.focus();
-    }
-  };
+  const onKeyDown = useModalA11y({ onClose: onCancel, containerRef: dialogRef, disabled: busy });
 
   const onCropAreaChange = useCallback((percent: PercentArea, px: PixelArea) => {
     setArea(percent);
