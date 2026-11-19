@@ -291,10 +291,11 @@ export function OrdersPage() {
 
   const timeZone = data?.timezone ?? 'Europe/Berlin';
   // Computed once per selection: a ticking `now` would change the query arg and refetch constantly
+  const dayKey = JSON.stringify(daySelection);
   const range = useMemo(
     () => (isToday ? null : dayRange(daySelection, timeZone, new Date())),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [isToday, JSON.stringify(daySelection), timeZone],
+    [isToday, dayKey, timeZone],
   );
   const dayQuery = useGetOrdersByShopQuery(
     {
@@ -307,10 +308,11 @@ export function OrdersPage() {
     { skip: isToday },
   );
   // A new window starts on its first page, however it was reached (picker, preset, hand-edited URL).
-  const dayKey = JSON.stringify(daySelection);
-  useEffect(() => {
+  const [prevDayKey, setPrevDayKey] = useState(dayKey);
+  if (prevDayKey !== dayKey) {
+    setPrevDayKey(dayKey);
     setDayPage(1);
-  }, [dayKey]);
+  }
   const money = (order: IntakeOrder) => formatCents(chargedCents(order), order.currency, i18n.language);
   const clock = (iso: string) => new Date(iso).toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit', timeZone });
   const prepFor = (order: IntakeOrder) => data?.defaultPrepMinutes[order.fulfilmentMode] ?? 20;
