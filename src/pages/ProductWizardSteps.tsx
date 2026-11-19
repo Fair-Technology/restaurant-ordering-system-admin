@@ -295,8 +295,9 @@ export function StepFoodInfo({ foodInfo, setFoodInfo, refs, showOptional }: Step
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-gray-700">{t('products.spiceLevel')}</label>
+            <label htmlFor="dish-spice-level" className="text-sm font-medium text-gray-700">{t('products.spiceLevel')}</label>
             <select
+              id="dish-spice-level"
               value={foodInfo.spiceLevel ?? ''}
               onChange={(e) => setFoodInfo({ ...foodInfo, spiceLevel: (e.target.value || null) as SpiceLevel | null })}
               className="w-full border border-gray-200 rounded-lg bg-white text-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400"
@@ -420,7 +421,7 @@ export function StepCategories({
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-gray-700">
+          <label htmlFor="dish-add-category" className="text-sm font-medium text-gray-700">
             {t('products.categories')}
           </label>
           {selected.length > 0 && (
@@ -445,6 +446,7 @@ export function StepCategories({
           )}
           {remaining.length > 0 && (
             <select
+              id="dish-add-category"
               value=""
               onChange={(e) => { addCategory(e.target.value); e.target.value = ''; }}
               className="w-full border border-gray-200 rounded-lg bg-white text-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400"
@@ -808,8 +810,9 @@ export function Step5Schedule({
         <div className="space-y-3 pt-1">
           <div className="flex gap-3">
             <div className="flex flex-col gap-1 flex-1">
-              <label className="text-xs text-gray-500 uppercase tracking-wide">{t('products.scheduleStartDate')}</label>
+              <label htmlFor="schedule-start-date" className="text-xs text-gray-500 uppercase tracking-wide">{t('products.scheduleStartDate')}</label>
               <input
+                id="schedule-start-date"
                 type="date"
                 value={schedule.startDate}
                 onChange={(e) => setSchedule((s) => ({ ...s, startDate: e.target.value }))}
@@ -818,8 +821,9 @@ export function Step5Schedule({
             </div>
             {!noEndDate && (
               <div className="flex flex-col gap-1 flex-1">
-                <label className="text-xs text-gray-500 uppercase tracking-wide">{t('products.scheduleEndDate')}</label>
+                <label htmlFor="schedule-end-date" className="text-xs text-gray-500 uppercase tracking-wide">{t('products.scheduleEndDate')}</label>
                 <input
+                  id="schedule-end-date"
                   type="date"
                   value={schedule.endDate}
                   onChange={(e) => setSchedule((s) => ({ ...s, endDate: e.target.value }))}
@@ -859,8 +863,9 @@ export function Step5Schedule({
           {timeWindowEnabled && (
             <div className="flex gap-3">
               <div className="flex flex-col gap-1 flex-1">
-                <label className="text-xs text-gray-500 uppercase tracking-wide">{t('products.scheduleStartTime')}</label>
+                <label htmlFor="schedule-start-time" className="text-xs text-gray-500 uppercase tracking-wide">{t('products.scheduleStartTime')}</label>
                 <input
+                  id="schedule-start-time"
                   type="time"
                   value={schedule.startTime}
                   onChange={(e) => setSchedule((s) => ({ ...s, startTime: e.target.value }))}
@@ -868,8 +873,9 @@ export function Step5Schedule({
                 />
               </div>
               <div className="flex flex-col gap-1 flex-1">
-                <label className="text-xs text-gray-500 uppercase tracking-wide">{t('products.scheduleEndTime')}</label>
+                <label htmlFor="schedule-end-time" className="text-xs text-gray-500 uppercase tracking-wide">{t('products.scheduleEndTime')}</label>
                 <input
+                  id="schedule-end-time"
                   type="time"
                   value={schedule.endTime}
                   onChange={(e) => setSchedule((s) => ({ ...s, endTime: e.target.value }))}

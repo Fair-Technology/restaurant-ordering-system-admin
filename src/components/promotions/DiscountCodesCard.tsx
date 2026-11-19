@@ -131,7 +131,7 @@ export function DiscountCodesCard({ shopId, shop, data }: DiscountCodesCardProps
 
       <div className="space-y-3 border-t border-line-soft p-4 sm:p-5">
         <h3 className="text-[15px] font-bold">{t('promotions.newCode')}</h3>
-        <MyInput label={t('promotions.code')} value={form.code} onChange={(e) => set({ code: e.target.value })} />
+        <MyInput label={t('promotions.code')} hint={t('promotions.codeHint')} value={form.code} onChange={(e) => set({ code: e.target.value })} />
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
@@ -152,11 +152,13 @@ export function DiscountCodesCard({ shopId, shop, data }: DiscountCodesCardProps
         </div>
         <MyInput
           label={form.kind === 'percent' ? t('promotions.valuePercent') : t('promotions.valueAmount')}
+          hint={form.kind === 'percent' ? t('promotions.valuePercentHint') : t('promotions.valueAmountHint')}
           value={form.value}
           onChange={(e) => set({ value: e.target.value })}
         />
         <MyInput
           label={t('promotions.minOrderLabel')}
+          hint={t('promotions.minOrderLabelHint')}
           value={form.minOrder}
           onChange={(e) => set({ minOrder: e.target.value })}
         />
@@ -164,12 +166,14 @@ export function DiscountCodesCard({ shopId, shop, data }: DiscountCodesCardProps
           <MyInput
             type="date"
             label={t('promotions.validFrom')}
+            hint={t('promotions.validFromHint')}
             value={form.validFrom}
             onChange={(e) => set({ validFrom: e.target.value })}
           />
           <MyInput
             type="date"
             label={t('promotions.validUntil')}
+            hint={t('promotions.validUntilHint')}
             value={form.validUntil}
             onChange={(e) => set({ validUntil: e.target.value })}
           />
@@ -177,11 +181,13 @@ export function DiscountCodesCard({ shopId, shop, data }: DiscountCodesCardProps
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <MyInput
             label={t('promotions.totalLimit')}
+            hint={t('promotions.totalLimitHint')}
             value={form.totalLimit}
             onChange={(e) => set({ totalLimit: e.target.value })}
           />
           <MyInput
             label={t('promotions.perEmailLimit')}
+            hint={t('promotions.perEmailLimitHint')}
             value={form.perEmailLimit}
             onChange={(e) => set({ perEmailLimit: e.target.value })}
           />

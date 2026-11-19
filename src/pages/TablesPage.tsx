@@ -114,8 +114,7 @@ export function TablesPage() {
 
       <Section title={t('tables.listTitle')} count={parsed.valid.length}>
         <div className="space-y-1.5 border-b border-line-soft p-4 sm:p-5">
-          <MyInput label={t('tables.numbersLabel')} value={input} onChange={(e) => setInput(e.target.value)} />
-          <p className="text-xs text-muted">{t('tables.numbersHint')}</p>
+          <MyInput label={t('tables.numbersLabel')} hint={t('tables.numbersHint')} value={input} onChange={(e) => setInput(e.target.value)} />
           {parsed.invalid.length > 0 && (
             <p className="text-sm text-[#b42318]">{t('tables.invalid', { list: parsed.invalid.join(', ') })}</p>
           )}
