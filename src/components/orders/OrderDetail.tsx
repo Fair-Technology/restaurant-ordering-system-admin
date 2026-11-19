@@ -13,6 +13,7 @@ import { formatCents } from '../../utils/money';
 import { PendingButton } from '../ui/PendingButton';
 import { ModeBadge, StateBadge } from './OrderBadges';
 import { RefundPanel } from './RefundPanel';
+import { isPlausiblePhone } from '../../utils/validatePhone';
 import { SoldOutTodayButton } from '../menu/SoldOutTodayButton';
 import { useSoldOutToday } from '../../features/menu/useSoldOutToday';
 
@@ -292,9 +293,13 @@ export function OrderDetail({
             {order.customerPhone && (
               <>
                 {' · '}
-                <a href={`tel:${order.customerPhone}`} className="font-semibold text-ink underline">
-                  {order.customerPhone}
-                </a>
+                {isPlausiblePhone(order.customerPhone) ? (
+                  <a href={`tel:${order.customerPhone}`} className="font-semibold text-ink underline">
+                    {order.customerPhone}
+                  </a>
+                ) : (
+                  order.customerPhone
+                )}
               </>
             )}
           </dd>
@@ -436,14 +441,14 @@ export function OrderDetail({
           </PendingButton>
         )}
 
-        {(order.documents.length > 0 || order.customerPhone) && (
+        {(order.documents.length > 0 || (order.customerPhone && isPlausiblePhone(order.customerPhone))) && (
           <div className="flex flex-wrap gap-x-3.5 gap-y-1 text-[13px]">
             {order.documents.map((doc) => (
               <button key={doc.id} type="button" onClick={() => void downloadDocument(doc.id)} className="text-[#5c524b] underline">
                 {t(`orders.document.${doc.kind}`, { number: doc.number })}
               </button>
             ))}
-            {order.customerPhone && (
+            {order.customerPhone && isPlausiblePhone(order.customerPhone) && (
               <a href={`tel:${order.customerPhone}`} className="text-[#5c524b] underline">
                 {t('orders.live.callGuest')}
               </a>
