@@ -635,7 +635,7 @@
     "scheduleStartTime": "Verfügbar ab",
     "scheduleEndTime": "Verfügbar bis",
     "scheduleDaysOfWeek": "An diesen Tagen anzeigen",
-    "scheduleDaysRequired": "Wähle mindestens einen Tag für den Zeitplan aus.",
+    "scheduleDaysRequired": "Wählen Sie mindestens einen Tag für den Zeitplan aus.",
     "scheduleInvalid": "Enddatum muss gleich oder nach dem Startdatum liegen, Endzeit muss nach der Startzeit liegen",
     "scheduleMon": "Mo",
     "scheduleTue": "Di",
