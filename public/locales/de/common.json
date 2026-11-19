@@ -1200,7 +1200,7 @@
     "complete": "Vollständig",
     "incomplete": "Unvollständig",
     "dpaTitle": "Auftragsverarbeitungsvertrag",
-    "dpaIntro": "Sie sind für die Daten Ihrer Kunden verantwortlich; wir verarbeiten sie in Ihrem Auftrag. Dieser Vertrag regelt, wie.",
+    "dpaIntro": "Sie sind für die Daten Ihrer Kunden verantwortlich; wir verarbeiten sie in Ihrem Auftrag. Dieser Vertrag regelt, wie wir diese Daten in Ihrem Auftrag verarbeiten.",
     "dpaAcceptedOn": "Version {{version}} akzeptiert am {{date}}.",
     "dpaNotAccepted": "Noch nicht akzeptiert – erforderlich, bevor Sie live gehen können.",
     "dpaNewVersion": "Eine neue Version ({{version}}) liegt vor. Akzeptieren Sie sie, bevor Sie wieder live gehen.",

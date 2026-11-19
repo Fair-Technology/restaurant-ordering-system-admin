@@ -1200,7 +1200,7 @@
     "complete": "Complete",
     "incomplete": "Incomplete",
     "dpaTitle": "Data processing agreement",
-    "dpaIntro": "You are responsible for your customers' data; we process it on your behalf. This agreement sets out how.",
+    "dpaIntro": "You are responsible for your customers' data; we process it on your behalf. This agreement sets out how we process that data on your behalf.",
     "dpaAcceptedOn": "Accepted version {{version}} on {{date}}.",
     "dpaNotAccepted": "Not accepted yet — required before you can go live.",
     "dpaNewVersion": "A new version ({{version}}) is available. Accept it before you next go live.",
