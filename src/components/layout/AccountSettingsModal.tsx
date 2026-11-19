@@ -6,6 +6,9 @@ import { useTranslation } from 'react-i18next';
 import { useModalA11y } from '../../hooks/useModalA11y';
 import { chipClass } from './pageStyles';
 
+/** Each language named in itself, whatever the UI language is. */
+const LANGUAGE_NAMES = { en: 'English', de: 'Deutsch' } as const;
+
 interface AccountSettingsModalProps {
   user: AccountInfo;
   onClose: () => void;
@@ -16,6 +19,8 @@ export function AccountSettingsModal({ user, onClose }: AccountSettingsModalProp
   const { instance } = useMsal();
   const dialogRef = useRef<HTMLDivElement>(null);
   const onKeyDown = useModalA11y({ onClose, containerRef: dialogRef });
+  // `i18n.resolvedLanguage` stays undefined here (both buttons read as not pressed), so use the active language, region stripped.
+  const currentLanguage = (i18n.resolvedLanguage ?? i18n.language ?? '').split('-')[0];
 
   return (
     <>
@@ -59,17 +64,23 @@ export function AccountSettingsModal({ user, onClose }: AccountSettingsModalProp
           {/* Language + sign out */}
           <div className="flex items-center justify-between gap-3 px-5 py-4">
             <div className="flex gap-1.5">
-              {(['en', 'de'] as const).map((lng) => (
-                <button
-                  key={lng}
-                  type="button"
-                  aria-pressed={i18n.resolvedLanguage === lng}
-                  onClick={() => i18n.changeLanguage(lng)}
-                  className={`${chipClass(i18n.resolvedLanguage === lng)} uppercase`}
-                >
-                  {lng}
-                </button>
-              ))}
+              {(['en', 'de'] as const).map((lng) => {
+                const selected = currentLanguage === lng;
+                return (
+                  <button
+                    key={lng}
+                    type="button"
+                    aria-pressed={selected}
+                    // Endonym, not translated: a language picker names each language in itself
+                    aria-label={LANGUAGE_NAMES[lng]}
+                    lang={lng}
+                    onClick={() => i18n.changeLanguage(lng)}
+                    className={`${chipClass(selected)} uppercase`}
+                  >
+                    {lng}
+                  </button>
+                );
+              })}
             </div>
             <button
               type="button"
