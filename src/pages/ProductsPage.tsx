@@ -555,7 +555,7 @@ function DishRow({
           onOpen();
         }
       }}
-      className={`flex cursor-pointer items-center gap-3.5 border-b border-[#f6f1eb] px-4 py-2.5 transition-colors last:border-b-0 hover:bg-cream focus:outline-none focus-visible:bg-cream ${
+      className={`flex cursor-pointer flex-wrap items-center gap-x-3.5 gap-y-2 border-b border-[#f6f1eb] px-4 py-2.5 transition-colors md:flex-nowrap last:border-b-0 hover:bg-cream focus:outline-none focus-visible:bg-cream ${
         selected ? 'bg-cream shadow-[inset_3px_0_0_#1f1a17]' : ''
       }`}
     >
@@ -590,39 +590,41 @@ function DishRow({
       <span className="hidden w-[110px] text-[13px] text-[#6b6058] md:block">
         {groups > 0 ? t('dishes.optionGroups', { count: groups }) : '–'}
       </span>
-      <span className="w-20 text-right text-[15px] font-bold">{currencyMoney(product.price ?? 0)}</span>
-      <SoldOutTodayButton
-        name={product.name ?? ''}
-        soldOut={soldOut}
-        busy={soldOutBusy}
-        onToggle={onToggleSoldOut}
-      />
-      <PendingButton
-        type="button"
-        role="switch"
-        aria-checked={available}
-        aria-label={t('dishes.availableFor', { name: product.name })}
-        isPending={toggling}
-        spinner={false}
-        onClick={(e) => {
-          e.stopPropagation();
-          onToggle();
-        }}
-        onKeyDown={(e) => e.stopPropagation()}
-        className={`relative h-6 w-10 flex-shrink-0 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 disabled:opacity-50 ${
-          available ? 'bg-[#2f8a4c]' : 'bg-[#d6cdc4]'
-        }`}
-      >
-        <span className={`absolute top-[3px] h-[18px] w-[18px] rounded-full bg-white shadow transition-all ${available ? 'right-[3px]' : 'left-[3px]'}`}>
-          {toggling && (
-            <span
-              data-pending-spinner=""
-              aria-hidden="true"
-              className="absolute inset-0 m-auto h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent text-ink"
-            />
-          )}
-        </span>
-      </PendingButton>
+      <div className="flex w-full flex-shrink-0 items-center justify-end gap-3.5 md:w-auto">
+        <span className="w-20 text-right text-[15px] font-bold">{currencyMoney(product.price ?? 0)}</span>
+        <SoldOutTodayButton
+          name={product.name ?? ''}
+          soldOut={soldOut}
+          busy={soldOutBusy}
+          onToggle={onToggleSoldOut}
+        />
+        <PendingButton
+          type="button"
+          role="switch"
+          aria-checked={available}
+          aria-label={t('dishes.availableFor', { name: product.name })}
+          isPending={toggling}
+          spinner={false}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggle();
+          }}
+          onKeyDown={(e) => e.stopPropagation()}
+          className={`relative h-6 w-10 flex-shrink-0 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 disabled:opacity-50 ${
+            available ? 'bg-[#2f8a4c]' : 'bg-[#d6cdc4]'
+          }`}
+        >
+          <span className={`absolute top-[3px] h-[18px] w-[18px] rounded-full bg-white shadow transition-all ${available ? 'right-[3px]' : 'left-[3px]'}`}>
+            {toggling && (
+              <span
+                data-pending-spinner=""
+                aria-hidden="true"
+                className="absolute inset-0 m-auto h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent text-ink"
+              />
+            )}
+          </span>
+        </PendingButton>
+      </div>
     </div>
   );
 }
