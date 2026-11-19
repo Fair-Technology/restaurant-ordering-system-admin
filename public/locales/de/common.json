@@ -326,6 +326,11 @@
     "membersAccessDenied": "Sie haben keine Berechtigung, auf die Einstellungen zuzugreifen.",
     "shopCountry": "Land",
     "shopCountryPlaceholder": "Land auswählen",
+    "countryHelp": "Währung, Zeitzone und Steuerregeln richten sich nach dem Land. Sie können später nicht geändert werden.",
+    "countryRequired": "Wählen Sie das Land, in dem Ihr Restaurant steht.",
+    "countryName": {
+      "DE": "Deutschland"
+    },
     "taxClassesTitle": "Steuerklassen",
     "taxClassesEmpty": "Steuerklassen für {{country}} sind noch nicht eingerichtet.",
     "taxClassesNote": "Von der Plattform für {{country}} festgelegt. Gerichte erhalten ihren Satz über ihre Kategorie.",

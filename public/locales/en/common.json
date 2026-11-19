@@ -326,6 +326,11 @@
     "membersAccessDenied": "You don't have permission to access Settings.",
     "shopCountry": "Country",
     "shopCountryPlaceholder": "Select country",
+    "countryHelp": "Currency, time zone and tax rules come from the country. They can't be changed later.",
+    "countryRequired": "Choose the country your restaurant is in.",
+    "countryName": {
+      "DE": "Germany"
+    },
     "taxClassesTitle": "Tax classes",
     "taxClassesEmpty": "Tax classes for {{country}} are not set up yet.",
     "taxClassesNote": "Set by the platform for {{country}}. Dishes get their rate from their category.",
