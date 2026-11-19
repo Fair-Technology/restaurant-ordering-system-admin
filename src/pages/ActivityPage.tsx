@@ -6,6 +6,7 @@ import type { AuditEntry } from '../services/api';
 import { EmptyNote, PageHeader, Pager, Row, Section } from '../components/layout/Page';
 import { MySpinner } from '../components/ui/MySpinner';
 import { formatShopDateTime } from '../utils/locale';
+import { resolveActionLabel, resolveActorDisplayLabel } from '../features/activity/activityLabels';
 
 const PAGE_SIZE = 20;
 
@@ -16,12 +17,13 @@ function formatDate(iso: string, language: string, countryCode?: string | null, 
 interface ActivityRowProps {
   entry: AuditEntry;
   actorLabel: string;
+  actionLabel: string;
   language: string;
   countryCode?: string | null;
   timeZone?: string;
 }
 
-function ActivityRow({ entry, actorLabel, language, countryCode, timeZone }: ActivityRowProps) {
+function ActivityRow({ entry, actorLabel, actionLabel, language, countryCode, timeZone }: ActivityRowProps) {
   return (
     <Row>
       <span
@@ -32,7 +34,7 @@ function ActivityRow({ entry, actorLabel, language, countryCode, timeZone }: Act
       </span>
       <div className="min-w-0 flex-1 text-sm">
         <p className="break-words">
-          <span className="font-bold">{actorLabel}</span> <span className="text-[#4a413b]">&middot; {entry.action} &middot; {entry.entityName}</span>
+          <span className="font-bold">{actorLabel}</span> <span className="text-[#4a413b]">&middot; {actionLabel} &middot; {entry.entityName}</span>
         </p>
         <p className="mt-0.5 text-xs text-[#8a7f77]">{formatDate(entry.timestamp, language, countryCode, timeZone)}</p>
       </div>
@@ -89,7 +91,12 @@ export function ActivityPage() {
             <ActivityRow
               key={entry.id}
               entry={entry}
-              actorLabel={actorLabels[`${entry.actorType}:${entry.actorId}`] ?? entry.actorId}
+              actorLabel={resolveActorDisplayLabel(
+                actorLabels[`${entry.actorType}:${entry.actorId}`] ?? entry.actorId,
+                entry.actorType,
+                t,
+              )}
+              actionLabel={resolveActionLabel(entry.action, t)}
               language={i18n.language}
               countryCode={shop?.countryCode}
               timeZone={shop?.timezone}
