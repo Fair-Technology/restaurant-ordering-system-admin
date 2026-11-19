@@ -146,6 +146,29 @@ export function overdueLabel(lateMinutes: number): OverdueLabel {
   return { key: 'orders.live.late', params: { minutes }, stale: false };
 }
 
+export type DurationLabel =
+  | { key: 'orders.live.unitMinutes'; params: { minutes: number } }
+  | { key: 'orders.live.unitHours'; params: { hours: number } }
+  | { key: 'orders.live.unitHoursMinutes'; params: { hours: number; minutes: number } }
+  | { key: 'orders.live.unitDays'; params: { days: number } };
+
+/**
+ * How to say a duration (how long something has been waiting). Minutes under an hour, hours (plus
+ * leftover minutes) under a day, days from a day up — so a 17-hour wait never prints "1063 min".
+ */
+export function formatDuration(totalMinutes: number): DurationLabel {
+  const minutes = Math.max(0, Math.round(totalMinutes));
+  if (minutes < 60) return { key: 'orders.live.unitMinutes', params: { minutes } };
+  if (minutes < 1440) {
+    const hours = Math.floor(minutes / 60);
+    const rem = minutes % 60;
+    if (rem === 0) return { key: 'orders.live.unitHours', params: { hours } };
+    return { key: 'orders.live.unitHoursMinutes', params: { hours, minutes: rem } };
+  }
+  const days = Math.floor(minutes / 1440);
+  return { key: 'orders.live.unitDays', params: { days } };
+}
+
 const minutesBetween = (fromMs: number, toMs: number) => Math.max(0, Math.round((toMs - fromMs) / 60000));
 
 /**

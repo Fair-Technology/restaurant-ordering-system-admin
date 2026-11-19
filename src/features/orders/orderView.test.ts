@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { IntakeOrder } from '../../services/ordersApi';
 import type { OrderHistoryEntry } from '../../services/api';
-import { boardColumns, enteredStateAt, itemSummary, liveGroups, matchesOrderSearch, orderTiming, overdueLabel, OVERDUE_CAP_MINUTES, parseOrderFilter, ORDER_FILTERS, ORDER_SCOPE_FILTERS, ORDER_STATE_FILTERS } from './orderView';
+import { boardColumns, enteredStateAt, formatDuration, itemSummary, liveGroups, matchesOrderSearch, orderTiming, overdueLabel, OVERDUE_CAP_MINUTES, parseOrderFilter, ORDER_FILTERS, ORDER_SCOPE_FILTERS, ORDER_STATE_FILTERS } from './orderView';
 
 const NOW = Date.parse('2026-10-12T12:00:00Z');
 const min = (m: number) => new Date(NOW + m * 60000).toISOString();
@@ -221,6 +221,25 @@ describe('orderTiming', () => {
 
   it('has nothing to count for a closed order', () => {
     expect(orderTiming(order({ state: 'COMPLETED' }), NOW)).toBeNull();
+  });
+});
+
+describe('formatDuration', () => {
+  it('shows plain minutes under an hour', () => {
+    expect(formatDuration(59)).toEqual({ key: 'orders.live.unitMinutes', params: { minutes: 59 } });
+  });
+  it('switches to hours at exactly 60 minutes', () => {
+    expect(formatDuration(60)).toEqual({ key: 'orders.live.unitHours', params: { hours: 1 } });
+  });
+  it('shows hours plus leftover minutes', () => {
+    expect(formatDuration(1439)).toEqual({ key: 'orders.live.unitHoursMinutes', params: { hours: 23, minutes: 59 } });
+  });
+  it('switches to days at exactly 1440 minutes', () => {
+    expect(formatDuration(1440)).toEqual({ key: 'orders.live.unitDays', params: { days: 1 } });
+  });
+  it('rounds and clamps like overdueLabel does', () => {
+    expect(formatDuration(-7)).toEqual({ key: 'orders.live.unitMinutes', params: { minutes: 0 } });
+    expect(formatDuration(0.4)).toEqual({ key: 'orders.live.unitMinutes', params: { minutes: 0 } });
   });
 });
 

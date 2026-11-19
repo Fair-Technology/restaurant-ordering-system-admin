@@ -12,6 +12,7 @@ import {
   itemSummary,
   boardColumns,
   liveGroups,
+  formatDuration,
   matchesOrderSearch,
   orderTiming,
   overdueLabel,
@@ -430,7 +431,12 @@ export function OrdersPage() {
       return { text: t(timing.delivery ? 'orders.live.deliverIn' : 'orders.live.readyIn', { minutes: timing.minutes }), urgent: timing.urgent, stale: false };
     }
     if (timing.minutes === null) return { text: t(`orders.state.${order.displayState}`), urgent: false, stale: false };
-    return { text: t(timing.kind === 'out' ? 'orders.live.outFor' : 'orders.live.waitingFor', { minutes: timing.minutes }), urgent: false, stale: false };
+    const duration = formatDuration(timing.minutes);
+    return {
+      text: t(timing.kind === 'out' ? 'orders.live.outFor' : 'orders.live.waitingFor', { duration: t(duration.key, duration.params) }),
+      urgent: false,
+      stale: false,
+    };
   };
 
   const rowAction = (order: IntakeOrder) => {
