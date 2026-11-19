@@ -12,6 +12,7 @@ import { MyButton } from '../components/ui/MyButton';
 import { Chip, EmptyNote, PageHeader, Row, Section, Toolbar } from '../components/layout/Page';
 import { MySpinner } from '../components/ui/MySpinner';
 import { formatCents } from '../utils/money';
+import { usePageTitle } from '../features/layout/usePageTitle';
 
 function downloadFile(name: string, content: string, mime: string) {
   const url = URL.createObjectURL(new Blob([content], { type: mime }));
@@ -52,6 +53,7 @@ function StatTile({ label, value, help }: { label: string; value: string; help?:
 }
 
 export function ReportsPage() {
+  usePageTitle('nav.reports');
   const { shopId } = useParams<{ shopId: string }>();
   const { t, i18n } = useTranslation();
   const { data: shop } = useGetShopByIdQuery({ shopId: shopId! });

@@ -15,8 +15,10 @@ import { downloadBase64File } from '../features/files/downloadBase64';
 import { PNG_DATA_URL_PREFIX, parseTableNumbers, qrPngDataUrl, tableUrl } from '../features/tables/tableLinks';
 import { buildTableCardsPdf } from '../features/tables/tableCards';
 import { menuLanguagesOf } from '../features/menu/translations';
+import { usePageTitle } from '../features/layout/usePageTitle';
 
 export function TablesPage() {
+  usePageTitle('nav.tables');
   const { shopId } = useParams<{ shopId: string }>();
   const { t } = useTranslation();
   const toast = useToast();

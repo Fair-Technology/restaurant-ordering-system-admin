@@ -7,6 +7,7 @@ import { EmptyNote, PageHeader, Pager, Row, Section } from '../components/layout
 import { MySpinner } from '../components/ui/MySpinner';
 import { formatShopDateTime } from '../utils/locale';
 import { resolveActionLabel, resolveActorDisplayLabel } from '../features/activity/activityLabels';
+import { usePageTitle } from '../features/layout/usePageTitle';
 
 const PAGE_SIZE = 20;
 
@@ -43,6 +44,7 @@ function ActivityRow({ entry, actorLabel, actionLabel, language, countryCode, ti
 }
 
 export function ActivityPage() {
+  usePageTitle('nav.activity');
   const { shopId } = useParams<{ shopId: string }>();
   const { t, i18n } = useTranslation();
   const [page, setPage] = useState(1);

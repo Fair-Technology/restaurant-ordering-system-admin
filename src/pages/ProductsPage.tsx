@@ -36,6 +36,7 @@ import type { PreviewDish } from '../features/menu/previewBridge';
 import { DishEditor } from '../components/menu/DishEditor';
 import { LivePreview } from '../components/menu/LivePreview';
 import { PageHeader, Section, SplitPage } from '../components/layout/Page';
+import { usePageTitle } from '../features/layout/usePageTitle';
 
 // ── Bulk import types ──────────────────────────────────────────────────────────
 
@@ -635,6 +636,7 @@ function DishRow({
  * and follows: it outlines the dish, shows unsaved edits, and opens a dish here when clicked there.
  */
 export function ProductsPage() {
+  usePageTitle('nav.dishes');
   const { shopId } = useParams<{ shopId: string }>();
   const { t, i18n } = useTranslation();
   const toast = useToast();

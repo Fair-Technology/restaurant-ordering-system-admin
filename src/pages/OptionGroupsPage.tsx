@@ -29,6 +29,7 @@ import {
   type OptionGroupKind,
 } from '../features/menu/optionGroupLibrary';
 import { formatCents } from '../utils/money';
+import { usePageTitle } from '../features/layout/usePageTitle';
 
 const errorMessage = (err: unknown): string | undefined => (err as { data?: { error?: string } })?.data?.error;
 
@@ -359,6 +360,7 @@ function GroupCard({
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export function OptionGroupsPage() {
+  usePageTitle('nav.optionGroups');
   const { shopId } = useParams<{ shopId: string }>();
   const { t } = useTranslation();
   const { data, isLoading, isFetching, isError, refetch } = useGetOptionGroupsQuery({ shopId: shopId! });

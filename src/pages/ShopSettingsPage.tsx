@@ -46,6 +46,7 @@ import { useShopReferenceLists } from '../features/menu/useShopReferenceLists';
 import { formatRate, labelFor } from '../features/menu/foodInfo';
 import type { MenuLanguage } from '../services/api';
 import { menuLanguagesOf } from '../features/menu/translations';
+import { usePageTitle } from '../features/layout/usePageTitle';
 
 const MENU_LANGUAGES: MenuLanguage[] = ['de', 'en'];
 
@@ -77,6 +78,7 @@ const FILE_INPUT_CLASS =
   'block w-full min-w-0 cursor-pointer text-sm text-muted file:mr-3 file:h-8 file:cursor-pointer file:rounded-full file:border file:border-solid file:border-[#e3d9ce] file:bg-white file:px-3 file:text-xs file:font-semibold file:text-ink hover:file:bg-cream';
 
 export function ShopSettingsPage() {
+  usePageTitle('nav.settings');
   const { shopId } = useParams<{ shopId: string }>();
   const { t, i18n } = useTranslation();
   const toast = useToast();

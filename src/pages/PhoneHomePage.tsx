@@ -6,8 +6,10 @@ import { useGetMyShopsQuery } from '../services/api';
 import { MySpinner } from '../components/ui/MySpinner';
 import { pillClass } from '../components/layout/pageStyles';
 import { ShopLogoBadge } from '../components/shop/ShopLogoBadge';
+import { usePageTitle } from '../features/layout/usePageTitle';
 
 export function PhoneHomePage() {
+  usePageTitle('phone.pageTitle');
   const { t } = useTranslation();
   const staff = readStaffSession();
   const { data, isLoading } = useGetMyShopsQuery(undefined, { skip: staff !== null });
