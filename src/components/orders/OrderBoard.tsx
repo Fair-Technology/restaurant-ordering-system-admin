@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { IntakeOrder } from '../../services/ordersApi';
 import { itemSummary, type LiveGroupKey } from '../../features/orders/orderView';
 import { ModeBadge } from './OrderBadges';
@@ -14,7 +15,7 @@ interface Props {
   columns: BoardColumnView[];
   selectedId?: string;
   onSelect: (order: IntakeOrder) => void;
-  timeOf: (order: IntakeOrder) => { text: string; urgent: boolean };
+  timeOf: (order: IntakeOrder) => { text: string; urgent: boolean; stale: boolean };
   moneyOf: (order: IntakeOrder) => string;
   actionFor: (order: IntakeOrder) => ReactNode;
 }
@@ -23,6 +24,7 @@ const DOT: Record<LiveGroupKey, string> = { new: 'bg-[#c2410c]', work: 'bg-ink',
 
 /** The live queue as side-by-side columns. Presentational; every stage change is a button on the card. */
 export function OrderBoard({ columns, selectedId, onSelect, timeOf, moneyOf, actionFor }: Props) {
+  const { t } = useTranslation();
   return (
     <div className="flex min-h-0 flex-1 gap-4">
       {columns.map((column) => (
@@ -59,7 +61,10 @@ export function OrderBoard({ columns, selectedId, onSelect, timeOf, moneyOf, act
                     <div className="flex items-center gap-2">
                       <span className="text-[15px] font-bold tracking-[0.02em]">#{order.orderRef}</span>
                       <ModeBadge order={order} />
-                      <span className={`ml-auto text-[13px] font-semibold ${time.urgent ? 'text-[#b42318]' : 'text-[#4a413b]'}`}>{time.text}</span>
+                      <span className={`ml-auto inline-flex items-center gap-1.5 text-[13px] font-semibold ${time.urgent ? 'text-[#b42318]' : 'text-[#4a413b]'}`}>
+                        {time.text}
+                        {time.stale && <span className="rounded-full bg-[#fdeceb] px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-[#b42318]">{t('orders.live.stale')}</span>}
+                      </span>
                     </div>
                     <div className="mt-1 flex min-w-0 flex-col gap-[3px]">
                       <span className="truncate text-[14px] font-bold">{order.customerName}</span>

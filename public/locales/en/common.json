@@ -908,6 +908,8 @@
       "readyIn": "Ready in {{minutes}} min",
       "deliverIn": "Delivery in {{minutes}} min",
       "late": "{{minutes}} min overdue",
+      "lateCapped": "overdue {{hours}}h+",
+      "stale": "stale",
       "waitingFor": "waiting · {{minutes}} min",
       "outFor": "on the way · {{minutes}} min",
       "at": "at {{time}}",

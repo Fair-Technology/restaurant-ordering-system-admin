@@ -4,7 +4,7 @@ import { X } from 'lucide-react';
 import { useLazyGetOrderDocumentQuery } from '../../services/api';
 import { type IntakeOrder, type RejectReason } from '../../services/ordersApi';
 import { REJECT_REASONS, formatCountdown, prepChoices, scheduledReadyMs, type SlotLoad } from '../../features/orders/intake';
-import { orderTiming } from '../../features/orders/orderView';
+import { orderTiming, overdueLabel } from '../../features/orders/orderView';
 import { nextActionLabelKey } from '../../features/orders/useOrderActions';
 import { canRefund, chargedCents } from '../../features/orders/refunds';
 import { downloadBase64File } from '../../features/files/downloadBase64';
@@ -134,6 +134,7 @@ export function OrderDetail({
 
   const live = kind === 'live';
   const timing = live ? orderTiming(order, nowMs) : null;
+  const lateLabel = timing?.kind === 'due' && timing.minutes < 0 ? overdueLabel(-timing.minutes) : null;
   const working = actions?.isWorking(order.id) ?? false;
   const nextKey = live ? nextActionLabelKey(order) : null;
   const canReject =
@@ -222,9 +223,15 @@ export function OrderDetail({
               ) : (
                 <>
                   <span>
-                    {timing.minutes < 0
-                      ? t('orders.live.late', { minutes: -timing.minutes })
+                    {lateLabel
+                      ? t(lateLabel.key, lateLabel.params)
                       : t(timing.delivery ? 'orders.live.deliverIn' : 'orders.live.readyIn', { minutes: timing.minutes })}
+                    {lateLabel?.stale && (
+                      <>
+                        {' '}
+                        <span className="rounded-full bg-[#fdeceb] px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-[#b42318]">{t('orders.live.stale')}</span>
+                      </>
+                    )}
                   </span>
                   {order.readyAt && (
                     <span>{t(timing.delivery ? 'orders.deliverBy' : 'orders.readyAt', { time: time(order.readyAt) })}</span>
