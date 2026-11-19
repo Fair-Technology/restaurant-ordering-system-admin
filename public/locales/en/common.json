@@ -951,6 +951,7 @@
       "late": "{{minutes}} min overdue",
       "lateCapped": "overdue {{hours}}h+",
       "stale": "stale",
+      "openOrder": "Open order #{{ref}}",
       "waitingFor": "waiting · {{minutes}} min",
       "outFor": "on the way · {{minutes}} min",
       "at": "at {{time}}",

@@ -951,6 +951,7 @@
       "late": "{{minutes}} Min. überfällig",
       "lateCapped": "{{hours}} Std.+ überfällig",
       "stale": "veraltet",
+      "openOrder": "Bestellung #{{ref}} öffnen",
       "waitingFor": "wartet · {{minutes}} Min.",
       "outFor": "unterwegs · {{minutes}} Min.",
       "at": "um {{time}}",

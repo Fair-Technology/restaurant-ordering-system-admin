@@ -44,16 +44,8 @@ export function OrderBoard({ columns, selectedId, onSelect, timeOf, moneyOf, act
                 return (
                   <div
                     key={order.id}
-                    role="button"
-                    tabIndex={0}
                     aria-current={selected ? 'true' : undefined}
                     onClick={() => onSelect(order)}
-                    onKeyDown={(e) => {
-                      if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
-                        e.preventDefault();
-                        onSelect(order);
-                      }
-                    }}
                     className={`cursor-pointer border-b border-line-soft p-3 transition-colors last:border-b-0 hover:bg-cream focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink ${
                       selected ? 'bg-cream shadow-[inset_3px_0_0_#1f1a17]' : ''
                     }`}
@@ -71,7 +63,17 @@ export function OrderBoard({ columns, selectedId, onSelect, timeOf, moneyOf, act
                       <span className="truncate text-[13px] text-muted">{itemSummary(order.items)}</span>
                     </div>
                     <div className="mt-2 flex items-center justify-between gap-2">
-                      <span className="text-[15px] font-bold">{moneyOf(order)}</span>
+                      <button
+                        type="button"
+                        aria-label={t('orders.live.openOrder', { ref: order.orderRef })}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelect(order);
+                        }}
+                        className="cursor-pointer appearance-none rounded border-0 bg-transparent p-0 text-[15px] font-bold focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink"
+                      >
+                        {moneyOf(order)}
+                      </button>
                       <div className="flex justify-end gap-1.5">{actionFor(order)}</div>
                     </div>
                   </div>
