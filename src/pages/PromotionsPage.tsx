@@ -6,8 +6,10 @@ import { MySpinner } from '../components/ui/MySpinner';
 import { PageHeader, Section } from '../components/layout/Page';
 import { DiscountCodesCard } from '../components/promotions/DiscountCodesCard';
 import { LoyaltyCard } from '../components/promotions/LoyaltyCard';
+import { usePageTitle } from '../features/layout/usePageTitle';
 
 export function PromotionsPage() {
+  usePageTitle('nav.promotions');
   const { shopId } = useParams<{ shopId: string }>();
   const { t } = useTranslation();
   const { data: shop, isLoading, isError } = useGetShopByIdQuery({ shopId: shopId! });

@@ -6,8 +6,10 @@ import { afterLoginPath, RETURN_TO_KEY } from '../features/auth/redirects';
 import { loginRequest } from '../config/msalConfig';
 import { MyCard } from '../components/ui/MyCard';
 import { MyButton } from '../components/ui/MyButton';
+import { usePageTitle } from '../features/layout/usePageTitle';
 
 export function LoginPage() {
+  usePageTitle('auth.signIn');
   const { instance, inProgress } = useMsal();
   const isAuthenticated = useIsAuthenticated();
   const { t } = useTranslation();

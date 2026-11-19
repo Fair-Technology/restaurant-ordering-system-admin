@@ -1,8 +1,10 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { MyButton } from '../components/ui/MyButton';
+import { usePageTitle } from '../features/layout/usePageTitle';
 
 export function NotFoundPage() {
+  usePageTitle('notFound.title');
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { shopId } = useParams<{ shopId: string }>();

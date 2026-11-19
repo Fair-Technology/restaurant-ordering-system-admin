@@ -4,8 +4,10 @@ import { useGetShopByIdQuery } from '../services/api';
 import { Breadcrumb } from '../components/ui/Breadcrumb';
 import { PageHeader } from '../components/layout/Page';
 import { CategoryEditor } from '../components/categories/CategoryEditor';
+import { usePageTitle } from '../features/layout/usePageTitle';
 
 export function EditCategoryPage() {
+  usePageTitle('nav.categories');
   const { shopId, categoryId } = useParams<{ shopId: string; categoryId: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation();

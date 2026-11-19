@@ -8,8 +8,10 @@ import { startStaffSession } from '../features/staff/startStaffSession';
 import { MyCard } from '../components/ui/MyCard';
 import { MyButton } from '../components/ui/MyButton';
 import { MyInput } from '../components/ui/MyInput';
+import { usePageTitle } from '../features/layout/usePageTitle';
 
 export function StaffLoginPage() {
+  usePageTitle('staffLogin.title');
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation();

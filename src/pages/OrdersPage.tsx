@@ -32,6 +32,7 @@ import { ModeBadge, StateBadge } from '../components/orders/OrderBadges';
 import { OrderBoard } from '../components/orders/OrderBoard';
 import { OrderDetail, type DetailKind } from '../components/orders/OrderDetail';
 import { ReceiptsArchiveButton } from '../components/orders/ReceiptsArchiveButton';
+import { usePageTitle } from '../features/layout/usePageTitle';
 
 const DAY_PAGE_SIZE = 100;
 
@@ -246,6 +247,7 @@ const scopeTab = (on: boolean) =>
  * Pre-orders and past days always use the list and the same panel.
  */
 export function OrdersPage() {
+  usePageTitle('nav.orders');
   const { shopId } = useParams<{ shopId: string }>();
   const { t, i18n } = useTranslation();
   const toast = useToast();
