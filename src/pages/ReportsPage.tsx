@@ -109,6 +109,12 @@ export function ReportsPage() {
     );
 
   const maxHour = report ? Math.max(1, ...report.byHour) : 1;
+  const hourTotal = report ? report.byHour.reduce((a, b) => a + b, 0) : 0;
+  const peakHour = report ? report.byHour.indexOf(Math.max(...report.byHour)) : 0;
+  const hourSummary =
+    hourTotal > 0 && report
+      ? t('reports.byHourSummary', { total: hourTotal, peakHour: `${peakHour}:00`, peakCount: report.byHour[peakHour] })
+      : t('reports.byHourSummaryEmpty');
   const dateInput =
     'h-9 rounded-full border border-[#e3d9ce] bg-white px-3 text-[13px] font-semibold text-ink outline-none focus-visible:border-ink';
   const th = 'px-4 py-2 text-xs font-semibold text-[#8a7f77]';
@@ -202,9 +208,16 @@ export function ReportsPage() {
 
               <div className="grid gap-x-[18px] lg:grid-cols-2">
                 <Section title={t('reports.byHour')} hint={t('reports.byHourHelp')} padded>
+                  <div role="img" aria-label={`${t('reports.byHour')}: ${hourSummary}`}>
                   <div className="flex h-32 items-end gap-[3px] border-b border-[#c8bfb6]">
                     {report.byHour.map((n, hour) => (
-                      <div key={hour} className="flex h-full flex-1 flex-col items-center justify-end" title={`${hour}:00 · ${n}`}>
+                      <div
+                        key={hour}
+                        tabIndex={0}
+                        aria-label={t('reports.hourOrders', { count: n, hour: `${hour}:00` })}
+                        className="flex h-full flex-1 flex-col items-center justify-end rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink"
+                        title={`${hour}:00 · ${n}`}
+                      >
                         <div
                           className={`w-full rounded-t-[3px] ${n > 0 ? 'bg-[#1f1a17]' : 'bg-[#c8bfb6]'}`}
                           style={{ height: n > 0 ? `${(n / maxHour) * 100}%` : '2px' }}
@@ -218,6 +231,24 @@ export function ReportsPage() {
                         {hour % 3 === 0 ? hour : ''}
                       </span>
                     ))}
+                  </div>
+                  <table className="sr-only">
+                    <caption>{t('reports.byHour')}</caption>
+                    <thead>
+                      <tr>
+                        <th scope="col">{t('reports.hour')}</th>
+                        <th scope="col">{t('reports.orders')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {report.byHour.map((n, hour) => (
+                        <tr key={hour}>
+                          <th scope="row">{`${hour}:00`}</th>
+                          <td>{n}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                   </div>
                 </Section>
 
