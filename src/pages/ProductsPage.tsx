@@ -11,7 +11,7 @@ import {
 import { MyButton } from '../components/ui/MyButton';
 import { MySpinner } from '../components/ui/MySpinner';
 import { PendingButton } from '../components/ui/PendingButton';
-import { getCurrencySymbol } from '../utils/currency';
+import { getCurrencySymbolOrDefault } from '../utils/currency';
 import { formatCents } from '../utils/money';
 import { Plus, Search, X } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
@@ -53,7 +53,7 @@ function AddProductModal({ shopId, onClose }: AddProductModalProps) {
   const toast = useToast();
 
   const { data: shop } = useGetShopByIdQuery({ shopId });
-  const currencySymbol = shop?.currency ? getCurrencySymbol(shop.currency) : '$';
+  const currencySymbol = getCurrencySymbolOrDefault(shop?.currency);
   const { data: categories } = useGetCategoriesByShopQuery({ shopId });
   const [createProduct, { isLoading, isError, error }] = useCreateProductMutation();
   const uploadProductImage = useUploadProductImage();
@@ -301,7 +301,7 @@ function AddProductModal({ shopId, onClose }: AddProductModalProps) {
 
 function BulkImportModal({ shopId, onClose }: { shopId: string; onClose: () => void }) {
   const { data: shop } = useGetShopByIdQuery({ shopId });
-  const currencySymbol = shop?.currency ? getCurrencySymbol(shop.currency) : '$';
+  const currencySymbol = getCurrencySymbolOrDefault(shop?.currency);
   const [createProduct] = useCreateProductMutation();
 
   const [step, setStep] = useState<ImportStep>('upload');
@@ -649,7 +649,7 @@ export function ProductsPage() {
   const { data: categories } = useGetCategoriesByShopQuery({ shopId: shopId! }, { skip: !canManage });
   const timeZone = shop?.timezone ?? 'UTC';
   const { markSoldOutToday, clearSoldOut, setAvailable, isPending: soldOutPending } = useSoldOutToday(shopId!, timeZone);
-  const currencySymbol = shop?.currency ? getCurrencySymbol(shop.currency) : '€';
+  const currencySymbol = getCurrencySymbolOrDefault(shop?.currency);
   const money = (cents: number) => formatCents(cents, shop?.currency ?? 'EUR', i18n.language);
 
   const selectedId = searchParams.get('dish');
