@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useId } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -36,6 +36,7 @@ import { selectClass, useIsWide } from '../features/menu/useIsWide';
 import { EmptyNote, PageHeader, Section, SideCard, SideColumn, SplitPage } from '../components/layout/Page';
 import { badgeClass } from '../components/layout/pageStyles';
 import { CategoryEditor } from '../components/categories/CategoryEditor';
+import { requiredName } from '../utils/validateName';
 
 type Category = NonNullable<GetCategoriesByShopApiResponse>[number];
 
@@ -55,17 +56,25 @@ function CreateCategoryModal({
   const [createCategory, { isLoading, isError, error }] = useCreateCategoryMutation();
   const { refs } = useShopReferenceLists(shopId);
   const [name, setName] = useState('');
+  const [nameError, setNameError] = useState(false);
+  const nameErrorId = useId();
   const [icon, setIcon] = useState<string | null>(null);
   const [taxClassOverride, setTaxClassOverride] = useState<string | null>(null);
   const taxClassId = taxClassOverride ?? refs?.defaultTaxClassId ?? '';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const trimmedName = requiredName(name);
+    if (!trimmedName) {
+      setNameError(true);
+      return;
+    }
+    setNameError(false);
     try {
       await createCategory({
         shopId,
         body: {
-          name,
+          name: trimmedName,
           sortOrder: existingCount,
           icon: icon ?? undefined,
           ...(taxClassId ? { taxClassId } : {}),
@@ -123,8 +132,18 @@ function CreateCategoryModal({
                     aria-label={t('categories.name')}
                     placeholder={t('categories.namePlaceholder')}
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    aria-invalid={nameError}
+                    aria-describedby={nameError ? nameErrorId : undefined}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      setNameError(false);
+                    }}
                   />
+                  {nameError && (
+                    <p id={nameErrorId} role="alert" className="text-sm text-[#b42318]">
+                      {t('categories.nameRequired')}
+                    </p>
+                  )}
                 </div>
               </div>
               {(refs?.taxClasses.length ?? 0) > 0 && (

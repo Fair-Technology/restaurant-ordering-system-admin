@@ -1147,6 +1147,7 @@
     "saveChanges": "Save Changes",
     "name": "Name",
     "namePlaceholder": "Category name",
+    "nameRequired": "Please enter a name.",
     "hasStar": "Show star icon",
     "taxClass": "Tax class for new dishes",
     "taxClassHelp": "New dishes in this category start with this tax class. Changing it doesn't change existing dishes.",

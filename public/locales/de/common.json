@@ -1147,6 +1147,7 @@
     "saveChanges": "Änderungen speichern",
     "name": "Name",
     "namePlaceholder": "Kategoriename",
+    "nameRequired": "Bitte geben Sie einen Namen ein.",
     "hasStar": "Stern-Symbol anzeigen",
     "taxClass": "Steuerklasse für neue Gerichte",
     "taxClassHelp": "Neue Gerichte in dieser Kategorie starten mit dieser Steuerklasse. Eine Änderung hier ändert bestehende Gerichte nicht.",
