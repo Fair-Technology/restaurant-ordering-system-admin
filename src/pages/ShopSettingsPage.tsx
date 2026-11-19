@@ -34,6 +34,7 @@ import { OrderAlertsCard } from '../components/shop/OrderAlertsCard';
 import { AutoAcceptCard } from '../components/shop/AutoAcceptCard';
 import { KitchenTimingCard } from '../components/shop/KitchenTimingCard';
 import { DeliveryCard } from '../components/shop/DeliveryCard';
+import { ClosuresCard } from '../components/shop/ClosuresCard';
 import { ScheduledOrdersCard } from '../components/shop/ScheduledOrdersCard';
 import { DeleteShopCard } from '../components/shop/DeleteShopCard';
 import { ShopStatusCard } from '../components/shop/ShopStatusCard';
@@ -490,6 +491,7 @@ export function ShopSettingsPage() {
     { id: 'settings-general', label: t('shops.settingsPage.groupGeneral') },
     { id: 'settings-look', label: t('shops.settingsPage.groupLook') },
     { id: 'opening-hours', label: t('shops.openingHours') },
+    { id: 'closures', label: t('shops.closuresTitle') },
     { id: 'settings-orders', label: t('shops.settingsPage.groupOrders') },
     { id: 'settings-payments', label: t('shops.settingsPage.groupPayments') },
     ...(canDeleteShop(shop.callerRole) ? [{ id: 'settings-danger', label: t('shops.settingsPage.groupDanger') }] : []),
@@ -970,6 +972,8 @@ export function ShopSettingsPage() {
             </MyButton>
           </div>
         </Section>
+
+        <ClosuresCard shop={shop} onRefetch={refetch} />
 
         <div id="settings-orders" className={GROUP_CLASS}>
           <p className={GROUP_LABEL_CLASS}>{t('shops.settingsPage.groupOrders')}</p>
