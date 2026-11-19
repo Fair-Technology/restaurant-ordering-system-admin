@@ -116,6 +116,18 @@
     "allSystemsOperational": "All systems operational"
   },
   "shops": {
+    "closuresTitle": "Closures",
+    "closuresHelp": "Close the shop on specific dates, e.g. holidays. A closure overrides the weekly opening hours on that day.",
+    "closuresEmpty": "No upcoming closures.",
+    "closuresDateLabel": "Date",
+    "closuresReasonLabel": "Reason (optional)",
+    "closuresReasonPlaceholder": "e.g. Christmas Eve",
+    "closuresAdd": "Add closure",
+    "closuresRemove": "Remove closure",
+    "closuresSave": "Save closures",
+    "closuresSaved": "Closures saved.",
+    "closuresFailed": "Could not save closures. Please try again.",
+    "closuresPastHidden": "Closures that have already ended are not shown.",
     "dineInTitle": "Dine in",
     "dineInHelp": "Let guests order from their table by scanning a QR code. They pay online, exactly like every other order.",
     "dineInLabel": "Take table orders",

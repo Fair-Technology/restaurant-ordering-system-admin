@@ -1370,6 +1370,12 @@ export type UpdateShopApiArg = {
         close: string;
       }[];
     };
+    closures?: {
+      id?: string;
+      start: string;
+      end: string;
+      reason?: string;
+    }[];
   };
 };
 export type GetAuditEntriesApiResponse =
