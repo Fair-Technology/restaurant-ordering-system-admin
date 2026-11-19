@@ -556,7 +556,7 @@ function DishRow({
           onOpen();
         }
       }}
-      className={`flex cursor-pointer items-center gap-3.5 border-b border-[#f6f1eb] px-4 py-2.5 transition-colors last:border-b-0 hover:bg-cream focus:outline-none focus-visible:bg-cream ${
+      className={`flex cursor-pointer items-center gap-2.5 border-b border-[#f6f1eb] px-3 sm:gap-3.5 sm:px-4 py-2.5 transition-colors last:border-b-0 hover:bg-cream focus:outline-none focus-visible:bg-cream ${
         selected ? 'bg-cream shadow-[inset_3px_0_0_#1f1a17]' : ''
       }`}
     >
@@ -569,7 +569,7 @@ function DishRow({
       )}
       <div className={`flex min-w-0 flex-1 flex-col gap-0.5 ${available ? '' : 'opacity-55'}`}>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[15px] font-bold">{product.name}</span>
+          <span className="text-[15px] font-bold break-words">{product.name}</span>
           {offer && (
             <span className="rounded-full bg-[#fdeee6] px-2 py-0.5 text-[11px] font-bold text-[#7c2a09]">
               {offer.offerLabel || t('products.offerBadge')} · {currencyMoney(offer.offerPrice!)}
@@ -591,7 +591,7 @@ function DishRow({
       <span className="hidden w-[110px] text-[13px] text-[#6b6058] md:block">
         {groups > 0 ? t('dishes.optionGroups', { count: groups }) : '–'}
       </span>
-      <span className="w-20 text-right text-[15px] font-bold">{currencyMoney(product.price ?? 0)}</span>
+      <span className="min-w-14 flex-shrink-0 text-right text-[15px] font-bold sm:w-20">{currencyMoney(product.price ?? 0)}</span>
       <SoldOutTodayButton
         name={product.name ?? ''}
         soldOut={soldOut}

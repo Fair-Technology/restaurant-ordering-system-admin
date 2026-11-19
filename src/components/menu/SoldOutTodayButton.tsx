@@ -37,7 +37,7 @@ export function SoldOutTodayButton({ name, soldOut, busy, onToggle, className = 
       } ${className}`}
     >
       {soldOut ? <Undo2 size={13} aria-hidden="true" /> : <Ban size={13} aria-hidden="true" />}
-      {soldOut ? t('dishes.soldOutBack') : t('dishes.soldOutToday')}
+      <span className="hidden min-[480px]:inline">{soldOut ? t('dishes.soldOutBack') : t('dishes.soldOutToday')}</span>
     </PendingButton>
   );
 }

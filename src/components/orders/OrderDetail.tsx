@@ -257,12 +257,12 @@ export function OrderDetail({
       {/* What to cook */}
       <ul className="flex flex-col gap-2.5 border-b border-line-soft px-5 py-3.5">
         {linesOf(order.items).map((line) => (
-          <li key={line.key} className="flex items-start gap-3">
-            <span className="flex h-7 min-w-8 items-center justify-center rounded-lg bg-sand px-1.5 text-[15px] font-bold">
+          <li key={line.key} className="flex flex-wrap items-start gap-x-3 gap-y-1.5">
+            <span className="flex h-7 min-w-8 flex-shrink-0 items-center justify-center rounded-lg bg-sand px-1.5 text-[15px] font-bold">
               {line.quantity}×
             </span>
-            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-              <span className="text-base font-bold">{line.name}</span>
+            <span className="flex min-w-[8rem] flex-1 flex-col gap-0.5">
+              <span className="text-base font-bold break-words">{line.name}</span>
               {line.detail && <span className="text-[13px] text-muted">{line.detail}</span>}
             </span>
             {canStock && kind !== 'history' && line.productId && (
@@ -273,7 +273,7 @@ export function OrderDetail({
                 onToggle={() => toggleSoldOut(line.productId!)}
               />
             )}
-            <span className="text-sm font-semibold whitespace-nowrap">{money(line.cents)}</span>
+            <span className="flex-shrink-0 text-sm font-semibold whitespace-nowrap">{money(line.cents)}</span>
           </li>
         ))}
       </ul>
