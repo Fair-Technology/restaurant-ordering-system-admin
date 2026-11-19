@@ -109,6 +109,12 @@ export function ReportsPage() {
     );
 
   const maxHour = report ? Math.max(1, ...report.byHour) : 1;
+  const hourTotal = report ? report.byHour.reduce((a, b) => a + b, 0) : 0;
+  const peakHour = report ? report.byHour.indexOf(Math.max(...report.byHour)) : 0;
+  const hourSummary =
+    hourTotal > 0 && report
+      ? t('reports.byHourSummary', { total: hourTotal, peakHour: `${peakHour}:00`, peakCount: report.byHour[peakHour] })
+      : t('reports.byHourSummaryEmpty');
   const dateInput =
     'h-9 rounded-full border border-[#e3d9ce] bg-white px-3 text-[13px] font-semibold text-ink outline-none focus-visible:border-ink';
   const th = 'px-4 py-2 text-xs font-semibold text-[#8a7f77]';
@@ -202,7 +208,11 @@ export function ReportsPage() {
 
               <div className="grid gap-x-[18px] lg:grid-cols-2">
                 <Section title={t('reports.byHour')} hint={t('reports.byHourHelp')} padded>
-                  <div className="flex h-32 items-end gap-[3px] border-b border-[#c8bfb6]">
+                  <div
+                    role="img"
+                    aria-label={`${t('reports.byHour')}: ${hourSummary}`}
+                    className="flex h-32 items-end gap-[3px] border-b border-[#c8bfb6]"
+                  >
                     {report.byHour.map((n, hour) => (
                       <div key={hour} className="flex h-full flex-1 flex-col items-center justify-end" title={`${hour}:00 · ${n}`}>
                         <div
@@ -219,6 +229,23 @@ export function ReportsPage() {
                       </span>
                     ))}
                   </div>
+                  <table className="sr-only">
+                    <caption>{t('reports.byHour')}</caption>
+                    <thead>
+                      <tr>
+                        <th scope="col">{t('reports.hour')}</th>
+                        <th scope="col">{t('reports.orders')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {report.byHour.map((n, hour) => (
+                        <tr key={hour}>
+                          <th scope="row">{`${hour}:00`}</th>
+                          <td>{n}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </Section>
 
                 <Section title={t('reports.byMode')}>
