@@ -5,25 +5,23 @@ import { useGetAuditEntriesQuery, useGetShopByIdQuery } from '../services/api';
 import type { AuditEntry } from '../services/api';
 import { EmptyNote, PageHeader, Pager, Row, Section } from '../components/layout/Page';
 import { MySpinner } from '../components/ui/MySpinner';
+import { formatShopDateTime } from '../utils/locale';
 
 const PAGE_SIZE = 20;
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleString(undefined, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+function formatDate(iso: string, language: string, countryCode?: string | null, timeZone?: string): string {
+  return formatShopDateTime(iso, language, countryCode, timeZone);
 }
 
 interface ActivityRowProps {
   entry: AuditEntry;
   actorLabel: string;
+  language: string;
+  countryCode?: string | null;
+  timeZone?: string;
 }
 
-function ActivityRow({ entry, actorLabel }: ActivityRowProps) {
+function ActivityRow({ entry, actorLabel, language, countryCode, timeZone }: ActivityRowProps) {
   return (
     <Row>
       <span
@@ -36,7 +34,7 @@ function ActivityRow({ entry, actorLabel }: ActivityRowProps) {
         <p className="break-words">
           <span className="font-bold">{actorLabel}</span> <span className="text-[#4a413b]">&middot; {entry.action} &middot; {entry.entityName}</span>
         </p>
-        <p className="mt-0.5 text-xs text-[#8a7f77]">{formatDate(entry.timestamp)}</p>
+        <p className="mt-0.5 text-xs text-[#8a7f77]">{formatDate(entry.timestamp, language, countryCode, timeZone)}</p>
       </div>
     </Row>
   );
@@ -44,7 +42,7 @@ function ActivityRow({ entry, actorLabel }: ActivityRowProps) {
 
 export function ActivityPage() {
   const { shopId } = useParams<{ shopId: string }>();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [page, setPage] = useState(1);
   const [pagedShopId, setPagedShopId] = useState(shopId);
 
@@ -92,6 +90,9 @@ export function ActivityPage() {
               key={entry.id}
               entry={entry}
               actorLabel={actorLabels[`${entry.actorType}:${entry.actorId}`] ?? entry.actorId}
+              language={i18n.language}
+              countryCode={shop?.countryCode}
+              timeZone={shop?.timezone}
             />
           ))
         )}

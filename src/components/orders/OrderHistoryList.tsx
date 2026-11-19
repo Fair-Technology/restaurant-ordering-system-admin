@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatCents } from '../../utils/money';
+import { formatShopDateTime } from '../../utils/locale';
 import { useGetOrdersByShopQuery, useGetShopByIdQuery } from '../../services/api';
 import { useLazyGetOrderDocumentQuery } from '../../services/api';
 import { type IntakeOrder } from '../../services/ordersApi';
@@ -15,14 +16,8 @@ import { MyButton } from '../ui/MyButton';
 
 const PAGE_SIZE = 10;
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleString(undefined, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+function formatDate(iso: string, language: string, countryCode?: string | null, timeZone?: string): string {
+  return formatShopDateTime(iso, language, countryCode, timeZone);
 }
 
 function paymentLabelKey(order: IntakeOrder): string {
@@ -36,13 +31,15 @@ interface OrderRowProps {
   shopId: string;
   order: IntakeOrder;
   permissions: readonly string[];
+  countryCode?: string | null;
+  timeZone?: string;
 }
 
-function OrderRow({ shopId, order, permissions }: OrderRowProps) {
+function OrderRow({ shopId, order, permissions, countryCode, timeZone }: OrderRowProps) {
   const { t, i18n } = useTranslation();
   const toast = useToast();
   const [getDocument] = useLazyGetOrderDocumentQuery();
-  const formatCurrency = (cents: number, currency: string) => formatCents(cents, currency, i18n.language);
+  const formatCurrency = (cents: number, currency: string) => formatCents(cents, currency, i18n.language, countryCode);
   const [expanded, setExpanded] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
@@ -93,9 +90,9 @@ function OrderRow({ shopId, order, permissions }: OrderRowProps) {
               {order.deliveryAddress.city}
             </span>
           )}
-          {order.scheduledFor && <span>{t('orders.scheduledFor', { time: formatDate(order.scheduledFor) })}</span>}
+          {order.scheduledFor && <span>{t('orders.scheduledFor', { time: formatDate(order.scheduledFor, i18n.language, countryCode, timeZone) })}</span>}
           {address && <span>{`${address.street}, ${address.postcode} ${address.city}, ${address.country}`}</span>}
-          <span>{formatDate(order.createdAt)}</span>
+          <span>{formatDate(order.createdAt, i18n.language, countryCode, timeZone)}</span>
         </div>
       </div>
 
@@ -144,7 +141,7 @@ function OrderRow({ shopId, order, permissions }: OrderRowProps) {
               <p>
                 {t('orders.refundLine', {
                   amount: formatCurrency(refund.amountCents, order.currency),
-                  date: formatDate(refund.at),
+                  date: formatDate(refund.at, i18n.language, countryCode, timeZone),
                   reason: refund.reason,
                 })}
               </p>
@@ -225,7 +222,7 @@ export function OrderHistoryList({ shopId }: OrderHistoryListProps) {
         ) : (
           <div className="divide-y divide-gray-200">
             {orders.map((order) => (
-              <OrderRow key={order.id} shopId={shopId} order={order} permissions={permissions} />
+              <OrderRow key={order.id} shopId={shopId} order={order} permissions={permissions} countryCode={shop?.countryCode} timeZone={shop?.timezone} />
             ))}
           </div>
         )}
