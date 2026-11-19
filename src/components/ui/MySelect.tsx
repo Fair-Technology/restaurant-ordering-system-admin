@@ -1,4 +1,4 @@
-import { type ReactNode, type SelectHTMLAttributes } from 'react';
+import { type ReactNode, type SelectHTMLAttributes, useId } from 'react';
 
 const BASE =
   'w-full border border-[#e3d9ce] rounded-[10px] bg-white text-ink ' +
@@ -17,14 +17,16 @@ interface MySelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
 }
 
 export function MySelect({ label, options, children, className = '', ...props }: MySelectProps) {
+  const generatedId = useId();
+  const id = props.id ?? generatedId;
   return (
     <div className="flex flex-col gap-1.5">
       {label && (
-        <label htmlFor={props.id} className="text-[13px] font-semibold text-[#4a413b]">
+        <label htmlFor={id} className="text-[13px] font-semibold text-[#4a413b]">
           {label}
         </label>
       )}
-      <select className={`${BASE} ${className}`} {...props}>
+      <select className={`${BASE} ${className}`} {...props} id={id}>
         {children}
         {options?.map((o) => (
           <option key={o.value} value={o.value}>

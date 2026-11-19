@@ -658,6 +658,7 @@ export function ShopSettingsPage() {
                   <MySelect
                     label={t('shops.addressState')}
                     value={stateField.value}
+                    aria-describedby={stateField.isLegacy ? 'address-state-legacy-hint' : undefined}
                     onChange={(e) => setAddressState({ ...currentAddress, state: e.target.value })}
                   >
                     <option value="">{t('shops.addressStatePlaceholder')}</option>
@@ -668,7 +669,7 @@ export function ShopSettingsPage() {
                     ))}
                   </MySelect>
                   {stateField.isLegacy && (
-                    <p className="text-xs text-muted">
+                    <p id="address-state-legacy-hint" className="text-xs text-muted">
                       {t('shops.addressStateLegacy', { state: stateField.value })}
                     </p>
                   )}
