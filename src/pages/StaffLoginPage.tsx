@@ -5,6 +5,7 @@ import { useStaffLoginMutation } from '../services/api';
 import { useDispatch } from 'react-redux';
 import { readStaffSession } from '../features/staff/staffSession';
 import { startStaffSession } from '../features/staff/startStaffSession';
+import { PageTitle } from '../components/layout/PageTitle';
 import { MyCard } from '../components/ui/MyCard';
 import { MyButton } from '../components/ui/MyButton';
 import { MyInput } from '../components/ui/MyInput';
@@ -49,41 +50,44 @@ export function StaffLoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-paper text-ink">
-      <div className="w-full max-w-sm px-4">
-        <MyCard className="p-8">
-          <div className="mb-7">
-            <h1 className="font-display text-[30px] leading-tight font-semibold">{t('staffLogin.title')}</h1>
-          </div>
+    <>
+      <PageTitle />
+      <div className="flex min-h-screen items-center justify-center bg-paper text-ink">
+        <div className="w-full max-w-sm px-4">
+          <MyCard className="p-8">
+            <div className="mb-7">
+              <h1 className="font-display text-[30px] leading-tight font-semibold">{t('staffLogin.title')}</h1>
+            </div>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            {error && (
-              <div role="alert" className="rounded-xl border border-[#f5c2bd] bg-[#fdeceb] p-3">
-                <p className="text-sm text-[#b42318]">{error}</p>
-              </div>
-            )}
-            <MyInput
-              type="text"
-              autoComplete="username"
-              required
-              label={t('staff.username')}
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-            />
-            <MyInput
-              type="password"
-              autoComplete="current-password"
-              required
-              label={t('staff.password')}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            <MyButton type="submit" size="lg" className="mt-1 w-full" isPending={isLoading}>
-              {t('staffLogin.submit')}
-            </MyButton>
-          </form>
-        </MyCard>
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              {error && (
+                <div role="alert" className="rounded-xl border border-[#f5c2bd] bg-[#fdeceb] p-3">
+                  <p className="text-sm text-[#b42318]">{error}</p>
+                </div>
+              )}
+              <MyInput
+                type="text"
+                autoComplete="username"
+                required
+                label={t('staff.username')}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
+              <MyInput
+                type="password"
+                autoComplete="current-password"
+                required
+                label={t('staff.password')}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <MyButton type="submit" size="lg" className="mt-1 w-full" isPending={isLoading}>
+                {t('staffLogin.submit')}
+              </MyButton>
+            </form>
+          </MyCard>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
