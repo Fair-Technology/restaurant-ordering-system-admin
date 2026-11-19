@@ -27,6 +27,8 @@ import { canDeleteShop } from '../features/shops/deleteShop';
 import { MySpinner } from '../components/ui/MySpinner';
 import { MyButton } from '../components/ui/MyButton';
 import { MyInput } from '../components/ui/MyInput';
+import { MySelect } from '../components/ui/MySelect';
+import { stateFieldFor } from '../features/shops/addressState';
 import { CurrencyInput } from '../components/ui/CurrencyInput';
 import { useToast } from '../contexts/ToastContext';
 import { PaymentsCard } from '../components/shop/PaymentsCard';
@@ -183,6 +185,8 @@ export function ShopSettingsPage() {
   };
 
   const originalLanguage: MenuLanguage = menuLanguagesOf(shop)[0];
+  // The backend go-live gate keys the state rule off shop.countryCode, not the free-text country.
+  const stateField = stateFieldFor(shop.countryCode, currentAddress.state);
   const currentLanguages = languagesState ?? menuLanguagesOf(shop);
 
   const handleSaveLanguages = async () => {
@@ -332,8 +336,12 @@ export function ShopSettingsPage() {
   };
 
   const handleSaveAddress = async () => {
-    setIsSavingAddress(true);
     setAddressError(null);
+    if (stateField.kind === 'select' && !currentAddress.state.trim()) {
+      setAddressError(t('shops.addressStateRequired'));
+      return;
+    }
+    setIsSavingAddress(true);
     try {
       await updateShop({
         shopId: shopId!,
@@ -645,16 +653,35 @@ export function ShopSettingsPage() {
                 value={currentAddress.city}
                 onChange={(e) => setAddressState({ ...currentAddress, city: e.target.value })}
               />
-              <MyInput
-                label={t('shops.addressState')}
-                value={currentAddress.state}
-                onChange={(e) => setAddressState({ ...currentAddress, state: e.target.value })}
-              />
-              <MyInput
-                label={t('shops.addressCountry')}
-                value={currentAddress.country}
-                onChange={(e) => setAddressState({ ...currentAddress, country: e.target.value })}
-              />
+              {stateField.kind === 'select' && (
+                <div className="flex flex-col gap-1.5">
+                  <MySelect
+                    label={t('shops.addressState')}
+                    value={stateField.value}
+                    aria-describedby={stateField.isLegacy ? 'address-state-legacy-hint' : undefined}
+                    onChange={(e) => setAddressState({ ...currentAddress, state: e.target.value })}
+                  >
+                    <option value="">{t('shops.addressStatePlaceholder')}</option>
+                    {stateField.options.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </MySelect>
+                  {stateField.isLegacy && (
+                    <p id="address-state-legacy-hint" className="text-xs text-muted">
+                      {t('shops.addressStateLegacy', { state: stateField.value })}
+                    </p>
+                  )}
+                </div>
+              )}
+              <div className={stateField.kind === 'hidden' ? 'sm:col-span-2' : ''}>
+                <MyInput
+                  label={t('shops.addressCountry')}
+                  value={currentAddress.country}
+                  onChange={(e) => setAddressState({ ...currentAddress, country: e.target.value })}
+                />
+              </div>
             </div>
             {addressError && <p className={`mt-3 ${ERROR_CLASS}`}>{addressError}</p>}
             <div className={FOOTER_CLASS}>
