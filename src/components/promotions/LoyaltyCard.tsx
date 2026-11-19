@@ -8,6 +8,7 @@ import { MyButton } from '../ui/MyButton';
 import { Section } from '../layout/Page';
 import { badgeClass } from '../layout/pageStyles';
 import { MyInput } from '../ui/MyInput';
+import { formatShopDate } from '../../utils/locale';
 
 interface LoyaltyCardProps {
   shopId: string;
@@ -53,9 +54,7 @@ export function LoyaltyCard({ shopId, shop, loyalty }: LoyaltyCardProps) {
   };
 
   const since = loyalty.since
-    ? new Date(loyalty.since).toLocaleDateString(i18n.language.startsWith('de') ? 'de-DE' : 'en-GB', {
-        timeZone: shop.timezone ?? 'Europe/Berlin',
-      })
+    ? formatShopDate(loyalty.since, i18n.language, shop.countryCode, undefined, shop.timezone ?? 'Europe/Berlin')
     : null;
 
   return (

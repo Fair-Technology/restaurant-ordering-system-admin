@@ -29,6 +29,7 @@ import { MySpinner } from '../components/ui/MySpinner';
 import { PendingButton } from '../components/ui/PendingButton';
 import { PageHeader, Section } from '../components/layout/Page';
 import { badgeClass, chipClass } from '../components/layout/pageStyles';
+import { formatShopCents, formatShopDate } from '../utils/locale';
 
 // Taglines shown beneath each plan name, indexed by sort position
 const PLAN_TAGLINES = [
@@ -59,19 +60,18 @@ function formatLimitKey(key: string): string {
   return key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-function formatPrice(cents: number, currency: string): string {
-  return new Intl.NumberFormat(undefined, {
-    style: 'currency',
-    currency,
+function formatPrice(cents: number, currency: string, language: string, countryCode?: string | null): string {
+  return formatShopCents(cents, currency, language, countryCode, {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(cents / 100);
+  });
 }
 
 interface PlanCardProps {
   plan: Plan;
   index: number;
   currency: string;
+  countryCode: string;
   interval: BillingInterval;
   isCurrentPlan: boolean;
   action: PlanAction;
@@ -85,6 +85,7 @@ function PlanCard({
   plan,
   index,
   currency,
+  countryCode,
   interval,
   isCurrentPlan,
   action,
@@ -93,7 +94,7 @@ function PlanCard({
   onChoose,
   isBusy,
 }: PlanCardProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { data: pricingList } = useGetPlanPricingQuery({ planId: plan.id });
 
   const pricing = pricingList?.find(
@@ -112,7 +113,7 @@ function PlanCard({
   } else if (pricing) {
     const amount = interval === 'yearly' ? pricing.yearlyAmountCents : pricing.monthlyAmountCents;
     if (amount > 0) {
-      priceDisplay = formatPrice(amount, currency);
+      priceDisplay = formatPrice(amount, currency, i18n.language, countryCode);
       periodLabel = t(interval === 'yearly' ? 'subscription.perYear' : 'subscription.perMonth');
       hasPrice = true;
     }
@@ -237,7 +238,7 @@ function UsageMeter({ label, used, limit, fill, unlimitedText }: { label: string
 
 export function SubscriptionPage() {
   const { shopId } = useParams<{ shopId: string }>();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const dispatch = useDispatch();
   const [searchParams, setSearchParams] = useSearchParams();
   const [upgradeError, setUpgradeError] = useState<string | null>(null);
@@ -477,7 +478,7 @@ export function SubscriptionPage() {
           <span className="min-w-0 flex-1">
             {t('subscription.changeScheduled', {
               plan: scheduledPlan?.name ?? '',
-              date: new Date(scheduled.effectiveAt).toLocaleDateString(),
+              date: formatShopDate(scheduled.effectiveAt, i18n.language, shop?.countryCode),
             })}
           </span>
           {isOwner && (
@@ -493,7 +494,7 @@ export function SubscriptionPage() {
         <div role="alert" className={`${banner} border-[#f5c2bd] bg-[#fdeceb] text-[#8f1c13]`}>
           <span className="min-w-0 flex-1">
             {t('subscription.paymentFailed', {
-              date: new Date(graceEnd ?? paymentFailedAt).toLocaleDateString(),
+              date: formatShopDate(graceEnd ?? paymentFailedAt, i18n.language, shop?.countryCode),
             })}
           </span>
           {isOwner && (
@@ -514,7 +515,7 @@ export function SubscriptionPage() {
         <div className={`${banner} border-[#f1dfae] bg-[#fff6e0] text-[#5c3c00]`}>
           <span className="min-w-0 flex-1">
             {t('subscription.cancelScheduled', {
-              date: new Date(subscription.currentPeriodEnd).toLocaleDateString(),
+              date: formatShopDate(subscription.currentPeriodEnd, i18n.language, shop?.countryCode),
             })}
           </span>
           {isOwner && (
@@ -544,7 +545,7 @@ export function SubscriptionPage() {
               {subscription?.currentPeriodEnd && !isCancelPending && (
                 <span>
                   {t('subscription.periodEnd')}:{' '}
-                  <span className="font-semibold text-ink">{new Date(subscription.currentPeriodEnd).toLocaleDateString()}</span>
+                  <span className="font-semibold text-ink">{formatShopDate(subscription.currentPeriodEnd, i18n.language, shop?.countryCode)}</span>
                 </span>
               )}
             </span>
@@ -598,6 +599,7 @@ export function SubscriptionPage() {
               plan={plan}
               index={index}
               currency={currency}
+              countryCode={shop?.countryCode ?? ''}
               isCurrentPlan={currentPlanId === plan.id}
               interval={interval}
               isCancelPending={isCancelPending}

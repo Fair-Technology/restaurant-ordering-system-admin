@@ -31,6 +31,7 @@ import { MyButton } from '../components/ui/MyButton';
 import { MyInput, MyTextarea } from '../components/ui/MyInput';
 import { MySpinner } from '../components/ui/MySpinner';
 import { useToast } from '../contexts/ToastContext';
+import { formatShopDate } from '../utils/locale';
 import { buildCustomersCsv, buildOrdersCsv } from '../features/legal/exportCsv';
 
 const IMPRESSUM_TEXT_FIELDS: ImpressumFieldKey[] = [
@@ -97,8 +98,9 @@ function DocumentSections({ sections }: { sections: LegalSection[] }) {
 
 // ── DPA ────────────────────────────────────────────────────────────────────
 
-function DpaCard({ shopId, shopName, legal, lang }: {
+function DpaCard({ shopId, shopName, legal, lang, countryCode }: {
   shopId: string;
+  countryCode: string;
   shopName: string;
   legal: ShopLegalSettingsDto;
   lang: LegalLanguage;
@@ -117,7 +119,7 @@ function DpaCard({ shopId, shopName, legal, lang }: {
     : accepted.version === currentVersion
       ? t('legal.dpaAcceptedOn', {
           version: accepted.version,
-          date: new Date(accepted.acceptedAt).toLocaleDateString(i18n.language),
+          date: formatShopDate(accepted.acceptedAt, i18n.language, countryCode),
         })
       : t('legal.dpaNewVersion', { version: currentVersion });
   const needsAcceptance = accepted?.version !== currentVersion;
@@ -275,7 +277,8 @@ function ImpressumCard({ shopId, legal, shopAddress }: {
 
 // ── Free-text documents ────────────────────────────────────────────────────
 
-function TextEditor({ label, saved, max, minLength, onSave, saveLabel }: {
+function TextEditor({ label, saved, max, minLength, onSave, saveLabel, countryCode }: {
+  countryCode: string;
   label?: string;
   saved: LegalTextDto | null;
   max: number;
@@ -316,7 +319,7 @@ function TextEditor({ label, saved, max, minLength, onSave, saveLabel }: {
           <span>
             {t('legal.revision', {
               revision: saved.revision,
-              date: new Date(saved.updatedAt).toLocaleDateString(i18n.language),
+              date: formatShopDate(saved.updatedAt, i18n.language, countryCode),
             })}
           </span>
         )}
@@ -342,7 +345,8 @@ function useSaveLegal(shopId: string) {
   };
 }
 
-function TextCard({ id, kind, title, complete, saved, guideCount, shopId }: {
+function TextCard({ id, kind, title, complete, saved, guideCount, shopId, countryCode }: {
+  countryCode: string;
   id: string;
   kind: 'terms' | 'withdrawal';
   title: string;
@@ -380,6 +384,7 @@ function TextCard({ id, kind, title, complete, saved, guideCount, shopId }: {
           )}
         </div>
         <TextEditor
+          countryCode={countryCode}
           saved={saved}
           max={LEGAL_TEXT_MAX_CHARS[kind]}
           minLength={MIN_LEGAL_TEXT_CHARS}
@@ -393,7 +398,7 @@ function TextCard({ id, kind, title, complete, saved, guideCount, shopId }: {
 
 // ── Privacy ────────────────────────────────────────────────────────────────
 
-function PrivacyCard({ shopId, slug, legal }: { shopId: string; slug: string; legal: ShopLegalSettingsDto }) {
+function PrivacyCard({ shopId, slug, legal, countryCode }: { shopId: string; slug: string; legal: ShopLegalSettingsDto; countryCode: string }) {
   const { t } = useTranslation();
   const save = useSaveLegal(shopId);
   const base = import.meta.env.VITE_SHOP_BASE_URL ?? 'https://www.example.com';
@@ -418,6 +423,7 @@ function PrivacyCard({ shopId, slug, legal }: { shopId: string; slug: string; le
           </a>
         )}
         <TextEditor
+          countryCode={countryCode}
           label={t('legal.privacyAddition')}
           saved={legal.privacyAddition}
           max={LEGAL_TEXT_MAX_CHARS.privacyAddition}
@@ -578,17 +584,17 @@ export function LegalPage() {
           </a>
         ))}
       </nav>
-      <DpaCard shopId={shopId!} shopName={shop.name ?? ''} legal={legal} lang={lang} />
+      <DpaCard shopId={shopId!} shopName={shop.name ?? ''} legal={legal} lang={lang} countryCode={shop.countryCode} />
       <ImpressumCard shopId={shopId!} legal={legal} shopAddress={shop.address} />
       <TextCard
-        id="terms" kind="terms" title={t('legal.termsTitle')} shopId={shopId!}
+        id="terms" kind="terms" title={t('legal.termsTitle')} shopId={shopId!} countryCode={shop.countryCode}
         complete={legal.completeness.terms} saved={legal.terms} guideCount={TERMS_GUIDE_COUNT}
       />
       <TextCard
-        id="withdrawal" kind="withdrawal" title={t('legal.withdrawalTitle')} shopId={shopId!}
+        id="withdrawal" kind="withdrawal" title={t('legal.withdrawalTitle')} shopId={shopId!} countryCode={shop.countryCode}
         complete={legal.completeness.withdrawal} saved={legal.withdrawal} guideCount={WITHDRAWAL_GUIDE_COUNT}
       />
-      <PrivacyCard shopId={shopId!} slug={shop.slug ?? ''} legal={legal} />
+      <PrivacyCard shopId={shopId!} slug={shop.slug ?? ''} legal={legal} countryCode={shop.countryCode} />
       <DataCard shopId={shopId!} slug={shop.slug ?? ''} legal={legal} />
     </div>
   );
