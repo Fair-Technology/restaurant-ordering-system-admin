@@ -26,6 +26,7 @@ import { ShopLiveBadge } from '../components/shop/ShopLiveBadge';
 import { shopLiveState } from '../features/shops/shopStatus';
 import { OPENED_COUNTRIES, openedCountry } from '../features/shops/openedCountries';
 import { defaultNewShopForm, newShopFormError, withCountry } from '../features/shops/newShopForm';
+import { usePageTitle } from '../features/layout/usePageTitle';
 
 const INDUSTRY_OPTIONS = [
   'Food & Beverage',
@@ -384,6 +385,7 @@ function ShopRow({ shop }: { shop: ShopSummaryDto }) {
 }
 
 export function ShopsPage() {
+  usePageTitle('nav.myShops');
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data, isLoading, isError } = useGetMyShopsQuery();

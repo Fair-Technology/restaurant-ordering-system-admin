@@ -1396,6 +1396,7 @@
     "openPhone": "Phone view"
   },
   "phone": {
+    "pageTitle": "Phone orders",
     "pickRestaurant": "Which restaurant?",
     "noRestaurant": "You have no restaurant yet."
   },

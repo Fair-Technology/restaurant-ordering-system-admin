@@ -31,6 +31,7 @@ import { PendingButton } from '../components/ui/PendingButton';
 import { PageHeader, Section } from '../components/layout/Page';
 import { badgeClass, chipClass } from '../components/layout/pageStyles';
 import { formatShopCents, formatShopDate } from '../utils/locale';
+import { usePageTitle } from '../features/layout/usePageTitle';
 
 // Taglines shown beneath each plan name, indexed by sort position
 const PLAN_TAGLINE_KEYS = [
@@ -246,6 +247,7 @@ function UsageMeter({ label, used, limit, fill, unlimitedText }: { label: string
 }
 
 export function SubscriptionPage() {
+  usePageTitle('nav.subscription');
   const { shopId } = useParams<{ shopId: string }>();
   const { t, i18n } = useTranslation();
   const dispatch = useDispatch();

@@ -4,9 +4,11 @@ import { OrdersPage } from './OrdersPage';
 import { readStaffSession } from '../features/staff/staffSession';
 import { useGetShopByIdQuery } from '../services/api';
 import { ShopLogoBadge } from '../components/shop/ShopLogoBadge';
+import { usePageTitle } from '../features/layout/usePageTitle';
 
 /** The staff bookmark/QR entry: the one Orders page, under a thin phone shell. */
 export function PhoneOrdersPage() {
+  usePageTitle('phone.pageTitle');
   const { shopId } = useParams<{ shopId: string }>();
   const { t } = useTranslation();
   const { data: shop } = useGetShopByIdQuery({ shopId: shopId! });

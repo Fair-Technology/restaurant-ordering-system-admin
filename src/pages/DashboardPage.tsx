@@ -11,8 +11,10 @@ import { badgeClass, pillClass } from '../components/layout/pageStyles';
 import { ShopLogoBadge } from '../components/shop/ShopLogoBadge';
 import { ShopLiveBadge } from '../components/shop/ShopLiveBadge';
 import { formatCents } from '../utils/money';
+import { usePageTitle } from '../features/layout/usePageTitle';
 
 export function DashboardPage() {
+  usePageTitle('nav.overview');
   const { t, i18n } = useTranslation();
   const { accounts } = useMsal();
   const { data, isLoading, isError, isFetching, refetch } = useGetOwnerOverviewQuery();

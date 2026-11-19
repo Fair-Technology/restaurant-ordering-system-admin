@@ -19,8 +19,10 @@ import { badgeClass, pillClass } from '../components/layout/pageStyles';
 import { MyButton } from '../components/ui/MyButton';
 import { MySpinner } from '../components/ui/MySpinner';
 import { PendingButton } from '../components/ui/PendingButton';
+import { usePageTitle } from '../features/layout/usePageTitle';
 
 export function CombosPage() {
+  usePageTitle('nav.combos');
   const { shopId } = useParams<{ shopId: string }>();
   const { t, i18n } = useTranslation();
   const toast = useToast();

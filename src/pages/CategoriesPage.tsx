@@ -37,6 +37,7 @@ import { EmptyNote, PageHeader, Section, SideCard, SideColumn, SplitPage } from 
 import { badgeClass } from '../components/layout/pageStyles';
 import { CategoryEditor } from '../components/categories/CategoryEditor';
 import { requiredName } from '../utils/validateName';
+import { usePageTitle } from '../features/layout/usePageTitle';
 
 type Category = NonNullable<GetCategoriesByShopApiResponse>[number];
 
@@ -335,6 +336,7 @@ function SortableCategoryItem({ cat, shopId, selected, onOpen }: SortableCategor
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export function CategoriesPage() {
+  usePageTitle('nav.categories');
   const { shopId } = useParams<{ shopId: string }>();
   const { t } = useTranslation();
   const toast = useToast();

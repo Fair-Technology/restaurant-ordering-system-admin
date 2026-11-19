@@ -1396,6 +1396,7 @@
     "openPhone": "Handy-Ansicht"
   },
   "phone": {
+    "pageTitle": "Telefonbestellungen",
     "pickRestaurant": "Welches Restaurant?",
     "noRestaurant": "Sie haben noch kein Restaurant."
   },

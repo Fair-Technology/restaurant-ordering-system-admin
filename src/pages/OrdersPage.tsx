@@ -25,12 +25,14 @@ import { useLiveQueue } from '../features/orders/useLiveQueue';
 import { nextActionLabelKey, useOrderActions } from '../features/orders/useOrderActions';
 import { chargedCents } from '../features/orders/refunds';
 import { formatCents } from '../utils/money';
+import { useModalA11y } from '../hooks/useModalA11y';
 import { MySpinner } from '../components/ui/MySpinner';
 import { PendingButton } from '../components/ui/PendingButton';
 import { ModeBadge, StateBadge } from '../components/orders/OrderBadges';
 import { OrderBoard } from '../components/orders/OrderBoard';
 import { OrderDetail, type DetailKind } from '../components/orders/OrderDetail';
 import { ReceiptsArchiveButton } from '../components/orders/ReceiptsArchiveButton';
+import { usePageTitle } from '../features/layout/usePageTitle';
 
 const DAY_PAGE_SIZE = 100;
 
@@ -101,6 +103,28 @@ function OrderRow({ order, selected, onSelect, time, urgent = false, stale = fal
       </span>
       <span className="hidden w-20 text-right text-[15px] font-bold sm:block">{money(order)}</span>
       <div className="flex flex-shrink-0 justify-end gap-1.5 sm:w-[150px]">{action}</div>
+    </div>
+  );
+}
+
+/** Floating order-detail dialog: Escape closes, Tab is trapped, focus returns to the opener. */
+function OrderDetailPanel({ label, onClose, children }: { label: string; onClose: () => void; children: ReactNode }) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const onKeyDown = useModalA11y({ onClose, containerRef: panelRef });
+  return (
+    <div className="fixed inset-0 z-40 flex justify-end bg-ink/30" onClick={onClose}>
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={label}
+        tabIndex={-1}
+        onKeyDown={onKeyDown}
+        className="flex h-full w-full max-w-[452px] flex-col bg-[#efebe6] p-3 outline-none"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {children}
+      </div>
     </div>
   );
 }
@@ -245,6 +269,7 @@ const scopeTab = (on: boolean) =>
  * Pre-orders and past days always use the list and the same panel.
  */
 export function OrdersPage() {
+  usePageTitle('nav.orders');
   const { shopId } = useParams<{ shopId: string }>();
   const { t, i18n } = useTranslation();
   const toast = useToast();
@@ -771,17 +796,9 @@ export function OrdersPage() {
 
       {/* Detail: a floating panel over the page at every width, opened by clicking an order */}
       {detail && (
-        <div className="fixed inset-0 z-40 flex justify-end bg-ink/30" onClick={() => update({ order: null })}>
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-label={t('orders.live.detail')}
-            className="flex h-full w-full max-w-[452px] flex-col bg-[#efebe6] p-3"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {detail}
-          </div>
-        </div>
+        <OrderDetailPanel label={t('orders.live.detail')} onClose={() => update({ order: null })}>
+          {detail}
+        </OrderDetailPanel>
       )}
     </div>
   );

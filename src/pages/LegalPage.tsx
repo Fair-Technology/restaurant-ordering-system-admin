@@ -33,6 +33,7 @@ import { MySpinner } from '../components/ui/MySpinner';
 import { useToast } from '../contexts/ToastContext';
 import { formatShopDate } from '../utils/locale';
 import { buildCustomersCsv, buildOrdersCsv } from '../features/legal/exportCsv';
+import { usePageTitle } from '../features/layout/usePageTitle';
 
 const IMPRESSUM_TEXT_FIELDS: ImpressumFieldKey[] = [
   'legalName', 'representatives', 'street', 'postcode', 'city', 'country', 'phone', 'email',
@@ -533,6 +534,7 @@ function DataCard({ shopId, slug, legal }: { shopId: string; slug: string; legal
 // ── Page ───────────────────────────────────────────────────────────────────
 
 export function LegalPage() {
+  usePageTitle('nav.legal');
   const { shopId } = useParams<{ shopId: string }>();
   const { t, i18n } = useTranslation();
   const { data: shop } = useGetShopByIdQuery({ shopId: shopId! });

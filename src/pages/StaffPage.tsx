@@ -18,6 +18,7 @@ import { MyInput } from '../components/ui/MyInput';
 import { MySpinner } from '../components/ui/MySpinner';
 import { PendingButton } from '../components/ui/PendingButton';
 import { useToast } from '../contexts/ToastContext';
+import { usePageTitle } from '../features/layout/usePageTitle';
 
 function serverErrorText(err: unknown): string {
   return (err as { data?: { error?: string } })?.data?.error ?? '';
@@ -253,6 +254,7 @@ function StaffRow({ acc, shopId }: { acc: StaffAccountDto; shopId: string }) {
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export function StaffPage() {
+  usePageTitle('nav.staff');
   const { shopId } = useParams<{ shopId: string }>();
   const { t } = useTranslation();
   const { data: shop } = useGetShopByIdQuery({ shopId: shopId! });
