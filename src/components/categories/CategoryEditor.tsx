@@ -20,6 +20,7 @@ import { menuLanguagesOf, resolveActiveLanguage, withTranslation } from '../../f
 import { LanguageTabs, TranslationField } from '../menu/LanguageTabs';
 import { DEFAULT_SCHEDULE, WEEK_DAYS, dayName, isScheduleValid } from '../../features/menu/categorySchedule';
 import { selectClass } from '../../features/menu/useIsWide';
+import { requiredName } from '../../utils/validateName';
 
 interface CategoryEditorProps {
   shopId: string;
@@ -97,6 +98,8 @@ function CategoryForm({
   const [confirmingApply, setConfirmingApply] = useState(false);
 
   const [name, setName] = useState(category.name ?? '');
+  const [nameError, setNameError] = useState(false);
+  const nameErrorId = useId();
   const icon = category.icon ?? null;
   const [taxClassId, setTaxClassId] = useState(category.taxClassId ?? '');
   const [nameTranslations, setNameTranslations] = useState<TranslationMap>(category.nameTranslations ?? {});
@@ -120,12 +123,18 @@ function CategoryForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (scheduleInvalid) return;
+    const trimmedName = requiredName(name);
+    if (!trimmedName) {
+      setNameError(true);
+      return;
+    }
+    setNameError(false);
     try {
       await updateCategory({
         shopId,
         categoryId,
         body: {
-          name,
+          name: trimmedName,
           ...(extraLanguage ? { nameTranslations } : {}),
           icon: icon ?? undefined,
           ...(taxClassId ? { taxClassId } : {}),
@@ -187,14 +196,26 @@ function CategoryForm({
                 onChange={(v) => setNameTranslations((m) => withTranslation(m, extraLanguage, v))}
               />
             ) : (
-              <MyInput
-                label={t('categories.name')}
-                type="text"
-                required
-                placeholder={t('categories.namePlaceholder')}
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
+              <div className="flex flex-col gap-1.5">
+                <MyInput
+                  label={t('categories.name')}
+                  type="text"
+                  required
+                  placeholder={t('categories.namePlaceholder')}
+                  value={name}
+                  aria-invalid={nameError}
+                  aria-describedby={nameError ? nameErrorId : undefined}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    setNameError(false);
+                  }}
+                />
+                {nameError && (
+                  <p id={nameErrorId} role="alert" className="text-sm text-[#b42318]">
+                    {t('categories.nameRequired')}
+                  </p>
+                )}
+              </div>
             )}
             {!translating && (refs?.taxClasses.length ?? 0) > 0 && (
               <div className="flex flex-col gap-1.5">
