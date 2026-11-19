@@ -24,6 +24,8 @@ function downloadFile(name: string, content: string, mime: string) {
   URL.revokeObjectURL(url);
 }
 
+const RANGE_ERROR_ID = 'reports-range-error';
+
 const PRESET_LABELS: Record<ReportPreset, string> = {
   today: 'reports.presetToday',
   yesterday: 'reports.presetYesterday',
@@ -137,15 +139,33 @@ export function ReportsPage() {
         <span className="flex flex-wrap items-center gap-2">
           <label className="flex items-center gap-1.5 text-[13px] text-muted">
             {t('reports.from')}
-            <input type="date" value={range.from} onChange={(e) => changeDate('from', e.target.value)} className={dateInput} />
+            <input
+              type="date"
+              value={range.from}
+              onChange={(e) => changeDate('from', e.target.value)}
+              aria-invalid={!valid}
+              aria-describedby={!valid ? RANGE_ERROR_ID : undefined}
+              className={dateInput}
+            />
           </label>
           <label className="flex items-center gap-1.5 text-[13px] text-muted">
             {t('reports.to')}
-            <input type="date" value={range.to} onChange={(e) => changeDate('to', e.target.value)} className={dateInput} />
+            <input
+              type="date"
+              value={range.to}
+              onChange={(e) => changeDate('to', e.target.value)}
+              aria-invalid={!valid}
+              aria-describedby={!valid ? RANGE_ERROR_ID : undefined}
+              className={dateInput}
+            />
           </label>
         </span>
       </Toolbar>
-      {!valid && <p className="mb-3 text-sm text-[#b42318]">{t('reports.rangeInvalid')}</p>}
+      {!valid && (
+        <p id={RANGE_ERROR_ID} role="alert" className="mb-3 text-sm text-[#b42318]">
+          {t('reports.rangeInvalid')}
+        </p>
+      )}
 
       {valid && isError && <p className="text-sm text-[#b42318]">{t('reports.loadError')}</p>}
       {valid && !report && !isError && <MySpinner label={t('reports.loading')} />}
