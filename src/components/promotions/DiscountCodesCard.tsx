@@ -110,7 +110,7 @@ export function DiscountCodesCard({ shopId, shop, data }: DiscountCodesCardProps
                   <span>
                     {c.totalLimit !== null
                       ? t('promotions.usesOf', { uses: c.uses, limit: c.totalLimit })
-                      : t('promotions.uses', { uses: c.uses })}
+                      : t('promotions.uses', { count: c.uses })}
                   </span>
                   {c.perEmailLimit !== null && <span>{t('promotions.perDiner', { n: c.perEmailLimit })}</span>}
                 </div>
