@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
 import type { MenuLanguage, ProductDto, TranslationMap } from '../../services/api';
@@ -27,6 +27,7 @@ export function ScheduleOfferModal({
 }) {
   const { t } = useTranslation();
   const toast = useToast();
+  const offerLabelId = useId();
   const [updateProduct, { isLoading: isSaving }] = useUpdateProductMutation();
 
   const [scheduleEnabled, setScheduleEnabled] = useState(!!product.schedule);
@@ -158,10 +159,11 @@ export function ScheduleOfferModal({
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-gray-500 uppercase tracking-wide block mb-1">
+                      <label htmlFor={offerLabelId} className="text-xs text-gray-500 uppercase tracking-wide block mb-1">
                         {t('products.offerLabel')}
                       </label>
                       <input
+                        id={offerLabelId}
                         type="text"
                         value={schedule.offerLabel}
                         onChange={(e) => setSchedule((s) => ({ ...s, offerLabel: e.target.value }))}

@@ -136,8 +136,9 @@ function CreateShopModal({ onClose }: { onClose: () => void }) {
               />
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-[13px] font-semibold text-[#4a413b]">Industry</label>
+                <label htmlFor="shop-industry" className="text-[13px] font-semibold text-[#4a413b]">Industry</label>
                 <select
+                  id="shop-industry"
                   required
                   value={form.industry ?? ''}
                   onChange={(e) => setForm((f) => ({ ...f, industry: e.target.value }))}
@@ -161,8 +162,9 @@ function CreateShopModal({ onClose }: { onClose: () => void }) {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-[13px] font-semibold text-[#4a413b]">{t('shops.shopCountry')}</label>
+                <label htmlFor="shop-country" className="text-[13px] font-semibold text-[#4a413b]">{t('shops.shopCountry')}</label>
                 <select
+                  id="shop-country"
                   required
                   value={form.countryCode ?? ''}
                   onChange={(e) => handleCountryChange(e.target.value)}

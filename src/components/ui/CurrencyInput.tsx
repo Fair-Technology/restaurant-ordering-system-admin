@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { shopLocale } from '../../utils/locale';
 
@@ -17,6 +18,7 @@ interface CurrencyInputProps {
 
 export function CurrencyInput({ label, valueCents, onChange, className = '', countryCode }: CurrencyInputProps) {
   const { i18n } = useTranslation();
+  const id = useId();
   const formatted = new Intl.NumberFormat(shopLocale(i18n.language, countryCode), {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
@@ -36,9 +38,10 @@ export function CurrencyInput({ label, valueCents, onChange, className = '', cou
   return (
     <div className="flex flex-col gap-1.5">
       {label && (
-        <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">{label}</label>
+        <label htmlFor={id} className="text-xs font-medium text-gray-500 uppercase tracking-wide">{label}</label>
       )}
       <input
+        id={id}
         type="text"
         inputMode="numeric"
         value={formatted}

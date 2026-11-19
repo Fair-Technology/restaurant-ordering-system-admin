@@ -75,9 +75,9 @@ export function LoyaltyCard({ shopId, shop, loyalty }: LoyaltyCardProps) {
           {t('promotions.loyaltyEnabled')}
         </label>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <MyInput label={t('promotions.everyOrders')} value={everyOrders} onChange={(e) => setEveryOrders(e.target.value)} />
-          <MyInput label={t('promotions.reward')} value={reward} onChange={(e) => setReward(e.target.value)} />
-          <MyInput label={t('promotions.validDays')} value={validDays} onChange={(e) => setValidDays(e.target.value)} />
+          <MyInput label={t('promotions.everyOrders')} hint={t('promotions.everyOrdersHint')} value={everyOrders} onChange={(e) => setEveryOrders(e.target.value)} />
+          <MyInput label={t('promotions.reward')} hint={t('promotions.rewardHint')} value={reward} onChange={(e) => setReward(e.target.value)} />
+          <MyInput label={t('promotions.validDays')} hint={t('promotions.validDaysHint')} value={validDays} onChange={(e) => setValidDays(e.target.value)} />
         </div>
         {since && <p className="text-xs text-muted">{t('promotions.loyaltySince', { date: since })}</p>}
         {invalid && <p className="text-sm text-[#b42318]">{t('promotions.loyaltyInvalid')}</p>}

@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { useId, useRef, useState, useEffect } from 'react';
 import { X, ChevronDown } from 'lucide-react';
 
 interface Category {
@@ -15,6 +15,7 @@ interface CategoryPickerProps {
 
 export function CategoryPicker({ label, categories, selectedIds, onChange }: CategoryPickerProps) {
   const [open, setOpen] = useState(false);
+  const triggerId = useId();
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -44,11 +45,12 @@ export function CategoryPicker({ label, categories, selectedIds, onChange }: Cat
   return (
     <div className="flex flex-col gap-1.5" ref={containerRef}>
       {label && (
-        <label className="text-sm font-medium text-gray-700">{label}</label>
+        <label htmlFor={triggerId} className="text-sm font-medium text-gray-700">{label}</label>
       )}
 
       {/* Trigger area */}
       <button
+        id={triggerId}
         type="button"
         onClick={() => remaining.length > 0 && setOpen((v) => !v)}
         className={`w-full min-h-[38px] bg-white border rounded-lg px-3 py-2 text-left transition-all duration-150 flex flex-wrap items-center gap-1.5 ${
