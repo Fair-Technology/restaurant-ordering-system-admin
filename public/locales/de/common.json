@@ -908,6 +908,8 @@
       "readyIn": "Fertig in {{minutes}} Min.",
       "deliverIn": "Lieferung in {{minutes}} Min.",
       "late": "{{minutes}} Min. überfällig",
+      "lateCapped": "{{hours}} Std.+ überfällig",
+      "stale": "veraltet",
       "waitingFor": "wartet · {{minutes}} Min.",
       "outFor": "unterwegs · {{minutes}} Min.",
       "at": "um {{time}}",

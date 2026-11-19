@@ -14,6 +14,7 @@ import {
   liveGroups,
   matchesOrderSearch,
   orderTiming,
+  overdueLabel,
   parseOrderFilter,
   type LiveGroupKey,
   type OrderFilter,
@@ -55,12 +56,13 @@ interface RowProps {
   onSelect: () => void;
   time: string;
   urgent?: boolean;
+  stale?: boolean;
   money: (order: IntakeOrder) => string;
   action?: ReactNode;
 }
 
 /** One order in the list: number, guest, what they ordered, the clock, the total and one button. */
-function OrderRow({ order, selected, onSelect, time, urgent = false, money, action }: RowProps) {
+function OrderRow({ order, selected, onSelect, time, urgent = false, stale = false, money, action }: RowProps) {
   const { t } = useTranslation();
   return (
     <div
@@ -88,10 +90,14 @@ function OrderRow({ order, selected, onSelect, time, urgent = false, money, acti
           )}
         </div>
         <span className="truncate text-[13px] text-muted">{itemSummary(order.items)}</span>
-        <span className={`text-[13px] font-semibold md:hidden ${urgent ? 'text-[#b42318]' : 'text-[#4a413b]'}`}>{time}</span>
+        <span className={`inline-flex items-center gap-1.5 text-[13px] font-semibold md:hidden ${urgent ? 'text-[#b42318]' : 'text-[#4a413b]'}`}>
+          {time}
+          {stale && <span className="rounded-full bg-[#fdeceb] px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-[#b42318]">{t('orders.live.stale')}</span>}
+        </span>
       </div>
-      <span className={`hidden w-[150px] text-right text-[13px] font-semibold md:block ${urgent ? 'text-[#b42318]' : 'text-[#4a413b]'}`}>
+      <span className={`hidden w-[150px] items-center justify-end gap-1.5 text-right text-[13px] font-semibold md:flex ${urgent ? 'text-[#b42318]' : 'text-[#4a413b]'}`}>
         {time}
+        {stale && <span className="rounded-full bg-[#fdeceb] px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-[#b42318]">{t('orders.live.stale')}</span>}
       </span>
       <span className="hidden w-20 text-right text-[15px] font-bold sm:block">{money(order)}</span>
       <div className="flex flex-shrink-0 justify-end gap-1.5 sm:w-[150px]">{action}</div>
@@ -410,16 +416,19 @@ export function OrdersPage() {
     upcoming: data?.upcoming?.length ?? null,
   };
 
-  const liveTime = (order: IntakeOrder): { text: string; urgent: boolean } => {
+  const liveTime = (order: IntakeOrder): { text: string; urgent: boolean; stale: boolean } => {
     const timing = orderTiming(order, nowMs);
-    if (!timing) return { text: '', urgent: false };
-    if (timing.kind === 'reject') return { text: t('orders.live.rejectIn', { time: formatCountdown(timing.seconds) }), urgent: timing.urgent };
+    if (!timing) return { text: '', urgent: false, stale: false };
+    if (timing.kind === 'reject') return { text: t('orders.live.rejectIn', { time: formatCountdown(timing.seconds) }), urgent: timing.urgent, stale: false };
     if (timing.kind === 'due') {
-      if (timing.minutes < 0) return { text: t('orders.live.late', { minutes: -timing.minutes }), urgent: true };
-      return { text: t(timing.delivery ? 'orders.live.deliverIn' : 'orders.live.readyIn', { minutes: timing.minutes }), urgent: timing.urgent };
+      if (timing.minutes < 0) {
+        const label = overdueLabel(-timing.minutes);
+        return { text: t(label.key, label.params), urgent: true, stale: label.stale };
+      }
+      return { text: t(timing.delivery ? 'orders.live.deliverIn' : 'orders.live.readyIn', { minutes: timing.minutes }), urgent: timing.urgent, stale: false };
     }
-    if (timing.minutes === null) return { text: t(`orders.state.${order.displayState}`), urgent: false };
-    return { text: t(timing.kind === 'out' ? 'orders.live.outFor' : 'orders.live.waitingFor', { minutes: timing.minutes }), urgent: false };
+    if (timing.minutes === null) return { text: t(`orders.state.${order.displayState}`), urgent: false, stale: false };
+    return { text: t(timing.kind === 'out' ? 'orders.live.outFor' : 'orders.live.waitingFor', { minutes: timing.minutes }), urgent: false, stale: false };
   };
 
   const rowAction = (order: IntakeOrder) => {
@@ -704,6 +713,7 @@ export function OrdersPage() {
                           onSelect={() => select(order)}
                           time={time.text}
                           urgent={time.urgent}
+                          stale={time.stale}
                           money={money}
                           action={rowAction(order)}
                         />

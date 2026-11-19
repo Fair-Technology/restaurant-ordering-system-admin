@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { IntakeOrder } from '../../services/ordersApi';
 import type { OrderHistoryEntry } from '../../services/api';
-import { boardColumns, enteredStateAt, itemSummary, liveGroups, matchesOrderSearch, orderTiming, parseOrderFilter, ORDER_FILTERS, ORDER_SCOPE_FILTERS, ORDER_STATE_FILTERS } from './orderView';
+import { boardColumns, enteredStateAt, itemSummary, liveGroups, matchesOrderSearch, orderTiming, overdueLabel, OVERDUE_CAP_MINUTES, parseOrderFilter, ORDER_FILTERS, ORDER_SCOPE_FILTERS, ORDER_STATE_FILTERS } from './orderView';
 
 const NOW = Date.parse('2026-10-12T12:00:00Z');
 const min = (m: number) => new Date(NOW + m * 60000).toISOString();
@@ -221,5 +221,28 @@ describe('orderTiming', () => {
 
   it('has nothing to count for a closed order', () => {
     expect(orderTiming(order({ state: 'COMPLETED' }), NOW)).toBeNull();
+  });
+});
+
+describe('overdueLabel', () => {
+  it('shows the real minutes under the cap', () => {
+    expect(overdueLabel(5)).toEqual({ key: 'orders.live.late', params: { minutes: 5 }, stale: false });
+  });
+  it('is still uncapped one minute below the cap', () => {
+    expect(overdueLabel(OVERDUE_CAP_MINUTES - 1)).toEqual({ key: 'orders.live.late', params: { minutes: 119 }, stale: false });
+  });
+  it('caps exactly at 120 minutes and flags stale', () => {
+    expect(overdueLabel(120)).toEqual({ key: 'orders.live.lateCapped', params: { hours: 2 }, stale: true });
+  });
+  it('never lets a huge minute count into the label', () => {
+    const label = overdueLabel(61430);
+    expect(label).toEqual({ key: 'orders.live.lateCapped', params: { hours: 2 }, stale: true });
+    expect(JSON.stringify(label)).not.toContain('61430');
+  });
+  it('clamps negative input to 0 minutes', () => {
+    expect(overdueLabel(-7)).toEqual({ key: 'orders.live.late', params: { minutes: 0 }, stale: false });
+  });
+  it('rounds fractional input', () => {
+    expect(overdueLabel(0.4)).toEqual({ key: 'orders.live.late', params: { minutes: 0 }, stale: false });
   });
 });

@@ -127,6 +127,25 @@ export type OrderTiming =
   | { kind: 'waiting' | 'out'; minutes: number | null }
   | null;
 
+/** Overdue orders stop counting here — "overdue 2h+" — and are flagged stale. */
+export const OVERDUE_CAP_MINUTES = 120;
+
+export type OverdueLabel =
+  | { key: 'orders.live.late'; params: { minutes: number }; stale: false }
+  | { key: 'orders.live.lateCapped'; params: { hours: number }; stale: true };
+
+/**
+ * How to say how late an order is. Up to the cap the real minutes; past it the capped label plus a
+ * stale flag, so a 40-hour-old order never prints "61430 min overdue".
+ */
+export function overdueLabel(lateMinutes: number): OverdueLabel {
+  const minutes = Math.max(0, Math.round(lateMinutes));
+  if (minutes >= OVERDUE_CAP_MINUTES) {
+    return { key: 'orders.live.lateCapped', params: { hours: OVERDUE_CAP_MINUTES / 60 }, stale: true };
+  }
+  return { key: 'orders.live.late', params: { minutes }, stale: false };
+}
+
 const minutesBetween = (fromMs: number, toMs: number) => Math.max(0, Math.round((toMs - fromMs) / 60000));
 
 /**
