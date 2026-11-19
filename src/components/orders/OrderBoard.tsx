@@ -59,7 +59,7 @@ export function OrderBoard({ columns, selectedId, onSelect, timeOf, moneyOf, act
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      <span className="text-[15px] font-bold tracking-[0.02em]">#{order.orderRef}</span>
+                      <span className="flex-shrink-0 whitespace-nowrap text-[15px] font-bold tracking-[0.02em]">#{order.orderRef}</span>
                       <ModeBadge order={order} />
                       <span className={`ml-auto inline-flex items-center gap-1.5 text-[13px] font-semibold ${time.urgent ? 'text-[#b42318]' : 'text-[#4a413b]'}`}>
                         {time.text}

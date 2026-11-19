@@ -80,7 +80,7 @@ function OrderRow({ order, selected, onSelect, time, urgent = false, stale = fal
         selected ? 'bg-cream shadow-[inset_3px_0_0_#1f1a17]' : ''
       }`}
     >
-      <span className="w-16 flex-shrink-0 text-[15px] font-bold tracking-[0.02em]">#{order.orderRef}</span>
+      <span className="w-20 flex-shrink-0 whitespace-nowrap text-[15px] font-bold tracking-[0.02em]">#{order.orderRef}</span>
       <div className="flex min-w-0 flex-1 flex-col gap-[3px]">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="text-[15px] font-bold">{order.customerName}</span>

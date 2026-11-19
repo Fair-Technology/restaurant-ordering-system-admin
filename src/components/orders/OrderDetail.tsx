@@ -168,22 +168,24 @@ export function OrderDetail({
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-2xl border border-line bg-white">
       {/* Header: number, state, how it is fulfilled, the clock that matters */}
       <div className="flex flex-col gap-2.5 border-b border-line-soft px-5 pt-[18px] pb-3.5">
-        <div className="flex items-center gap-2.5">
-          <h2 className="font-display text-[26px] font-semibold">#{order.orderRef}</h2>
-          <StateBadge order={order} />
-          <span className="ml-auto text-[13px] text-muted">
-            {order.state === 'PLACED' && live ? t('orders.placedAgo', { minutes: placedAgo }) : dateTime(order.createdAt)}
-          </span>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <h2 className="order-1 whitespace-nowrap font-display text-[26px] font-semibold">#{order.orderRef}</h2>
           {onClose && (
             <button
               type="button"
               onClick={onClose}
               aria-label={t('orders.live.closeDetail')}
-              className="-mr-1 rounded-full p-1.5 text-muted hover:bg-sand"
+              className="order-2 ml-auto -mr-1 rounded-full p-1.5 text-muted hover:bg-sand sm:order-4 sm:ml-0"
             >
               <X size={18} />
             </button>
           )}
+          <div className="order-3 flex w-full items-center gap-2.5 sm:ml-auto sm:w-auto">
+            <StateBadge order={order} />
+            <span className="text-[13px] text-muted">
+              {order.state === 'PLACED' && live ? t('orders.placedAgo', { minutes: placedAgo }) : dateTime(order.createdAt)}
+            </span>
+          </div>
         </div>
         <div className="flex flex-wrap gap-1.5">
           <ModeBadge order={order} large />
