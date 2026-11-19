@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Plus, Store, Package, Tag } from 'lucide-react';
 
 interface Action {
@@ -9,6 +10,7 @@ interface Action {
 }
 
 export function FloatingActionButton() {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const { shopId } = useParams<{ shopId?: string }>();
   const navigate = useNavigate();
@@ -34,18 +36,18 @@ export function FloatingActionButton() {
 
   const actions: Action[] = [
     {
-      label: 'New shop',
+      label: t('fab.newShop'),
       icon: <Store size={15} />,
       onClick: () => { navigate('/shops?addShop=1'); setOpen(false); },
     },
     ...(shopId ? [
       {
-        label: 'New product',
+        label: t('fab.newProduct'),
         icon: <Package size={15} />,
         onClick: () => { navigate(`/shops/${shopId}/products?addProduct=1`); setOpen(false); },
       },
       {
-        label: 'New category',
+        label: t('fab.newCategory'),
         icon: <Tag size={15} />,
         onClick: () => { navigate(`/shops/${shopId}/categories?addCategory=1`); setOpen(false); },
       },
@@ -79,7 +81,7 @@ export function FloatingActionButton() {
           open ? 'rotate-45' : 'rotate-0'
         }`}
         style={{ width: 52, height: 52 }}
-        aria-label="Quick actions"
+        aria-label={t('fab.quickActions')}
         aria-expanded={open}
       >
         <Plus size={22} strokeWidth={2.5} />
