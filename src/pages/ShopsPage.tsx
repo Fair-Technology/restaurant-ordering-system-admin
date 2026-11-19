@@ -24,21 +24,8 @@ import { pillClass } from '../components/layout/pageStyles';
 import { ShopLogoBadge } from '../components/shop/ShopLogoBadge';
 import { ShopLiveBadge } from '../components/shop/ShopLiveBadge';
 import { shopLiveState } from '../features/shops/shopStatus';
-
-const COUNTRY_OPTIONS = [
-  { code: 'AU', label: 'Australia' },
-  { code: 'NZ', label: 'New Zealand' },
-  { code: 'DE', label: 'Germany' },
-  { code: 'AT', label: 'Austria' },
-  { code: 'FR', label: 'France' },
-  { code: 'NL', label: 'Netherlands' },
-  { code: 'GB', label: 'United Kingdom' },
-  { code: 'CH', label: 'Switzerland' },
-  { code: 'US', label: 'United States' },
-  { code: 'CA', label: 'Canada' },
-  { code: 'SG', label: 'Singapore' },
-  { code: 'JP', label: 'Japan' },
-] as const;
+import { OPENED_COUNTRIES, openedCountry } from '../features/shops/openedCountries';
+import { defaultNewShopForm, newShopFormError, withCountry } from '../features/shops/newShopForm';
 
 const INDUSTRY_OPTIONS = [
   'Food & Beverage',
@@ -54,21 +41,6 @@ const INDUSTRY_OPTIONS = [
   'Other',
 ] as const;
 
-const COUNTRY_DEFAULTS: Record<string, { currency: string; timezone: string }> = {
-  AU: { currency: 'AUD', timezone: 'Australia/Sydney' },
-  NZ: { currency: 'NZD', timezone: 'Pacific/Auckland' },
-  DE: { currency: 'EUR', timezone: 'Europe/Berlin' },
-  AT: { currency: 'EUR', timezone: 'Europe/Vienna' },
-  FR: { currency: 'EUR', timezone: 'Europe/Paris' },
-  NL: { currency: 'EUR', timezone: 'Europe/Amsterdam' },
-  GB: { currency: 'GBP', timezone: 'Europe/London' },
-  CH: { currency: 'CHF', timezone: 'Europe/Zurich' },
-  US: { currency: 'USD', timezone: 'America/New_York' },
-  CA: { currency: 'CAD', timezone: 'America/Toronto' },
-  SG: { currency: 'SGD', timezone: 'Asia/Singapore' },
-  JP: { currency: 'JPY', timezone: 'Asia/Tokyo' },
-};
-
 function CreateShopModal({ onClose }: { onClose: () => void }) {
   const { t, i18n } = useTranslation();
   const toast = useToast();
@@ -80,41 +52,31 @@ function CreateShopModal({ onClose }: { onClose: () => void }) {
   const dpaLang = i18n.language.startsWith('de') ? 'de' : 'en';
 
   const [industryOther, setIndustryOther] = useState('');
-  const [form, setForm] = useState<Partial<CreateShopRequestDto>>({
-    name: '',
-    countryCode: 'AU',
-    menuLanguage: defaultMenuLanguageForUiLanguage(i18n.language),
-    currency: 'AUD',
-    timezone: 'Australia/Sydney',
+  const [countryError, setCountryError] = useState(false);
+  const [form, setForm] = useState<Partial<CreateShopRequestDto>>(() => ({
+    ...defaultNewShopForm(defaultMenuLanguageForUiLanguage(i18n.language)),
     minOrderAmountCents: 0,
-    address: { street: '', city: '', state: '', postcode: '', country: 'Australia' },
-    openingHours: {
-      mon: [{ open: '09:00', close: '17:00' }],
-      tue: [{ open: '09:00', close: '17:00' }],
-      wed: [{ open: '09:00', close: '17:00' }],
-      thu: [{ open: '09:00', close: '17:00' }],
-      fri: [{ open: '09:00', close: '17:00' }],
-      sat: [],
-      sun: [],
-    },
-  });
+  }));
 
-  const handleCountryChange = (countryCode: string) => {
-    const defaults = COUNTRY_DEFAULTS[countryCode];
-    setForm((f) => ({
-      ...f,
-      countryCode,
-      ...(defaults ? { currency: defaults.currency, timezone: defaults.timezone } : {}),
-    }));
+  const handleCountryChange = (code: string) => {
+    const country = openedCountry(code);
+    if (!country) return;
+    setForm((f) =>
+      withCountry(f, country, t('shops.countryName.' + country.code, { defaultValue: country.label })),
+    );
+    setCountryError(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const resolvedIndustry =
       form.industry === 'Other' ? industryOther.trim() : form.industry;
-    if (!resolvedIndustry) return;
-    if (!form.name || form.name.trim().length < 3) return;
-    if (!dpaTicked || !dpa) return;
+    const problem = newShopFormError(
+      { ...form, industry: resolvedIndustry },
+      dpaTicked && !!dpa,
+    );
+    if (problem === 'country') setCountryError(true);
+    if (problem || !dpa) return;
     try {
       const shop = await createShop({
         createShopRequestDto: {
@@ -202,14 +164,18 @@ function CreateShopModal({ onClose }: { onClose: () => void }) {
                 <label className="text-[13px] font-semibold text-[#4a413b]">{t('shops.shopCountry')}</label>
                 <select
                   required
-                  value={form.countryCode ?? 'AU'}
+                  value={form.countryCode ?? ''}
                   onChange={(e) => handleCountryChange(e.target.value)}
                   className="h-10 w-full rounded-[10px] border border-[#e3d9ce] bg-white px-3 text-sm text-ink focus:border-ink focus:outline-none"
                 >
-                  {COUNTRY_OPTIONS.map((c) => (
-                    <option key={c.code} value={c.code}>{c.label}</option>
+                  <option value="" disabled>{t('shops.shopCountryPlaceholder')}</option>
+                  {OPENED_COUNTRIES.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {t('shops.countryName.' + c.code, { defaultValue: c.label })}
+                    </option>
                   ))}
                 </select>
+                <p className="text-xs text-muted">{t('shops.countryHelp')}</p>
               </div>
 
               <div className="flex flex-col gap-1.5">
@@ -262,6 +228,9 @@ function CreateShopModal({ onClose }: { onClose: () => void }) {
             </div>
 
             {/* Footer */}
+            {countryError && (
+              <p className="px-6 pb-2 text-xs text-muted">{t('shops.countryRequired')}</p>
+            )}
             <div className="flex items-center gap-2 border-t border-line-soft px-6 py-4">
               <MyButton type="submit" isPending={isLoading} disabled={!dpaTicked || !dpa} className="flex-1">
                 {isLoading ? t('shops.creating') : t('shops.create')}
