@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useDispatch } from 'react-redux';
 import { Link, NavLink, useNavigate, useParams } from 'react-router-dom';
 import { useMsal } from '@azure/msal-react';
@@ -12,6 +12,7 @@ import { navGroups, navPath, topNavItems, type ShopNavKey } from '../../features
 import { formatPauseEnd, isOfflineBySuperadminError, isOrdersPausedAt, shopLiveState, shopPauseOutOfDate } from '../../features/shops/shopStatus';
 import { clearStaffSession, readStaffSession } from '../../features/staff/staffSession';
 import { useToast } from '../../contexts/ToastContext';
+import { useModalA11y } from '../../hooks/useModalA11y';
 import { AccountSettingsModal } from './AccountSettingsModal';
 import { PauseOrdersDialog } from '../shop/PauseOrdersDialog';
 import { PendingButton } from '../ui/PendingButton';
@@ -193,6 +194,33 @@ function ShopSwitcher({ shop, allowSwitch }: { shop: GetShopResultDto | undefine
   );
 }
 
+/** Mobile nav drawer as a modal dialog: Escape closes, Tab is trapped, focus returns to the hamburger. */
+function NavDrawer({ label, closeLabel, onClose, children }: { label: string; closeLabel: string; onClose: () => void; children: ReactNode }) {
+  const drawerRef = useRef<HTMLDivElement>(null);
+  const onKeyDown = useModalA11y({ onClose, containerRef: drawerRef });
+  return (
+    <>
+      <div className="fixed inset-0 z-40 bg-black/30 lg:hidden" onClick={onClose} />
+      <div
+        ref={drawerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={label}
+        tabIndex={-1}
+        onKeyDown={onKeyDown}
+        className="fixed inset-y-0 left-0 z-50 flex w-[272px] flex-col bg-white shadow-xl outline-none lg:hidden"
+      >
+        <div className="flex h-12 flex-shrink-0 items-center justify-end px-2">
+          <button onClick={onClose} className="rounded-lg p-1.5 text-[#8a7f77] hover:bg-sand" aria-label={closeLabel}>
+            <X size={18} />
+          </button>
+        </div>
+        <div className="min-h-0 flex-1">{children}</div>
+      </div>
+    </>
+  );
+}
+
 const linkClass = (isActive: boolean) =>
   `flex h-9 items-center justify-between rounded-[9px] px-2.5 text-sm transition-colors ${
     isActive ? 'bg-sand font-bold text-ink' : 'font-medium text-[#4a413b] hover:bg-cream hover:text-ink'
@@ -359,6 +387,7 @@ export function TopNav({ sidebarHidden, onToggleSidebar }: { sidebarHidden: bool
           onClick={() => setDrawerOpen(true)}
           className="rounded-lg p-2 text-[#4a413b] hover:bg-sand"
           aria-label={t('nav.openMenu')}
+          aria-expanded={drawerOpen}
         >
           <Menu size={20} />
         </button>
@@ -373,21 +402,9 @@ export function TopNav({ sidebarHidden, onToggleSidebar }: { sidebarHidden: bool
       </header>
 
       {drawerOpen && (
-        <>
-          <div className="fixed inset-0 z-40 bg-black/30 lg:hidden" onClick={() => setDrawerOpen(false)} />
-          <div className="fixed inset-y-0 left-0 z-50 flex w-[272px] flex-col bg-white shadow-xl lg:hidden">
-            <div className="flex h-12 flex-shrink-0 items-center justify-end px-2">
-              <button
-                onClick={() => setDrawerOpen(false)}
-                className="rounded-lg p-1.5 text-[#8a7f77] hover:bg-sand"
-                aria-label={t('nav.closeMenu')}
-              >
-                <X size={18} />
-              </button>
-            </div>
-            <div className="min-h-0 flex-1">{sidebarContent}</div>
-          </div>
-        </>
+        <NavDrawer label={t('nav.openMenu')} closeLabel={t('nav.closeMenu')} onClose={() => setDrawerOpen(false)}>
+          {sidebarContent}
+        </NavDrawer>
       )}
 
       {accountOpen && user && <AccountSettingsModal user={user} onClose={() => setAccountOpen(false)} />}

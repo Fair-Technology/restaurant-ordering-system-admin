@@ -1,7 +1,9 @@
 import type { AccountInfo } from '@azure/msal-browser';
 import { useMsal } from '@azure/msal-react';
 import { X, LogOut } from 'lucide-react';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useModalA11y } from '../../hooks/useModalA11y';
 import { chipClass } from './pageStyles';
 
 interface AccountSettingsModalProps {
@@ -12,16 +14,21 @@ interface AccountSettingsModalProps {
 export function AccountSettingsModal({ user, onClose }: AccountSettingsModalProps) {
   const { t, i18n } = useTranslation();
   const { instance } = useMsal();
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const onKeyDown = useModalA11y({ onClose, containerRef: dialogRef });
 
   return (
     <>
       <div className="fixed inset-0 z-50 bg-ink/30 backdrop-blur-sm" />
       <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center">
         <div
+          ref={dialogRef}
+          tabIndex={-1}
+          onKeyDown={onKeyDown}
           role="dialog"
           aria-modal="true"
           aria-labelledby="account-settings-title"
-          className="flex w-full max-w-sm flex-col overflow-hidden rounded-2xl border border-line bg-white text-ink shadow-xl"
+          className="flex w-full max-w-sm flex-col overflow-hidden rounded-2xl border border-line bg-white text-ink shadow-xl outline-none"
         >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-line-soft px-5 pt-5 pb-4">
