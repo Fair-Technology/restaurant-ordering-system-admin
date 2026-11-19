@@ -3,7 +3,6 @@ import { InteractionStatus } from '@azure/msal-browser';
 import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { RETURN_TO_KEY, staffRedirectFor } from '../../features/auth/redirects';
-import { PageTitle } from '../layout/PageTitle';
 import { readStaffSession } from '../../features/staff/staffSession';
 
 export function RequireAuth() {
@@ -17,12 +16,7 @@ export function RequireAuth() {
   const staff = readStaffSession();
   if (staff) {
     const target = staffRedirectFor(pathname, staff.shopId);
-    return target ? <Navigate to={target} replace /> : (
-      <>
-        <PageTitle />
-        <Outlet />
-      </>
-    );
+    return target ? <Navigate to={target} replace /> : <Outlet />;
   }
 
   if (inProgress !== InteractionStatus.None) {
@@ -38,10 +32,5 @@ export function RequireAuth() {
     return <Navigate to="/login" replace />;
   }
 
-  return (
-    <>
-      <PageTitle />
-      <Outlet />
-    </>
-  );
+  return <Outlet />;
 }
