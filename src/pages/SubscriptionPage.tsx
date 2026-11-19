@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { useDispatch } from 'react-redux';
 import { CheckCircle2 } from 'lucide-react';
 import {
@@ -32,32 +33,38 @@ import { badgeClass, chipClass } from '../components/layout/pageStyles';
 import { formatShopCents, formatShopDate } from '../utils/locale';
 
 // Taglines shown beneath each plan name, indexed by sort position
-const PLAN_TAGLINES = [
-  'Everything you need to start taking orders online.',
-  'Perfect for growing shops with higher volume.',
-  'Built for busy venues that need maximum power.',
-  'Enterprise-grade with zero limits on your business.',
+const PLAN_TAGLINE_KEYS = [
+  'subscription.tagline0',
+  'subscription.tagline1',
+  'subscription.tagline2',
+  'subscription.tagline3',
 ];
 
 // Base features every plan includes
-const BASE_FEATURES = [
-  'Online ordering storefront',
-  'Product catalog management',
-  'Real-time order dashboard',
-  'Customer email notifications',
-  'Basic analytics & reporting',
+const BASE_FEATURE_KEYS = [
+  'subscription.featureStorefront',
+  'subscription.featureCatalog',
+  'subscription.featureDashboard',
+  'subscription.featureEmailNotifications',
+  'subscription.featureBasicAnalytics',
 ];
 
 // Extra features unlocked on paid plans
-const PAID_FEATURES = [
-  'Custom branding & colours',
-  'Advanced analytics & reports',
-  'Multiple staff accounts',
-  'Priority support',
+const PAID_FEATURE_KEYS = [
+  'subscription.featureBranding',
+  'subscription.featureAdvancedAnalytics',
+  'subscription.featureMultiStaff',
+  'subscription.featurePrioritySupport',
 ];
 
 function formatLimitKey(key: string): string {
   return key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function limitKeyLabel(key: string, t: TFunction): string {
+  if (key === 'ORDERS_PER_MONTH') return t('subscription.limitOrdersPerMonth');
+  if (key === 'STAFF_ACCOUNTS') return t('subscription.limitStaffAccounts');
+  return formatLimitKey(key);
 }
 
 function formatPrice(cents: number, currency: string, language: string, countryCode?: string | null): string {
@@ -102,7 +109,7 @@ function PlanCard({
   );
 
   const isFree = isFreePlan(plan);
-  const tagline = PLAN_TAGLINES[index] ?? 'The right plan for your business.';
+  const tagline = t(PLAN_TAGLINE_KEYS[index] ?? 'subscription.taglineDefault');
 
   let priceDisplay = '';
   let periodLabel = '';
@@ -120,9 +127,11 @@ function PlanCard({
   }
 
   const limitFeatures = plan.limits.map(
-    (l) => `${l.value === -1 ? 'Unlimited' : l.value.toLocaleString()} ${formatLimitKey(l.key)}`,
+    (l) => `${l.value === -1 ? t('subscription.unlimited') : l.value.toLocaleString(i18n.language)} ${limitKeyLabel(l.key, t)}`,
   );
-  const staticFeatures = isFree ? BASE_FEATURES : [...BASE_FEATURES, ...PAID_FEATURES];
+  const staticFeatures = (
+    isFree ? BASE_FEATURE_KEYS : [...BASE_FEATURE_KEYS, ...PAID_FEATURE_KEYS]
+  ).map((k) => t(k));
   const features = limitFeatures.length > 0 ? [...limitFeatures, ...staticFeatures] : staticFeatures;
 
   return (
@@ -186,7 +195,7 @@ function PlanCard({
               onClick={() => onChoose(plan, action)}
               className="h-10 w-full rounded-full border border-[#f5c2bd] bg-white text-sm font-bold text-[#b42318] transition-colors hover:bg-[#fdeceb] disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {isBusy ? t('subscription.cancellingSubscription') : `${t('subscription.downgrade')} to ${plan.name}`}
+              {isBusy ? t('subscription.cancellingSubscription') : t('subscription.downgradeTo', { plan: plan.name })}
             </PendingButton>
           )
         ) : (
@@ -200,7 +209,7 @@ function PlanCard({
               ? t('subscription.upgrading')
               : action === 'switch_interval'
                 ? `${t('subscription.billingInterval')}: ${t(interval === 'yearly' ? 'subscription.yearly' : 'subscription.monthly')}`
-                : `${t('subscription.upgrade')} to ${plan.name}`}
+                : t('subscription.upgradeTo', { plan: plan.name })}
           </PendingButton>
         )}
       </div>
