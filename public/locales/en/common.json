@@ -1474,5 +1474,11 @@
       "descriptionRequired": "Please enter a description.",
       "descriptionHint": "{{count}} / {{max}} characters"
     }
+  },
+  "fab": {
+    "quickActions": "Quick actions",
+    "newShop": "New shop",
+    "newProduct": "New product",
+    "newCategory": "New category"
   }
 }
