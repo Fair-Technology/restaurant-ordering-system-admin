@@ -1,3 +1,6 @@
+import { useTranslation } from 'react-i18next';
+import { shopLocale } from '../../utils/locale';
+
 const BASE =
   'w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 ' +
   'focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 ' +
@@ -8,10 +11,13 @@ interface CurrencyInputProps {
   valueCents: number;
   onChange: (cents: number) => void;
   className?: string;
+  /** Shop's country code, for de-AT/de-CH etc; omitted falls back to the UI-language default (de-DE / en-GB). */
+  countryCode?: string | null;
 }
 
-export function CurrencyInput({ label, valueCents, onChange, className = '' }: CurrencyInputProps) {
-  const formatted = new Intl.NumberFormat(navigator.language, {
+export function CurrencyInput({ label, valueCents, onChange, className = '', countryCode }: CurrencyInputProps) {
+  const { i18n } = useTranslation();
+  const formatted = new Intl.NumberFormat(shopLocale(i18n.language, countryCode), {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(valueCents / 100);

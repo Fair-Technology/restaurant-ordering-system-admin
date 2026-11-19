@@ -32,7 +32,7 @@ export function AccountSettingsModal({ user, onClose }: AccountSettingsModalProp
               type="button"
               onClick={onClose}
               className="rounded-full p-1.5 text-[#8a7f77] transition-colors hover:bg-sand hover:text-ink"
-              aria-label="Close"
+              aria-label={t('account.close')}
             >
               <X size={16} />
             </button>

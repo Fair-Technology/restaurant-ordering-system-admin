@@ -1,6 +1,7 @@
 {
   "account": {
-    "title": "Account"
+    "title": "Account",
+    "close": "Close"
   },
   "nav": {
     "reports": "Dashboard",
@@ -134,6 +135,9 @@
     "allSystemsOperational": "All systems operational"
   },
   "shops": {
+    "downloadQr": "Download PNG",
+    "logoAlt": "Shop logo",
+    "debugLabel": "Debug",
     "closuresTitle": "Closures",
     "closuresHelp": "Close the shop on specific dates, e.g. holidays. A closure overrides the weekly opening hours on that day.",
     "closuresEmpty": "No upcoming closures.",
@@ -599,6 +603,8 @@
     "editTitle": "Edit Product",
     "name": "Name",
     "description": "Description",
+    "nameRequired": "Name is required.",
+    "descriptionRequired": "Description is required.",
     "price": "Price ({{symbol}})",
     "categories": "Categories",
     "image": "Product Image",

@@ -115,6 +115,8 @@ interface Step1Props {
   nameError: boolean;
   descError: boolean;
   existingImageUrl?: string | null;
+  /** Shop's country code, so the price formats like the shop's locale. */
+  countryCode?: string | null;
   /** True after a failed attempt to leave step 1 without a photo: shows the required-photo message. */
   photoError?: boolean;
   /** Present only while the translation tab is active: the fields then edit this language's text. */
@@ -127,7 +129,7 @@ interface Step1Props {
   };
 }
 
-export function Step1Basics({ form, setForm, imageFile, setImageFile, currencySymbol, nameError, descError, existingImageUrl, photoError, translation }: Step1Props) {
+export function Step1Basics({ form, setForm, imageFile, setImageFile, currencySymbol, nameError, descError, existingImageUrl, countryCode, photoError, translation }: Step1Props) {
   const { t } = useTranslation();
   if (translation) {
     const nothing = form.name.trim() === '' && form.description.trim() === '';
@@ -150,7 +152,7 @@ export function Step1Basics({ form, setForm, imageFile, setImageFile, currencySy
           onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
         />
         {nameError && (
-          <p className="mt-1 text-xs text-red-500">{t('products.name')} is required.</p>
+          <p className="mt-1 text-xs text-red-500">{t('products.nameRequired')}</p>
         )}
       </div>
       <div>
@@ -162,13 +164,14 @@ export function Step1Basics({ form, setForm, imageFile, setImageFile, currencySy
           onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
         />
         {descError && (
-          <p className="mt-1 text-xs text-red-500">{t('products.description')} is required.</p>
+          <p className="mt-1 text-xs text-red-500">{t('products.descriptionRequired')}</p>
         )}
       </div>
       <CurrencyInput
         label={t('products.price', { symbol: currencySymbol })}
         valueCents={form.price}
         onChange={(cents) => setForm((f) => ({ ...f, price: cents }))}
+        countryCode={countryCode}
       />
       <DishPhotoField imageFile={imageFile} setImageFile={setImageFile} existingImageUrl={existingImageUrl} photoError={photoError} />
     </div>

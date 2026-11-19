@@ -611,6 +611,7 @@ export function ShopSettingsPage() {
                 label={t('shops.detailsMinOrder')}
                 valueCents={currentDetails.minOrderAmountCents}
                 onChange={(cents) => setDetailsState({ ...currentDetails, minOrderAmountCents: cents })}
+                countryCode={shop.countryCode}
               />
             </div>
             {detailsError && <p className={`mt-3 ${ERROR_CLASS}`}>{detailsError}</p>}
@@ -699,7 +700,7 @@ export function ShopSettingsPage() {
               <div className="min-w-0 flex-1 space-y-3 text-center sm:text-left">
                 <p className="font-mono text-xs break-all text-muted">{shopUrl}</p>
                 <MyButton type="button" variant="secondary" size="sm" onClick={handleDownloadQr}>
-                  Download PNG
+                  {t('shops.downloadQr')}
                 </MyButton>
               </div>
             </div>
@@ -714,7 +715,7 @@ export function ShopSettingsPage() {
               {currentLogoUrl ? (
                 <img
                   src={currentLogoUrl}
-                  alt="Shop logo"
+                  alt={t('shops.logoAlt')}
                   className="h-24 w-auto max-w-full rounded-xl border border-line object-contain"
                 />
               ) : (
@@ -1083,7 +1084,7 @@ export function ShopSettingsPage() {
         )}
 
         <details className="mt-2 rounded-2xl border border-line bg-white">
-          <summary className="cursor-pointer px-4 py-3 text-[13px] font-semibold text-[#8a7f77]">Debug</summary>
+          <summary className="cursor-pointer px-4 py-3 text-[13px] font-semibold text-[#8a7f77]">{t('shops.debugLabel')}</summary>
           <pre className="overflow-x-auto border-t border-line-soft p-4 text-xs whitespace-pre-wrap text-[#8a7f77]">
             {JSON.stringify(shop, null, 2)}
           </pre>

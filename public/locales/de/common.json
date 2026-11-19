@@ -1,6 +1,7 @@
 {
   "account": {
-    "title": "Konto"
+    "title": "Konto",
+    "close": "Schließen"
   },
   "nav": {
     "reports": "Dashboard",
@@ -134,6 +135,9 @@
     "allSystemsOperational": "Alle Systeme funktionieren"
   },
   "shops": {
+    "downloadQr": "PNG herunterladen",
+    "logoAlt": "Shop-Logo",
+    "debugLabel": "Fehlerdiagnose",
     "closuresTitle": "Schließtage",
     "closuresHelp": "Schließen Sie den Shop an bestimmten Tagen, z. B. an Feiertagen. Ein Schließtag übersteuert die wöchentlichen Öffnungszeiten an diesem Tag.",
     "closuresEmpty": "Keine anstehenden Schließtage.",
@@ -599,6 +603,8 @@
     "editTitle": "Produkt bearbeiten",
     "name": "Name",
     "description": "Beschreibung",
+    "nameRequired": "Name ist erforderlich.",
+    "descriptionRequired": "Beschreibung ist erforderlich.",
     "price": "Preis ({{symbol}})",
     "categories": "Kategorien",
     "image": "Produktbild",
@@ -667,12 +673,12 @@
     "deleted": "Produkt gelöscht.",
     "wizardStep1": "Grundlagen",
     "wizardStep2": "Kategorien",
-    "wizardStep3": "Lebensmittelinfos",
+    "wizardStep3": "Speiseinfo",
     "wizardStep4": "Anpassen",
     "wizardStep5": "Zeitplan",
     "wizardStep6": "Überprüfen",
     "modeSimple": "Einfach",
-    "modeExtended": "Advanced",
+    "modeExtended": "Erweitert",
     "wizardStep1Subtitle": "Name, Beschreibung und Preis Ihres Produkts.",
     "wizardStep2Subtitle": "Kategorien zuweisen und die Steuerklasse des Gerichts prüfen.",
     "wizardStep3Subtitle": "Allergene und Zusatzstoffe sind Pflicht, bevor das Gericht auf Ihrer Karte erscheint.",
