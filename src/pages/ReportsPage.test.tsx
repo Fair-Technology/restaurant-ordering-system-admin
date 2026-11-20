@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { ReportsPage } from './ReportsPage';
 
@@ -12,14 +12,32 @@ vi.mock('../services/api', () => ({
     data: { timezone: 'Europe/Berlin', currency: 'EUR', slug: 'shop', callerPermissions: ['view_reports'] },
   }),
 }));
+const reportQuery = vi.hoisted(() => ({
+  current: { data: undefined, isFetching: false, isError: false } as Record<string, unknown>,
+}));
 vi.mock('../services/reportsApi', () => ({
-  useGetSalesReportQuery: () => ({ data: undefined, isFetching: false, isError: false }),
+  useGetSalesReportQuery: () => ({ refetch: vi.fn(), ...reportQuery.current }),
 }));
 vi.mock('../services/subscriptionApi', () => ({
   useGetOrderLimitQuery: () => ({ data: undefined }),
 }));
 
-afterEach(cleanup);
+const REPORT = {
+  from: '2026-02-01',
+  to: '2026-02-10',
+  currency: 'EUR',
+  totals: { takingsCents: 12345, orderCount: 7, refundCents: 0, discountCents: 0, grossCents: 12345, deliveryFeeCents: 0, byRate: [] },
+  days: [],
+  byHour: Array(24).fill(0),
+  byMode: [],
+  topDishes: [],
+};
+
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+  reportQuery.current = { data: undefined, isFetching: false, isError: false };
+});
 
 function renderPage() {
   render(
@@ -57,5 +75,48 @@ describe('ReportsPage date range accessibility', () => {
       expect(input.getAttribute('aria-invalid')).not.toBe('true');
       expect(input.getAttribute('aria-describedby')).toBeNull();
     }
+  });
+});
+
+describe('ReportsPage loading and error states', () => {
+  it('shows an updating indicator while keeping the previous figures (dimmed)', () => {
+    reportQuery.current = { data: REPORT, isFetching: true, isError: false };
+    renderPage();
+
+    const status = screen.getByRole('status');
+    expect(status.textContent).toBe('reports.updating');
+    const content = screen.getByTestId('reports-content');
+    expect(content.className).toContain('opacity-60');
+    expect(screen.getByText('7')).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('shows only the error, not the stale figures, when the request failed', () => {
+    reportQuery.current = { data: REPORT, isFetching: false, isError: true };
+    renderPage();
+
+    expect(screen.getByRole('alert').textContent).toContain('reports.loadError');
+    expect(screen.queryByTestId('reports-content')).toBeNull();
+    expect(screen.queryByText('7')).toBeNull();
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('treats a request pending for 15s as a timeout and hides the stale figures', () => {
+    vi.useFakeTimers();
+    reportQuery.current = { data: REPORT, isFetching: true, isError: false };
+    renderPage();
+    expect(screen.getByTestId('reports-content')).toBeTruthy();
+
+    act(() => {
+      vi.advanceTimersByTime(14_999);
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
+
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(screen.getByRole('alert').textContent).toContain('reports.loadTimeout');
+    expect(screen.queryByTestId('reports-content')).toBeNull();
+    expect(screen.queryByRole('status')).toBeNull();
   });
 });
