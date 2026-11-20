@@ -27,7 +27,7 @@ export function resolveActorDisplayLabel(label: string, actorType: string, t: TF
  * Action keys contain dots ("shop.update"), so a normal `t('activity.action.shop.update')` would
  * traverse nested objects and miss. keySeparator: false doesn't help either (it flattens the whole
  * path, including "activity.action"). Instead fetch the `activity.action` map and index it by the
- * raw action string. Unknown actions fall back to the raw key.
+ * raw action string. Unknown actions fall back to a humanised version of the key.
  */
 export function resolveActionLabel(action: string, t: TFunction): string {
   const labels = t('activity.action', { returnObjects: true, defaultValue: {} }) as unknown;
@@ -35,5 +35,16 @@ export function resolveActionLabel(action: string, t: TFunction): string {
     const label = (labels as Record<string, unknown>)[action];
     if (typeof label === 'string') return label;
   }
-  return action;
+  return humaniseActionKey(action);
+}
+
+/** Turns an untranslated action key ("shop.nameChange.requested") into readable text ("Shop name change requested"). */
+export function humaniseActionKey(action: string): string {
+  const spaced = action
+    .replace(/[._]/g, ' ')
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }

@@ -1026,6 +1026,7 @@
       "staff.password_reset": "Mitarbeiter-Passwort zurückgesetzt",
       "customer.erase": "Kundendaten gelöscht",
       "order.refund": "Bestellung erstattet",
+      "order.charges_backfilled": "Bestellbeträge nachträglich berechnet",
       "promotion.code_create": "Rabattcode erstellt",
       "promotion.code_update": "Rabattcode aktualisiert",
       "promotion.loyalty_update": "Treueprogramm aktualisiert",

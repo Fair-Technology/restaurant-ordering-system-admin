@@ -3,7 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { createInstance } from 'i18next';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { resolveActionLabel, resolveActorDisplayLabel } from './activityLabels';
+import { humaniseActionKey, resolveActionLabel, resolveActorDisplayLabel } from './activityLabels';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const load = (lng: string) =>
@@ -32,8 +32,11 @@ describe('resolveActionLabel', () => {
     const t = i18n.getFixedT('de');
     expect(resolveActionLabel('shop.update', t)).toBe('Shopdetails aktualisiert');
   });
-  it('falls back to the raw action for unknown keys', () => {
-    expect(resolveActionLabel('foo.bar', i18n.getFixedT('en'))).toBe('foo.bar');
+  it('humanises unknown keys instead of showing the raw key', () => {
+    expect(resolveActionLabel('foo.bar', i18n.getFixedT('en'))).toBe('Foo bar');
+  });
+  it('translates order.charges_backfilled', () => {
+    expect(resolveActionLabel('order.charges_backfilled', i18n.getFixedT('en'))).toBe('Order charges backfilled');
   });
   it('every action key in en exists in de', () => {
     expect(Object.keys(load('de').activity.action).sort()).toEqual(Object.keys(load('en').activity.action).sort());
@@ -51,5 +54,15 @@ describe('resolveActorDisplayLabel', () => {
   it('leaves real names alone', () => {
     expect(resolveActorDisplayLabel('Owner', 'staff', t)).toBe('Owner');
     expect(resolveActorDisplayLabel('Anna', 'owner', t)).toBe('Anna');
+  });
+});
+
+describe('humaniseActionKey', () => {
+  it('replaces separators and capitalises the first letter', () => {
+    expect(humaniseActionKey('foo.bar')).toBe('Foo bar');
+    expect(humaniseActionKey('order.auto_void')).toBe('Order auto void');
+  });
+  it('splits camelCase', () => {
+    expect(humaniseActionKey('shop.nameChange.requested')).toBe('Shop name change requested');
   });
 });
