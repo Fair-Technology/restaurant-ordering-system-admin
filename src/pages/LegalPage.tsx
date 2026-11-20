@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Download } from 'lucide-react';
 import { useGetShopByIdQuery } from '../services/api';
 import {
+  EMPTY_INVOICE_LEGAL_EXTRAS,
   LEGAL_FORMS,
   LEGAL_TEXT_MAX_CHARS,
   MIN_LEGAL_TEXT_CHARS,
@@ -18,6 +19,7 @@ import {
 import type {
   ImpressumFieldKey,
   ImpressumFields,
+  InvoiceLegalExtras,
   LegalForm,
   LegalLanguage,
   LegalSection,
@@ -41,7 +43,11 @@ const IMPRESSUM_TEXT_FIELDS: ImpressumFieldKey[] = [
 ];
 
 /** Section ids on this page, in order; the chips under the header jump to them. */
-const LEGAL_PARTS = ['dpa', 'impressum', 'terms', 'withdrawal', 'privacy', 'data'] as const;
+const LEGAL_PARTS = ['dpa', 'impressum', 'invoiceExtras', 'terms', 'withdrawal', 'privacy', 'data'] as const;
+
+// Loose, non-blocking format hints for the invoice extras (save is always allowed).
+const IBAN_PATTERN = /^[A-Z]{2}[0-9A-Z]{2,30}$/;
+const BIC_PATTERN = /^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$/;
 
 const TERMS_GUIDE_COUNT = 6;
 const WITHDRAWAL_GUIDE_COUNT = 4;
@@ -270,6 +276,84 @@ function ImpressumCard({ shopId, legal, shopAddress }: {
         {serverError && <p className="text-sm text-[#b42318]">{serverError}</p>}
         <MyButton type="button" onClick={handleSave} isPending={isLoading}>
           {isLoading ? t('legal.saving') : t('legal.impressumSave')}
+        </MyButton>
+      </div>
+    </Section>
+  );
+}
+
+function InvoiceLegalExtrasCard({ shopId, legal }: { shopId: string; legal: ShopLegalSettingsDto }) {
+  const { t } = useTranslation();
+  const toast = useToast();
+  const [updateLegal, { isLoading }] = useUpdateShopLegalMutation();
+  const [draft, setDraft] = useState<InvoiceLegalExtras | null>(null);
+  const [serverError, setServerError] = useState<string | null>(null);
+
+  const loaded = legal.invoiceLegalExtras ?? EMPTY_INVOICE_LEGAL_EXTRAS;
+  const value = draft ?? loaded;
+  const set = (key: keyof InvoiceLegalExtras, v: string) => setDraft({ ...value, [key]: v });
+
+  const iban = value.iban.replace(/\s+/g, '').toUpperCase();
+  const bic = value.bic.trim().toUpperCase();
+  const ibanValid = iban === '' || IBAN_PATTERN.test(iban);
+  const bicValid = bic === '' || BIC_PATTERN.test(bic);
+
+  const handleSave = async () => {
+    setServerError(null);
+    try {
+      await updateLegal({ shopId, body: { invoiceLegalExtras: value } }).unwrap();
+      toast.success(t('legal.saved'));
+    } catch (err) {
+      const message = errorMessage(err, t('legal.saveFailed'));
+      setServerError(message);
+      toast.error(message);
+    }
+  };
+
+  const textField = (key: 'managingDirector' | 'court' | 'registerNumber') => (
+    <MyInput
+      key={key}
+      label={t(`legal.f2.${key}`)}
+      maxLength={300}
+      value={value[key]}
+      onChange={(e) => set(key, e.target.value)}
+    />
+  );
+
+  return (
+    <Section id="invoiceExtras" title={t('legal.invoiceExtrasTitle')} padded>
+      <div className="space-y-4">
+        <p className="text-sm text-muted">{t('legal.invoiceExtrasHelp')}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {textField('managingDirector')}
+          {textField('court')}
+          {textField('registerNumber')}
+          <div className="flex flex-col gap-1">
+            <MyInput
+              label={t('legal.f2.iban')}
+              maxLength={300}
+              value={value.iban}
+              aria-invalid={ibanValid ? undefined : 'true'}
+              aria-describedby={ibanValid ? undefined : 'iban-hint-error'}
+              onChange={(e) => set('iban', e.target.value)}
+            />
+            {!ibanValid && <p id="iban-hint-error" className="text-sm text-[#8a5a00]">{t('legal.ibanFormatHint')}</p>}
+          </div>
+          <div className="flex flex-col gap-1">
+            <MyInput
+              label={t('legal.f2.bic')}
+              maxLength={300}
+              value={value.bic}
+              aria-invalid={bicValid ? undefined : 'true'}
+              aria-describedby={bicValid ? undefined : 'bic-hint-error'}
+              onChange={(e) => set('bic', e.target.value)}
+            />
+            {!bicValid && <p id="bic-hint-error" className="text-sm text-[#8a5a00]">{t('legal.bicFormatHint')}</p>}
+          </div>
+        </div>
+        {serverError && <p className="text-sm text-[#b42318]">{serverError}</p>}
+        <MyButton type="button" onClick={handleSave} isPending={isLoading}>
+          {isLoading ? t('legal.saving') : t('legal.invoiceExtrasSave')}
         </MyButton>
       </div>
     </Section>
@@ -588,6 +672,7 @@ export function LegalPage() {
       </nav>
       <DpaCard shopId={shopId!} shopName={shop.name ?? ''} legal={legal} lang={lang} countryCode={shop.countryCode} />
       <ImpressumCard shopId={shopId!} legal={legal} shopAddress={shop.address} />
+      <InvoiceLegalExtrasCard shopId={shopId!} legal={legal} />
       <TextCard
         id="terms" kind="terms" title={t('legal.termsTitle')} shopId={shopId!} countryCode={shop.countryCode}
         complete={legal.completeness.terms} saved={legal.terms} guideCount={TERMS_GUIDE_COUNT}
