@@ -23,6 +23,23 @@ export interface ImpressumFields {
 }
 export type ImpressumFieldKey = keyof ImpressumFields;
 
+/** Optional, invoice-only details; never shown in the public Impressum. '' = not given. */
+export interface InvoiceLegalExtras {
+  managingDirector: string;
+  court: string;
+  registerNumber: string;
+  iban: string;
+  bic: string;
+}
+
+export const EMPTY_INVOICE_LEGAL_EXTRAS: InvoiceLegalExtras = {
+  managingDirector: '',
+  court: '',
+  registerNumber: '',
+  iban: '',
+  bic: '',
+};
+
 export const LEGAL_TEXT_MAX_CHARS = { terms: 20000, withdrawal: 10000, privacyAddition: 5000 } as const;
 export const MIN_LEGAL_TEXT_CHARS = 50;
 
@@ -50,6 +67,7 @@ export interface ShopLegalSettingsDto {
   platformIdentityComplete: boolean;
   callerIsOwner: boolean;
   taxNumber: string;
+  invoiceLegalExtras: InvoiceLegalExtras | null;
 }
 
 export interface UpdateShopLegalBody {
@@ -58,6 +76,7 @@ export interface UpdateShopLegalBody {
   withdrawal?: string;
   privacyAddition?: string;
   taxNumber?: string;
+  invoiceLegalExtras?: InvoiceLegalExtras;
 }
 
 export interface LegalSection {

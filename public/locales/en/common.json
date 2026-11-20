@@ -1265,6 +1265,18 @@
     "taxNumberHelp": "Printed on your invoices only, never in the public Impressum. Invoices need either this or your VAT ID.",
     "taxIdMissing": "Without a tax number or VAT ID, no invoices can be issued and the restaurant can't go live.",
     "impressumSave": "Save Impressum",
+    "invoiceExtrasTitle": "Invoice extras (optional)",
+    "invoiceExtrasHelp": "Optional details some businesses print on invoices. None of this is required and none of it appears in your public Impressum.",
+    "invoiceExtrasSave": "Save invoice extras",
+    "f2": {
+      "managingDirector": "Managing director (Geschäftsführer)",
+      "court": "Register court (Amtsgericht)",
+      "registerNumber": "HRB number",
+      "iban": "IBAN",
+      "bic": "BIC"
+    },
+    "ibanFormatHint": "That doesn't look like a valid IBAN (e.g. DE89 3704 0044 0532 0130 00). It will still be saved as entered.",
+    "bicFormatHint": "That doesn't look like a valid BIC/SWIFT code (e.g. DEUTDEFF). It will still be saved as entered.",
     "termsTitle": "Terms and conditions",
     "withdrawalTitle": "Withdrawal policy",
     "textSave": "Save",
@@ -1312,6 +1324,7 @@
     "jump": {
       "dpa": "DPA",
       "impressum": "Impressum",
+      "invoiceExtras": "Invoice extras",
       "terms": "Terms",
       "withdrawal": "Withdrawal",
       "privacy": "Privacy",

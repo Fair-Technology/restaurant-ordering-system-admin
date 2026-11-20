@@ -1265,6 +1265,18 @@
     "taxNumberHelp": "Steht nur auf Ihren Rechnungen, nie im öffentlichen Impressum. Rechnungen brauchen diese oder Ihre USt-IdNr.",
     "taxIdMissing": "Ohne Steuernummer oder USt-IdNr. können keine Rechnungen erstellt werden und das Restaurant kann nicht live gehen.",
     "impressumSave": "Impressum speichern",
+    "invoiceExtrasTitle": "Rechnungsdaten (optional)",
+    "invoiceExtrasHelp": "Optionale Angaben, die manche Unternehmen auf Rechnungen drucken. Nichts davon ist erforderlich, und nichts davon erscheint in Ihrem öffentlichen Impressum.",
+    "invoiceExtrasSave": "Rechnungsdaten speichern",
+    "f2": {
+      "managingDirector": "Geschäftsführer",
+      "court": "Amtsgericht",
+      "registerNumber": "HRB-Nummer",
+      "iban": "IBAN",
+      "bic": "BIC"
+    },
+    "ibanFormatHint": "Das sieht nicht nach einer gültigen IBAN aus (z. B. DE89 3704 0044 0532 0130 00). Wird trotzdem wie eingegeben gespeichert.",
+    "bicFormatHint": "Das sieht nicht nach einem gültigen BIC/SWIFT-Code aus (z. B. DEUTDEFF). Wird trotzdem wie eingegeben gespeichert.",
     "termsTitle": "Allgemeine Geschäftsbedingungen (AGB)",
     "withdrawalTitle": "Widerrufsbelehrung",
     "textSave": "Speichern",
@@ -1312,6 +1324,7 @@
     "jump": {
       "dpa": "AV-Vertrag",
       "impressum": "Impressum",
+      "invoiceExtras": "Rechnungsdaten",
       "terms": "AGB",
       "withdrawal": "Widerruf",
       "privacy": "Datenschutz",
