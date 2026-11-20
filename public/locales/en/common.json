@@ -887,6 +887,7 @@
     "refund": "Refund",
     "refundAmount": "Amount",
     "refundReason": "Reason (for your records)",
+    "refundReasonRequired": "Required",
     "refundConfirmButton": "Refund {{amount}}",
     "refundReview": "Refund {{amount}}...",
     "refundConfirmBack": "Back",

@@ -887,6 +887,7 @@
     "refund": "Erstatten",
     "refundAmount": "Betrag",
     "refundReason": "Grund (für Ihre Unterlagen)",
+    "refundReasonRequired": "Erforderlich",
     "refundConfirmButton": "{{amount}} erstatten",
     "refundReview": "{{amount}} erstatten...",
     "refundConfirmBack": "Zurück",

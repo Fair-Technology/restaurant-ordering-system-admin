@@ -181,7 +181,14 @@ export function RefundPanel({ shopId, order }: RefundPanelProps) {
         </div>
       )}
 
-      <MyInput label={t('orders.refundReason')} value={reason} onChange={(e) => setReason(e.target.value)} />
+      <MyInput
+        label={t('orders.refundReason')}
+        hint={t('orders.refundReasonRequired')}
+        required
+        aria-required="true"
+        value={reason}
+        onChange={(e) => setReason(e.target.value)}
+      />
 
       {confirming && (
         <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
