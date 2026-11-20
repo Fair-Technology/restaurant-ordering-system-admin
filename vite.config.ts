@@ -6,6 +6,11 @@ import tailwindcss from '@tailwindcss/vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  server: {
+    // Nested git worktrees under `.worktrees/` are full repo copies; edits or tsconfig changes
+    // inside them must not clear this dev server's dependency cache (white page, 504 Outdated Optimize Dep).
+    watch: { ignored: ['**/.worktrees/**'] },
+  },
   test: {
     // Tests must not depend on a developer's .env.local: RTK Query needs an absolute
     // base URL to build Request objects. Fake host; fetch is stubbed in every test.
