@@ -466,7 +466,7 @@
     "dineInOff": "Table ordering is switched off, so these codes open your normal pickup menu for now. An owner can switch on \"Dine in\" in Settings.",
     "goToSettings": "Open Settings",
     "numbersLabel": "Table numbers",
-    "numbersHint": "Separate with commas, e.g. 1, 2, 3, Terrasse 1. Up to 10 letters, digits, spaces or dashes each.",
+    "numbersHint": "Separate with commas, e.g. 1, 2, 3, Terrasse 1. Up to 10 letters, digits, spaces or dashes each, starting with a letter or digit.",
     "invalid": "These can't be used: {{list}}",
     "tooMany": "Only the first 100 tables are shown.",
     "empty": "Type a table number to see its QR code.",

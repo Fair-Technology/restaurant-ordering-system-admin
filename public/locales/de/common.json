@@ -466,7 +466,7 @@
     "dineInOff": "Tischbestellung ist ausgeschaltet – diese Codes öffnen vorerst Ihr normales Abhol-Menü. Ein Inhaber kann „Vor Ort\" in den Einstellungen einschalten.",
     "goToSettings": "Einstellungen öffnen",
     "numbersLabel": "Tischnummern",
-    "numbersHint": "Durch Kommas getrennt, z. B. 1, 2, 3, Terrasse 1. Je bis zu 10 Buchstaben, Ziffern, Leerzeichen oder Bindestriche.",
+    "numbersHint": "Durch Kommas getrennt, z. B. 1, 2, 3, Terrasse 1. Je bis zu 10 Buchstaben, Ziffern, Leerzeichen oder Bindestriche, beginnend mit einem Buchstaben oder einer Ziffer.",
     "invalid": "Diese sind nicht möglich: {{list}}",
     "tooMany": "Es werden nur die ersten 100 Tische angezeigt.",
     "empty": "Geben Sie eine Tischnummer ein, um den QR-Code zu sehen.",
