@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Navigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Download } from 'lucide-react';
@@ -26,6 +26,9 @@ function downloadFile(name: string, content: string, mime: string) {
 }
 
 const RANGE_ERROR_ID = 'reports-range-error';
+const LOAD_ERROR_ID = 'reports-load-error';
+/** A report request still pending after this long is treated as failed. */
+const REPORT_TIMEOUT_MS = 15_000;
 
 const PRESET_LABELS: Record<ReportPreset, string> = {
   today: 'reports.presetToday',
@@ -65,10 +68,27 @@ export function ReportsPage() {
     custom ?? (shop?.timezone ? rangeFor('last7', todayIn(shop.timezone, new Date())) : { from: '', to: '' });
   const valid = isValidRange(range.from, range.to);
 
-  const { data: report, isFetching, isError } = useGetSalesReportQuery(
+  const { data: report, isFetching, isError, refetch } = useGetSalesReportQuery(
     { shopId: shopId!, from: range.from, to: range.to },
     { skip: !allowed || !valid },
   );
+
+  // Client-side timeout: `isFetching` continuously true for REPORT_TIMEOUT_MS counts as a failure.
+  const [timedOut, setTimedOut] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    if (!isFetching) return;
+    const timer = setTimeout(() => setTimedOut(true), REPORT_TIMEOUT_MS);
+    return () => {
+      clearTimeout(timer);
+      setTimedOut(false);
+    };
+  }, [shopId, range.from, range.to, isFetching, attempt]);
+  const retry = () => {
+    setAttempt((n) => n + 1);
+    refetch();
+  };
+  const failed = valid && (isError || (timedOut && isFetching));
   const { data: limit } = useGetOrderLimitQuery({ shopId: shopId! }, { skip: !allowed });
 
   if (!shop) return <MySpinner label={t('reports.loading')} />;
@@ -129,6 +149,7 @@ export function ReportsPage() {
         title={t('reports.title')}
         actions={
           valid &&
+          !failed &&
           report && (
             <MyButton variant="secondary" onClick={() => download(report)} className="gap-2">
               <Download size={16} aria-hidden="true" />
@@ -175,11 +196,25 @@ export function ReportsPage() {
         </p>
       )}
 
-      {valid && isError && <p className="text-sm text-[#b42318]">{t('reports.loadError')}</p>}
-      {valid && !report && !isError && <MySpinner label={t('reports.loading')} />}
+      {failed && (
+        <div id={LOAD_ERROR_ID} role="alert" className="flex flex-wrap items-center gap-3 text-sm text-[#b42318]">
+          <p>{timedOut ? t('reports.loadTimeout') : t('reports.loadError')}</p>
+          <MyButton variant="secondary" onClick={retry}>
+            {t('reports.retry')}
+          </MyButton>
+        </div>
+      )}
+      {valid && !failed && !report && <MySpinner label={t('reports.loading')} />}
 
-      {valid && report && (
-        <div className={isFetching ? 'opacity-60' : ''}>
+      {valid && !failed && report && isFetching && (
+        <div role="status" aria-live="polite" className="mb-3 flex items-center gap-2 text-[13px] font-semibold text-[#4a413b]">
+          <span aria-hidden="true" className="h-4 w-4 animate-spin rounded-full border-2 border-gray-200 border-t-gray-600" />
+          {t('reports.updating')}
+        </div>
+      )}
+
+      {valid && !failed && report && (
+        <div data-testid="reports-content" className={isFetching ? 'opacity-60' : ''}>
           <div className="mb-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
             <StatTile label={t('reports.takings')} value={money(report.totals.takingsCents)} help={t('reports.takingsHelp')} />
             <StatTile label={t('reports.orders')} value={String(report.totals.orderCount)} />
