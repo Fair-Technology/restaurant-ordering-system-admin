@@ -3,6 +3,7 @@ import { useMsal } from '@azure/msal-react';
 import { X, LogOut } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useUpdateMyLanguageMutation } from '../../services/api';
 import { useModalA11y } from '../../hooks/useModalA11y';
 import { chipClass } from './pageStyles';
 
@@ -16,6 +17,7 @@ interface AccountSettingsModalProps {
 
 export function AccountSettingsModal({ user, onClose }: AccountSettingsModalProps) {
   const { t, i18n } = useTranslation();
+  const [updateMyLanguage] = useUpdateMyLanguageMutation();
   const { instance } = useMsal();
   const dialogRef = useRef<HTMLDivElement>(null);
   const onKeyDown = useModalA11y({ onClose, containerRef: dialogRef });
@@ -74,7 +76,10 @@ export function AccountSettingsModal({ user, onClose }: AccountSettingsModalProp
                     // Endonym, not translated: a language picker names each language in itself
                     aria-label={LANGUAGE_NAMES[lng]}
                     lang={lng}
-                    onClick={() => i18n.changeLanguage(lng)}
+                    onClick={() => {
+                      void i18n.changeLanguage(lng);
+                      void updateMyLanguage({ updateMyLanguageRequestDto: { language: lng } });
+                    }}
                     className={`${chipClass(selected)} uppercase`}
                   >
                     {lng}

@@ -3,6 +3,7 @@ import { InteractionStatus } from '@azure/msal-browser';
 import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { RETURN_TO_KEY, staffRedirectFor } from '../../features/auth/redirects';
+import { AccountLanguageSync } from '../../features/auth/AccountLanguageSync';
 import { readStaffSession } from '../../features/staff/staffSession';
 
 export function RequireAuth() {
@@ -32,5 +33,10 @@ export function RequireAuth() {
     return <Navigate to="/login" replace />;
   }
 
-  return <Outlet />;
+  return (
+    <>
+      <AccountLanguageSync />
+      <Outlet />
+    </>
+  );
 }
