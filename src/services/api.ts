@@ -1014,6 +1014,21 @@ const injectedRtkApi = api
         }),
         invalidatesTags: ["Staff"],
       }),
+      getStaffMe: build.query<GetStaffMeApiResponse, GetStaffMeApiArg>({
+        query: () => ({ url: `/staff/me` }),
+        providesTags: ["Staff"],
+      }),
+      updateMyStaffLanguage: build.mutation<
+        UpdateMyStaffLanguageApiResponse,
+        UpdateMyStaffLanguageApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/staff/me/language`,
+          method: "PATCH",
+          body: queryArg.updateMyStaffLanguageRequestDto,
+        }),
+        invalidatesTags: ["Staff"],
+      }),
       getRejectionWatch: build.query<
         GetRejectionWatchApiResponse,
         GetRejectionWatchApiArg
@@ -1024,6 +1039,17 @@ const injectedRtkApi = api
       getMe: build.query<GetMeApiResponse, GetMeApiArg>({
         query: () => ({ url: `/users/me` }),
         providesTags: ["Users"],
+      }),
+      updateMyLanguage: build.mutation<
+        UpdateMyLanguageApiResponse,
+        UpdateMyLanguageApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/users/me/language`,
+          method: "PATCH",
+          body: queryArg.updateMyLanguageRequestDto,
+        }),
+        invalidatesTags: ["Users"],
       }),
       stripeWebhook: build.mutation<
         StripeWebhookApiResponse,
@@ -1886,11 +1912,24 @@ export type StaffLoginApiResponse =
 export type StaffLoginApiArg = {
   staffLoginRequestDto: StaffLoginRequestDto;
 };
+export type GetStaffMeApiResponse =
+  /** status 200 Success */ GetStaffMeResultDto;
+export type GetStaffMeApiArg = void;
+export type UpdateMyStaffLanguageApiResponse =
+  /** status 200 Success */ GetStaffMeResultDto;
+export type UpdateMyStaffLanguageApiArg = {
+  updateMyStaffLanguageRequestDto: UpdateMyStaffLanguageRequestDto;
+};
 export type GetRejectionWatchApiResponse =
   /** status 200 Success */ RejectionWatchDto;
 export type GetRejectionWatchApiArg = void;
 export type GetMeApiResponse = /** status 200 Success */ GetMeResultDto;
 export type GetMeApiArg = void;
+export type UpdateMyLanguageApiResponse =
+  /** status 200 Success */ GetMeResultDto;
+export type UpdateMyLanguageApiArg = {
+  updateMyLanguageRequestDto: UpdateMyLanguageRequestDto;
+};
 export type StripeWebhookApiResponse = /** status 200 Event received */ {
   received?: boolean;
 };
@@ -4159,11 +4198,27 @@ export type StaffLoginResultDto = {
   staffId: string;
   username: string;
   role: StaffRole;
+  language: MenuLanguage | null;
 };
 export type StaffLoginRequestDto = {
   shopSlug: string;
   username: string;
   password: string;
+};
+export type GetStaffMeResultDto = {
+  shopId: string;
+  id: string;
+  username: string;
+  displayName: string | null;
+  role: StaffRole;
+  language: MenuLanguage | null;
+  isActive: boolean;
+  isLocked: boolean;
+  lastLoginAt: string | null;
+  createdAt: string;
+};
+export type UpdateMyStaffLanguageRequestDto = {
+  language: MenuLanguage;
 };
 export type RejectionWatchRowDto = {
   shopId: string;
@@ -4182,8 +4237,12 @@ export type GetMeResultDto = {
   name?: string;
   systemRole: SystemRole;
   platformAccess?: "read" | "write";
+  language?: MenuLanguage;
   createdAt: string;
   updatedAt: string;
+};
+export type UpdateMyLanguageRequestDto = {
+  language: MenuLanguage;
 };
 export type HandleCheckoutSessionCompletedInput = {
   shopId: string;
@@ -4382,10 +4441,14 @@ export const {
   useGetPublicLegalPackQuery,
   useLazyGetPublicLegalPackQuery,
   useStaffLoginMutation,
+  useGetStaffMeQuery,
+  useLazyGetStaffMeQuery,
+  useUpdateMyStaffLanguageMutation,
   useGetRejectionWatchQuery,
   useLazyGetRejectionWatchQuery,
   useGetMeQuery,
   useLazyGetMeQuery,
+  useUpdateMyLanguageMutation,
   useStripeWebhookMutation,
   useStripeConnectWebhookMutation,
   useUpdateProductAvailabilityMutation,

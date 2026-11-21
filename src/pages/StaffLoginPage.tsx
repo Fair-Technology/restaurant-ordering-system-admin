@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useNavigate, useParams, Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useStaffLoginMutation } from '../services/api';
+import { useStaffLoginMutation, useUpdateMyStaffLanguageMutation } from '../services/api';
 import { useDispatch } from 'react-redux';
 import { readStaffSession } from '../features/staff/staffSession';
+import { resolveLoginLanguage } from '../features/i18n/accountLanguage';
 import { startStaffSession } from '../features/staff/startStaffSession';
 import { MyCard } from '../components/ui/MyCard';
 import { MyButton } from '../components/ui/MyButton';
@@ -14,9 +15,10 @@ export function StaffLoginPage() {
   usePageTitle('staffLogin.title');
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const dispatch = useDispatch();
   const [staffLogin, { isLoading }] = useStaffLoginMutation();
+  const [updateMyStaffLanguage] = useUpdateMyStaffLanguageMutation();
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -35,6 +37,9 @@ export function StaffLoginPage() {
         staffLoginRequestDto: { shopSlug: slug ?? '', username, password },
       }).unwrap();
       startStaffSession(dispatch, result);
+      const { language, persist } = resolveLoginLanguage(result.language ?? null);
+      await i18n.changeLanguage(language);
+      if (persist) void updateMyStaffLanguage({ updateMyStaffLanguageRequestDto: { language } });
       navigate(`/shops/${result.shopId}/reports`, { replace: true });
     } catch (err) {
       const code = (err as { data?: { error?: string } })?.data?.error;

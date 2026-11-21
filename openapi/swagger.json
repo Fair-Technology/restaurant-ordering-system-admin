@@ -6556,6 +6556,94 @@
         }
       }
     },
+    "/staff/me": {
+      "get": {
+        "operationId": "getStaffMe",
+        "tags": [
+          "Staff"
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetStaffMeResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/staff/me/language": {
+      "patch": {
+        "operationId": "updateMyStaffLanguage",
+        "tags": [
+          "Staff"
+        ],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMyStaffLanguageRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateMyStaffLanguageResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
     "/usage/rejection-watch": {
       "get": {
         "operationId": "getRejectionWatch",
@@ -6609,6 +6697,55 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/GetMeResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/users/me/language": {
+      "patch": {
+        "operationId": "updateMyLanguage",
+        "tags": [
+          "Users"
+        ],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMyLanguageRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateMyLanguageResultDto"
                 }
               }
             }
@@ -12131,6 +12268,61 @@
         "enum": [
           "manager",
           "staff"
+        ]
+      },
+      "GetStaffMeResultDto": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "shopId": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string",
+            "nullable": true
+          },
+          "role": {
+            "$ref": "#/components/schemas/StaffRole"
+          },
+          "language": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MenuLanguage"
+              }
+            ]
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "isLocked": {
+            "type": "boolean"
+          },
+          "lastLoginAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "createdAt",
+          "displayName",
+          "id",
+          "isActive",
+          "isLocked",
+          "language",
+          "lastLoginAt",
+          "role",
+          "shopId",
+          "username"
         ]
       },
       "ShopSubscription": {
@@ -17731,6 +17923,14 @@
           },
           "role": {
             "$ref": "#/components/schemas/StaffRole"
+          },
+          "language": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MenuLanguage"
+              }
+            ]
           }
         },
         "required": [
@@ -17740,7 +17940,8 @@
           "shopSlug",
           "staffId",
           "username",
-          "role"
+          "role",
+          "language"
         ],
         "additionalProperties": false
       },
@@ -17761,6 +17962,21 @@
           "shopSlug",
           "username",
           "password"
+        ],
+        "additionalProperties": false
+      },
+      "UpdateMyStaffLanguageResultDto": {
+        "$ref": "#/components/schemas/GetStaffMeResultDto"
+      },
+      "UpdateMyStaffLanguageRequestDto": {
+        "type": "object",
+        "properties": {
+          "language": {
+            "$ref": "#/components/schemas/MenuLanguage"
+          }
+        },
+        "required": [
+          "language"
         ],
         "additionalProperties": false
       },
@@ -18222,6 +18438,21 @@
         ],
         "additionalProperties": false
       },
+      "UpdateMyLanguageResultDto": {
+        "$ref": "#/components/schemas/GetMeResultDto"
+      },
+      "UpdateMyLanguageRequestDto": {
+        "type": "object",
+        "properties": {
+          "language": {
+            "$ref": "#/components/schemas/MenuLanguage"
+          }
+        },
+        "required": [
+          "language"
+        ],
+        "additionalProperties": false
+      },
       "GetMeResultDto": {
         "type": "object",
         "properties": {
@@ -18243,6 +18474,9 @@
               "read",
               "write"
             ]
+          },
+          "language": {
+            "$ref": "#/components/schemas/MenuLanguage"
           },
           "createdAt": {
             "type": "string"
