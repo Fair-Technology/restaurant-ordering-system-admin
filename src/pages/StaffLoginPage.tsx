@@ -37,7 +37,7 @@ export function StaffLoginPage() {
         staffLoginRequestDto: { shopSlug: slug ?? '', username, password },
       }).unwrap();
       startStaffSession(dispatch, result);
-      const { language, persist } = resolveLoginLanguage(result.language ?? null);
+      const { language, persist } = resolveLoginLanguage(result.language ?? null, result.shopLanguage);
       await i18n.changeLanguage(language);
       if (persist) void updateMyStaffLanguage({ updateMyStaffLanguageRequestDto: { language } });
       navigate(`/shops/${result.shopId}/reports`, { replace: true });

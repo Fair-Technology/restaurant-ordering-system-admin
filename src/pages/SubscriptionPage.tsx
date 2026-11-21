@@ -269,7 +269,7 @@ export function SubscriptionPage() {
     { shopId: shopId! },
     { refetchOnMountOrArgChange: true, skip: !canManage },
   );
-  const { data: plansData, isLoading: plansLoading } = useGetPlansQuery();
+  const { data: plansData, isLoading: plansLoading } = useGetPlansQuery({});
   const [createSubscriptionCheckout] = useCreateSubscriptionCheckoutMutation();
   const [cancelShopSubscription] = useCancelShopSubscriptionMutation();
   const [resumeShopSubscription] = useResumeShopSubscriptionMutation();

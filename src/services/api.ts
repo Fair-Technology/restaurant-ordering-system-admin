@@ -5,6 +5,7 @@ export const addTagTypes = [
   "Reports",
   "Plans",
   "Platform",
+  "Content Reports",
   "Reference Lists",
   "Products",
   "Shops",
@@ -16,6 +17,7 @@ export const addTagTypes = [
   "Data Privacy",
   "Promotions",
   "Shop Logo",
+  "OptionGroups",
   "Usage",
   "Product Images",
   "Staff",
@@ -23,7 +25,6 @@ export const addTagTypes = [
   "Subscriptions",
   "Users",
   "Webhooks",
-  "OptionGroups",
 ] as const;
 const injectedRtkApi = api
   .enhanceEndpoints({
@@ -124,7 +125,12 @@ const injectedRtkApi = api
         invalidatesTags: ["Plans"],
       }),
       getPlans: build.query<GetPlansApiResponse, GetPlansApiArg>({
-        query: () => ({ url: `/plans` }),
+        query: (queryArg) => ({
+          url: `/plans`,
+          params: {
+            includeHidden: queryArg.includeHidden,
+          },
+        }),
         providesTags: ["Plans"],
       }),
       getPlan: build.query<GetPlanApiResponse, GetPlanApiArg>({
@@ -174,6 +180,31 @@ const injectedRtkApi = api
           body: queryArg.updateSystemConfigRequestDto,
         }),
         invalidatesTags: ["Platform"],
+      }),
+      listContentReports: build.query<
+        ListContentReportsApiResponse,
+        ListContentReportsApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/platform/content-reports`,
+          params: {
+            status: queryArg.status,
+            page: queryArg.page,
+            pageSize: queryArg.pageSize,
+          },
+        }),
+        providesTags: ["Content Reports"],
+      }),
+      decideContentReport: build.mutation<
+        DecideContentReportApiResponse,
+        DecideContentReportApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/platform/content-reports/${queryArg.reportId}/decision`,
+          method: "POST",
+          body: queryArg.decideContentReportBody,
+        }),
+        invalidatesTags: ["Content Reports"],
       }),
       getPlatformLegalIdentity: build.query<
         GetPlatformLegalIdentityApiResponse,
@@ -288,6 +319,17 @@ const injectedRtkApi = api
       >({
         query: (queryArg) => ({
           url: `/products/${queryArg.productId}`,
+          method: "PATCH",
+          body: queryArg.body,
+        }),
+        invalidatesTags: ["Products"],
+      }),
+      updateProductAvailability: build.mutation<
+        UpdateProductAvailabilityApiResponse,
+        UpdateProductAvailabilityApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/products/${queryArg.productId}/availability`,
           method: "PATCH",
           body: queryArg.body,
         }),
@@ -441,6 +483,17 @@ const injectedRtkApi = api
         }),
         invalidatesTags: ["Combos"],
       }),
+      submitContentReport: build.mutation<
+        SubmitContentReportApiResponse,
+        SubmitContentReportApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/shops/${queryArg.shopId}/content-reports`,
+          method: "POST",
+          body: queryArg.submitContentReportBody,
+        }),
+        invalidatesTags: ["Content Reports"],
+      }),
       removeShopCoverImage: build.mutation<
         RemoveShopCoverImageApiResponse,
         RemoveShopCoverImageApiArg
@@ -529,6 +582,18 @@ const injectedRtkApi = api
           url: `/shops/${queryArg.shopId}/go-live-status`,
         }),
         providesTags: ["Shops"],
+      }),
+      exportInvoiceArchive: build.query<
+        ExportInvoiceArchiveApiResponse,
+        ExportInvoiceArchiveApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/shops/${queryArg.shopId}/invoices/archive`,
+          params: {
+            month: queryArg.month,
+          },
+        }),
+        providesTags: ["Orders"],
       }),
       getShopLegal: build.query<GetShopLegalApiResponse, GetShopLegalApiArg>({
         query: (queryArg) => ({ url: `/shops/${queryArg.shopId}/legal` }),
@@ -627,6 +692,67 @@ const injectedRtkApi = api
         }),
         invalidatesTags: ["Shops"],
       }),
+      createOptionGroup: build.mutation<
+        CreateOptionGroupApiResponse,
+        CreateOptionGroupApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/shops/${queryArg.shopId}/option-groups`,
+          method: "POST",
+          body: queryArg.body,
+        }),
+        invalidatesTags: ["OptionGroups"],
+      }),
+      getOptionGroups: build.query<
+        GetOptionGroupsApiResponse,
+        GetOptionGroupsApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/shops/${queryArg.shopId}/option-groups`,
+        }),
+        providesTags: ["OptionGroups"],
+      }),
+      deleteOptionGroup: build.mutation<
+        DeleteOptionGroupApiResponse,
+        DeleteOptionGroupApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/shops/${queryArg.shopId}/option-groups/${queryArg.groupId}`,
+          method: "DELETE",
+        }),
+        invalidatesTags: ["OptionGroups"],
+      }),
+      getOptionGroup: build.query<
+        GetOptionGroupApiResponse,
+        GetOptionGroupApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/shops/${queryArg.shopId}/option-groups/${queryArg.groupId}`,
+        }),
+        providesTags: ["OptionGroups"],
+      }),
+      updateOptionGroup: build.mutation<
+        UpdateOptionGroupApiResponse,
+        UpdateOptionGroupApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/shops/${queryArg.shopId}/option-groups/${queryArg.groupId}`,
+          method: "PUT",
+          body: queryArg.body,
+        }),
+        invalidatesTags: ["OptionGroups"],
+      }),
+      setOptionAvailability: build.mutation<
+        SetOptionAvailabilityApiResponse,
+        SetOptionAvailabilityApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/shops/${queryArg.shopId}/option-groups/${queryArg.groupId}/options/${queryArg.optionId}`,
+          method: "PATCH",
+          body: queryArg.body,
+        }),
+        invalidatesTags: ["OptionGroups"],
+      }),
       getOrderLimit: build.query<GetOrderLimitApiResponse, GetOrderLimitApiArg>(
         {
           query: (queryArg) => ({
@@ -663,6 +789,8 @@ const injectedRtkApi = api
           params: {
             page: queryArg.page,
             pageSize: queryArg.pageSize,
+            from: queryArg["from"],
+            to: queryArg.to,
           },
         }),
         providesTags: ["Orders"],
@@ -760,6 +888,45 @@ const injectedRtkApi = api
           providesTags: ["Promotions"],
         },
       ),
+      getPushPublicKey: build.query<
+        GetPushPublicKeyApiResponse,
+        GetPushPublicKeyApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/shops/${queryArg.shopId}/push/public-key`,
+        }),
+        providesTags: ["Orders"],
+      }),
+      subscribePush: build.mutation<
+        SubscribePushApiResponse,
+        SubscribePushApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/shops/${queryArg.shopId}/push/subscriptions`,
+          method: "POST",
+          body: queryArg.body,
+        }),
+        invalidatesTags: ["Orders"],
+      }),
+      unsubscribePush: build.mutation<
+        UnsubscribePushApiResponse,
+        UnsubscribePushApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/shops/${queryArg.shopId}/push/subscriptions`,
+          method: "DELETE",
+        }),
+        invalidatesTags: ["Orders"],
+      }),
+      negotiateRealtime: build.query<
+        NegotiateRealtimeApiResponse,
+        NegotiateRealtimeApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/shops/${queryArg.shopId}/realtime/negotiate`,
+        }),
+        providesTags: ["Orders"],
+      }),
       getSalesReport: build.query<
         GetSalesReportApiResponse,
         GetSalesReportApiArg
@@ -1073,78 +1240,6 @@ const injectedRtkApi = api
         }),
         invalidatesTags: ["Webhooks"],
       }),
-      updateProductAvailability: build.mutation<
-        UpdateProductAvailabilityApiResponse,
-        UpdateProductAvailabilityApiArg
-      >({
-        query: (queryArg) => ({
-          url: `/products/${queryArg.productId}/availability`,
-          method: "PATCH",
-          body: queryArg.body,
-        }),
-        invalidatesTags: ["Products"],
-      }),
-      createOptionGroup: build.mutation<
-        CreateOptionGroupApiResponse,
-        CreateOptionGroupApiArg
-      >({
-        query: (queryArg) => ({
-          url: `/shops/${queryArg.shopId}/option-groups`,
-          method: "POST",
-          body: queryArg.body,
-        }),
-        invalidatesTags: ["OptionGroups"],
-      }),
-      getOptionGroups: build.query<
-        GetOptionGroupsApiResponse,
-        GetOptionGroupsApiArg
-      >({
-        query: (queryArg) => ({
-          url: `/shops/${queryArg.shopId}/option-groups`,
-        }),
-        providesTags: ["OptionGroups"],
-      }),
-      deleteOptionGroup: build.mutation<
-        DeleteOptionGroupApiResponse,
-        DeleteOptionGroupApiArg
-      >({
-        query: (queryArg) => ({
-          url: `/shops/${queryArg.shopId}/option-groups/${queryArg.groupId}`,
-          method: "DELETE",
-        }),
-        invalidatesTags: ["OptionGroups"],
-      }),
-      getOptionGroup: build.query<
-        GetOptionGroupApiResponse,
-        GetOptionGroupApiArg
-      >({
-        query: (queryArg) => ({
-          url: `/shops/${queryArg.shopId}/option-groups/${queryArg.groupId}`,
-        }),
-        providesTags: ["OptionGroups"],
-      }),
-      updateOptionGroup: build.mutation<
-        UpdateOptionGroupApiResponse,
-        UpdateOptionGroupApiArg
-      >({
-        query: (queryArg) => ({
-          url: `/shops/${queryArg.shopId}/option-groups/${queryArg.groupId}`,
-          method: "PUT",
-          body: queryArg.body,
-        }),
-        invalidatesTags: ["OptionGroups"],
-      }),
-      setOptionAvailability: build.mutation<
-        SetOptionAvailabilityApiResponse,
-        SetOptionAvailabilityApiArg
-      >({
-        query: (queryArg) => ({
-          url: `/shops/${queryArg.shopId}/option-groups/${queryArg.groupId}/options/${queryArg.optionId}`,
-          method: "PATCH",
-          body: queryArg.body,
-        }),
-        invalidatesTags: ["OptionGroups"],
-      }),
     }),
     overrideExisting: false,
   });
@@ -1206,8 +1301,12 @@ export type CreatePlanApiResponse =
 export type CreatePlanApiArg = {
   createPlanRequestDto: CreatePlanRequestDto;
 };
-export type GetPlansApiResponse = /** status 200 Success */ GetPlansResultDto;
-export type GetPlansApiArg = void;
+export type GetPlansApiResponse =
+  /** status 200 Plans retrieved successfully */ GetPlansResultDto;
+export type GetPlansApiArg = {
+  /** Platform operators only: include plans hidden from the customer selector. */
+  includeHidden?: boolean;
+};
 export type GetPlanApiResponse = /** status 200 Success */ GetPlanResultDto;
 export type GetPlanApiArg = {
   planId: string;
@@ -1236,6 +1335,19 @@ export type UpdateSystemConfigApiResponse =
   /** status 200 Success */ UpdateSystemConfigResultDto;
 export type UpdateSystemConfigApiArg = {
   updateSystemConfigRequestDto: UpdateSystemConfigRequestDto;
+};
+export type ListContentReportsApiResponse =
+  /** status 200 Content reports */ ContentReport[];
+export type ListContentReportsApiArg = {
+  status?: ContentReportStatus | string;
+  page?: number;
+  pageSize?: number;
+};
+export type DecideContentReportApiResponse =
+  /** status 200 Decision recorded */ ContentReport;
+export type DecideContentReportApiArg = {
+  reportId: string;
+  decideContentReportBody: DecideContentReportBody;
 };
 export type GetPlatformLegalIdentityApiResponse =
   /** status 200 Success */ PlatformLegalIdentityDto;
@@ -1321,6 +1433,16 @@ export type UpdateProductApiArg = {
     addonGroups?: ProductAddonGroup[];
     isAvailable?: boolean;
     schedule?: ProductSchedule | null;
+  };
+};
+export type UpdateProductAvailabilityApiResponse =
+  /** status 200 Dish availability updated */ UpdateProductAvailabilityResultDto;
+export type UpdateProductAvailabilityApiArg = {
+  productId: string;
+  body: {
+    shopId: string;
+    isAvailable?: boolean;
+    unavailableUntil?: string | null;
   };
 };
 export type GetReferenceListsApiResponse =
@@ -1494,6 +1616,12 @@ export type UpdateComboApiArg = {
     [key: string]: any;
   };
 };
+export type SubmitContentReportApiResponse =
+  /** status 200 Report received */ SubmitContentReportResultDto;
+export type SubmitContentReportApiArg = {
+  shopId: string;
+  submitContentReportBody: SubmitContentReportBody;
+};
 export type RemoveShopCoverImageApiResponse =
   /** status 200 Shop cover image removed successfully */ ShopCoverImageResultDto;
 export type RemoveShopCoverImageApiArg = {
@@ -1560,6 +1688,13 @@ export type GetGoLiveStatusApiResponse =
   /** status 200 Success */ GetGoLiveStatusResultDto;
 export type GetGoLiveStatusApiArg = {
   shopId: string;
+};
+export type ExportInvoiceArchiveApiResponse =
+  /** status 200 The ZIP as base64 */ InvoiceArchiveFileDto;
+export type ExportInvoiceArchiveApiArg = {
+  shopId: string;
+  /** The restaurant's local month, as YYYY-MM */
+  month: string;
 };
 export type GetShopLegalApiResponse =
   /** status 200 Success */ ShopLegalSettingsDto;
@@ -1630,6 +1765,59 @@ export type ApproveShopNameChangeApiResponse =
 export type ApproveShopNameChangeApiArg = {
   shopId: string;
 };
+export type CreateOptionGroupApiResponse =
+  /** status 200 Option group created successfully */ ShopOptionGroupDto;
+export type CreateOptionGroupApiArg = {
+  shopId: string;
+  body: {
+    kind: "variant" | "addon";
+    name: string;
+    nameTranslations?: TranslationMap;
+    minSelectable?: number;
+    maxSelectable?: number;
+    options: ShopOptionGroupOptionInputDto[];
+  };
+};
+export type GetOptionGroupsApiResponse =
+  /** status 200 Option groups retrieved successfully */ GetOptionGroupsResultDto;
+export type GetOptionGroupsApiArg = {
+  shopId: string;
+};
+export type DeleteOptionGroupApiResponse =
+  /** status 200 Option group deleted successfully */ DeleteOptionGroupResultDto;
+export type DeleteOptionGroupApiArg = {
+  shopId: string;
+  groupId: string;
+};
+export type GetOptionGroupApiResponse =
+  /** status 200 Option group retrieved successfully */ ShopOptionGroupDto;
+export type GetOptionGroupApiArg = {
+  shopId: string;
+  groupId: string;
+};
+export type UpdateOptionGroupApiResponse =
+  /** status 200 Option group updated successfully */ ShopOptionGroupDto;
+export type UpdateOptionGroupApiArg = {
+  shopId: string;
+  groupId: string;
+  body: {
+    name: string;
+    nameTranslations?: TranslationMap;
+    minSelectable?: number;
+    maxSelectable?: number;
+    options: ShopOptionGroupOptionInputDto[];
+  };
+};
+export type SetOptionAvailabilityApiResponse =
+  /** status 200 Option availability updated */ ShopOptionGroupDto;
+export type SetOptionAvailabilityApiArg = {
+  shopId: string;
+  groupId: string;
+  optionId: string;
+  body: {
+    isAvailable: boolean;
+  };
+};
 export type GetOrderLimitApiResponse =
   /** status 200 Success */ OrderLimitWithPaymentDto;
 export type GetOrderLimitApiArg = {
@@ -1672,6 +1860,10 @@ export type GetOrdersByShopApiArg = {
   page?: number;
   /** Number of orders per page (default: 20, max: 100) */
   pageSize?: number;
+  /** Inclusive lower bound on the order's createdAt, an ISO-8601 UTC instant (e.g. 2026-11-16T00:00:00.000Z). `total` is scoped by the same filter. */
+  from?: string;
+  /** Exclusive upper bound on the order's createdAt, an ISO-8601 UTC instant (e.g. 2026-11-17T00:00:00.000Z). `total` is scoped by the same filter. */
+  to?: string;
 };
 export type AcceptOrderApiResponse = /** status 200 Success */ OrderDto;
 export type AcceptOrderApiArg = {
@@ -1739,6 +1931,29 @@ export type GenerateUploadUrlApiArg = {
 };
 export type GetPromotionsApiResponse = /** status 200 Success */ PromotionsDto;
 export type GetPromotionsApiArg = {
+  shopId: string;
+};
+export type GetPushPublicKeyApiResponse =
+  /** status 200 Success */ PushPublicKeyDto;
+export type GetPushPublicKeyApiArg = {
+  shopId: string;
+};
+export type SubscribePushApiResponse =
+  /** status 200 Success */ SubscribePushResultDto;
+export type SubscribePushApiArg = {
+  shopId: string;
+  body: {
+    [key: string]: any;
+  };
+};
+export type UnsubscribePushApiResponse =
+  /** status 200 Success */ UnsubscribePushResultDto;
+export type UnsubscribePushApiArg = {
+  shopId: string;
+};
+export type NegotiateRealtimeApiResponse =
+  /** status 200 Success */ RealtimeConnectionDto;
+export type NegotiateRealtimeApiArg = {
   shopId: string;
 };
 export type GetSalesReportApiResponse = /** status 200 Success */ SalesReport;
@@ -1916,7 +2131,7 @@ export type GetStaffMeApiResponse =
   /** status 200 Success */ GetStaffMeResultDto;
 export type GetStaffMeApiArg = void;
 export type UpdateMyStaffLanguageApiResponse =
-  /** status 200 Success */ GetStaffMeResultDto;
+  /** status 200 Success */ UpdateMyStaffLanguageResultDto;
 export type UpdateMyStaffLanguageApiArg = {
   updateMyStaffLanguageRequestDto: UpdateMyStaffLanguageRequestDto;
 };
@@ -1944,69 +2159,6 @@ export type StripeConnectWebhookApiArg = {
     sessionId: string;
     paymentIntentId: string;
     connectAccountId?: any;
-  };
-};
-export type UpdateProductAvailabilityApiResponse =
-  /** status 200 Dish availability updated */ UpdateProductAvailabilityResultDto;
-export type UpdateProductAvailabilityApiArg = {
-  productId: string;
-  body: {
-    shopId: string;
-    isAvailable?: boolean;
-    unavailableUntil?: string | null;
-  };
-};
-export type CreateOptionGroupApiResponse =
-  /** status 200 Option group created successfully */ ShopOptionGroupDto;
-export type CreateOptionGroupApiArg = {
-  shopId: string;
-  body: {
-    kind: "variant" | "addon";
-    name: string;
-    nameTranslations?: TranslationMap;
-    minSelectable?: number;
-    maxSelectable?: number;
-    options: ShopOptionGroupOptionInputDto[];
-  };
-};
-export type GetOptionGroupsApiResponse =
-  /** status 200 Option groups retrieved successfully */ GetOptionGroupsResultDto;
-export type GetOptionGroupsApiArg = {
-  shopId: string;
-};
-export type DeleteOptionGroupApiResponse =
-  /** status 200 Option group deleted successfully */ DeleteOptionGroupResultDto;
-export type DeleteOptionGroupApiArg = {
-  shopId: string;
-  groupId: string;
-};
-export type GetOptionGroupApiResponse =
-  /** status 200 Option group retrieved successfully */ ShopOptionGroupDto;
-export type GetOptionGroupApiArg = {
-  shopId: string;
-  groupId: string;
-};
-export type UpdateOptionGroupApiResponse =
-  /** status 200 Option group updated successfully */ ShopOptionGroupDto;
-export type UpdateOptionGroupApiArg = {
-  shopId: string;
-  groupId: string;
-  body: {
-    name: string;
-    nameTranslations?: TranslationMap;
-    minSelectable?: number;
-    maxSelectable?: number;
-    options: ShopOptionGroupOptionInputDto[];
-  };
-};
-export type SetOptionAvailabilityApiResponse =
-  /** status 200 Option availability updated */ ShopOptionGroupDto;
-export type SetOptionAvailabilityApiArg = {
-  shopId: string;
-  groupId: string;
-  optionId: string;
-  body: {
-    isAvailable: boolean;
   };
 };
 export type MenuLanguage = "de" | "en";
@@ -2080,6 +2232,11 @@ export type CustomerOrderDto = {
     lineTotalCents: number;
     selectedVariantOptionName: string | null;
     selectedAddonOptionNames: string[];
+    combo?: {
+      line: number;
+      productId: string;
+      name: string;
+    } | null;
   }[];
   subtotalCents: number;
   totalCents: number;
@@ -2422,6 +2579,39 @@ export type UpdateSystemConfigResultDto = {
 export type UpdateSystemConfigRequestDto = {
   maxShopsDefault: number;
 };
+export type ContentReportCategory =
+  | "illegal_goods"
+  | "fraud_or_scam"
+  | "hate_or_harassment"
+  | "copyright_or_trademark"
+  | "personal_data"
+  | "other";
+export type ContentReportStatus = "received" | "actioned" | "dismissed";
+export type ContentReportDecision = {
+  decision: "actioned" | "dismissed";
+  reason: string;
+  decidedBy: string;
+  decidedAt: string;
+};
+export type ContentReport = {
+  id: string;
+  shopId: string;
+  shopSlug: string;
+  shopName: string;
+  category: ContentReportCategory;
+  reason: string;
+  /** Absolute http(s) URL supplied by the reporter, when one was given. Constrained on the write path (see SubmitContentReportBody.contentUrl); rows written before that constraint existed are not migrated. */
+  contentUrl?: string;
+  reporterName?: string;
+  reporterEmail?: string;
+  status: ContentReportStatus;
+  receivedAt: string;
+  decision?: ContentReportDecision;
+};
+export type DecideContentReportBody = {
+  decision: "actioned" | "dismissed";
+  reason: string;
+};
 export type PlatformLegalIdentityDto = {
   platformName: string;
   salesSiteUrl: string | null;
@@ -2702,6 +2892,14 @@ export type UpdateProductResultDto = {
   isDeleted: boolean;
   schedule?: ProductSchedule | null;
   createdAt: string;
+  updatedAt: string;
+};
+export type UpdateProductAvailabilityResultDto = {
+  id: string;
+  shopId: string;
+  isAvailable: boolean;
+  unavailableUntil: string | null;
+  soldOut: boolean;
   updatedAt: string;
 };
 export type CreateShopResultDto = {
@@ -3214,6 +3412,19 @@ export type ComboDto = {
   createdAt: string;
   updatedAt: string;
 };
+export type SubmitContentReportResultDto = {
+  reportId: string;
+  status: ContentReportStatus;
+  receivedAt: string;
+};
+export type SubmitContentReportBody = {
+  category: ContentReportCategory;
+  reason: string;
+  /** Absolute http(s) URL of the reported content. The submit route is public (no sign-in) and the platform console renders this value as a link an operator clicks, so the server accepts nothing else: any other scheme (javascript:, data:, blob:, file:) or a non-absolute URL (relative or protocol-relative) is refused with 400. Omit or send blank to report without a URL. */
+  contentUrl?: string;
+  reporterName?: string;
+  reporterEmail?: string;
+};
 export type ShopCoverImageResultDto = {
   id: string;
   slug: string;
@@ -3447,6 +3658,73 @@ export type ExportCustomer = {
   firstOrderAt: string;
   lastOrderAt: string;
 };
+export type InvoiceSeller = {
+  legalName: string;
+  street: string;
+  postcode: string;
+  city: string;
+  country: string;
+  phone: string;
+  email: string;
+  vatId: string;
+  taxNumber: string;
+  registerCourt: string;
+  registerNumber: string;
+  managingDirector?: string;
+  invoiceCourt?: string;
+  invoiceRegisterNumber?: string;
+  iban?: string;
+  bic?: string;
+};
+export type InvoiceBuyer = {
+  name: string;
+  address: CustomerAddress | null;
+};
+export type InvoiceLine = {
+  name: string;
+  quantity: number;
+  unitPriceCents: number;
+  lineTotalCents: number;
+  taxRateBasisPoints: number;
+  taxCents: number;
+  modifiers?: string[];
+  productName?: string;
+  comboLine?: number;
+};
+export type InvoiceDoc = {
+  id: string;
+  shopId: string;
+  kind: "invoice";
+  documentType: InvoiceDocumentType;
+  number: string;
+  templateVersion: "receipt-2026-10" | "invoice-2026-11";
+  issuedAt: string;
+  supplyDate: string;
+  timezone: string;
+  seller: InvoiceSeller;
+  buyer: InvoiceBuyer;
+  lines: InvoiceLine[];
+  taxBreakdown: TaxBreakdownEntry[];
+  totalCents: number;
+  currency: string;
+  payment: {
+    method: "card";
+    stripePaymentIntentId: string;
+  };
+  orderRef: string;
+  fulfilmentMode: FulfilmentMode;
+  language: MenuLanguage;
+  corrects: {
+    number: string;
+    issuedAt: string;
+  } | null;
+  reverses?: {
+    number: string;
+    issuedAt: string;
+    documentType: InvoiceDocumentType;
+  };
+  refundId: string | null;
+};
 export type ShopDataExportDto = {
   formatVersion: 1;
   exportedAt: string;
@@ -3504,6 +3782,7 @@ export type ShopDataExportDto = {
   products: Product[];
   orders: PickOrderExcludeIdShopIdOrderRefSt08D1799A[];
   customers: ExportCustomer[];
+  invoices: InvoiceDoc[];
 };
 export type DiscountCodeKind = "percent" | "amount";
 export type DiscountCodeDto = {
@@ -3557,6 +3836,13 @@ export type DpaAcceptance = {
   acceptedByUserId: string;
   shopNameAtAcceptance: string;
 };
+export type InvoiceLegalExtras = {
+  managingDirector: string;
+  court: string;
+  registerNumber: string;
+  iban: string;
+  bic: string;
+};
 export type ShopLegalSettingsDto = {
   impressum: ImpressumFields | null;
   terms: LegalTextDto | null;
@@ -3578,6 +3864,7 @@ export type ShopLegalSettingsDto = {
   platformIdentityComplete: boolean;
   callerIsOwner: boolean;
   taxNumber: string;
+  invoiceLegalExtras: InvoiceLegalExtras | null;
 };
 export type GoLiveCriterion = {
   key: string;
@@ -3588,12 +3875,18 @@ export type GetGoLiveStatusResultDto = {
   allMet: boolean;
   criteria: GoLiveCriterion[];
 };
+export type InvoiceArchiveFileDto = {
+  fileName: string;
+  contentType: "application/zip";
+  contentBase64: string;
+};
 export type UpdateShopLegalBody = {
   impressum?: any;
   terms?: string;
   withdrawal?: string;
   privacyAddition?: string;
   taxNumber?: string;
+  invoiceLegalExtras?: any;
 };
 export type SetShopLogoResultDto = {
   id: string;
@@ -3621,6 +3914,44 @@ export type ApproveShopNameChangeResultDto = {
   id: string;
   name: string;
   slug: string;
+  updatedAt: string;
+};
+export type ShopOptionGroupOption = {
+  id: string;
+  name: string;
+  nameTranslations?: TranslationMap;
+  priceDelta: number;
+  isAvailable: boolean;
+  allergenIds?: string[];
+  additiveIds?: string[];
+};
+export type ShopOptionGroupDto = {
+  id: string;
+  shopId: string;
+  kind: "variant" | "addon";
+  name: string;
+  nameTranslations: TranslationMap;
+  minSelectable: number;
+  maxSelectable: number;
+  options: ShopOptionGroupOption[];
+  createdAt: string;
+  updatedAt: string;
+};
+export type ShopOptionGroupOptionInputDto = {
+  id?: string;
+  name: string;
+  nameTranslations?: TranslationMap;
+  priceDelta: number;
+  isAvailable?: boolean;
+  allergenIds?: string[];
+  additiveIds?: string[];
+};
+export type GetOptionGroupsResultDto = ShopOptionGroupDto[];
+export type DeleteOptionGroupResultDto = {
+  id: string;
+  shopId: string;
+  name: string;
+  isDeleted: boolean;
   updatedAt: string;
 };
 export type OrderLimitWithPaymentDto = {
@@ -3828,6 +4159,19 @@ export type GenerateImageUploadUrlResultDto = {
   blobUrl: string;
   expiresAt: string;
 };
+export type PushPublicKeyDto = {
+  publicKey: string | null;
+};
+export type SubscribePushResultDto = {
+  id: string;
+};
+export type UnsubscribePushResultDto = {
+  ok: true;
+};
+export type RealtimeConnectionDto = {
+  url: string | null;
+  accessToken: string | null;
+};
 export type RateTotals = {
   rateBasisPoints: number;
   grossCents: number;
@@ -3882,6 +4226,7 @@ export type StaffAccountDto = {
   username: string;
   displayName: string | null;
   role: StaffRole;
+  language: MenuLanguage | null;
   isActive: boolean;
   isLocked: boolean;
   lastLoginAt: string | null;
@@ -4199,6 +4544,7 @@ export type StaffLoginResultDto = {
   username: string;
   role: StaffRole;
   language: MenuLanguage | null;
+  shopLanguage: MenuLanguage;
 };
 export type StaffLoginRequestDto = {
   shopSlug: string;
@@ -4207,6 +4553,7 @@ export type StaffLoginRequestDto = {
 };
 export type GetStaffMeResultDto = {
   shopId: string;
+  shopLanguage: MenuLanguage;
   id: string;
   username: string;
   displayName: string | null;
@@ -4216,6 +4563,18 @@ export type GetStaffMeResultDto = {
   isLocked: boolean;
   lastLoginAt: string | null;
   createdAt: string;
+};
+export type UpdateMyStaffLanguageResultDto = {
+  id: string;
+  username: string;
+  displayName: string | null;
+  role: StaffRole;
+  language: MenuLanguage | null;
+  isActive: boolean;
+  isLocked: boolean;
+  lastLoginAt: string | null;
+  createdAt: string;
+  shopId: string;
 };
 export type UpdateMyStaffLanguageRequestDto = {
   language: MenuLanguage;
@@ -4230,14 +4589,13 @@ export type RejectionWatchRowDto = {
 export type RejectionWatchDto = {
   shops: RejectionWatchRowDto[];
 };
-export type SystemRole = "user" | "superadmin";
 export type GetMeResultDto = {
   id: string;
   email?: string;
   name?: string;
-  systemRole: SystemRole;
   platformAccess?: "read" | "write";
   language?: MenuLanguage;
+  restaurantLanguage?: MenuLanguage;
   createdAt: string;
   updatedAt: string;
 };
@@ -4250,52 +4608,6 @@ export type HandleCheckoutSessionCompletedInput = {
   billingInterval: "monthly" | "yearly";
   billingSubscriptionId: string;
   billingCustomerId: string;
-};
-export type UpdateProductAvailabilityResultDto = {
-  id: string;
-  shopId: string;
-  isAvailable: boolean;
-  unavailableUntil: string | null;
-  soldOut: boolean;
-  updatedAt: string;
-};
-export type ShopOptionGroupOption = {
-  id: string;
-  name: string;
-  nameTranslations?: TranslationMap;
-  priceDelta: number;
-  isAvailable: boolean;
-  allergenIds?: string[];
-  additiveIds?: string[];
-};
-export type ShopOptionGroupDto = {
-  id: string;
-  shopId: string;
-  kind: "variant" | "addon";
-  name: string;
-  nameTranslations: TranslationMap;
-  minSelectable: number;
-  maxSelectable: number;
-  options: ShopOptionGroupOption[];
-  createdAt: string;
-  updatedAt: string;
-};
-export type ShopOptionGroupOptionInputDto = {
-  id?: string;
-  name: string;
-  nameTranslations?: TranslationMap;
-  priceDelta: number;
-  isAvailable?: boolean;
-  allergenIds?: string[];
-  additiveIds?: string[];
-};
-export type GetOptionGroupsResultDto = ShopOptionGroupDto[];
-export type DeleteOptionGroupResultDto = {
-  id: string;
-  shopId: string;
-  name: string;
-  isDeleted: boolean;
-  updatedAt: string;
 };
 export const {
   useCancelCustomerOrderMutation,
@@ -4323,6 +4635,9 @@ export const {
   useGetSystemConfigQuery,
   useLazyGetSystemConfigQuery,
   useUpdateSystemConfigMutation,
+  useListContentReportsQuery,
+  useLazyListContentReportsQuery,
+  useDecideContentReportMutation,
   useGetPlatformLegalIdentityQuery,
   useLazyGetPlatformLegalIdentityQuery,
   useUpdatePlatformLegalIdentityMutation,
@@ -4338,6 +4653,7 @@ export const {
   useGetProductByIdQuery,
   useLazyGetProductByIdQuery,
   useUpdateProductMutation,
+  useUpdateProductAvailabilityMutation,
   useGetReferenceListsQuery,
   useLazyGetReferenceListsQuery,
   useCreateShopMutation,
@@ -4364,6 +4680,7 @@ export const {
   useGetCombosQuery,
   useLazyGetCombosQuery,
   useUpdateComboMutation,
+  useSubmitContentReportMutation,
   useRemoveShopCoverImageMutation,
   useSetShopCoverImageMutation,
   useGenerateShopCoverImageUploadUrlMutation,
@@ -4375,6 +4692,8 @@ export const {
   useAcceptDpaMutation,
   useGetGoLiveStatusQuery,
   useLazyGetGoLiveStatusQuery,
+  useExportInvoiceArchiveQuery,
+  useLazyExportInvoiceArchiveQuery,
   useGetShopLegalQuery,
   useLazyGetShopLegalQuery,
   useUpdateShopLegalMutation,
@@ -4386,6 +4705,14 @@ export const {
   useRejectShopNameChangeMutation,
   useRequestShopNameChangeMutation,
   useApproveShopNameChangeMutation,
+  useCreateOptionGroupMutation,
+  useGetOptionGroupsQuery,
+  useLazyGetOptionGroupsQuery,
+  useDeleteOptionGroupMutation,
+  useGetOptionGroupQuery,
+  useLazyGetOptionGroupQuery,
+  useUpdateOptionGroupMutation,
+  useSetOptionAvailabilityMutation,
   useGetOrderLimitQuery,
   useLazyGetOrderLimitQuery,
   useGetOrderQueueQuery,
@@ -4405,6 +4732,12 @@ export const {
   useGenerateUploadUrlMutation,
   useGetPromotionsQuery,
   useLazyGetPromotionsQuery,
+  useGetPushPublicKeyQuery,
+  useLazyGetPushPublicKeyQuery,
+  useSubscribePushMutation,
+  useUnsubscribePushMutation,
+  useNegotiateRealtimeQuery,
+  useLazyNegotiateRealtimeQuery,
   useGetSalesReportQuery,
   useLazyGetSalesReportQuery,
   useRestoreShopMutation,
@@ -4451,13 +4784,4 @@ export const {
   useUpdateMyLanguageMutation,
   useStripeWebhookMutation,
   useStripeConnectWebhookMutation,
-  useUpdateProductAvailabilityMutation,
-  useCreateOptionGroupMutation,
-  useGetOptionGroupsQuery,
-  useLazyGetOptionGroupsQuery,
-  useDeleteOptionGroupMutation,
-  useGetOptionGroupQuery,
-  useLazyGetOptionGroupQuery,
-  useUpdateOptionGroupMutation,
-  useSetOptionAvailabilityMutation,
 } = injectedRtkApi;
