@@ -14,7 +14,7 @@ export function AccountLanguageSync() {
 
   useEffect(() => {
     if (!data) return;
-    const { language, persist } = resolveLoginLanguage(data.language ?? null);
+    const { language, persist } = resolveLoginLanguage(data.language ?? null, data.restaurantLanguage ?? 'en');
     if (i18n.language.split('-')[0] !== language) void i18n.changeLanguage(language);
     if (persist && !persisted.current) {
       persisted.current = true;
