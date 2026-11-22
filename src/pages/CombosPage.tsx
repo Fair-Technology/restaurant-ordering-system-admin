@@ -174,7 +174,11 @@ export function CombosPage() {
               <span className={c.isAvailable ? badgeClass.good : badgeClass.neutral}>
                 {c.isAvailable ? t('combos.statusOn') : t('combos.statusOff')}
               </span>
-              {c.bmfDrinkShare && <span className={badgeClass.neutral}>{t('combos.bmfBadge')}</span>}
+              {c.bmfDrinkShare && (
+                <span className={badgeClass.neutral} title={t('combos.bmfHelp')}>
+                  {t('combos.bmfBadge')}
+                </span>
+              )}
             </div>
             <span className="text-[13px] text-[#6b6058]">
               {c.groups

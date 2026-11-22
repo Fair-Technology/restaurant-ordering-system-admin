@@ -384,7 +384,7 @@
     "dpaRead": "Read it",
     "dpaLoadError": "Could not load the agreement. Try again.",
     "orderAlertsTitle": "Order alerts",
-    "orderAlertsHelp": "If nobody accepts an order within 3 minutes, we email your Impressum address and the extra address below. If nobody answers within the time limit, the order is declined automatically and the customer is told.",
+    "orderAlertsHelp": "If nobody accepts an order within 3 minutes, we email the contact address on your legal notice (Impressum) page and the extra address below. If nobody answers within the time limit, the order is declined automatically and the customer is told.",
     "orderAlertsMinutes": "Decline automatically after (minutes)",
     "orderAlertsEmail": "Extra alert email (optional)",
     "orderAlertsSave": "Save",
