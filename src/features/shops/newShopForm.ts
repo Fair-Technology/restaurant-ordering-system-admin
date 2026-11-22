@@ -1,9 +1,11 @@
 import type { CreateShopRequestDto, MenuLanguage } from '../../services/api';
 import { openedCountry } from './openedCountries';
 import type { OpenedCountry } from './openedCountries';
+import { SLUG_PATTERN } from './slugFromName';
 
 export interface NewShopFormValues {
   name?: string;
+  slug?: string;
   countryCode?: string;
   industry?: string;
   currency?: string;
@@ -52,11 +54,17 @@ export function withCountry<T extends NewShopFormValues>(
   };
 }
 
-export type NewShopFormError = 'name' | 'industry' | 'country' | 'dpa';
+export type NewShopFormError = 'name' | 'slug' | 'industry' | 'country' | 'dpa';
 
 /** The first thing blocking submit, in the order the form shows them; null when it may submit. */
-export function newShopFormError(form: NewShopFormValues, dpaAccepted: boolean): NewShopFormError | null {
+export function newShopFormError(
+  form: NewShopFormValues,
+  dpaAccepted: boolean,
+  /** Whether the last live availability check for exactly `form.slug` said it is free. */
+  slugAvailable: boolean = true,
+): NewShopFormError | null {
   if ((form.name ?? '').trim().length < 3) return 'name';
+  if (!SLUG_PATTERN.test(form.slug ?? '') || !slugAvailable) return 'slug';
   if (!(form.industry ?? '').trim()) return 'industry';
   if (!openedCountry(form.countryCode)) return 'country';
   if (dpaAccepted === false) return 'dpa';

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
@@ -6,6 +6,7 @@ import {
   useGetMyShopsQuery,
   useGetShopSubscriptionQuery,
   useCreateShopMutation,
+  useLazyCheckSlugAvailabilityQuery,
   useUpdateShopMutation,
 } from '../services/api';
 import type { CreateShopRequestDto, MenuLanguage, ShopSummaryDto } from '../services/api';
@@ -26,6 +27,7 @@ import { ShopLiveBadge } from '../components/shop/ShopLiveBadge';
 import { shopLiveState } from '../features/shops/shopStatus';
 import { OPENED_COUNTRIES, openedCountry } from '../features/shops/openedCountries';
 import { defaultNewShopForm, newShopFormError, withCountry } from '../features/shops/newShopForm';
+import { SLUG_PATTERN, slugFromName } from '../features/shops/slugFromName';
 import { usePageTitle } from '../features/layout/usePageTitle';
 
 const INDUSTRY_OPTIONS = [
@@ -42,7 +44,7 @@ const INDUSTRY_OPTIONS = [
   'Other',
 ] as const;
 
-function CreateShopModal({ onClose }: { onClose: () => void }) {
+export function CreateShopModal({ onClose }: { onClose: () => void }) {
   const { t, i18n } = useTranslation();
   const toast = useToast();
   const navigate = useNavigate();
@@ -58,6 +60,46 @@ function CreateShopModal({ onClose }: { onClose: () => void }) {
     ...defaultNewShopForm(defaultMenuLanguageForUiLanguage(i18n.language)),
     minOrderAmountCents: 0,
   }));
+
+  const [slugTouched, setSlugTouched] = useState(false);
+  const [checkSlug] = useLazyCheckSlugAvailabilityQuery();
+  // Result of the last live check, keyed by the exact slug it was for (so stale results are ignored).
+  const [slugCheck, setSlugCheck] = useState<{ slug: string; result: 'available' | 'taken' | 'invalid' | 'failed'; message?: string } | null>(null);
+  const slug = form.slug ?? '';
+  const slugValid = SLUG_PATTERN.test(slug);
+  const slugIsAvailable = slugCheck?.slug === slug && slugCheck.result === 'available';
+  const slugChecking = slugValid && slugCheck?.slug !== slug;
+
+  useEffect(() => {
+    if (!SLUG_PATTERN.test(slug)) return;
+    let stale = false;
+    const timer = setTimeout(async () => {
+      try {
+        const res = await checkSlug({ slug }).unwrap();
+        if (!stale) setSlugCheck({ slug, result: res.available ? 'available' : 'taken' });
+      } catch (err) {
+        if (stale) return;
+        const status = (err as { status?: number })?.status;
+        const message = (err as { data?: { error?: string } })?.data?.error;
+        setSlugCheck({ slug, result: status === 400 ? 'invalid' : 'failed', message });
+      }
+    }, 400);
+    return () => {
+      stale = true;
+      clearTimeout(timer);
+    };
+  }, [slug, checkSlug]);
+
+  const handleNameChange = (name: string) => {
+    setForm((f) => (slugTouched ? { ...f, name } : { ...f, name, slug: slugFromName(name) }));
+  };
+
+  const handleSlugChange = (value: string) => {
+    setSlugTouched(true);
+    setForm((f) => ({ ...f, slug: value.trim().toLowerCase() }));
+  };
+
+  const shopUrl = `${import.meta.env.VITE_SHOP_BASE_URL ?? 'https://www.example.com'}/shops/${slug}`;
 
   const handleCountryChange = (code: string) => {
     const country = openedCountry(code);
@@ -75,6 +117,7 @@ function CreateShopModal({ onClose }: { onClose: () => void }) {
     const problem = newShopFormError(
       { ...form, industry: resolvedIndustry },
       dpaTicked && !!dpa,
+      slugIsAvailable,
     );
     if (problem === 'country') setCountryError(true);
     if (problem || !dpa) return;
@@ -83,6 +126,7 @@ function CreateShopModal({ onClose }: { onClose: () => void }) {
         createShopRequestDto: {
           ...form,
           industry: resolvedIndustry,
+          slug,
           acceptDpaVersion: dpa.version,
         } as CreateShopRequestDto,
       }).unwrap();
@@ -133,8 +177,42 @@ function CreateShopModal({ onClose }: { onClose: () => void }) {
                 minLength={3}
                 placeholder={t('shops.shopNamePlaceholder')}
                 value={form.name}
-                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                onChange={(e) => handleNameChange(e.target.value)}
               />
+
+              <div className="flex flex-col gap-1.5">
+                <MyInput
+                  id="shop-slug"
+                  label={t('shops.shopSlug')}
+                  type="text"
+                  required
+                  maxLength={64}
+                  autoComplete="off"
+                  spellCheck={false}
+                  value={slug}
+                  onChange={(e) => handleSlugChange(e.target.value)}
+                  aria-describedby="shop-slug-status"
+                />
+                <p id="shop-slug-status" role="status" data-testid="slug-status" className="text-xs">
+                  {!slugValid ? (
+                    <span className={slug ? 'text-[#b42318]' : 'text-muted'}>{t('shops.shopSlugHint')}</span>
+                  ) : slugChecking ? (
+                    <span className="inline-flex items-center gap-1.5 text-muted">
+                      <span className="h-3 w-3 animate-spin rounded-full border-2 border-gray-200 border-t-gray-600" />
+                      {t('shops.slugChecking')}
+                    </span>
+                  ) : slugCheck?.result === 'available' ? (
+                    <span className="text-[#1d5a32]">{t('shops.slugAvailable')}</span>
+                  ) : slugCheck?.result === 'taken' ? (
+                    <span className="text-[#b42318]">{t('shops.slugTaken')}</span>
+                  ) : slugCheck?.result === 'invalid' ? (
+                    <span className="text-[#b42318]">{slugCheck.message ?? t('shops.slugInvalid')}</span>
+                  ) : (
+                    <span className="text-[#b42318]">{t('shops.slugCheckFailed')}</span>
+                  )}
+                </p>
+                <p className="text-xs break-all text-muted" data-testid="slug-url">{shopUrl}</p>
+              </div>
 
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="shop-industry" className="text-[13px] font-semibold text-[#4a413b]">Industry</label>
