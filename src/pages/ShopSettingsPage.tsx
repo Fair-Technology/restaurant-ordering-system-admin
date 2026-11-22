@@ -1085,12 +1085,14 @@ export function ShopSettingsPage() {
           </div>
         )}
 
-        <details className="mt-2 rounded-2xl border border-line bg-white">
-          <summary className="cursor-pointer px-4 py-3 text-[13px] font-semibold text-[#8a7f77]">{t('shops.debugLabel')}</summary>
-          <pre className="overflow-x-auto border-t border-line-soft p-4 text-xs whitespace-pre-wrap text-[#8a7f77]">
-            {JSON.stringify(shop, null, 2)}
-          </pre>
-        </details>
+        {import.meta.env.DEV && (
+          <details className="mt-2 rounded-2xl border border-line bg-white">
+            <summary className="cursor-pointer px-4 py-3 text-[13px] font-semibold text-[#8a7f77]">{t('shops.debugLabel')}</summary>
+            <pre className="overflow-x-auto border-t border-line-soft p-4 text-xs whitespace-pre-wrap text-[#8a7f77]">
+              {JSON.stringify(shop, null, 2)}
+            </pre>
+          </details>
+        )}
       </div>
     </div>
   );
