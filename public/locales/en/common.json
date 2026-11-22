@@ -5,6 +5,7 @@
   },
   "nav": {
     "reports": "Dashboard",
+    "skipToContent": "Skip to content",
     "overview": "Overview",
     "combos": "Combos",
     "tables": "Tables & QR codes",
