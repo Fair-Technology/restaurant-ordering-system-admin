@@ -4,7 +4,7 @@
     "close": "Schließen"
   },
   "nav": {
-    "reports": "Dashboard",
+    "reports": "Berichte",
     "skipToContent": "Zum Inhalt springen",
     "overview": "Übersicht",
     "combos": "Menüs",
@@ -1347,7 +1347,7 @@
     "paymentDropped": "Zahlung fehlt weiterhin: Ihr Shop ist im kostenlosen Tarif. Nach der Zahlung ist alles sofort wieder da."
   },
   "reports": {
-    "title": "Dashboard",
+    "title": "Berichte",
     "accessDenied": "Sie können die Berichte dieses Restaurants nicht sehen.",
     "presetToday": "Heute",
     "presetYesterday": "Gestern",

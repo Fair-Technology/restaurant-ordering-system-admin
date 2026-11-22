@@ -4,7 +4,7 @@
     "close": "Close"
   },
   "nav": {
-    "reports": "Dashboard",
+    "reports": "Reports",
     "skipToContent": "Skip to content",
     "overview": "Overview",
     "combos": "Combos",
@@ -1347,7 +1347,7 @@
     "paymentDropped": "Payment still missing: your shop is on the free plan. Pay to restore everything at once."
   },
   "reports": {
-    "title": "Dashboard",
+    "title": "Reports",
     "accessDenied": "You can't see reports for this restaurant.",
     "presetToday": "Today",
     "presetYesterday": "Yesterday",
