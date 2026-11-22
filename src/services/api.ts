@@ -1155,6 +1155,15 @@ const injectedRtkApi = api
         query: () => ({ url: `/shops/public` }),
         providesTags: ["Shops"],
       }),
+      checkSlugAvailability: build.query<
+        CheckSlugAvailabilityApiResponse,
+        CheckSlugAvailabilityApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/shops/slug-available/${queryArg.slug}`,
+        }),
+        providesTags: ["Shops"],
+      }),
       getShopBySlug: build.query<GetShopBySlugApiResponse, GetShopBySlugApiArg>(
         {
           query: (queryArg) => ({ url: `/shops/slug/${queryArg.slug}` }),
@@ -2111,6 +2120,14 @@ export type GetMyShopsApiArg = void;
 export type ListPublicShopsApiResponse =
   /** status 200 Listed shops, sorted by name */ GetPublicShopsResultDto;
 export type ListPublicShopsApiArg = void;
+export type CheckSlugAvailabilityApiResponse =
+  /** status 200 Availability checked successfully */ {
+    slug: string;
+    available: boolean;
+  };
+export type CheckSlugAvailabilityApiArg = {
+  slug: string;
+};
 export type GetShopBySlugApiResponse =
   /** status 200 Shop retrieved successfully */ GetShopBySlugResultDto;
 export type GetShopBySlugApiArg = {
@@ -2918,6 +2935,7 @@ export type ShopBranding = {
 };
 export type CreateShopRequestDto = {
   name: string;
+  slug?: string;
   countryCode: string;
   currency: string;
   timezone: string;
@@ -4769,6 +4787,8 @@ export const {
   useLazyGetMyShopsQuery,
   useListPublicShopsQuery,
   useLazyListPublicShopsQuery,
+  useCheckSlugAvailabilityQuery,
+  useLazyCheckSlugAvailabilityQuery,
   useGetShopBySlugQuery,
   useLazyGetShopBySlugQuery,
   useGetPublicLegalPackQuery,
