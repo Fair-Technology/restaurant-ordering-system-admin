@@ -342,6 +342,19 @@ export function StepFoodInfo({ foodInfo, setFoodInfo, refs, showOptional }: Step
           </label>
         ))}
       </fieldset>
+
+      <label className="flex items-start gap-3 text-sm text-gray-800">
+        <input
+          type="checkbox"
+          className="mt-0.5 h-4 w-4"
+          checked={foodInfo.ageRestricted}
+          onChange={() => setFoodInfo({ ...foodInfo, ageRestricted: !foodInfo.ageRestricted })}
+        />
+        <span>
+          <span className="font-medium text-gray-700">{t('products.ageRestricted')}</span>
+          <span className="block text-xs text-gray-500">{t('products.ageRestrictedHelp')}</span>
+        </span>
+      </label>
     </div>
   );
 }
@@ -1027,6 +1040,9 @@ export function Step6Review({
             ? unavailableModesInOrder(foodInfo.unavailableModes).map((m) => t(`orders.fulfilment.${m}`)).join(', ')
             : <span className="text-gray-400">{t('products.notOfferedForNone')}</span>}
         </ReviewRow>
+        {foodInfo.ageRestricted && (
+          <ReviewRow label={t('products.ageRestricted')}>{t('orders.ageRestrictedBadge')}</ReviewRow>
+        )}
       </div>
     </div>
   );

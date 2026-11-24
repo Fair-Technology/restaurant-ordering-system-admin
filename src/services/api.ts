@@ -936,6 +936,7 @@ const injectedRtkApi = api
           params: {
             from: queryArg["from"],
             to: queryArg.to,
+            lang: queryArg.lang,
           },
         }),
         providesTags: ["Reports"],
@@ -1436,6 +1437,7 @@ export type UpdateProductApiArg = {
     spiceLevel?: SpiceLevel | null;
     prepMinutes?: number | null;
     unavailableModes?: FulfilmentMode[];
+    ageRestricted?: boolean;
     taxClassId?: string | null;
     variantGroups?: ProductVariantGroup[];
     optionGroupRefs?: string[];
@@ -1970,6 +1972,8 @@ export type GetSalesReportApiArg = {
   shopId: string;
   from: any;
   to: any;
+  /** Menu language for the top-dish names (e.g. de, en). Names come from the current catalog in this language; a deleted dish or combo keeps the name from its orders. Defaults to the shop's first menu language. */
+  lang?: string;
 };
 export type RestoreShopApiResponse = /** status 200 Shop restored */ {
   success: boolean;
@@ -2254,6 +2258,7 @@ export type CustomerOrderDto = {
       productId: string;
       name: string;
     } | null;
+    ageRestricted: boolean;
   }[];
   subtotalCents: number;
   totalCents: number;
@@ -2401,6 +2406,7 @@ export type GetOrderByPaymentIntentResultDto = {
   items: {
     productId: string;
     productName: string;
+    ageRestricted: boolean;
     quantity: number;
     unitPriceCents: number;
     selectedVariantOptionId?: string;
@@ -2621,6 +2627,7 @@ export type ContentReport = {
   contentUrl?: string;
   reporterName?: string;
   reporterEmail?: string;
+  ipHash?: string;
   status: ContentReportStatus;
   receivedAt: string;
   decision?: ContentReportDecision;
@@ -2751,6 +2758,7 @@ export type CreateProductResultDto = {
   spiceLevel: SpiceLevel | null;
   prepMinutes: number | null;
   unavailableModes: FulfilmentMode[];
+  ageRestricted: boolean;
   taxClassId: string | null;
   isDeclared: boolean;
   optionGroupRefs: string[];
@@ -2810,6 +2818,7 @@ export type CreateProductRequestDto = {
   spiceLevel?: SpiceLevel | null;
   prepMinutes?: number | null;
   unavailableModes?: FulfilmentMode[];
+  ageRestricted?: boolean;
   taxClassId?: string | null;
   variantGroups?: ProductVariantGroup[];
   optionGroupRefs?: string[];
@@ -2826,6 +2835,7 @@ export type ProductDto = {
   spiceLevel: SpiceLevel | null;
   prepMinutes: number | null;
   unavailableModes: FulfilmentMode[];
+  ageRestricted: boolean;
   taxClassId: string | null;
   isDeclared: boolean;
   optionGroupRefs: string[];
@@ -2863,6 +2873,7 @@ export type GetProductResultDto = {
   spiceLevel: SpiceLevel | null;
   prepMinutes: number | null;
   unavailableModes: FulfilmentMode[];
+  ageRestricted: boolean;
   taxClassId: string | null;
   isDeclared: boolean;
   optionGroupRefs: string[];
@@ -2896,6 +2907,7 @@ export type UpdateProductResultDto = {
   spiceLevel: SpiceLevel | null;
   prepMinutes: number | null;
   unavailableModes: FulfilmentMode[];
+  ageRestricted: boolean;
   taxClassId: string | null;
   isDeclared: boolean;
   optionGroupRefs: string[];
@@ -3316,6 +3328,7 @@ export type CatalogProductDto = {
   dietaryTags: CatalogLabelDto[];
   spice: CatalogLabelDto | null;
   unavailableModes: FulfilmentMode[];
+  ageRestricted: boolean;
   availableNow: boolean;
   combo: CatalogComboDto | null;
   createdAt: string;
@@ -3515,6 +3528,7 @@ export type Product = {
   spiceLevel: SpiceLevel | null;
   prepMinutes: number | null;
   unavailableModes?: FulfilmentMode[];
+  ageRestricted?: boolean;
   taxClassId: string | null;
   schedule?: ProductSchedule | null;
   combo?: ProductCombo | null;
@@ -3549,6 +3563,7 @@ export type OrderItem = {
   taxCents?: number;
   discountCents?: number;
   combo?: OrderItemCombo;
+  ageRestricted?: boolean;
 };
 export type OrderChargeKind = "delivery_fee";
 export type OrderCharge = {
@@ -4000,6 +4015,7 @@ export type OrderItemDto = {
     productId: string;
     name: string;
   } | null;
+  ageRestricted: boolean;
 };
 export type OrderDto = {
   id: string;
@@ -4140,6 +4156,9 @@ export type OrderQueueDto = {
 export type GetOrdersByShopResultDto = {
   orders: OrderDto[];
   total: number;
+  stateCounts: {
+    [key: string]: number;
+  };
   page: number;
   pageSize: number;
 };

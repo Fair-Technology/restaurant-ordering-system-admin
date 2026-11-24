@@ -161,6 +161,7 @@ function AddProductModal({ shopId, onClose }: AddProductModalProps) {
               // The dish owns its class: the one picked by hand, else its category's suggestion
           taxClassId: effectiveTaxClassId(selectedCategoryIds, categoriesList, foodInfo.taxClassId),
               unavailableModes: foodInfo.unavailableModes,
+              ageRestricted: foodInfo.ageRestricted,
             },
           }).unwrap();
           return product.id!;

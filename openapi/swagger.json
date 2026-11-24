@@ -1649,6 +1649,9 @@
                       "$ref": "#/components/schemas/FulfilmentMode"
                     }
                   },
+                  "ageRestricted": {
+                    "type": "boolean"
+                  },
                   "taxClassId": {
                     "type": "string",
                     "nullable": true
@@ -6028,6 +6031,15 @@
             "in": "query",
             "required": true,
             "schema": {}
+          },
+          {
+            "name": "lang",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Menu language for the top-dish names (e.g. de, en). Names come from the current catalog in this language; a deleted dish or combo keeps the name from its orders. Defaults to the shop's first menu language."
           }
         ],
         "responses": {
@@ -8364,6 +8376,9 @@
               "$ref": "#/components/schemas/FulfilmentMode"
             }
           },
+          "ageRestricted": {
+            "type": "boolean"
+          },
           "availableNow": {
             "type": "boolean"
           },
@@ -8398,6 +8413,7 @@
           "dietaryTags",
           "spice",
           "unavailableModes",
+          "ageRestricted",
           "availableNow",
           "combo",
           "createdAt",
@@ -9023,6 +9039,9 @@
               "$ref": "#/components/schemas/FulfilmentMode"
             }
           },
+          "ageRestricted": {
+            "type": "boolean"
+          },
           "taxClassId": {
             "type": "string",
             "nullable": true
@@ -9557,6 +9576,9 @@
           },
           "combo": {
             "$ref": "#/components/schemas/OrderItemCombo"
+          },
+          "ageRestricted": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -10610,6 +10632,9 @@
             ],
             "additionalProperties": false,
             "nullable": true
+          },
+          "ageRestricted": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -10619,7 +10644,8 @@
           "unitPriceCents",
           "lineTotalCents",
           "discountCents",
-          "combo"
+          "combo",
+          "ageRestricted"
         ],
         "additionalProperties": false
       },
@@ -11682,6 +11708,9 @@
               "$ref": "#/components/schemas/FulfilmentMode"
             }
           },
+          "ageRestricted": {
+            "type": "boolean"
+          },
           "taxClassId": {
             "type": "string",
             "nullable": true
@@ -11781,6 +11810,7 @@
         },
         "required": [
           "additiveIds",
+          "ageRestricted",
           "allergenIds",
           "categories",
           "createdAt",
@@ -14299,6 +14329,9 @@
           "reporterEmail": {
             "type": "string"
           },
+          "ipHash": {
+            "type": "string"
+          },
           "status": {
             "$ref": "#/components/schemas/ContentReportStatus"
           },
@@ -15365,6 +15398,12 @@
           "total": {
             "type": "number"
           },
+          "stateCounts": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            }
+          },
           "page": {
             "type": "number"
           },
@@ -15375,6 +15414,7 @@
         "required": [
           "orders",
           "total",
+          "stateCounts",
           "page",
           "pageSize"
         ],
@@ -15613,6 +15653,9 @@
                   ],
                   "additionalProperties": false,
                   "nullable": true
+                },
+                "ageRestricted": {
+                  "type": "boolean"
                 }
               },
               "required": [
@@ -15621,7 +15664,8 @@
                 "unitPriceCents",
                 "lineTotalCents",
                 "selectedVariantOptionName",
-                "selectedAddonOptionNames"
+                "selectedAddonOptionNames",
+                "ageRestricted"
               ],
               "additionalProperties": false
             }
@@ -15864,6 +15908,9 @@
                 "productName": {
                   "type": "string"
                 },
+                "ageRestricted": {
+                  "type": "boolean"
+                },
                 "quantity": {
                   "type": "number"
                 },
@@ -15895,6 +15942,7 @@
               "required": [
                 "productId",
                 "productName",
+                "ageRestricted",
                 "quantity",
                 "unitPriceCents",
                 "lineTotalCents"
@@ -16546,6 +16594,9 @@
               "$ref": "#/components/schemas/FulfilmentMode"
             }
           },
+          "ageRestricted": {
+            "type": "boolean"
+          },
           "taxClassId": {
             "type": "string",
             "nullable": true
@@ -16597,6 +16648,7 @@
         },
         "required": [
           "additiveIds",
+          "ageRestricted",
           "allergenIds",
           "createdAt",
           "description",
@@ -16689,6 +16741,9 @@
             "items": {
               "$ref": "#/components/schemas/FulfilmentMode"
             }
+          },
+          "ageRestricted": {
+            "type": "boolean"
           },
           "taxClassId": {
             "type": "string",
@@ -16857,6 +16912,9 @@
               "$ref": "#/components/schemas/FulfilmentMode"
             }
           },
+          "ageRestricted": {
+            "type": "boolean"
+          },
           "taxClassId": {
             "type": "string",
             "nullable": true
@@ -16956,6 +17014,7 @@
         },
         "required": [
           "additiveIds",
+          "ageRestricted",
           "allergenIds",
           "categories",
           "createdAt",
@@ -17062,6 +17121,9 @@
               "$ref": "#/components/schemas/FulfilmentMode"
             }
           },
+          "ageRestricted": {
+            "type": "boolean"
+          },
           "taxClassId": {
             "type": "string",
             "nullable": true
@@ -17117,6 +17179,7 @@
         },
         "required": [
           "additiveIds",
+          "ageRestricted",
           "allergenIds",
           "createdAt",
           "description",
@@ -17213,6 +17276,9 @@
             "items": {
               "$ref": "#/components/schemas/FulfilmentMode"
             }
+          },
+          "ageRestricted": {
+            "type": "boolean"
           },
           "taxClassId": {
             "type": "string",

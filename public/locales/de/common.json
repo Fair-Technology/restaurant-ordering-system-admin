@@ -768,6 +768,8 @@
     "notOfferedFor": "Nicht erhältlich bei",
     "notOfferedForNone": "Bei jeder Bestellart erhältlich",
     "notOfferedForHelp": "Haken Sie eine Bestellart an, um das Gericht dort auszublenden, z. B. Fassbier bei Lieferung.",
+    "ageRestricted": "Altersbeschränkt (18+)",
+    "ageRestrictedHelp": "Dieses Gericht enthält Alkohol. Der Shop bittet Gäste vor dem Bezahlen, ihr Alter (18+) zu bestätigen (Jugendschutz), und das Personal sieht einen Hinweis bei der Übergabe.",
     "taxClass": "Steuerklasse",
     "taxClassFromCategory": "Aus der Kategorie ({{label}})",
     "taxClassNoneYet": "Noch keine Steuerklasse",
@@ -801,6 +803,8 @@
     "removeOption": "Entfernen"
   },
   "orders": {
+    "ageRestrictedBadge": "18+",
+    "ageRestrictedHandover": "Ausweis bei Übergabe prüfen — Bestellung enthält Alkohol",
     "dayPicker": {
       "label": "Heute",
       "today": "Heute",

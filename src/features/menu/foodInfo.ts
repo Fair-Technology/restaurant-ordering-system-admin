@@ -8,6 +8,7 @@ export interface FoodInfo {
   prepMinutes: number | null;
   taxClassId: string | null;
   unavailableModes: FulfilmentMode[];
+  ageRestricted: boolean;
 }
 
 export const EMPTY_FOOD_INFO: FoodInfo = {
@@ -18,6 +19,7 @@ export const EMPTY_FOOD_INFO: FoodInfo = {
   prepMinutes: null,
   taxClassId: null,
   unavailableModes: [],
+  ageRestricted: false,
 };
 
 export function foodInfoFromProduct(p: {
@@ -28,6 +30,7 @@ export function foodInfoFromProduct(p: {
   prepMinutes?: number | null;
   taxClassId?: string | null;
   unavailableModes?: FulfilmentMode[];
+  ageRestricted?: boolean;
 }): FoodInfo {
   return {
     allergenIds: Array.isArray(p.allergenIds) ? p.allergenIds : null,
@@ -37,6 +40,7 @@ export function foodInfoFromProduct(p: {
     prepMinutes: p.prepMinutes ?? null,
     taxClassId: p.taxClassId ?? null,
     unavailableModes: p.unavailableModes ?? [],
+    ageRestricted: p.ageRestricted ?? false,
   };
 }
 
