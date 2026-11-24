@@ -836,6 +836,7 @@
     "payment": {
       "paid": "Online bezahlt",
       "refunded": "Erstattet",
+      "refundFailed": "Rückerstattung fehlgeschlagen",
       "partially_refunded": "Teilweise erstattet",
       "authorized": "Reserviert (wird bei Annahme abgebucht)",
       "canceled": "Freigegeben – nicht abgebucht",

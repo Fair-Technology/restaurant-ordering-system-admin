@@ -5,6 +5,7 @@ import {
   chargedCents,
   comboLineGroup,
   itemSelectionCents,
+  lastRefundFailed,
   parseAmountToCents,
   refundableCents,
   remainingQuantities,
@@ -133,5 +134,29 @@ describe('combo lines in the refund panel', () => {
 
   it('is capped by the combo line with the least left', () => {
     expect(setLineQuantity(items, [2, 1, 1, 2], {}, 0, 2)).toEqual({ 0: 1, 1: 1 });
+  });
+});
+
+describe('lastRefundFailed', () => {
+  it('is false without refunds', () => {
+    expect(lastRefundFailed({ paymentStatus: 'paid', refunds: [] })).toBe(false);
+  });
+
+  it('is false for a refund that went through', () => {
+    expect(lastRefundFailed({ paymentStatus: 'refunded', refunds: [{ reversal: false }] })).toBe(false);
+    expect(lastRefundFailed({ paymentStatus: 'refunded', refunds: [{}] })).toBe(false);
+  });
+
+  it('is true when the last entry is a reversal and the order is not fully refunded', () => {
+    expect(lastRefundFailed({ paymentStatus: 'paid', refunds: [{ reversal: false }, { reversal: true }] })).toBe(true);
+    expect(lastRefundFailed({ paymentStatus: 'partially_refunded', refunds: [{ reversal: true }] })).toBe(true);
+  });
+
+  it('is false once the order is refunded, even if the last entry is a reversal', () => {
+    expect(lastRefundFailed({ paymentStatus: 'refunded', refunds: [{ reversal: true }] })).toBe(false);
+  });
+
+  it('is false when a later entry follows the reversal', () => {
+    expect(lastRefundFailed({ paymentStatus: 'paid', refunds: [{ reversal: true }, { reversal: false }] })).toBe(false);
   });
 });
