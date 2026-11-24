@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { Link, useBlocker } from 'react-router-dom';
 import { Check, ChevronLeft } from 'lucide-react';
 import type { MenuLanguage, ProductDto, ProductImage, TranslationMap } from '../../services/api';
 import {
@@ -128,6 +128,24 @@ export function DishEditor({ productId, shopId, currencySymbol, categoriesList, 
     [edit, saved, imageFile],
   );
 
+  // Warn before unsaved edits are thrown away. Deleting the dish navigates away on purpose, so it skips the guard.
+  const skipLeaveGuard = useRef(false);
+  const blocker = useBlocker(() => dirty && !skipLeaveGuard.current);
+  useEffect(() => {
+    if (blocker.state !== 'blocked') return;
+    if (window.confirm(t('dishes.editor.confirmLeave'))) blocker.proceed();
+    else blocker.reset();
+  }, [blocker, t]);
+  useEffect(() => {
+    if (!dirty) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [dirty]);
+
   // What the live preview shows: the texts of the language being edited
   useEffect(() => {
     if (!edit) {
@@ -242,6 +260,7 @@ export function DishEditor({ productId, shopId, currencySymbol, categoriesList, 
     try {
       await deleteProduct({ productId, shopId }).unwrap();
       toast.success(t('products.deleted'));
+      skipLeaveGuard.current = true;
       onDeleted();
     } catch {
       toast.error(t('products.failedToDelete'));
@@ -305,7 +324,7 @@ export function DishEditor({ productId, shopId, currencySymbol, categoriesList, 
           <ChevronLeft size={16} strokeWidth={2.4} aria-hidden="true" />
           {t('nav.dishes')}
         </button>
-        <h1 className="min-w-0 truncate font-display text-2xl font-semibold">{edit.form.name || t('products.newProduct')}</h1>
+        <h1 className="min-w-0 truncate font-display text-2xl font-semibold">{edit.form.name || t('dishes.editor.untitledDish')}</h1>
         {extraLanguage && activeLanguage && (
           <div className="ml-auto">
             <LanguageTabs languages={languages} active={activeLanguage} onChange={setPickedLanguage} />
@@ -341,6 +360,7 @@ export function DishEditor({ productId, shopId, currencySymbol, categoriesList, 
                   setImageFile={setImageFile}
                   existingImageUrl={existingImageUrl}
                   photoError={tried && photoMissing}
+                  label={t('dishes.editor.dishPhoto')}
                 />
                 <div className="flex flex-col gap-3">
                   <div>
@@ -533,7 +553,7 @@ export function DishEditor({ productId, shopId, currencySymbol, categoriesList, 
                     onClick={() => setConfirmDelete(true)}
                     className="h-9 rounded-full border border-[#f0c4ad] px-4 text-[13px] font-semibold text-[#b42318] hover:bg-[#fdeceb]"
                   >
-                    {t('products.delete')}
+                    {t('dishes.editor.deleteDish')}
                   </button>
                 </div>
               )}
