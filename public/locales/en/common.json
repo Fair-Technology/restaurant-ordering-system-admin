@@ -70,6 +70,7 @@
     "limitStaffAccounts": "staff accounts",
     "downgradeTo": "Downgrade to {{plan}}",
     "upgradeTo": "Upgrade to {{plan}}",
+    "notAvailableInCurrency": "Not available in your currency",
     "accessDenied": "You don't have permission to manage this restaurant's subscription.",
     "currentPlan": "Current Plan",
     "monthly": "Monthly",
