@@ -736,6 +736,7 @@ export function ShopSettingsPage() {
                 <input
                   ref={fileInputRef}
                   type="file"
+                  aria-label={t('shops.uploadLogoFile')}
                   accept="image/jpeg,image/png,image/webp"
                   disabled={isUploading || isRemovingLogo}
                   onChange={(e) => {
@@ -873,14 +874,13 @@ export function ShopSettingsPage() {
                 }}
                 className={`${inputClass} w-28 font-mono`}
               />
-              <button
-                type="button"
-                disabled
-                className="h-10 rounded-full px-4 text-sm font-semibold"
+              <span
+                aria-hidden="true"
+                className="inline-flex h-10 items-center rounded-full px-4 text-sm font-semibold"
                 style={{ backgroundColor: currentAccent, color: accentOnColor }}
               >
                 {t('shops.colorsSave')}
-              </button>
+              </span>
             </div>
             {accentCheck && !accentCheck.ok && (
               <p className={`mt-3 ${ERROR_CLASS}`}>
@@ -964,6 +964,7 @@ export function ShopSettingsPage() {
                           <input
                             type="time"
                             value={slot.open}
+                            aria-label={t('shops.ohOpenAria', { day: label })}
                             onChange={(e) => updateSlot(key, idx, 'open', e.target.value)}
                             className={`${inputClass} w-28`}
                           />
@@ -971,6 +972,7 @@ export function ShopSettingsPage() {
                           <input
                             type="time"
                             value={slot.close}
+                            aria-label={t('shops.ohCloseAria', { day: label })}
                             onChange={(e) => updateSlot(key, idx, 'close', e.target.value)}
                             className={`${inputClass} w-28`}
                           />
@@ -979,7 +981,7 @@ export function ShopSettingsPage() {
                               type="button"
                               onClick={() => removeSlot(key, idx)}
                               className="flex h-8 w-8 items-center justify-center rounded-full text-base leading-none text-[#8a7f77] transition-colors hover:bg-[#fdeceb] hover:text-[#b42318]"
-                              aria-label="Remove slot"
+                              aria-label={t('shops.ohRemoveSlot')}
                             >
                               ×
                             </button>

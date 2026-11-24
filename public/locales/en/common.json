@@ -222,6 +222,7 @@
     "bannerFailedToSave": "Could not save the banner setting. Please try again.",
     "coverImagePlaceholder": "No cover image set — your shop shows a default photo",
     "uploadCoverImage": "Upload Cover Image",
+    "uploadLogoFile": "Choose a logo image file",
     "uploadingCoverImage": "Uploading...",
     "removeCoverImage": "Remove",
     "removingCoverImage": "Removing...",
@@ -250,6 +251,9 @@
     "ohClosed": "Closed",
     "ohTo": "to",
     "ohAddSlot": "+ Add slot",
+    "ohOpenAria": "{{day}} opens",
+    "ohCloseAria": "{{day}} closes",
+    "ohRemoveSlot": "Remove slot",
     "deleteShop": {
       "title": "Delete shop",
       "explain": "The shop disappears for you and your customers. Your subscription is cancelled immediately. Orders and invoices are kept, as the law requires. To get the shop back, contact support.",
