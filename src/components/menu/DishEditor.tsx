@@ -34,7 +34,6 @@ import { useShopReferenceLists } from '../../features/menu/useShopReferenceLists
 import { optionGroupsFromProduct } from '../../features/menu/optionFoodInfo';
 import { EMPTY_FOOD_INFO, effectiveTaxClassId, foodInfoFromProduct, type FoodInfo } from '../../features/menu/foodInfo';
 import { menuLanguagesOf, resolveActiveLanguage, withTranslation } from '../../features/menu/translations';
-import type { PreviewDish } from '../../features/menu/previewBridge';
 import { libraryGroupsForPicker, withToggledRef } from '../../features/menu/optionGroupLibrary';
 import { formatCents } from '../../utils/money';
 
@@ -48,8 +47,6 @@ interface Props {
   onClose: () => void;
   onSaved: () => void;
   onDeleted: () => void;
-  /** Unsaved state for the live preview (null while loading) */
-  onPreviewChange: (dish: PreviewDish | null, language: MenuLanguage | undefined) => void;
 }
 
 interface EditState {
@@ -83,9 +80,9 @@ const sectionTitle = 'mb-3 text-base font-bold text-ink';
 /**
  * DishEditor — one dish on one page (no wizard): basics with photo, categories and tax,
  * allergens and food info, sizes and extras, availability, and delete. Changes stay local until
- * "Speichern"; meanwhile they are shown in the live preview next to the editor.
+ * "Speichern".
  */
-export function DishEditor({ productId, shopId, currencySymbol, categoriesList, onClose, onSaved, onDeleted, onPreviewChange }: Props) {
+export function DishEditor({ productId, shopId, currencySymbol, categoriesList, onClose, onSaved, onDeleted }: Props) {
   const { t, i18n } = useTranslation();
   const toast = useToast();
   const { data: product, isLoading, isError } = useGetProductByIdQuery({ productId, shopId }, { refetchOnMountOrArgChange: true });
@@ -145,22 +142,6 @@ export function DishEditor({ productId, shopId, currencySymbol, categoriesList, 
     window.addEventListener('beforeunload', onBeforeUnload);
     return () => window.removeEventListener('beforeunload', onBeforeUnload);
   }, [dirty]);
-
-  // What the live preview shows: the texts of the language being edited
-  useEffect(() => {
-    if (!edit) {
-      onPreviewChange(null, activeLanguage);
-      return;
-    }
-    const name = translatingLanguage ? edit.nameTranslations[translatingLanguage] || edit.form.name : edit.form.name;
-    const description = translatingLanguage
-      ? edit.descriptionTranslations[translatingLanguage] || edit.form.description
-      : edit.form.description;
-    onPreviewChange(
-      { id: productId, lang: activeLanguage ?? null, name, description, priceCents: edit.form.price, isAvailable: edit.isAvailable },
-      activeLanguage,
-    );
-  }, [edit, productId, activeLanguage, translatingLanguage, onPreviewChange]);
 
   if (isLoading) {
     return (
