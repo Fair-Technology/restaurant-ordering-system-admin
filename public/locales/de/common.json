@@ -70,6 +70,7 @@
     "limitStaffAccounts": "Mitarbeiter-Zugänge",
     "downgradeTo": "Auf {{plan}} wechseln",
     "upgradeTo": "Auf {{plan}} upgraden",
+    "notAvailableInCurrency": "In Ihrer Währung nicht verfügbar",
     "accessDenied": "Sie haben keine Berechtigung, das Abonnement dieses Restaurants zu verwalten.",
     "currentPlan": "Aktueller Plan",
     "monthly": "Monatlich",

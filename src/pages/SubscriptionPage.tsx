@@ -89,7 +89,7 @@ interface PlanCardProps {
   isBusy: boolean;
 }
 
-function PlanCard({
+export function PlanCard({
   plan,
   index,
   currency,
@@ -187,6 +187,10 @@ function PlanCard({
         ) : !isOwner ? null : action === 'downgrade_blocked' || action === 'cancel_blocked' ? (
           <div className="w-full rounded-xl border border-[#f5c2bd] bg-[#fdeceb] px-3 py-2.5 text-center text-xs font-semibold text-[#b42318]">
             {t('subscription.downgradeBlocked', { n: staffCapOf(plan) ?? 0 })}
+          </div>
+        ) : !isFree && !hasPrice ? (
+          <div className="w-full rounded-xl border border-line bg-sand px-3 py-2.5 text-center text-xs font-semibold text-[#8a7f77]">
+            {t('subscription.notAvailableInCurrency')}
           </div>
         ) : action === 'downgrade' || action === 'cancel_to_free' ? (
           isCancelPending ? null : (
