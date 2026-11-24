@@ -88,7 +88,7 @@ const sectionTitle = 'mb-3 text-base font-bold text-ink';
 export function DishEditor({ productId, shopId, currencySymbol, categoriesList, onClose, onSaved, onDeleted, onPreviewChange }: Props) {
   const { t, i18n } = useTranslation();
   const toast = useToast();
-  const { data: product, isLoading } = useGetProductByIdQuery({ productId, shopId }, { refetchOnMountOrArgChange: true });
+  const { data: product, isLoading, isError } = useGetProductByIdQuery({ productId, shopId }, { refetchOnMountOrArgChange: true });
   const { data: shop } = useGetShopByIdQuery({ shopId });
   const { refs } = useShopReferenceLists(shopId);
   const { data: libraryGroups } = useGetOptionGroupsQuery({ shopId });
@@ -162,7 +162,31 @@ export function DishEditor({ productId, shopId, currencySymbol, categoriesList, 
     );
   }, [edit, productId, activeLanguage, translatingLanguage, onPreviewChange]);
 
-  if (isLoading || !product || !edit || !saved) {
+  if (isLoading) {
+    return (
+      <div className="flex flex-1 items-center justify-center p-10">
+        <MySpinner label={t('products.loadingProduct')} />
+      </div>
+    );
+  }
+
+  if (isError || !product) {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center gap-3 p-10 text-center">
+        <p className="text-[15px] font-medium text-ink">{t('products.productNotFound')}</p>
+        <button
+          type="button"
+          onClick={onClose}
+          className="inline-flex h-9 items-center gap-1 rounded-full bg-sand pl-2 pr-3 text-[13px] font-semibold hover:bg-[#ebe4dc]"
+        >
+          <ChevronLeft size={16} strokeWidth={2.4} aria-hidden="true" />
+          {t('nav.dishes')}
+        </button>
+      </div>
+    );
+  }
+
+  if (!edit || !saved) {
     return (
       <div className="flex flex-1 items-center justify-center p-10">
         <MySpinner label={t('products.loadingProduct')} />

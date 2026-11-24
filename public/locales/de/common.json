@@ -658,6 +658,7 @@
     "imagePreviewCard": "Speisekarte (4:3)",
     "imagePreviewPhoneList": "Liste am Handy (quadratisch)",
     "loadingProduct": "Produkt wird geladen...",
+    "productNotFound": "Dieses Gericht existiert nicht mehr. Es wurde möglicherweise gelöscht.",
     "failedToLoad": "Produkt konnte nicht geladen werden.",
     "failedToUpdate": "Produkt konnte nicht aktualisiert werden.",
     "failedToCreate": "Produkt konnte nicht erstellt werden.",
