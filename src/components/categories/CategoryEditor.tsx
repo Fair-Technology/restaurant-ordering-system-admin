@@ -136,10 +136,11 @@ function CategoryForm({
         body: {
           name: trimmedName,
           ...(extraLanguage ? { nameTranslations } : {}),
+          // Intentionally left as-is: icon has no UI control to null it in this form, and the API type doesn't accept null for icon, so this is not the same bug as schedule.
           icon: icon ?? undefined,
           ...(taxClassId ? { taxClassId } : {}),
           isAvailable: shown,
-          schedule: schedule ?? undefined,
+          schedule,
         },
       }).unwrap();
       toast.success(t('categories.saved'));
