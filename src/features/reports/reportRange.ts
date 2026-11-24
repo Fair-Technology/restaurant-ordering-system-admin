@@ -1,6 +1,8 @@
 export const REPORT_PRESETS = ['today', 'yesterday', 'last7', 'thisMonth', 'lastMonth'] as const;
 export type ReportPreset = (typeof REPORT_PRESETS)[number];
 export const REPORT_MAX_DAYS = 92;
+/** The server rejects a `to` date more than this many days after today. */
+export const REPORT_MAX_FUTURE_DAYS = 2;
 
 /** 'YYYY-MM-DD' plus n calendar days. */
 export function addDays(date: string, n: number): string {
@@ -36,9 +38,13 @@ export function rangeFor(preset: ReportPreset, today: string): { from: string; t
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const isRealDate = (s: string) => DATE.test(s) && addDays(s, 0) === s;
 
-/** Same rules as the server: real dates, from not after to, at most 92 days inclusive. */
-export function isValidRange(from: string, to: string): boolean {
+/**
+ * Same rules as the server: real dates, from not after to, at most 92 days inclusive, and `to` no more
+ * than REPORT_MAX_FUTURE_DAYS after `today` (shop-local YYYY-MM-DD). Without `today` the future check is skipped.
+ */
+export function isValidRange(from: string, to: string, today: string = '9000-01-01'): boolean {
   if (!isRealDate(from) || !isRealDate(to) || from > to) return false;
   const span = (Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000 + 1;
-  return span <= REPORT_MAX_DAYS;
+  if (span > REPORT_MAX_DAYS) return false;
+  return to <= addDays(today, REPORT_MAX_FUTURE_DAYS);
 }

@@ -66,12 +66,19 @@ export function ReportsPage() {
   const [custom, setCustom] = useState<{ from: string; to: string } | null>(null);
   const range =
     custom ?? (shop?.timezone ? rangeFor('last7', todayIn(shop.timezone, new Date())) : { from: '', to: '' });
-  const valid = isValidRange(range.from, range.to);
+  const today = todayIn(shop?.timezone ?? 'Europe/Berlin', new Date());
+  const valid = isValidRange(range.from, range.to, today);
 
-  const { data: report, isFetching, isError, refetch } = useGetSalesReportQuery(
+  const { data: report, isFetching, isError, error, refetch } = useGetSalesReportQuery(
     { shopId: shopId!, from: range.from, to: range.to },
     { skip: !allowed || !valid },
   );
+
+  // Remember the last good report so a range validation error doesn't blank the dashboard.
+  // Keyed by shop so switching shops never shows another shop's report.
+  const [good, setGood] = useState<{ shopId?: string; report: SalesReportDto } | null>(null);
+  if (report && (good?.report !== report || good.shopId !== shopId)) setGood({ shopId, report });
+  const lastGood = good && good.shopId === shopId ? good.report : null;
 
   // Client-side timeout: `isFetching` continuously true for REPORT_TIMEOUT_MS counts as a failure.
   const [timedOut, setTimedOut] = useState(false);
@@ -88,7 +95,11 @@ export function ReportsPage() {
     setAttempt((n) => n + 1);
     refetch();
   };
-  const failed = valid && (isError || (timedOut && isFetching));
+  const errorStatus = (error as { status?: number } | undefined)?.status;
+  const isRangeError = valid && isError && errorStatus === 400;
+  const failed = valid && !isRangeError && (isError || (timedOut && isFetching));
+  const rangeMessage = !valid || isRangeError ? t('reports.rangeInvalid') : null;
+  const shown = report ?? (rangeMessage ? lastGood : null);
   const { data: limit } = useGetOrderLimitQuery({ shopId: shopId! }, { skip: !allowed });
 
   if (!shop) return <MySpinner label={t('reports.loading')} />;
@@ -104,7 +115,7 @@ export function ReportsPage() {
     setCustom({ ...range, [key]: value });
   };
 
-  const money = (cents: number) => formatCents(cents, report?.currency ?? shop.currency ?? 'EUR', i18n.language);
+  const money = (cents: number) => formatCents(cents, shown?.currency ?? shop.currency ?? 'EUR', i18n.language);
   const dayText = (date: string) =>
     new Intl.DateTimeFormat(i18n.language.startsWith('de') ? 'de-DE' : 'en-GB', {
       timeZone: 'UTC',
@@ -132,12 +143,12 @@ export function ReportsPage() {
       'text/csv;charset=utf-8',
     );
 
-  const maxHour = report ? Math.max(1, ...report.byHour) : 1;
-  const hourTotal = report ? report.byHour.reduce((a, b) => a + b, 0) : 0;
-  const peakHour = report ? report.byHour.indexOf(Math.max(...report.byHour)) : 0;
+  const maxHour = shown ? Math.max(1, ...shown.byHour) : 1;
+  const hourTotal = shown ? shown.byHour.reduce((a, b) => a + b, 0) : 0;
+  const peakHour = shown ? shown.byHour.indexOf(Math.max(...shown.byHour)) : 0;
   const hourSummary =
-    hourTotal > 0 && report
-      ? t('reports.byHourSummary', { total: hourTotal, peakHour: `${peakHour}:00`, peakCount: report.byHour[peakHour] })
+    hourTotal > 0 && shown
+      ? t('reports.byHourSummary', { total: hourTotal, peakHour: `${peakHour}:00`, peakCount: shown.byHour[peakHour] })
       : t('reports.byHourSummaryEmpty');
   const dateInput =
     'h-9 rounded-full border border-[#e3d9ce] bg-white px-3 text-[13px] font-semibold text-ink outline-none focus-visible:border-ink';
@@ -148,10 +159,9 @@ export function ReportsPage() {
       <PageHeader
         title={t('reports.title')}
         actions={
-          valid &&
           !failed &&
-          report && (
-            <MyButton variant="secondary" onClick={() => download(report)} className="gap-2">
+          shown && (
+            <MyButton variant="secondary" onClick={() => download(shown)} className="gap-2">
               <Download size={16} aria-hidden="true" />
               {t('reports.downloadCsv')}
             </MyButton>
@@ -172,8 +182,8 @@ export function ReportsPage() {
               type="date"
               value={range.from}
               onChange={(e) => changeDate('from', e.target.value)}
-              aria-invalid={!valid}
-              aria-describedby={!valid ? RANGE_ERROR_ID : undefined}
+              aria-invalid={!!rangeMessage}
+              aria-describedby={rangeMessage ? RANGE_ERROR_ID : undefined}
               className={dateInput}
             />
           </label>
@@ -183,16 +193,16 @@ export function ReportsPage() {
               type="date"
               value={range.to}
               onChange={(e) => changeDate('to', e.target.value)}
-              aria-invalid={!valid}
-              aria-describedby={!valid ? RANGE_ERROR_ID : undefined}
+              aria-invalid={!!rangeMessage}
+              aria-describedby={rangeMessage ? RANGE_ERROR_ID : undefined}
               className={dateInput}
             />
           </label>
         </span>
       </Toolbar>
-      {!valid && (
+      {rangeMessage && (
         <p id={RANGE_ERROR_ID} role="alert" className="mb-3 text-sm text-[#b42318]">
-          {t('reports.rangeInvalid')}
+          {rangeMessage}
         </p>
       )}
 
@@ -204,7 +214,7 @@ export function ReportsPage() {
           </MyButton>
         </div>
       )}
-      {valid && !failed && !report && <MySpinner label={t('reports.loading')} />}
+      {valid && !failed && !shown && <MySpinner label={t('reports.loading')} />}
 
       {valid && !failed && report && isFetching && (
         <div role="status" aria-live="polite" className="mb-3 flex items-center gap-2 text-[13px] font-semibold text-[#4a413b]">
@@ -213,20 +223,20 @@ export function ReportsPage() {
         </div>
       )}
 
-      {valid && !failed && report && (
+      {!failed && shown && (
         <div data-testid="reports-content" className={isFetching ? 'opacity-60' : ''}>
           <div className="mb-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <StatTile label={t('reports.takings')} value={money(report.totals.takingsCents)} help={t('reports.takingsHelp')} />
-            <StatTile label={t('reports.orders')} value={String(report.totals.orderCount)} />
-            <StatTile label={t('reports.refunds')} value={money(report.totals.refundCents)} />
-            <StatTile label={t('reports.discounts')} value={money(report.totals.discountCents)} />
+            <StatTile label={t('reports.takings')} value={money(shown.totals.takingsCents)} help={t('reports.takingsHelp')} />
+            <StatTile label={t('reports.orders')} value={String(shown.totals.orderCount)} />
+            <StatTile label={t('reports.refunds')} value={money(shown.totals.refundCents)} />
+            <StatTile label={t('reports.discounts')} value={money(shown.totals.discountCents)} />
           </div>
           <div className="mb-[18px] flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-muted">
             <span>
-              {t('reports.gross')}: <span className="font-semibold text-ink">{money(report.totals.grossCents)}</span>
+              {t('reports.gross')}: <span className="font-semibold text-ink">{money(shown.totals.grossCents)}</span>
             </span>
             <span>
-              {t('reports.deliveryFees')}: <span className="font-semibold text-ink">{money(report.totals.deliveryFeeCents)}</span>
+              {t('reports.deliveryFees')}: <span className="font-semibold text-ink">{money(shown.totals.deliveryFeeCents)}</span>
             </span>
             {limit && (
               <span className="text-[#4a413b]">
@@ -237,14 +247,14 @@ export function ReportsPage() {
             )}
           </div>
 
-          {report.totals.orderCount === 0 && report.totals.refundCents === 0 ? (
+          {shown.totals.orderCount === 0 && shown.totals.refundCents === 0 ? (
             <Section>
               <EmptyNote>{t('reports.empty')}</EmptyNote>
             </Section>
           ) : (
             <>
-              <Section title={t('reports.byDay')} count={report.days.length}>
-                {report.days.map((d) => (
+              <Section title={t('reports.byDay')} count={shown.days.length}>
+                {shown.days.map((d) => (
                   <Row key={d.date}>
                     <div className="min-w-0 flex-1">
                       <div className="text-sm font-semibold">{dayText(d.date)}</div>
@@ -270,7 +280,7 @@ export function ReportsPage() {
                     aria-label={`${t('reports.byHour')}: ${hourSummary}`}
                     className="flex h-32 items-end gap-[3px] border-b border-[#c8bfb6]"
                   >
-                    {report.byHour.map((n, hour) => (
+                    {shown.byHour.map((n, hour) => (
                       <div key={hour} className="flex h-full flex-1 flex-col items-center justify-end" title={`${hour}:00 · ${n}`}>
                         <div
                           className={`w-full rounded-t-[3px] ${n > 0 ? 'bg-[#1f1a17]' : 'bg-[#c8bfb6]'}`}
@@ -280,7 +290,7 @@ export function ReportsPage() {
                     ))}
                   </div>
                   <div className="mt-1 flex gap-[3px]">
-                    {report.byHour.map((_, hour) => (
+                    {shown.byHour.map((_, hour) => (
                       <span key={hour} className="flex-1 text-center text-[10px] text-[#8a7f77]">
                         {hour % 3 === 0 ? hour : ''}
                       </span>
@@ -295,7 +305,7 @@ export function ReportsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {report.byHour.map((n, hour) => (
+                      {shown.byHour.map((n, hour) => (
                         <tr key={hour}>
                           <th scope="row">{`${hour}:00`}</th>
                           <td>{n}</td>
@@ -306,7 +316,7 @@ export function ReportsPage() {
                 </Section>
 
                 <Section title={t('reports.byMode')}>
-                  {report.byMode.map((m) => (
+                  {shown.byMode.map((m) => (
                     <Row key={m.mode}>
                       <span className="flex-1 text-sm font-semibold">{t(MODE_LABELS[m.mode])}</span>
                       <span className="text-[13px] text-[#8a7f77]">{m.orderCount}</span>
@@ -328,7 +338,7 @@ export function ReportsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {report.totals.byRate.map((r) => (
+                      {shown.totals.byRate.map((r) => (
                         <tr key={r.rateBasisPoints} className="border-b border-line-soft last:border-b-0">
                           <td className="px-4 py-3 font-semibold">{rateText(r.rateBasisPoints)}</td>
                           <td className="px-4 py-3 text-right whitespace-nowrap">{money(r.grossCents)}</td>
@@ -341,8 +351,8 @@ export function ReportsPage() {
                 </div>
               </Section>
 
-              <Section title={t('reports.topDishes')} count={report.topDishes.length}>
-                {report.topDishes.map((d, i) => (
+              <Section title={t('reports.topDishes')} count={shown.topDishes.length}>
+                {shown.topDishes.map((d, i) => (
                   <Row key={d.productId}>
                     <span className="w-5 text-[13px] font-bold text-[#8a7f77]">{i + 1}</span>
                     <span className="min-w-0 flex-1 truncate text-sm font-semibold">{d.name}</span>

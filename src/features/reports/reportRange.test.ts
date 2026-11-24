@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { isValidRange, rangeFor, todayIn } from './reportRange';
+import { addDays, isValidRange, rangeFor, REPORT_MAX_FUTURE_DAYS, todayIn } from './reportRange';
 
 describe('reportRange', () => {
   it("today is the restaurant's date", () => {
@@ -23,5 +23,14 @@ describe('reportRange', () => {
     expect(isValidRange('2026-01-01', '2026-04-02')).toBe(true);
     expect(isValidRange('2026-01-01', '2026-04-03')).toBe(false);
     expect(isValidRange('2026-02-30', '2026-03-01')).toBe(false);
+  });
+
+  it('rejects a `to` date too far in the future when today is given', () => {
+    const today = '2026-10-05';
+    expect(isValidRange('2026-10-05', addDays(today, REPORT_MAX_FUTURE_DAYS + 1), today)).toBe(false);
+    expect(isValidRange('2026-10-05', addDays(today, REPORT_MAX_FUTURE_DAYS), today)).toBe(true);
+    // Without `today` the future check is skipped (two-arg calls keep working)
+    expect(isValidRange('2026-10-05', '2999-01-01')).toBe(false); // span > 92 days
+    expect(isValidRange('2999-01-01', '2999-01-05')).toBe(true);
   });
 });
