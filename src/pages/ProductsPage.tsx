@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import type { CategoryDto, MenuLanguage, ProductDto } from '../services/api';
+import type { CategoryDto, ProductDto } from '../services/api';
 import {
   useGetProductsByShopQuery,
   useGetCategoriesByShopQuery,
@@ -32,9 +32,7 @@ import { useSoldOutToday } from '../features/menu/useSoldOutToday';
 import { SoldOutTodayButton } from '../components/menu/SoldOutTodayButton';
 import { wizardBackAction, wizardStepSequence } from '../features/menu/wizardSteps';
 import { importRowToCreateRequest, type MenuImportRow } from '../features/menu/menuImport';
-import type { PreviewDish } from '../features/menu/previewBridge';
 import { DishEditor } from '../components/menu/DishEditor';
-import { LivePreview } from '../components/menu/LivePreview';
 import { PageHeader, Section, SplitPage } from '../components/layout/Page';
 import { usePageTitle } from '../features/layout/usePageTitle';
 
@@ -661,8 +659,7 @@ function DishRow({
 
 /**
  * ProductsPage ("Gerichte") — the dish list grouped by category with filters and search; clicking a
- * dish opens it in the single-page editor. The live preview (the real storefront) sits on the right
- * and follows: it outlines the dish, shows unsaved edits, and opens a dish here when clicked there.
+ * dish opens it in the single-page editor.
  */
 export function ProductsPage() {
   usePageTitle('nav.dishes');
@@ -684,13 +681,7 @@ export function ProductsPage() {
   const money = (cents: number) => formatCents(cents, shop?.currency ?? 'EUR', i18n.language);
 
   const selectedId = searchParams.get('dish');
-  // A dish selection opens the live preview; the user may still collapse it while `?dish=` stays set,
-  // so `previewOpen` is a derived value plus a per-selection dismiss override (cleared on any change
-  // to the `dish` param).
-  const [previewDismissedFor, setPreviewDismissedFor] = useState<string | null>(null);
-  const previewOpen = !!selectedId && previewDismissedFor !== selectedId;
   const setParam = (key: string, value: string | null) => {
-    if (key === 'dish') setPreviewDismissedFor(null);
     setSearchParams((p) => {
       const n = new URLSearchParams(p);
       if (value === null) n.delete(key);
@@ -707,17 +698,9 @@ export function ProductsPage() {
   const [optimistic, setOptimistic] = useState<Record<string, boolean>>({});
   const [soldOutOverride, setSoldOutOverride] = useState<Record<string, boolean>>({});
 
-  // Live preview state
-  const [previewDish, setPreviewDish] = useState<PreviewDish | null>(null);
-  const [previewLanguage, setPreviewLanguage] = useState<MenuLanguage | undefined>();
-  const [refreshKey, setRefreshKey] = useState(0);
   const [brokenImageIds, setBrokenImageIds] = useState<Set<string>>(new Set());
   const markImageBroken = useCallback((id: string) => {
     setBrokenImageIds((prev) => (prev.has(id) ? prev : new Set(prev).add(id)));
-  }, []);
-  const onPreviewChange = useCallback((dish: PreviewDish | null, lang: MenuLanguage | undefined) => {
-    setPreviewDish(dish);
-    setPreviewLanguage(lang);
   }, []);
 
   if (shop && !canManage) {
@@ -757,9 +740,7 @@ export function ProductsPage() {
         n.delete(id);
         return n;
       });
-      if (ok) {
-        setRefreshKey((k) => k + 1);
-      } else {
+      if (!ok) {
         setOptimistic((o) => ({ ...o, [id]: current }));
         toast.error(t('products.failedToUpdate'));
       }
@@ -773,8 +754,7 @@ export function ProductsPage() {
     const next = !soldOutOf(product);
     setSoldOutOverride((o) => ({ ...o, [id]: next }));
     const done = (ok: boolean) => {
-      if (ok) setRefreshKey((k) => k + 1);
-      else setSoldOutOverride((o) => ({ ...o, [id]: !next }));
+      if (!ok) setSoldOutOverride((o) => ({ ...o, [id]: !next }));
     };
     if (next) markSoldOutToday(id, done);
     else clearSoldOut(id, done);
@@ -900,28 +880,13 @@ export function ProductsPage() {
             currencySymbol={currencySymbol}
             categoriesList={categoriesList}
             onClose={() => setParam('dish', null)}
-            onSaved={() => setRefreshKey((k) => k + 1)}
-            onDeleted={() => {
-              setParam('dish', null);
-              setRefreshKey((k) => k + 1);
-            }}
-            onPreviewChange={onPreviewChange}
+            onSaved={() => {}}
+            onDeleted={() => setParam('dish', null)}
           />
         ) : (
           list
         )}
       </div>
-
-      <LivePreview
-        slug={shop?.slug}
-        dish={selectedId ? previewDish : null}
-        focusId={selectedId}
-        open={previewOpen}
-        onOpenChange={(open) => setPreviewDismissedFor(open ? null : selectedId)}
-        onSelect={(id) => setParam('dish', id)}
-        language={previewLanguage}
-        refreshKey={refreshKey}
-      />
 
       {showAddModal && <AddProductModal shopId={shopId!} onClose={() => setParam('addProduct', null)} />}
       {showImportModal && <BulkImportModal shopId={shopId!} onClose={() => setParam('importProducts', null)} />}

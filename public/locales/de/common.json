@@ -1490,19 +1490,6 @@
     "soldOutBackFor": "{{name}} wieder auf die Karte nehmen",
     "soldOutBadge": "Heute ausverkauft",
     "soldOutFailed": "Verfügbarkeit konnte nicht geändert werden.",
-    "preview": {
-      "title": "Live-Vorschau",
-      "subtitle": "So sehen Gäste Ihren Shop",
-      "device": "Gerät",
-      "phone": "Handy",
-      "desktop": "Desktop",
-      "view": "Ansicht",
-      "menu": "Speisekarte",
-      "dishOpen": "Gericht geöffnet",
-      "hint": "Klicken Sie ein Gericht an, um es zu bearbeiten",
-      "openShop": "Shop öffnen",
-      "notConfigured": "Die Vorschau ist nicht verfügbar, weil die Adresse des Shops nicht eingerichtet ist."
-    },
     "editor": {
       "basics": "Grundlagen",
       "categories": "Kategorien",

@@ -1490,19 +1490,6 @@
     "soldOutBackFor": "Put {{name}} back on the menu now",
     "soldOutBadge": "Sold out today",
     "soldOutFailed": "Couldn't update the dish's availability.",
-    "preview": {
-      "title": "Live preview",
-      "subtitle": "How guests see your shop",
-      "device": "Device",
-      "phone": "Phone",
-      "desktop": "Desktop",
-      "view": "View",
-      "menu": "Menu",
-      "dishOpen": "Dish opened",
-      "hint": "Click a dish to edit it",
-      "openShop": "Open shop",
-      "notConfigured": "The preview isn't available because the shop's address isn't set up."
-    },
     "editor": {
       "basics": "Basics",
       "categories": "Categories",
