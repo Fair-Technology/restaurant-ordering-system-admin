@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { IntakeOrder } from '../../services/ordersApi';
 import { itemSummary, type LiveGroupKey } from '../../features/orders/orderView';
-import { ModeBadge } from './OrderBadges';
+import { AgeRestrictedBadge, ModeBadge } from './OrderBadges';
 
 export interface BoardColumnView {
   key: LiveGroupKey;
@@ -53,6 +53,7 @@ export function OrderBoard({ columns, selectedId, onSelect, timeOf, moneyOf, act
                     <div className="flex items-center gap-2">
                       <span className="flex-shrink-0 whitespace-nowrap text-[15px] font-bold tracking-[0.02em]">#{order.orderRef}</span>
                       <ModeBadge order={order} />
+                      <AgeRestrictedBadge order={order} />
                       <span className={`ml-auto inline-flex items-center gap-1.5 text-[13px] font-semibold ${time.urgent ? 'text-[#b42318]' : 'text-[#4a413b]'}`}>
                         {time.text}
                         {time.stale && <span className="rounded-full bg-[#fdeceb] px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-[#b42318]">{t('orders.live.stale')}</span>}

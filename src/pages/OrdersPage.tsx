@@ -29,7 +29,7 @@ import { formatCents } from '../utils/money';
 import { useModalA11y } from '../hooks/useModalA11y';
 import { MySpinner } from '../components/ui/MySpinner';
 import { PendingButton } from '../components/ui/PendingButton';
-import { ModeBadge, StateBadge } from '../components/orders/OrderBadges';
+import { AgeRestrictedBadge, ModeBadge, StateBadge } from '../components/orders/OrderBadges';
 import { OrderBoard } from '../components/orders/OrderBoard';
 import { OrderDetail, type DetailKind } from '../components/orders/OrderDetail';
 import { ReceiptsArchiveButton } from '../components/orders/ReceiptsArchiveButton';
@@ -88,6 +88,7 @@ function OrderRow({ order, selected, onSelect, time, urgent = false, stale = fal
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="text-[15px] font-bold">{order.customerName}</span>
           <ModeBadge order={order} />
+          <AgeRestrictedBadge order={order} />
           {order.customerNotes && (
             <span className="rounded-full bg-[#fff6e0] px-[7px] py-0.5 text-[11px] font-bold text-[#8a5a00]">{t('orders.notes')}</span>
           )}

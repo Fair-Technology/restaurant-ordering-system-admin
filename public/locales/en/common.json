@@ -768,6 +768,8 @@
     "notOfferedFor": "Not offered for",
     "notOfferedForNone": "Offered for every order type",
     "notOfferedForHelp": "Tick a way of ordering to hide this dish there, e.g. draught beer for delivery.",
+    "ageRestricted": "Age-restricted (18+)",
+    "ageRestrictedHelp": "This dish contains alcohol. The storefront will ask diners to confirm they are 18+ before checkout, and staff will see a handover reminder.",
     "taxClass": "Tax class",
     "taxClassFromCategory": "From category ({{label}})",
     "taxClassNoneYet": "No tax class yet",
@@ -801,6 +803,8 @@
     "removeOption": "Remove"
   },
   "orders": {
+    "ageRestrictedBadge": "18+",
+    "ageRestrictedHandover": "Check ID on handover — this order contains alcohol",
     "dayPicker": {
       "label": "Today",
       "today": "Today",

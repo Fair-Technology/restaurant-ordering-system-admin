@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X } from 'lucide-react';
+import { ShieldAlert, X } from 'lucide-react';
 import { useLazyGetOrderDocumentQuery } from '../../services/api';
 import { type IntakeOrder, type RejectReason } from '../../services/ordersApi';
 import { REJECT_REASONS, formatCountdown, prepChoices, scheduledReadyMs, type SlotLoad } from '../../features/orders/intake';
@@ -12,6 +12,7 @@ import { useToast } from '../../contexts/ToastContext';
 import { formatCents } from '../../utils/money';
 import { PendingButton } from '../ui/PendingButton';
 import { ModeBadge, StateBadge } from './OrderBadges';
+import { hasAgeRestrictedItem } from '../../features/orders/ageRestricted';
 import { RefundPanel } from './RefundPanel';
 import { isPlausiblePhone } from '../../utils/validatePhone';
 import { SoldOutTodayButton } from '../menu/SoldOutTodayButton';
@@ -188,6 +189,12 @@ export function OrderDetail({
             </span>
           </div>
         </div>
+        {hasAgeRestrictedItem(order) && (
+          <div role="alert" className="flex items-center gap-2 rounded-lg bg-[#fdeceb] px-3 py-2 text-[13px] font-bold text-[#b42318]">
+            <ShieldAlert size={16} aria-hidden />
+            {t('orders.ageRestrictedHandover')}
+          </div>
+        )}
         <div className="flex flex-wrap gap-1.5">
           <ModeBadge order={order} large />
           {order.scheduledFor && (

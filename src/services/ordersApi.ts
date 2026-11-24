@@ -66,7 +66,7 @@ export type IntakeOrder = Omit<
   | 'loyaltyVoucherSent'
 > & {
   // Lines sharing combo.line are the dishes of one combo; absent/null on dish lines and on an older backend
-  items: Array<OrderDto['items'][number] & { combo?: { line: number; productId: string; name: string } | null }>;
+  items: Array<OrderDto['items'][number] & { combo?: { line: number; productId: string; name: string } | null; ageRestricted?: boolean }>;
   // Absent when talking to a backend from before delivery
   totalCents?: number;
   deliveryFeeCents?: number | null;

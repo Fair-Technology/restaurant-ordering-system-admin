@@ -239,6 +239,7 @@ export function DishEditor({ productId, shopId, currencySymbol, categoriesList, 
           // The dish owns its class: the one picked by hand, else its category's suggestion
           taxClassId: effectiveTaxClassId(edit.categoryIds, categoriesList, edit.foodInfo.taxClassId),
           unavailableModes: edit.foodInfo.unavailableModes,
+          ageRestricted: edit.foodInfo.ageRestricted,
           isAvailable: edit.isAvailable,
           optionGroupRefs: edit.optionGroupRefs,
         },

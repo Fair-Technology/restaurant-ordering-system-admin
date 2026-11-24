@@ -1,5 +1,7 @@
 import { useTranslation } from 'react-i18next';
+import { ShieldAlert } from 'lucide-react';
 import type { IntakeOrder } from '../../services/ordersApi';
+import { hasAgeRestrictedItem } from '../../features/orders/ageRestricted';
 import { lastRefundFailed } from '../../features/orders/refunds';
 
 const MODE_STYLE: Record<IntakeOrder['fulfilmentMode'], string> = {
@@ -22,6 +24,18 @@ export function ModeBadge({ order, large = false }: { order: Pick<IntakeOrder, '
       }`}
     >
       {label}
+    </span>
+  );
+}
+
+/** Attention pill for orders with an 18+ item; nothing otherwise. */
+export function AgeRestrictedBadge({ order }: { order: { items: ReadonlyArray<{ ageRestricted?: boolean }> } }) {
+  const { t } = useTranslation();
+  if (!hasAgeRestrictedItem(order)) return null;
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-[#fdeceb] px-2 py-0.5 text-[11px] font-bold whitespace-nowrap text-[#b42318]">
+      <ShieldAlert size={11} aria-hidden />
+      {t('orders.ageRestrictedBadge')}
     </span>
   );
 }
