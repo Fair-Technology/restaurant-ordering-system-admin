@@ -26,7 +26,7 @@ import { isWrongSizeError } from '../features/images/imageRules';
 import { useShopReferenceLists } from '../features/menu/useShopReferenceLists';
 import { EMPTY_FOOD_INFO, effectiveTaxClassId, labelFor, taxClassOptionLabel } from '../features/menu/foodInfo';
 import type { FoodInfo } from '../features/menu/foodInfo';
-import { isListRefreshing } from '../features/menu/productListStatus';
+import { isIncomplete, isListRefreshing } from '../features/menu/productListStatus';
 import { isSoldOutUntil } from '../features/menu/soldOut';
 import { useSoldOutToday } from '../features/menu/useSoldOutToday';
 import { SoldOutTodayButton } from '../components/menu/SoldOutTodayButton';
@@ -505,17 +505,41 @@ function BulkImportModal({ shopId, onClose }: { shopId: string; onClose: () => v
 
 type DishFilter = 'all' | 'onMenu' | 'off' | 'incomplete' | 'soldOut';
 
-/** A dish still missing something before it can be on the menu: allergens declared, a photo, a category. */
-function isIncomplete(p: ProductDto): boolean {
-  return p.isDeclared === false || !p.images?.length || !p.categories?.length;
-}
-
-function passes(p: ProductDto, filter: DishFilter, available: boolean, soldOut: boolean): boolean {
+function passes(
+  p: ProductDto,
+  filter: DishFilter,
+  available: boolean,
+  soldOut: boolean,
+  brokenImageIds: ReadonlySet<string>,
+): boolean {
   if (filter === 'soldOut') return soldOut;
   if (filter === 'onMenu') return available && p.isDeclared !== false;
   if (filter === 'off') return !available;
-  if (filter === 'incomplete') return isIncomplete(p);
+  if (filter === 'incomplete') return isIncomplete(p, brokenImageIds);
   return true;
+}
+
+/**
+ * Invisible probe that loads every dish's stored photo regardless of the active filter, so a
+ * dead/broken image URL is caught even if the dish is never scrolled into view under the
+ * current filter (e.g. the owner only ever looks at the "Incomplete" tab). `onBroken` fires at
+ * most once per dish id.
+ */
+function ImageHealthProbe({ products, onBroken }: { products: ProductDto[]; onBroken: (id: string) => void }) {
+  return (
+    <div aria-hidden="true" className="hidden">
+      {products
+        .filter((p): p is ProductDto & { id: string } => !!p.id && !!p.images?.length)
+        .map((p) => (
+          <img
+            key={p.id}
+            src={p.images![p.images!.length - 1].url}
+            alt=""
+            onError={() => onBroken(p.id)}
+          />
+        ))}
+    </div>
+  );
 }
 
 function DishRow({
@@ -525,6 +549,7 @@ function DishRow({
   soldOut,
   soldOutBusy,
   selected,
+  broken,
   currencyMoney,
   onOpen,
   onToggle,
@@ -536,6 +561,7 @@ function DishRow({
   soldOut: boolean;
   soldOutBusy: boolean;
   selected: boolean;
+  broken: boolean;
   currencyMoney: (cents: number) => string;
   onOpen: () => void;
   onToggle: () => void;
@@ -543,6 +569,7 @@ function DishRow({
 }) {
   const { t } = useTranslation();
   const imageUrl = product.images?.length ? product.images[product.images.length - 1].url : undefined;
+  const effectiveImageUrl = broken ? undefined : imageUrl;
   const groups = (product.variantGroups?.length ?? 0) + (product.addonGroups?.length ?? 0);
   const offer = product.schedule?.offerPrice != null ? product.schedule : null;
 
@@ -561,8 +588,8 @@ function DishRow({
         selected ? 'bg-cream shadow-[inset_3px_0_0_#1f1a17]' : ''
       }`}
     >
-      {imageUrl ? (
-        <img src={imageUrl} alt="" className={`h-[42px] w-14 flex-shrink-0 rounded-lg object-cover ${available ? '' : 'opacity-50'}`} />
+      {effectiveImageUrl ? (
+        <img src={effectiveImageUrl} alt="" className={`h-[42px] w-14 flex-shrink-0 rounded-lg object-cover ${available ? '' : 'opacity-50'}`} />
       ) : (
         <span className="flex h-[42px] w-14 flex-shrink-0 items-center justify-center rounded-lg bg-[#f6f1eb] text-[11px] text-[#b9ada2]">
           {t('dishes.photo')}
@@ -585,7 +612,7 @@ function DishRow({
         {product.description && <span className="truncate text-[13px] text-[#6b6058]">{product.description}</span>}
         {product.isDeclared === false ? (
           <span className="self-start rounded-full bg-[#fff6e0] px-2 py-0.5 text-xs font-semibold text-[#8a5a00]">{t('products.notOnMenu')}</span>
-        ) : !imageUrl ? (
+        ) : !effectiveImageUrl ? (
           <span className="self-start rounded-full bg-[#fff6e0] px-2 py-0.5 text-xs font-semibold text-[#8a5a00]">{t('dishes.missingPhoto')}</span>
         ) : null}
       </div>
@@ -683,6 +710,10 @@ export function ProductsPage() {
   const [previewDish, setPreviewDish] = useState<PreviewDish | null>(null);
   const [previewLanguage, setPreviewLanguage] = useState<MenuLanguage | undefined>();
   const [refreshKey, setRefreshKey] = useState(0);
+  const [brokenImageIds, setBrokenImageIds] = useState<Set<string>>(new Set());
+  const markImageBroken = useCallback((id: string) => {
+    setBrokenImageIds((prev) => (prev.has(id) ? prev : new Set(prev).add(id)));
+  }, []);
   const onPreviewChange = useCallback((dish: PreviewDish | null, lang: MenuLanguage | undefined) => {
     setPreviewDish(dish);
     setPreviewLanguage(lang);
@@ -750,8 +781,8 @@ export function ProductsPage() {
 
   const all = products ?? [];
   const q = query.trim().toLowerCase();
-  const shown = all.filter((p) => passes(p, filter, availableOf(p), soldOutOf(p)) && (!q || (p.name ?? '').toLowerCase().includes(q)));
-  const countOf = (f: DishFilter) => all.filter((p) => passes(p, f, availableOf(p), soldOutOf(p))).length;
+  const shown = all.filter((p) => passes(p, filter, availableOf(p), soldOutOf(p), brokenImageIds) && (!q || (p.name ?? '').toLowerCase().includes(q)));
+  const countOf = (f: DishFilter) => all.filter((p) => passes(p, f, availableOf(p), soldOutOf(p), brokenImageIds)).length;
 
   // Group by category (sorted as on the menu); dishes without one at the end
   const categoryMap = new Map<string, { id: string; name: string; sortOrder: number }>();
@@ -820,6 +851,8 @@ export function ProductsPage() {
         </span>
       </div>
 
+      <ImageHealthProbe products={all} onBroken={markImageBroken} />
+
       <div aria-busy={isRefreshing} className="min-h-0 flex-1 overflow-y-auto px-7 pb-7">
         {all.length === 0 && <p className="text-sm text-[#8a7f77]">{t('products.empty')}</p>}
         {all.length > 0 && visibleGroups.length === 0 && <p className="text-sm text-[#8a7f77]">{t('dishes.noMatch')}</p>}
@@ -838,6 +871,7 @@ export function ProductsPage() {
                 soldOut={soldOutOf(p)}
                 soldOutBusy={soldOutPending(p.id!)}
                 selected={p.id === selectedId}
+                broken={brokenImageIds.has(p.id!)}
                 currencyMoney={money}
                 onOpen={() => setParam('dish', p.id!)}
                 onToggle={() => toggle(p)}
