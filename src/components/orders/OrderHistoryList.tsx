@@ -5,7 +5,7 @@ import { formatShopDateTime } from '../../utils/locale';
 import { useGetOrdersByShopQuery, useGetShopByIdQuery } from '../../services/api';
 import { useLazyGetOrderDocumentQuery } from '../../services/api';
 import { type IntakeOrder } from '../../services/ordersApi';
-import { canRefund, chargedCents } from '../../features/orders/refunds';
+import { canRefund, chargedCents, lastRefundFailed } from '../../features/orders/refunds';
 import { downloadBase64File } from '../../features/files/downloadBase64';
 import { useToast } from '../../contexts/ToastContext';
 import { RefundPanel } from './RefundPanel';
@@ -21,6 +21,7 @@ function formatDate(iso: string, language: string, countryCode?: string | null, 
 }
 
 function paymentLabelKey(order: IntakeOrder): string {
+  if (lastRefundFailed(order)) return 'orders.payment.refundFailed';
   const closed = order.state === 'REJECTED' || order.state === 'CANCELLED';
   if (closed && order.paymentStatus === 'authorized') return 'orders.releasePending';
   if (closed && order.paymentStatus === 'paid') return 'orders.refundPending';

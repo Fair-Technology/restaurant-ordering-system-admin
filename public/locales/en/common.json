@@ -836,6 +836,7 @@
     "payment": {
       "paid": "Paid online",
       "refunded": "Refunded",
+      "refundFailed": "Refund failed",
       "partially_refunded": "Partly refunded",
       "authorized": "Reserved (taken when accepted)",
       "canceled": "Released — not charged",
