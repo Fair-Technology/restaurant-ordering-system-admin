@@ -120,3 +120,38 @@ describe('ReportsPage loading and error states', () => {
     expect(screen.queryByRole('status')).toBeNull();
   });
 });
+
+describe('ReportsPage keeps the last report on a range error', () => {
+  it('keeps the figures and CSV button when the user picks a client-invalid range', () => {
+    reportQuery.current = { data: REPORT, isFetching: false, isError: false };
+    const { from, to } = renderPage();
+    expect(screen.getByTestId('reports-content')).toBeTruthy();
+    expect(screen.getByText('reports.downloadCsv')).toBeTruthy();
+
+    // The query is skipped for an invalid range, so data goes away
+    reportQuery.current = { data: undefined, isFetching: false, isError: false };
+    fireEvent.change(from, { target: { value: '2026-02-10' } });
+    fireEvent.change(to, { target: { value: '2026-02-01' } });
+
+    expect(screen.getByRole('alert').textContent).toBe('reports.rangeInvalid');
+    expect(screen.getByText('7')).toBeTruthy();
+    expect(screen.getByText('reports.downloadCsv')).toBeTruthy();
+  });
+
+  it('keeps the figures and CSV button when the server rejects the range with 400', () => {
+    reportQuery.current = {
+      data: REPORT,
+      isFetching: false,
+      isError: true,
+      error: { status: 400, data: { error: 'from and to must be ...' } },
+    };
+    const { from, to } = renderPage();
+    fireEvent.change(from, { target: { value: '2026-02-01' } });
+    fireEvent.change(to, { target: { value: '2026-02-10' } });
+
+    expect(screen.getByRole('alert').textContent).toBe('reports.rangeInvalid');
+    expect(screen.queryByText('reports.loadError')).toBeNull();
+    expect(screen.getByText('7')).toBeTruthy();
+    expect(screen.getByText('reports.downloadCsv')).toBeTruthy();
+  });
+});
