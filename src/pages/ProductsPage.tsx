@@ -503,14 +503,15 @@ function BulkImportModal({ shopId, onClose }: { shopId: string; onClose: () => v
 
 // ── Dish list ──────────────────────────────────────────────────────────────────
 
-type DishFilter = 'all' | 'onMenu' | 'off' | 'incomplete';
+type DishFilter = 'all' | 'onMenu' | 'off' | 'incomplete' | 'soldOut';
 
 /** A dish still missing something before it can be on the menu: allergens declared, a photo, a category. */
 function isIncomplete(p: ProductDto): boolean {
   return p.isDeclared === false || !p.images?.length || !p.categories?.length;
 }
 
-function passes(p: ProductDto, filter: DishFilter, available: boolean): boolean {
+function passes(p: ProductDto, filter: DishFilter, available: boolean, soldOut: boolean): boolean {
+  if (filter === 'soldOut') return soldOut;
   if (filter === 'onMenu') return available && p.isDeclared !== false;
   if (filter === 'off') return !available;
   if (filter === 'incomplete') return isIncomplete(p);
@@ -749,8 +750,8 @@ export function ProductsPage() {
 
   const all = products ?? [];
   const q = query.trim().toLowerCase();
-  const shown = all.filter((p) => passes(p, filter, availableOf(p)) && (!q || (p.name ?? '').toLowerCase().includes(q)));
-  const countOf = (f: DishFilter) => all.filter((p) => passes(p, f, availableOf(p))).length;
+  const shown = all.filter((p) => passes(p, filter, availableOf(p), soldOutOf(p)) && (!q || (p.name ?? '').toLowerCase().includes(q)));
+  const countOf = (f: DishFilter) => all.filter((p) => passes(p, f, availableOf(p), soldOutOf(p))).length;
 
   // Group by category (sorted as on the menu); dishes without one at the end
   const categoryMap = new Map<string, { id: string; name: string; sortOrder: number }>();
@@ -803,7 +804,7 @@ export function ProductsPage() {
             className="min-w-0 flex-1 bg-transparent text-sm outline-none"
           />
         </label>
-        {(['all', 'onMenu', 'off', 'incomplete'] as const).map((f) => (
+        {(['all', 'onMenu', 'off', 'incomplete', 'soldOut'] as const).map((f) => (
           <button key={f} type="button" aria-pressed={filter === f} className={chip(filter === f)} onClick={() => setFilter(f)}>
             {t(`dishes.filter.${f}`)}
             <span className="text-xs opacity-70">{countOf(f)}</span>
