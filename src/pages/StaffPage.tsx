@@ -72,6 +72,7 @@ function AddStaffForm({ shopId, canGrantManager, onClose }: { shopId: string; ca
           <MyInput
             type="text"
             required
+            autoComplete="username"
             label={t('staff.username')}
             value={username}
             onChange={(e) => setUsername(e.target.value)}
@@ -85,6 +86,7 @@ function AddStaffForm({ shopId, canGrantManager, onClose }: { shopId: string; ca
           <MyInput
             type="password"
             required
+            autoComplete="new-password"
             label={t('staff.password')}
             value={password}
             onChange={(e) => setPassword(e.target.value)}

@@ -1471,7 +1471,8 @@
       "all": "Alle",
       "onMenu": "Auf der Karte",
       "off": "Nicht verfügbar",
-      "incomplete": "Unvollständig"
+      "incomplete": "Unvollständig",
+      "soldOut": "Heute ausverkauft"
     },
     "photo": "Foto",
     "missingPhoto": "Foto fehlt",

@@ -1471,7 +1471,8 @@
       "all": "All",
       "onMenu": "On the menu",
       "off": "Unavailable",
-      "incomplete": "Incomplete"
+      "incomplete": "Incomplete",
+      "soldOut": "Sold out today"
     },
     "photo": "Photo",
     "missingPhoto": "Photo missing",
