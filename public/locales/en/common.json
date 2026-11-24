@@ -658,6 +658,7 @@
     "imagePreviewCard": "Menu card (4:3)",
     "imagePreviewPhoneList": "Phone list (square)",
     "loadingProduct": "Loading product...",
+    "productNotFound": "This dish no longer exists. It may have been deleted.",
     "failedToLoad": "Failed to load product.",
     "failedToUpdate": "Failed to update product.",
     "failedToCreate": "Failed to create product.",
