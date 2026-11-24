@@ -11,7 +11,7 @@ vi.mock('../staff/staffSession', () => ({
 }));
 
 import { api } from '../../services/api';
-import { isListRefreshing } from './productListStatus';
+import { isIncomplete, isListRefreshing } from './productListStatus';
 
 const shopId = 'shop-1';
 const dish = (id: string, isDeclared: boolean) => ({ id, shopId, name: id, isDeclared });
@@ -73,5 +73,27 @@ describe('isListRefreshing', () => {
     await vi.waitFor(() => expect(listState().data?.[0].isDeclared).toBe(true));
     expect(status()).toBe(false);
     sub.unsubscribe();
+  });
+});
+
+describe('isIncomplete', () => {
+  const complete = { id: 'd1', isDeclared: true, images: [{ url: 'https://x/y.jpg' }], categories: [{ id: 'c1' }] };
+  const none = new Set<string>();
+
+  it('is true when allergens are not declared', () => {
+    expect(isIncomplete({ ...complete, isDeclared: false }, none)).toBe(true);
+  });
+  it('is true when there are no images', () => {
+    expect(isIncomplete({ ...complete, images: [] }, none)).toBe(true);
+  });
+  it('is true when there are no categories', () => {
+    expect(isIncomplete({ ...complete, categories: [] }, none)).toBe(true);
+  });
+  it('is false for a complete dish with no broken ids', () => {
+    expect(isIncomplete(complete, none)).toBe(false);
+  });
+  it('is true for a complete dish whose image is known broken', () => {
+    expect(isIncomplete(complete, new Set(['d1']))).toBe(true);
+    expect(isIncomplete(complete, new Set(['other']))).toBe(false);
   });
 });
