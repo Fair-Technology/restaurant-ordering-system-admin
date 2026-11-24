@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  closureRange,
   closureRequest,
   dayClosure,
+  todayInZone,
   upcomingClosures,
   type ShopClosure,
 } from './closures';
@@ -56,5 +58,32 @@ describe('closureRequest', () => {
   });
   it('returns [] for an all-past list', () => {
     expect(closureRequest([past, ended], now)).toEqual([]);
+  });
+});
+
+describe('closureRange', () => {
+  it('spans a 3-day range inclusive of the end day in Berlin', () => {
+    const c = closureRange('2026-12-24', '2026-12-26', 'Holidays', 'Europe/Berlin');
+    expect(c.start).toBe('2026-12-24T00:00:00+01:00');
+    expect(c.end).toBe('2026-12-27T00:00:00+01:00');
+    expect(c.reason).toBe('Holidays');
+  });
+  it('follows the DST change inside a range', () => {
+    const c = closureRange('2026-03-28', '2026-03-30', undefined, 'Europe/Berlin');
+    expect(c.start).toBe('2026-03-28T00:00:00+01:00');
+    expect(c.end).toBe('2026-03-31T00:00:00+02:00');
+  });
+  it('equals dayClosure for a single day', () => {
+    expect(closureRange('2026-12-24', '2026-12-24', ' Eve ', 'Europe/Berlin')).toEqual(
+      dayClosure('2026-12-24', ' Eve ', 'Europe/Berlin'),
+    );
+  });
+});
+
+describe('todayInZone', () => {
+  it('uses the shop zone calendar date', () => {
+    const now = new Date('2026-12-24T23:30:00Z');
+    expect(todayInZone('Europe/Berlin', now)).toBe('2026-12-25');
+    expect(todayInZone('America/New_York', now)).toBe('2026-12-24');
   });
 });

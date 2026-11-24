@@ -46,6 +46,7 @@ import { useShopReferenceLists } from '../features/menu/useShopReferenceLists';
 import { formatRate, labelFor } from '../features/menu/foodInfo';
 import type { MenuLanguage } from '../services/api';
 import { menuLanguagesOf } from '../features/menu/translations';
+import { nameChangeValidationError, SHOP_NAME_MAX_LENGTH } from '../features/shops/nameChange';
 import { usePageTitle } from '../features/layout/usePageTitle';
 
 const MENU_LANGUAGES: MenuLanguage[] = ['de', 'en'];
@@ -306,8 +307,10 @@ export function ShopSettingsPage() {
   };
 
   const handleRequestNameChange = async () => {
-    if (!nameChangeState || nameChangeState.requestedName.trim().length < 3) {
-      setNameChangeError(t('shops.nameChangeMinLength'));
+    if (!nameChangeState) return;
+    const nameError = nameChangeValidationError(nameChangeState.requestedName, shop.name);
+    if (nameError) {
+      setNameChangeError(t(nameError));
       return;
     }
     setIsRequestingNameChange(true);
@@ -581,6 +584,7 @@ export function ShopSettingsPage() {
                   label={t('shops.nameChangeRequestedName')}
                   value={nameChangeState.requestedName}
                   placeholder={t('shops.detailsName')}
+                  maxLength={SHOP_NAME_MAX_LENGTH}
                   onChange={(e) => {
                     setNameChangeState({ requestedName: e.target.value });
                     setNameChangeError(null);
@@ -592,7 +596,7 @@ export function ShopSettingsPage() {
                     size="sm"
                     onClick={handleRequestNameChange}
                     isPending={isRequestingNameChange}
-                    disabled={nameChangeState.requestedName.trim().length < 3}
+                    disabled={nameChangeValidationError(nameChangeState.requestedName, shop.name) !== null}
                   >
                     {isRequestingNameChange ? t('shops.nameChangeSubmitting') : t('shops.nameChangeSubmit')}
                   </MyButton>

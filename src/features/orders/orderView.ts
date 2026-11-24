@@ -90,8 +90,11 @@ export function boardColumns(orders: IntakeOrder[]): BoardColumn[] {
 export function matchesOrderSearch(order: IntakeOrder, query: string): boolean {
   const q = query.trim().toLowerCase().replace(/^#/, '');
   if (!q) return true;
-  return [order.orderRef, order.customerName, order.table?.label ?? '']
-    .some((field) => field.toLowerCase().includes(q));
+  if ([order.orderRef, order.customerName, order.table?.label ?? ''].some((field) => field.toLowerCase().includes(q))) {
+    return true;
+  }
+  const digits = q.replace(/\D/g, '');
+  return digits !== '' && (order.customerPhone ?? '').replace(/\D/g, '').includes(digits);
 }
 
 /** "2× Pomodoro, 1× Mittagsmenü" — the dishes of a combo count once, under the combo's name. */

@@ -173,6 +173,15 @@ describe('matchesOrderSearch', () => {
     expect(matchesOrderSearch(o, '  ')).toBe(true);
     expect(matchesOrderSearch(o, 'jonas')).toBe(false);
   });
+  it('finds by phone, ignoring formatting on either side', () => {
+    const p = order({ customerPhone: '+61 412-345 678' });
+    expect(matchesOrderSearch(p, '+61 412 345 678')).toBe(true);
+    expect(matchesOrderSearch(p, '61412345678')).toBe(true);
+    expect(matchesOrderSearch(p, '412-345')).toBe(true);
+    expect(matchesOrderSearch(p, '345')).toBe(true);
+    expect(matchesOrderSearch(order({ customerPhone: '0412345678' }), '0412-345-678')).toBe(true);
+    expect(matchesOrderSearch(p, '0499')).toBe(false);
+  });
 });
 
 describe('itemSummary', () => {
