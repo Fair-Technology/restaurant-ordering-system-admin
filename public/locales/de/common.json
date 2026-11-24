@@ -222,6 +222,7 @@
     "bannerFailedToSave": "Die Banner-Einstellung konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.",
     "coverImagePlaceholder": "Kein Titelbild gesetzt – Ihr Shop zeigt ein Standardfoto",
     "uploadCoverImage": "Titelbild hochladen",
+    "uploadLogoFile": "Logo-Bilddatei auswählen",
     "uploadingCoverImage": "Wird hochgeladen...",
     "removeCoverImage": "Entfernen",
     "removingCoverImage": "Wird entfernt...",
@@ -250,6 +251,9 @@
     "ohClosed": "Geschlossen",
     "ohTo": "bis",
     "ohAddSlot": "+ Zeit hinzufügen",
+    "ohOpenAria": "{{day}} öffnet",
+    "ohCloseAria": "{{day}} schließt",
+    "ohRemoveSlot": "Zeit entfernen",
     "deleteShop": {
       "title": "Shop löschen",
       "explain": "Der Shop verschwindet für Sie und Ihre Kunden. Ihr Abo wird sofort gekündigt. Bestellungen und Rechnungen bleiben gesetzlich vorgeschrieben erhalten. Um den Shop wiederherzustellen, wenden Sie sich an den Support.",
