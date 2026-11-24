@@ -4,9 +4,11 @@ import { useTranslation } from 'react-i18next';
 import { useUpdateShopMutation, type GetShopResultDto } from '../../services/api';
 import {
   CLOSURE_REASON_MAX_LENGTH,
+  closureRange,
   closureRequest,
   dayClosure,
   formatClosureRange,
+  todayInZone,
   upcomingClosures,
   type ShopClosure,
 } from '../../features/shops/closures';
@@ -24,6 +26,7 @@ export function ClosuresCard({ shop, onRefetch }: Props) {
   const { shopId } = useParams<{ shopId: string }>();
   const [entries, setEntries] = useState<ShopClosure[] | null>(null);
   const [dateInput, setDateInput] = useState('');
+  const [endDateInput, setEndDateInput] = useState('');
   const [reasonInput, setReasonInput] = useState('');
   const [message, setMessage] = useState<{ kind: 'saved' | 'failed'; text: string } | null>(null);
   const [updateShop, { isLoading: isSaving }] = useUpdateShopMutation();
@@ -33,13 +36,24 @@ export function ClosuresCard({ shop, onRefetch }: Props) {
   const current = entries ?? upcomingClosures(stored, now);
   const pastHidden = stored.length > upcomingClosures(stored, now).length;
 
-  const addDisabled =
-    !dateInput || Date.parse(dayClosure(dateInput, undefined, shop.timezone).end) <= now.getTime();
+  const today = todayInZone(shop.timezone, now);
+  const startInPast =
+    !!dateInput && Date.parse(dayClosure(dateInput, undefined, shop.timezone).end) <= now.getTime();
+  const endBeforeStart = !!dateInput && !!endDateInput && endDateInput < dateInput;
+  const addDisabled = !dateInput || startInPast || endBeforeStart;
+  const addProblem = startInPast
+    ? t('shops.closuresPastDate')
+    : endBeforeStart
+      ? t('shops.closuresEndBeforeStart')
+      : null;
 
   const handleAdd = () => {
     if (addDisabled) return;
-    setEntries(upcomingClosures([...current, dayClosure(dateInput, reasonInput, shop.timezone)], now));
+    setEntries(
+      upcomingClosures([...current, closureRange(dateInput, endDateInput || dateInput, reasonInput, shop.timezone)], now),
+    );
     setDateInput('');
+    setEndDateInput('');
     setReasonInput('');
     setMessage(null);
   };
@@ -94,8 +108,20 @@ export function ClosuresCard({ shop, onRefetch }: Props) {
               type="date"
               aria-label={t('shops.closuresDateLabel')}
               className="rounded-[10px] border border-[#e3d9ce] bg-white px-3 py-2 text-sm text-ink focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink"
+              min={today}
               value={dateInput}
               onChange={(e) => setDateInput(e.target.value)}
+            />
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[13px] font-semibold text-[#4a413b]">{t('shops.closuresEndDateLabel')}</span>
+            <input
+              type="date"
+              aria-label={t('shops.closuresEndDateLabel')}
+              className="rounded-[10px] border border-[#e3d9ce] bg-white px-3 py-2 text-sm text-ink focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink"
+              min={dateInput || today}
+              value={endDateInput}
+              onChange={(e) => setEndDateInput(e.target.value)}
             />
           </label>
           <div className="min-w-[200px] flex-1">
@@ -111,6 +137,7 @@ export function ClosuresCard({ shop, onRefetch }: Props) {
             {t('shops.closuresAdd')}
           </MyButton>
         </div>
+        {addProblem && <p className="text-sm text-[#b42318]">{addProblem}</p>}
         {message && (
           <p className={`text-sm ${message.kind === 'saved' ? 'text-[#1d5a32]' : 'text-[#b42318]'}`}>{message.text}</p>
         )}

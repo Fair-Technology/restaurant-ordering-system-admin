@@ -45,6 +45,7 @@ export function WeeklyHoursEditor({ week, onChange, emptyLabel, removeLabel }: P
                   step={60}
                   className="h-9 rounded-[10px] border border-[#e3d9ce] bg-white px-2 text-sm text-ink focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink"
                   value={w.open}
+                  aria-label={t('shops.ohOpenAria', { day: t(DAY_LABEL_KEYS[day]) })}
                   onChange={(e) => changeWindow(day, i, 'open', e.target.value)}
                 />
                 <span className="text-xs text-muted">{t('shops.ohTo')}</span>
@@ -53,6 +54,7 @@ export function WeeklyHoursEditor({ week, onChange, emptyLabel, removeLabel }: P
                   step={60}
                   className="h-9 rounded-[10px] border border-[#e3d9ce] bg-white px-2 text-sm text-ink focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink"
                   value={w.close}
+                  aria-label={t('shops.ohCloseAria', { day: t(DAY_LABEL_KEYS[day]) })}
                   onChange={(e) => changeWindow(day, i, 'close', e.target.value)}
                 />
                 <button

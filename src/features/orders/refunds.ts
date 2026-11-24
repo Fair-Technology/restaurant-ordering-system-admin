@@ -41,6 +41,14 @@ export function canRefund(
   );
 }
 
+/**
+ * True when the latest refund attempt was reversed (Stripe failed or cancelled it) and the order is not
+ * fully refunded, i.e. the money is still with the shop. Mirrors `lastRefundFailed` in the backend.
+ */
+export function lastRefundFailed(o: { paymentStatus: string; refunds: ReadonlyArray<{ reversal?: boolean }> }): boolean {
+  return o.refunds.at(-1)?.reversal === true && o.paymentStatus !== 'refunded';
+}
+
 // per line: ordered quantity minus what earlier item refunds already covered (free-amount refunds have no lines)
 export function remainingQuantities(o: {
   items: ReadonlyArray<{ quantity: number }>;

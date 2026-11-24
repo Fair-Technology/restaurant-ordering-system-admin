@@ -9,20 +9,23 @@ import { checkProductImageFile } from '../../features/menu/productImage';
  * The photo picker shared by dishes and combos: file input, 4:3 crop window, before/after preview.
  * The cropped file is handed up via setImageFile; uploading it is the caller's job.
  */
-export function DishPhotoField({ imageFile, setImageFile, existingImageUrl, photoError }: {
+export function DishPhotoField({ imageFile, setImageFile, existingImageUrl, photoError, label }: {
   imageFile: File | null;
   setImageFile: (f: File | null) => void;
   existingImageUrl?: string | null;
   /** True after a failed save attempt without a photo: shows the required-photo message. */
   photoError?: boolean;
+  /** Field label; defaults to the shared product wording. */
+  label?: string;
 }) {
   const { t } = useTranslation();
+  const fieldLabel = label ?? t('products.image');
   const [pendingImage, setPendingImage] = useState<File | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
   return (
       <div className="flex flex-col gap-1.5">
         <p className="text-sm font-medium text-gray-700">
-          {t('products.image')}{' '}
+          {fieldLabel}{' '}
           <span className="text-gray-400 font-normal">{t('products.imageRequiredNote')}</span>
         </p>
         {/* Image preview */}
@@ -75,7 +78,7 @@ export function DishPhotoField({ imageFile, setImageFile, existingImageUrl, phot
         <input
           type="file"
           accept="image/jpeg,image/png,image/webp"
-          aria-label={t('products.image')}
+          aria-label={fieldLabel}
           aria-required="true"
           onChange={(e) => {
             const picked = e.target.files?.[0] ?? null;

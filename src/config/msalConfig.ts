@@ -8,8 +8,11 @@ const msalConfig: Configuration = {
     redirectUri: window.location.origin,
     postLogoutRedirectUri: window.location.origin,
   },
-  // localStorage: a sign-in carries over to new tabs and browser restarts; signing out clears it.
-  cache: { cacheLocation: 'localStorage' },
+  // sessionStorage: MSAL tokens (id/access/refresh) in localStorage are readable by any XSS and
+  // persist indefinitely. sessionStorage confines them to the current tab and clears them when the
+  // tab closes (standard MSAL hardening). UX tradeoff: a sign-in no longer carries over to new tabs
+  // or survives a browser restart; a fresh sign-in is required.
+  cache: { cacheLocation: 'sessionStorage' },
 };
 
 export const msalInstance = new PublicClientApplication(msalConfig);

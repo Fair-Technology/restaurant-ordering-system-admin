@@ -59,13 +59,29 @@ export function trimReason(reason?: string): string | undefined {
   return t ? t.slice(0, CLOSURE_REASON_MAX_LENGTH) : undefined;
 }
 
-/** A picked calendar date -> the closure window [00:00 that day, 00:00 the next day) in the shop's zone. */
-export function dayClosure(dateStr: string, reason?: string, timeZone?: string): ShopClosure {
+/** Today's calendar date "YYYY-MM-DD" in the shop's zone. */
+export function todayInZone(timeZone?: string, now: Date = new Date()): string {
+  const dtf = new Intl.DateTimeFormat('en-US', {
+    timeZone: zoneOrDefault(timeZone),
+    year: 'numeric', month: '2-digit', day: '2-digit',
+  });
+  const p: Record<string, string> = {};
+  for (const part of dtf.formatToParts(now)) p[part.type] = part.value;
+  return `${p.year}-${p.month}-${p.day}`;
+}
+
+/** Picked calendar dates (end inclusive) -> the closure window [00:00 start day, 00:00 day after end) in the shop's zone. */
+export function closureRange(startStr: string, endStr: string, reason?: string, timeZone?: string): ShopClosure {
   const tz = zoneOrDefault(timeZone);
-  const start = wallMidnight(dateStr, tz);
-  const end = wallMidnight(nextDate(dateStr), tz);
+  const start = wallMidnight(startStr, tz);
+  const end = wallMidnight(nextDate(endStr), tz);
   const trimmed = trimReason(reason);
   return { start: isoWithOffset(start, tz), end: isoWithOffset(end, tz), ...(trimmed ? { reason: trimmed } : {}) };
+}
+
+/** A picked calendar date -> the closure window [00:00 that day, 00:00 the next day) in the shop's zone. */
+export function dayClosure(dateStr: string, reason?: string, timeZone?: string): ShopClosure {
+  return closureRange(dateStr, dateStr, reason, timeZone);
 }
 
 /** Closures still running or ahead of `now`, soonest first. */

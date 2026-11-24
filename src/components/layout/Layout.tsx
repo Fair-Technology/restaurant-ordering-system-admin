@@ -50,7 +50,7 @@ export function Layout() {
             </button>
           </div>
         )}
-        <main id="main" className={fullBleed ? 'flex min-h-0 flex-1 flex-col [&>[role=status]]:mx-4 [&>[role=status]]:mt-4 [&>[role=status]]:mb-0 sm:[&>[role=status]]:mx-7' : 'flex flex-1 flex-col px-4 pt-[22px] pb-7 sm:px-7'}>
+        <main id="main" className={fullBleed ? 'flex min-h-0 flex-1 flex-col [&>[role=status]]:mx-4 [&>[role=status]]:mt-4 [&>[role=status]]:mb-0 sm:[&>[role=status]]:mx-7' : 'flex flex-1 flex-col px-4 pt-[22px] pb-28 sm:px-7 lg:pb-7'}>
           <Outlet />
         </main>
       </div>

@@ -46,6 +46,7 @@ import { useShopReferenceLists } from '../features/menu/useShopReferenceLists';
 import { formatRate, labelFor } from '../features/menu/foodInfo';
 import type { MenuLanguage } from '../services/api';
 import { menuLanguagesOf } from '../features/menu/translations';
+import { nameChangeValidationError, SHOP_NAME_MAX_LENGTH } from '../features/shops/nameChange';
 import { usePageTitle } from '../features/layout/usePageTitle';
 
 const MENU_LANGUAGES: MenuLanguage[] = ['de', 'en'];
@@ -306,8 +307,10 @@ export function ShopSettingsPage() {
   };
 
   const handleRequestNameChange = async () => {
-    if (!nameChangeState || nameChangeState.requestedName.trim().length < 3) {
-      setNameChangeError(t('shops.nameChangeMinLength'));
+    if (!nameChangeState) return;
+    const nameError = nameChangeValidationError(nameChangeState.requestedName, shop.name);
+    if (nameError) {
+      setNameChangeError(t(nameError));
       return;
     }
     setIsRequestingNameChange(true);
@@ -581,6 +584,7 @@ export function ShopSettingsPage() {
                   label={t('shops.nameChangeRequestedName')}
                   value={nameChangeState.requestedName}
                   placeholder={t('shops.detailsName')}
+                  maxLength={SHOP_NAME_MAX_LENGTH}
                   onChange={(e) => {
                     setNameChangeState({ requestedName: e.target.value });
                     setNameChangeError(null);
@@ -592,7 +596,7 @@ export function ShopSettingsPage() {
                     size="sm"
                     onClick={handleRequestNameChange}
                     isPending={isRequestingNameChange}
-                    disabled={nameChangeState.requestedName.trim().length < 3}
+                    disabled={nameChangeValidationError(nameChangeState.requestedName, shop.name) !== null}
                   >
                     {isRequestingNameChange ? t('shops.nameChangeSubmitting') : t('shops.nameChangeSubmit')}
                   </MyButton>
@@ -732,6 +736,7 @@ export function ShopSettingsPage() {
                 <input
                   ref={fileInputRef}
                   type="file"
+                  aria-label={t('shops.uploadLogoFile')}
                   accept="image/jpeg,image/png,image/webp"
                   disabled={isUploading || isRemovingLogo}
                   onChange={(e) => {
@@ -869,14 +874,13 @@ export function ShopSettingsPage() {
                 }}
                 className={`${inputClass} w-28 font-mono`}
               />
-              <button
-                type="button"
-                disabled
-                className="h-10 rounded-full px-4 text-sm font-semibold"
+              <span
+                aria-hidden="true"
+                className="inline-flex h-10 items-center rounded-full px-4 text-sm font-semibold"
                 style={{ backgroundColor: currentAccent, color: accentOnColor }}
               >
                 {t('shops.colorsSave')}
-              </button>
+              </span>
             </div>
             {accentCheck && !accentCheck.ok && (
               <p className={`mt-3 ${ERROR_CLASS}`}>
@@ -960,6 +964,7 @@ export function ShopSettingsPage() {
                           <input
                             type="time"
                             value={slot.open}
+                            aria-label={t('shops.ohOpenAria', { day: label })}
                             onChange={(e) => updateSlot(key, idx, 'open', e.target.value)}
                             className={`${inputClass} w-28`}
                           />
@@ -967,6 +972,7 @@ export function ShopSettingsPage() {
                           <input
                             type="time"
                             value={slot.close}
+                            aria-label={t('shops.ohCloseAria', { day: label })}
                             onChange={(e) => updateSlot(key, idx, 'close', e.target.value)}
                             className={`${inputClass} w-28`}
                           />
@@ -975,7 +981,7 @@ export function ShopSettingsPage() {
                               type="button"
                               onClick={() => removeSlot(key, idx)}
                               className="flex h-8 w-8 items-center justify-center rounded-full text-base leading-none text-[#8a7f77] transition-colors hover:bg-[#fdeceb] hover:text-[#b42318]"
-                              aria-label="Remove slot"
+                              aria-label={t('shops.ohRemoveSlot')}
                             >
                               ×
                             </button>
