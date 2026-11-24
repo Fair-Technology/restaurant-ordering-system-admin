@@ -804,7 +804,7 @@ export function ProductsPage() {
             className="min-w-0 flex-1 bg-transparent text-sm outline-none"
           />
         </label>
-        {(['all', 'onMenu', 'off', 'incomplete', 'soldOut'] as const).map((f) => (
+        {(['all', 'onMenu', 'off', 'soldOut', 'incomplete'] as const).map((f) => (
           <button key={f} type="button" aria-pressed={filter === f} className={chip(filter === f)} onClick={() => setFilter(f)}>
             {t(`dishes.filter.${f}`)}
             <span className="text-xs opacity-70">{countOf(f)}</span>
