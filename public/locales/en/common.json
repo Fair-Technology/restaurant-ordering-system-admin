@@ -600,7 +600,7 @@
     "switchOnNamed": "Switch on {{code}}",
     "minimumChargeHint": "The customer is always charged at least €0.50, even with a bigger discount.",
     "discardCodeConfirm": "Discard this new code? What you typed will be lost.",
-    "loyaltyStatusOn": "On, every {{every}}th order earns {{amount}}.",
+    "loyaltyStatusOn": "On, earns {{amount}} every {{every}} orders.",
     "loyaltyStatusOff": "Off.",
     "loyaltyOffNote": "Turn this on to set the rule and start counting orders.",
     "loyaltyConsentNote": "Vouchers are only emailed to diners who tick an unticked consent box at checkout — never sent without it.",
