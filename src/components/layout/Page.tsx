@@ -4,7 +4,7 @@ import { chipClass } from './pageStyles';
 
 /**
  * Building blocks shared by every admin page, so they all look like "Gerichte" and "Bestellungen":
- * a header with an eyebrow and a Fraunces title, chips to filter, white sections on warm paper,
+ * a header with an eyebrow and a display-font title, chips to filter, white sections on warm paper,
  * and (on wide screens) a grey column on the right for a preview or the selected item.
  */
 
