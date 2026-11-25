@@ -192,12 +192,14 @@ interface SortableCategoryItemProps {
   shopId: string;
   selected: boolean;
   onOpen: () => void;
+  /** The new order is being saved */
+  reordering: boolean;
 }
 
 /** Stops clicks on the controls inside a row from also opening the category. */
 const keepInside = (e: React.SyntheticEvent) => e.stopPropagation();
 
-function SortableCategoryItem({ cat, shopId, selected, onOpen }: SortableCategoryItemProps) {
+function SortableCategoryItem({ cat, shopId, selected, onOpen, reordering }: SortableCategoryItemProps) {
   const { t, i18n } = useTranslation();
   const toast = useToast();
   const [updateCategory, { isLoading: updating, originalArgs }] = useUpdateCategoryMutation();
@@ -216,7 +218,7 @@ function SortableCategoryItem({ cat, shopId, selected, onOpen }: SortableCategor
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: cat.id! });
+  } = useSortable({ id: cat.id!, disabled: reordering });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -224,7 +226,10 @@ function SortableCategoryItem({ cat, shopId, selected, onOpen }: SortableCategor
     opacity: isDragging ? 0.4 : 1,
   };
 
+  const [savingIcon, setSavingIcon] = useState(false);
   const handleIconChange = async (icon: string | null) => {
+    if (savingIcon) return;
+    setSavingIcon(true);
     try {
       await updateCategory({
         shopId,
@@ -233,6 +238,8 @@ function SortableCategoryItem({ cat, shopId, selected, onOpen }: SortableCategor
       }).unwrap();
     } catch {
       toast.error(t('common.genericError'));
+    } finally {
+      setSavingIcon(false);
     }
   };
 
@@ -272,16 +279,44 @@ function SortableCategoryItem({ cat, shopId, selected, onOpen }: SortableCategor
         {...attributes}
         {...listeners}
         onClick={keepInside}
-        className="flex-shrink-0 cursor-grab touch-none text-[#b9ada2] hover:text-ink active:cursor-grabbing"
+        disabled={reordering}
+        aria-busy={reordering ? true : undefined}
+        data-pending={reordering ? 'true' : undefined}
+        className={`flex-shrink-0 touch-none text-[#b9ada2] ${
+          reordering ? 'cursor-progress' : 'cursor-grab hover:text-ink active:cursor-grabbing'
+        }`}
         aria-label={t('categories.dragHandle')}
         type="button"
       >
-        <GripVertical size={18} aria-hidden="true" />
+        {reordering ? (
+          <span
+            data-pending-spinner=""
+            aria-hidden="true"
+            className="block h-[18px] w-[18px] animate-spin rounded-full border-2 border-current border-t-transparent text-ink"
+          />
+        ) : (
+          <GripVertical size={18} aria-hidden="true" />
+        )}
       </button>
 
       {/* Icon picker */}
-      <span className="flex-shrink-0" onClick={keepInside} onKeyDown={keepInside}>
-        <IconPickerInline value={cat.icon ?? null} onChange={handleIconChange} />
+      <span
+        className={`relative flex-shrink-0 ${savingIcon ? 'cursor-progress opacity-50' : ''}`}
+        aria-busy={savingIcon ? true : undefined}
+        data-pending={savingIcon ? 'true' : undefined}
+        onClick={keepInside}
+        onKeyDown={keepInside}
+      >
+        <span className={savingIcon ? 'pointer-events-none' : undefined}>
+          <IconPickerInline value={cat.icon ?? null} onChange={handleIconChange} />
+        </span>
+        {savingIcon && (
+          <span
+            data-pending-spinner=""
+            aria-hidden="true"
+            className="absolute inset-0 m-auto h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent text-ink"
+          />
+        )}
       </span>
 
       {/* Name */}
@@ -349,6 +384,8 @@ export function CategoriesPage() {
   const [orderedCategories, setOrderedCategories] = useState<Category[]>([]);
   const [reorderError, setReorderError] = useState(false);
   const isReordering = useRef(false);
+  // The drop saves every row's position: handles spin and refuse a second drag until it answers
+  const [savingOrder, setSavingOrder] = useState(false);
 
   useEffect(() => {
     if (categories && !isReordering.current) {
@@ -360,7 +397,7 @@ export function CategoriesPage() {
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
-    if (!over || active.id === over.id) return;
+    if (savingOrder || !over || active.id === over.id) return;
 
     const oldIndex = orderedCategories.findIndex((c) => c.id === active.id);
     const newIndex = orderedCategories.findIndex((c) => c.id === over.id);
@@ -370,6 +407,7 @@ export function CategoriesPage() {
     const reordered = arrayMove(orderedCategories, oldIndex, newIndex);
 
     isReordering.current = true;
+    setSavingOrder(true);
     setOrderedCategories(reordered);
     setReorderError(false);
 
@@ -389,6 +427,7 @@ export function CategoriesPage() {
       setReorderError(true);
     } finally {
       isReordering.current = false;
+      setSavingOrder(false);
     }
   };
 
@@ -487,6 +526,7 @@ export function CategoriesPage() {
                       shopId={shopId!}
                       selected={wide && cat.id === selectedId}
                       onOpen={() => open(cat)}
+                      reordering={savingOrder}
                     />
                   ))}
                 </SortableContext>

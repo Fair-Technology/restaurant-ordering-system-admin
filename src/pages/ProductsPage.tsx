@@ -730,11 +730,15 @@ function DishRow({
 type DishRowProps = Parameters<typeof DishRow>[0];
 
 /** A dish row with a drag handle. When `dragEnabled` is false the handle stays visible but inert. */
-function SortableDishRow({ dragEnabled, ...rowProps }: Omit<DishRowProps, 'dragHandle' | 'rowRef' | 'rowStyle'> & { dragEnabled: boolean }) {
+function SortableDishRow({
+  dragEnabled,
+  reordering,
+  ...rowProps
+}: Omit<DishRowProps, 'dragHandle' | 'rowRef' | 'rowStyle'> & { dragEnabled: boolean; reordering: boolean }) {
   const { t } = useTranslation();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: rowProps.product.id!,
-    disabled: !dragEnabled,
+    disabled: !dragEnabled || reordering,
   });
   const handle = (
     <button
@@ -744,13 +748,28 @@ function SortableDishRow({ dragEnabled, ...rowProps }: Omit<DishRowProps, 'dragH
       onClick={keepInside}
       aria-label={t('dishes.dragHandle')}
       aria-disabled={!dragEnabled || undefined}
+      aria-busy={reordering ? true : undefined}
+      data-pending={reordering ? 'true' : undefined}
+      disabled={reordering}
       tabIndex={dragEnabled ? attributes.tabIndex : -1}
       title={dragEnabled ? undefined : t('dishes.reorderDisabledHint')}
       className={`flex-shrink-0 touch-none ${
-        dragEnabled ? 'cursor-grab text-[#b9ada2] hover:text-ink active:cursor-grabbing' : 'cursor-not-allowed text-[#d6cdc4]'
+        reordering
+          ? 'cursor-progress text-[#b9ada2]'
+          : dragEnabled
+            ? 'cursor-grab text-[#b9ada2] hover:text-ink active:cursor-grabbing'
+            : 'cursor-not-allowed text-[#d6cdc4]'
       }`}
     >
-      <GripVertical size={18} aria-hidden="true" />
+      {reordering ? (
+        <span
+          data-pending-spinner=""
+          aria-hidden="true"
+          className="block h-[18px] w-[18px] animate-spin rounded-full border-2 border-current border-t-transparent text-ink"
+        />
+      ) : (
+        <GripVertical size={18} aria-hidden="true" />
+      )}
     </button>
   );
   return (
@@ -812,6 +831,8 @@ export function ProductsPage() {
   const [orderOverrides, setOrderOverrides] = useState<Record<string, string[]>>({});
   const reorderingRef = useRef<Set<string>>(new Set());
   const [reorderError, setReorderError] = useState(false);
+  // Categories whose new dish order is being saved: their handles spin and refuse another drag
+  const [savingOrderIds, setSavingOrderIds] = useState<ReadonlySet<string>>(new Set());
   const [setCategoryDishOrder] = useSetCategoryDishOrderMutation();
 
   // Once fresh data arrives, the server's order replaces local overrides (except for a save still in flight).
@@ -899,7 +920,7 @@ export function ProductsPage() {
 
   const handleDragEnd = (groupId: string, items: ProductDto[]) => async (event: DragEndEvent) => {
     const { active, over } = event;
-    if (!over || active.id === over.id) return;
+    if (!over || active.id === over.id || reorderingRef.current.has(groupId)) return;
     const current = orderOverrides[groupId] ?? items.map((p) => p.id!);
     const oldIndex = current.indexOf(active.id as string);
     const newIndex = current.indexOf(over.id as string);
@@ -907,6 +928,7 @@ export function ProductsPage() {
     const snapshot = current;
     const reordered = arrayMove(current, oldIndex, newIndex);
     reorderingRef.current.add(groupId);
+    setSavingOrderIds((ids) => new Set(ids).add(groupId));
     setOrderOverrides((o) => ({ ...o, [groupId]: reordered }));
     setReorderError(false);
     try {
@@ -917,6 +939,11 @@ export function ProductsPage() {
       setReorderError(true);
     } finally {
       reorderingRef.current.delete(groupId);
+      setSavingOrderIds((ids) => {
+        const next = new Set(ids);
+        next.delete(groupId);
+        return next;
+      });
     }
   };
 
@@ -925,7 +952,7 @@ export function ProductsPage() {
       on ? 'border-ink bg-ink text-white' : 'border-[#e3d9ce] bg-white text-[#4a413b] hover:bg-cream'
     }`;
 
-  const renderRow = (p: ProductDto, dragEnabled?: boolean) => {
+  const renderRow = (p: ProductDto, dragEnabled?: boolean, groupId?: string) => {
     const rowProps = {
       product: p,
       available: availableOf(p),
@@ -939,7 +966,7 @@ export function ProductsPage() {
     return dragEnabled === undefined ? (
       <DishRow key={p.id} {...rowProps} />
     ) : (
-      <SortableDishRow key={p.id} dragEnabled={dragEnabled} {...rowProps} />
+      <SortableDishRow key={p.id} dragEnabled={dragEnabled} reordering={!!groupId && savingOrderIds.has(groupId)} {...rowProps} />
     );
   };
 
@@ -1010,7 +1037,7 @@ export function ProductsPage() {
             {g.id === '_none' ? g.items.map((p) => renderRow(p)) : (
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd(g.id, g.items)}>
                 <SortableContext items={g.items.map((p) => p.id!)} strategy={verticalListSortingStrategy}>
-                  {g.items.map((p) => renderRow(p, canReorder && dragActive))}
+                  {g.items.map((p) => renderRow(p, canReorder && dragActive, g.id))}
                 </SortableContext>
               </DndContext>
             )}

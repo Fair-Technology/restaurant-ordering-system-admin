@@ -1,10 +1,12 @@
 import type { AccountInfo } from '@azure/msal-browser';
 import { useMsal } from '@azure/msal-react';
 import { X, LogOut } from 'lucide-react';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useUpdateMyLanguageMutation } from '../../services/api';
 import { useModalA11y } from '../../hooks/useModalA11y';
+import { useToast } from '../../contexts/ToastContext';
+import { PendingButton } from '../ui/PendingButton';
 import { chipClass } from './pageStyles';
 
 /** Each language named in itself, whatever the UI language is. */
@@ -17,12 +19,34 @@ interface AccountSettingsModalProps {
 
 export function AccountSettingsModal({ user, onClose }: AccountSettingsModalProps) {
   const { t, i18n } = useTranslation();
-  const [updateMyLanguage] = useUpdateMyLanguageMutation();
+  const toast = useToast();
+  const [updateMyLanguage, { isLoading: savingLanguage }] = useUpdateMyLanguageMutation();
+  const [signingOut, setSigningOut] = useState(false);
   const { instance } = useMsal();
   const dialogRef = useRef<HTMLDivElement>(null);
   const onKeyDown = useModalA11y({ onClose, containerRef: dialogRef });
   // `i18n.resolvedLanguage` stays undefined here (both buttons read as not pressed), so use the active language, region stripped.
   const currentLanguage = (i18n.resolvedLanguage ?? i18n.language ?? '').split('-')[0];
+
+  const chooseLanguage = async (lng: 'en' | 'de') => {
+    void i18n.changeLanguage(lng);
+    try {
+      await updateMyLanguage({ updateMyLanguageRequestDto: { language: lng } }).unwrap();
+    } catch {
+      toast.error(t('common.genericError'));
+    }
+  };
+
+  const signOut = async () => {
+    setSigningOut(true);
+    try {
+      await instance.logoutRedirect();
+    } catch {
+      toast.error(t('common.genericError'));
+    } finally {
+      setSigningOut(false);
+    }
+  };
 
   return (
     <>
@@ -69,32 +93,29 @@ export function AccountSettingsModal({ user, onClose }: AccountSettingsModalProp
               {(['en', 'de'] as const).map((lng) => {
                 const selected = currentLanguage === lng;
                 return (
-                  <button
+                  <PendingButton
                     key={lng}
-                    type="button"
+                    isPending={savingLanguage}
                     aria-pressed={selected}
                     // Endonym, not translated: a language picker names each language in itself
                     aria-label={LANGUAGE_NAMES[lng]}
                     lang={lng}
-                    onClick={() => {
-                      void i18n.changeLanguage(lng);
-                      void updateMyLanguage({ updateMyLanguageRequestDto: { language: lng } });
-                    }}
+                    onClick={() => void chooseLanguage(lng)}
                     className={`${chipClass(selected)} uppercase`}
                   >
                     {lng}
-                  </button>
+                  </PendingButton>
                 );
               })}
             </div>
-            <button
-              type="button"
-              onClick={() => instance.logoutRedirect()}
+            <PendingButton
+              isPending={signingOut}
+              onClick={() => void signOut()}
               className="inline-flex h-9 items-center gap-1.5 rounded-full border border-[#e3d9ce] bg-white px-3.5 text-[13px] font-bold text-ink transition-colors hover:bg-sand"
             >
               <LogOut size={14} />
               {t('nav.signOut')}
-            </button>
+            </PendingButton>
           </div>
         </div>
       </div>

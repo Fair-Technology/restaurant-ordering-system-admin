@@ -73,10 +73,12 @@ describe('pending wrapper contract', () => {
 const ASYNC_CONTROLS: Array<{ file: string; control: string; min: number }> = [
   { file: 'src/components/categories/CategoryEditor.tsx', control: 'apply tax class, save, delete category', min: 3 },
   { file: 'src/components/combos/ComboEditor.tsx', control: 'save combo (create and edit forms)', min: 2 },
+  { file: 'src/components/layout/AccountSettingsModal.tsx', control: 'language chips, sign out', min: 2 },
   { file: 'src/components/layout/AutoPausedBanner.tsx', control: 'resume orders', min: 1 },
   { file: 'src/components/layout/Sidebar.tsx', control: 'taking-orders switch', min: 1 },
   { file: 'src/components/menu/DishEditor.tsx', control: 'save dish, delete dish', min: 2 },
   { file: 'src/components/menu/ScheduleOfferModal.tsx', control: 'save schedule', min: 1 },
+  { file: 'src/components/orders/OrderDetail.tsx', control: 'accept, reject, next step, document download', min: 5 },
   { file: 'src/components/orders/OrderHistoryList.tsx', control: 'document download', min: 1 },
   { file: 'src/components/orders/ReceiptsArchiveButton.tsx', control: 'receipts archive download', min: 1 },
   { file: 'src/components/orders/RefundPanel.tsx', control: 'confirm refund', min: 1 },
@@ -101,6 +103,7 @@ const ASYNC_CONTROLS: Array<{ file: string; control: string; min: number }> = [
   { file: 'src/pages/OptionGroupsPage.tsx', control: 'save group, delete group, option switch, retry', min: 4 },
   { file: 'src/pages/ProductWizardSteps.tsx', control: 'create category inline', min: 1 },
   { file: 'src/pages/ProductsPage.tsx', control: 'create product, product available switch', min: 2 },
+  { file: 'src/pages/ReportsPage.tsx', control: 'retry report (the CSV download only formats the loaded report: instant)', min: 1 },
   { file: 'src/pages/ShopSettingsPage.tsx', control: 'name change, details, address, logo, banner, cover, colours, languages, hours', min: 11 },
   { file: 'src/pages/ShopsPage.tsx', control: 'create shop, shop online switch', min: 2 },
   { file: 'src/pages/StaffLoginPage.tsx', control: 'staff sign in', min: 1 },
@@ -111,8 +114,6 @@ const ASYNC_CONTROLS: Array<{ file: string; control: string; min: number }> = [
 
 // Controls that only format data already in memory or change local state: no spinner, ever.
 const INSTANT_FILES: Array<{ file: string; control: string }> = [
-  { file: 'src/pages/ReportsPage.tsx', control: 'CSV download formats the loaded report' },
-  { file: 'src/components/layout/AccountSettingsModal.tsx', control: 'language chips, close, sign out (redirect)' },
   { file: 'src/components/ui/CategoryPicker.tsx', control: 'picker' },
   { file: 'src/components/ui/IconPicker.tsx', control: 'picker' },
   { file: 'src/components/shop/StripeOnboardingModal.tsx', control: 'close (Stripe draws its own UI)' },
@@ -150,5 +151,95 @@ describe('async controls show a pending state', () => {
 describe('instant controls stay unwrapped', () => {
   it.each(INSTANT_FILES)('$file ($control)', ({ file, control }) => {
     expect(countIn(file), `${file}: must have 0 pending-wrapped controls, it does not await (${control})`).toBe(0);
+  });
+});
+
+// ── Automatic guard ───────────────────────────────────────────────────────────────────────────
+// The lists above only know the files someone remembered. This part walks all of src/ so a NEW
+// file that fires an API call from a click cannot ship without a pending state.
+
+const srcDir = path.join(root, 'src');
+
+function walk(dir: string): string[] {
+  return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) return walk(full);
+    return /\.tsx?$/.test(entry.name) ? [full] : [];
+  });
+}
+
+const sourceFiles = walk(srcDir)
+  .map((full) => path.relative(root, full).split(path.sep).join('/'))
+  .filter((file) => !/\.test\.tsx?$/.test(file) && file !== 'src/services/api.ts')
+  .sort();
+
+/** What makes a file fire a request that a person waits on. */
+const API_CALL_SIGNALS: Array<{ name: string; pattern: RegExp }> = [
+  { name: 'mutation trigger (useXxxMutation())', pattern: /\buse\w+Mutation\(/ },
+  { name: 'lazy query trigger (useLazyXxxQuery())', pattern: /\buseLazy\w+Query\(/ },
+  { name: '.unwrap() call', pattern: /\.unwrap\(\)/ },
+];
+
+/** What shows the staffer the request is running. */
+const PENDING_SIGNALS = [/\bisPending=/, /\.isLoading\b/, /\.isFetching\b/, /<PendingButton\b/, /<MySpinner\b/];
+// Destructured `{ isLoading }` / `{ isFetching }` from a hook result is the common form in this codebase.
+const DESTRUCTURED_PENDING = /\{[^{}]*\b(?:isLoading|isFetching)\b[^{}]*\}\s*\]?\s*=\s*use\w+/;
+
+function apiCallsIn(source: string): string[] {
+  return API_CALL_SIGNALS.filter(({ pattern }) => pattern.test(source)).map(({ name }) => name);
+}
+
+function hasPendingWiring(source: string): boolean {
+  return PENDING_SIGNALS.some((pattern) => pattern.test(source)) || DESTRUCTURED_PENDING.test(source);
+}
+
+/**
+ * Files that call the API but are deliberately spinner-free. Every entry needs a reason; an entry
+ * that no longer calls the API (or has since been wired) fails the stale check below.
+ */
+const API_EXEMPT_FILES: Array<{ file: string; reason: string }> = [
+  { file: 'src/features/auth/AccountLanguageSync.tsx', reason: 'not a click: saves the browser-chosen language once after sign-in' },
+  { file: 'src/components/shop/StripeOnboardingModal.tsx', reason: 'Stripe Connect draws its own loading UI while it fetches the client secret' },
+  { file: 'src/features/orders/useOrderActions.ts', reason: 'hook: exposes isWorking(orderId); OrdersPage and OrderDetail feed it to PendingButton' },
+  { file: 'src/features/menu/useSetAvailable.ts', reason: 'hook: exposes isPending(id); the dish switch in ProductsPage renders it' },
+  { file: 'src/features/menu/useUploadProductImage.ts', reason: 'hook: DishEditor shows its isUploading state on the save button' },
+];
+
+describe('every file that calls the API has a pending state (automatic scan)', () => {
+  it('scans the real source tree', () => {
+    expect(sourceFiles.length).toBeGreaterThan(50);
+    expect(sourceFiles).not.toContain('src/services/api.ts');
+  });
+
+  it('flags a file with an API call and no pending wiring', () => {
+    expect(apiCallsIn('const [go] = useFooMutation();')).toEqual(['mutation trigger (useXxxMutation())']);
+    expect(hasPendingWiring('const [go] = useFooMutation();')).toBe(false);
+    expect(hasPendingWiring('const [go, { isLoading }] = useFooMutation();')).toBe(true);
+    expect(hasPendingWiring('<MyButton isPending={x} />')).toBe(true);
+    expect(hasPendingWiring(stripComments('// <PendingButton'))).toBe(false);
+  });
+
+  it('every API-calling file shows pending or is exempt with a reason', () => {
+    const exempt = new Set(API_EXEMPT_FILES.map((entry) => entry.file));
+    const offenders = sourceFiles.flatMap((file) => {
+      const source = stripComments(read(file));
+      const calls = apiCallsIn(source);
+      if (calls.length === 0 || hasPendingWiring(source) || exempt.has(file)) return [];
+      return [
+        `${file}: has ${calls.join(' + ')} but no pending wiring (isPending=, .isLoading, .isFetching, <PendingButton, <MySpinner). ` +
+          'Wrap the control in PendingButton/isPending, or add the file to API_EXEMPT_FILES with a reason.',
+      ];
+    });
+    expect(offenders, `\n${offenders.join('\n')}\n`).toEqual([]);
+  });
+
+  it('keeps the exemption list honest', () => {
+    for (const { file, reason } of API_EXEMPT_FILES) {
+      expect(reason.length, `${file}: exemption needs a reason`).toBeGreaterThan(10);
+      expect(sourceFiles, `${file}: exempt file no longer exists, remove the entry`).toContain(file);
+      const source = stripComments(read(file));
+      expect(apiCallsIn(source).length, `${file}: no longer calls the API, remove the exemption`).toBeGreaterThan(0);
+      expect(hasPendingWiring(source), `${file}: now has pending wiring, remove the exemption`).toBe(false);
+    }
   });
 });

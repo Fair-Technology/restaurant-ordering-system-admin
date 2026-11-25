@@ -108,6 +108,7 @@ export function OrderDetail({
   const toast = useToast();
   const [getDocument] = useLazyGetOrderDocumentQuery();
   const [prep, setPrep] = useState(defaultPrepMinutes);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [rejecting, setRejecting] = useState(false);
   const [reason, setReason] = useState<RejectReason | null>(null);
 
@@ -127,11 +128,14 @@ export function OrderDetail({
   const placedAgo = Math.max(0, Math.floor((nowMs - Date.parse(order.createdAt)) / 60000));
 
   const downloadDocument = async (documentId: string) => {
+    setDownloadingId(documentId);
     try {
       const file = await getDocument({ shopId, orderId: order.id, documentId }).unwrap();
       downloadBase64File(file.fileName, file.contentBase64, file.contentType);
     } catch {
       toast.error(t('orders.documentDownloadFailed'));
+    } finally {
+      setDownloadingId(null);
     }
   };
 
@@ -425,9 +429,14 @@ export function OrderDetail({
         {(order.documents.length > 0 || (order.customerPhone && isPlausiblePhone(order.customerPhone))) && (
           <div className="flex flex-wrap gap-x-3.5 gap-y-1 text-[13px]">
             {order.documents.map((doc) => (
-              <button key={doc.id} type="button" onClick={() => void downloadDocument(doc.id)} className="text-[#5c524b] underline">
+              <PendingButton
+                key={doc.id}
+                isPending={downloadingId === doc.id}
+                onClick={() => void downloadDocument(doc.id)}
+                className="text-[#5c524b] underline"
+              >
                 {t(`orders.document.${doc.kind}`, { number: doc.number })}
-              </button>
+              </PendingButton>
             ))}
             {order.customerPhone && isPlausiblePhone(order.customerPhone) && (
               <a href={`tel:${order.customerPhone}`} className="text-[#5c524b] underline">

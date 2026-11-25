@@ -13,6 +13,9 @@
 ## Gates
 `npm run lint` → `npm run typecheck` → `npm test` → `npm run build`
 
+## UI rules
+- Every control that makes an API call shows a spinner via `PendingButton`/`isPending`; `src/components/ui/pendingControls.test.ts` scans `src/` and fails the suite if a file calls the API without it.
+
 ## Workflow
 Branch + PR only. Never push to `main` (it deploys dev).
 
