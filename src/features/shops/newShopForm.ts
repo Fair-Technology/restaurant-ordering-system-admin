@@ -7,7 +7,6 @@ export interface NewShopFormValues {
   name?: string;
   slug?: string;
   countryCode?: string;
-  industry?: string;
   currency?: string;
   timezone?: string;
   address?: { street?: string; city?: string; state?: string; postcode?: string; country?: string };
@@ -54,7 +53,7 @@ export function withCountry<T extends NewShopFormValues>(
   };
 }
 
-export type NewShopFormError = 'name' | 'slug' | 'industry' | 'country' | 'dpa';
+export type NewShopFormError = 'name' | 'slug' | 'country' | 'dpa';
 
 /** The first thing blocking submit, in the order the form shows them; null when it may submit. */
 export function newShopFormError(
@@ -65,7 +64,6 @@ export function newShopFormError(
 ): NewShopFormError | null {
   if ((form.name ?? '').trim().length < 3) return 'name';
   if (!SLUG_PATTERN.test(form.slug ?? '') || !slugAvailable) return 'slug';
-  if (!(form.industry ?? '').trim()) return 'industry';
   if (!openedCountry(form.countryCode)) return 'country';
   if (dpaAccepted === false) return 'dpa';
   return null;

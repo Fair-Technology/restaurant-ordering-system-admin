@@ -38,8 +38,6 @@ const settle = () => act(async () => { await vi.advanceTimersByTimeAsync(450); }
 const status = () => screen.getByTestId('slug-status').textContent;
 
 function fillRest() {
-  fireEvent.change(screen.getByLabelText('Industry'), { target: { value: 'Other' } });
-  fireEvent.change(screen.getByPlaceholderText('Describe your industry…'), { target: { value: 'Bakery' } });
   fireEvent.change(screen.getByLabelText('shops.shopCountry'), { target: { value: 'DE' } });
   fireEvent.click(screen.getByRole('checkbox'));
 }
@@ -61,6 +59,12 @@ afterEach(() => {
   cleanup();
   vi.unstubAllEnvs();
   vi.useRealTimers();
+});
+
+describe('new shop dialog fields', () => {
+  it('has no Industry control', () => {
+    expect(screen.queryByLabelText('Industry')).toBeNull();
+  });
 });
 
 describe('slug pre-fill', () => {

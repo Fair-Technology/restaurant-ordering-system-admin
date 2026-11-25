@@ -57,7 +57,6 @@ describe('newShopFormError', () => {
   const complete: NewShopFormValues = {
     name: 'Cafe Berlin',
     slug: 'cafe-berlin',
-    industry: 'Food & Beverage',
     countryCode: 'DE',
   };
   it('requires a country', () => {
@@ -75,9 +74,9 @@ describe('newShopFormError', () => {
     expect(newShopFormError(complete, true, false)).toBe('slug');
   });
   it('reports problems in form order', () => {
-    expect(newShopFormError({ name: 'ab', industry: '', countryCode: '' }, false)).toBe('name');
-    expect(newShopFormError({ name: 'abc', slug: 'abc', industry: '  ', countryCode: '' }, false)).toBe('industry');
-    expect(newShopFormError({ name: 'abc', slug: 'abc', industry: 'x', countryCode: '' }, false)).toBe('country');
+    expect(newShopFormError({ name: 'ab', countryCode: '' }, false)).toBe('name');
+    expect(newShopFormError({ name: 'abc', slug: '', countryCode: '' }, false)).toBe('slug');
+    expect(newShopFormError({ name: 'abc', slug: 'abc', countryCode: '' }, false)).toBe('country');
     expect(newShopFormError(complete, false)).toBe('dpa');
   });
 });
