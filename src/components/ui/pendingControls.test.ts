@@ -16,7 +16,7 @@ function stripComments(source: string): string {
 
 /**
  * Pending-wrapped controls in a file: `<PendingButton` elements plus `isPending=` props handed to
- * `<MyButton` / `<MySwitch` (the nearest JSX tag opener before the prop decides which element owns it,
+ * `<MyButton` / `<MySwitch` / `<PillSwitch` (the nearest JSX tag opener before the prop decides which element owns it,
  * so `<PendingButton isPending=...>` is counted once, not twice).
  */
 function countIn(file: string): number {
@@ -26,7 +26,7 @@ function countIn(file: string): number {
   for (const match of source.matchAll(/\bisPending=/g)) {
     const openers = [...source.slice(0, match.index).matchAll(/<([A-Z]\w*)/g)];
     const owner = openers[openers.length - 1]?.[1];
-    if (owner === 'MyButton' || owner === 'MySwitch') props += 1;
+    if (owner === 'MyButton' || owner === 'MySwitch' || owner === 'PillSwitch') props += 1;
   }
   return elements + props;
 }

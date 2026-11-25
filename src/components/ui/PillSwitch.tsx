@@ -9,25 +9,40 @@ interface Props {
   /** Visible text beside the track; the whole row is the 44px-tall switch target. */
   children?: ReactNode;
   className?: string;
+  /** A request for this switch is in flight: disabled, dimmed, spinner over the knob; `checked` is not flipped early. */
+  isPending?: boolean;
 }
 
 /** The dish screen's switch: a 48×28 pill track with a knob, `role="switch"`, a 44px-tall hit area. Ink when on, grey when off. */
-export function PillSwitch({ checked, onChange, label, disabled, children, className = '' }: Props) {
+export function PillSwitch({ checked, onChange, label, disabled, children, className = '', isPending = false }: Props) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
       aria-label={children ? undefined : label}
-      disabled={disabled}
-      onClick={() => onChange(!checked)}
-      className={`inline-flex h-11 items-center gap-2.5 rounded-full text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2563eb] disabled:opacity-50 ${className}`}
+      disabled={disabled || isPending}
+      aria-busy={isPending ? true : undefined}
+      data-pending={isPending ? 'true' : undefined}
+      onClick={() => {
+        if (!isPending) onChange(!checked);
+      }}
+      className={`inline-flex h-11 items-center gap-2.5 rounded-full text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2563eb] disabled:opacity-50 ${className}${isPending ? ' cursor-progress' : ''}`}
     >
       <span
         aria-hidden="true"
         className={`flex h-7 w-12 flex-none items-center rounded-full p-[3px] transition-colors ${checked ? 'justify-end bg-ink' : 'justify-start bg-control'}`}
       >
-        <span className="h-[22px] w-[22px] rounded-full bg-white" />
+        <span className={`h-[22px] w-[22px] rounded-full bg-white${isPending ? ' relative' : ''}`}>
+          {isPending && (
+            // Absolutely centred over the knob, so the knob keeps its position.
+            <span
+              data-pending-spinner=""
+              aria-hidden="true"
+              className="absolute left-1/2 top-1/2 -ml-[7px] -mt-[7px] h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink border-t-transparent"
+            />
+          )}
+        </span>
       </span>
       {children}
     </button>

@@ -592,6 +592,18 @@
     "selectHint": "Wählen Sie links ein Menü aus, um es zu bearbeiten, oder legen Sie ein neues an."
   },
   "promotions": {
+    "pageSubtitle": "Rabattcodes, die Gäste an der Kasse eingeben, und Treuegutscheine für wiederkehrende Bestellungen.",
+    "activeCodesCount_one": "{{count}} aktiver Code",
+    "activeCodesCount_other": "{{count}} aktive Codes",
+    "codesLimitReached": "Sie haben die Grenze von 50 Codes erreicht. Schalten Sie einen alten Code aus, um Platz zu schaffen.",
+    "switchOffNamed": "{{code}} ausschalten",
+    "switchOnNamed": "{{code}} einschalten",
+    "minimumChargeHint": "Gästen werden immer mindestens 0,50 € berechnet, auch bei einem höheren Rabatt.",
+    "discardCodeConfirm": "Diesen neuen Code verwerfen? Ihre Eingaben gehen verloren.",
+    "loyaltyStatusOn": "An: Jede {{every}}. Bestellung bringt {{amount}}.",
+    "loyaltyStatusOff": "Aus.",
+    "loyaltyOffNote": "Schalten Sie das ein, um die Regel festzulegen und Bestellungen zu zählen.",
+    "loyaltyConsentNote": "Gutscheine werden nur per E-Mail an Gäste geschickt, die an der Kasse ein nicht vorangekreuztes Einwilligungsfeld ankreuzen – ohne Häkchen nie.",
     "accessDenied": "Nur wer das Restaurant verwaltet, kann Rabatte ändern.",
     "codesTitle": "Rabattcodes",
     "codesHelp": "Gäste geben einen Code an der Kasse ein. Ein Code pro Bestellung; die Liefergebühr wird nie rabattiert. Ein Code lässt sich nach dem Anlegen nicht ändern – schalten Sie ihn aus und legen Sie einen neuen an.",
@@ -609,8 +621,6 @@
       "expired": "abgelaufen",
       "used_up": "aufgebraucht"
     },
-    "switchOff": "Ausschalten",
-    "switchOn": "Einschalten",
     "newCode": "Neuer Code",
     "code": "Code",
     "codeHint": "(3–20 Buchstaben, Ziffern oder Bindestriche)",

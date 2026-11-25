@@ -6,7 +6,9 @@ import { useToast } from '../../contexts/ToastContext';
 import { parseAmountToCents } from '../../features/orders/refunds';
 import { MyButton } from '../ui/MyButton';
 import { Section } from '../layout/Page';
-import { badgeClass } from '../layout/pageStyles';
+import { MySwitch } from '../ui/MySwitch';
+import { formatCents } from '../../utils/money';
+import { loyaltyStatus } from '../../features/promotions/promotions';
 import { MyInput } from '../ui/MyInput';
 import { formatShopDate } from '../../utils/locale';
 
@@ -57,30 +59,47 @@ export function LoyaltyCard({ shopId, shop, loyalty }: LoyaltyCardProps) {
     ? formatShopDate(loyalty.since, i18n.language, shop.countryCode, undefined, shop.timezone ?? 'Europe/Berlin')
     : null;
 
+  const status = loyaltyStatus(loyalty);
+  const currency = shop.currency ?? 'EUR';
+
   return (
     <Section
       id="loyalty"
       title={t('promotions.loyaltyTitle')}
       hint={
-        <span className={loyalty.enabled ? badgeClass.good : badgeClass.neutral}>
-          {t(loyalty.enabled ? 'promotions.status.active' : 'promotions.status.off')}
-        </span>
+        status.enabled
+          ? t('promotions.loyaltyStatusOn', {
+              every: status.every,
+              amount: formatCents(status.rewardCents, currency, i18n.language),
+            })
+          : t('promotions.loyaltyStatusOff')
+      }
+      actions={
+        <div className="flex items-center gap-2">
+          <span id="loyalty-enabled-label" className="text-sm font-semibold">
+            {t('promotions.loyaltyEnabled')}
+          </span>
+          <MySwitch checked={enabled} onChange={setEnabled} labelledBy="loyalty-enabled-label" />
+        </div>
       }
       description={t('promotions.loyaltyHelp')}
       padded
     >
       <div className="space-y-4">
-        <label className="flex items-center gap-2 text-sm font-semibold">
-          <input type="checkbox" className="h-4 w-4 accent-ink" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
-          {t('promotions.loyaltyEnabled')}
-        </label>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <MyInput label={t('promotions.everyOrders')} hint={t('promotions.everyOrdersHint')} value={everyOrders} onChange={(e) => setEveryOrders(e.target.value)} />
-          <MyInput label={t('promotions.reward')} hint={t('promotions.rewardHint')} value={reward} onChange={(e) => setReward(e.target.value)} />
-          <MyInput label={t('promotions.validDays')} hint={t('promotions.validDaysHint')} value={validDays} onChange={(e) => setValidDays(e.target.value)} />
-        </div>
-        {since && <p className="text-xs text-muted">{t('promotions.loyaltySince', { date: since })}</p>}
-        {invalid && <p className="text-sm text-[#b42318]">{t('promotions.loyaltyInvalid')}</p>}
+        {enabled ? (
+          <>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <MyInput label={t('promotions.everyOrders')} hint={t('promotions.everyOrdersHint')} value={everyOrders} onChange={(e) => setEveryOrders(e.target.value)} />
+              <MyInput label={t('promotions.reward')} hint={t('promotions.rewardHint')} value={reward} onChange={(e) => setReward(e.target.value)} />
+              <MyInput label={t('promotions.validDays')} hint={t('promotions.validDaysHint')} value={validDays} onChange={(e) => setValidDays(e.target.value)} />
+            </div>
+            {since && <p className="text-xs text-muted">{t('promotions.loyaltySince', { date: since })}</p>}
+            <p className="text-[13px] text-muted">{t('promotions.loyaltyConsentNote')}</p>
+          </>
+        ) : (
+          <p className="text-[13px] text-muted">{t('promotions.loyaltyOffNote')}</p>
+        )}
+        {invalid && <p role="alert" className="text-sm text-[#b42318]">{t('promotions.loyaltyInvalid')}</p>}
         <MyButton type="button" isPending={isLoading} onClick={save}>
           {t('promotions.loyaltySave')}
         </MyButton>

@@ -19,11 +19,11 @@ export function PromotionsPage() {
   if (isLoading) return <MySpinner />;
   if (isError || !shop) return <p className="text-[#b42318]">{t('shops.failedToLoadShop')}</p>;
 
-  const header = <PageHeader eyebrow={t('nav.group.shop')} title={t('nav.promotions')} />;
+  const header = <PageHeader eyebrow={t('nav.group.shop')} title={t('nav.promotions')} description={t('promotions.pageSubtitle')} />;
 
   if (!canManage) {
     return (
-      <div className="max-w-3xl">
+      <div className="max-w-[720px]">
         {header}
         <Section padded>
           <p className="text-sm text-[#4a413b]">{t('promotions.accessDenied')}</p>
@@ -38,7 +38,7 @@ export function PromotionsPage() {
   }
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-[720px]">
       {header}
       <DiscountCodesCard shopId={shopId!} shop={shop} data={promotions.data} />
       <LoyaltyCard shopId={shopId!} shop={shop} loyalty={promotions.data.loyalty} />
