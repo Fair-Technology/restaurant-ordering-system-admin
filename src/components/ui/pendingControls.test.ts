@@ -74,7 +74,7 @@ const ASYNC_CONTROLS: Array<{ file: string; control: string; min: number }> = [
   { file: 'src/components/categories/CategoryEditor.tsx', control: 'apply tax class, save, delete category', min: 3 },
   { file: 'src/components/combos/ComboEditor.tsx', control: 'save combo (create and edit forms)', min: 2 },
   { file: 'src/components/layout/AutoPausedBanner.tsx', control: 'resume orders', min: 1 },
-  { file: 'src/components/layout/TopNav.tsx', control: 'taking-orders switch', min: 1 },
+  { file: 'src/components/layout/Sidebar.tsx', control: 'taking-orders switch', min: 1 },
   { file: 'src/components/menu/DishEditor.tsx', control: 'save dish, delete dish', min: 2 },
   { file: 'src/components/menu/ScheduleOfferModal.tsx', control: 'save schedule', min: 1 },
   { file: 'src/components/orders/OrderHistoryList.tsx', control: 'document download', min: 1 },

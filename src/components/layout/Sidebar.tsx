@@ -8,7 +8,7 @@ import { useGetMyShopsQuery, useGetShopByIdQuery, useUpdateShopMutation, type Ge
 import { useGetOrderQueueQuery } from '../../services/ordersApi';
 import { baseApi } from '../../services/baseApi';
 import { useNow } from '../../features/orders/useNow';
-import { navGroups, navPath, topNavItems, type ShopNavKey } from '../../features/shops/shopNav';
+import { navGroups, navPath, sidebarTopItems, type ShopNavKey } from '../../features/shops/shopNav';
 import { formatPauseEnd, isOfflineBySuperadminError, isOrdersPausedAt, shopLiveState, shopPauseOutOfDate } from '../../features/shops/shopStatus';
 import { clearStaffSession, readStaffSession } from '../../features/staff/staffSession';
 import { useToast } from '../../contexts/ToastContext';
@@ -233,7 +233,7 @@ const linkClass = (isActive: boolean) =>
  * Service / Speisekarte / Shop / Geschäft (only those the user may open), and the user at the bottom.
  * Outside a shop: overview and the shop list.
  */
-export function TopNav({ sidebarHidden, onToggleSidebar }: { sidebarHidden: boolean; onToggleSidebar: () => void }) {
+export function Sidebar({ sidebarHidden, onToggleSidebar }: { sidebarHidden: boolean; onToggleSidebar: () => void }) {
   const { shopId } = useParams<{ shopId?: string }>();
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -247,7 +247,7 @@ export function TopNav({ sidebarHidden, onToggleSidebar }: { sidebarHidden: bool
   const dispatch = useDispatch();
   const { data: currentShop, fulfilledTimeStamp: shopAt } = useGetShopByIdQuery({ shopId: shopId! }, { skip: !shopId });
   const perms = currentShop?.callerPermissions ?? [];
-  const topItems = topNavItems(perms);
+  const topItems = sidebarTopItems(perms);
   const groups = navGroups(perms);
   const canSeeOrders = groups.some((g) => g.items.includes('orders'));
 

@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 
 /**
  * SkipLink — the first Tab stop on every admin page. Invisible until focused; jumps past the
- * top nav and sidebar to the <main id="main"> landmark, so keyboard users don't have to Tab
+ * sidebar to the <main id="main"> landmark, so keyboard users don't have to Tab
  * through every sidebar link on each page change.
  */
 export function SkipLink() {

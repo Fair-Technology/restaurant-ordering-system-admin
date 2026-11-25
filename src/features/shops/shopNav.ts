@@ -50,7 +50,7 @@ export function shopNavItems(permissions: readonly string[]): ShopNavKey[] {
 }
 
 /** The ungrouped entries above the groups that the user may open, in order. */
-export function topNavItems(permissions: readonly string[]): ShopNavKey[] {
+export function sidebarTopItems(permissions: readonly string[]): ShopNavKey[] {
   const allowed = new Set(shopNavItems(permissions));
   return TOP.filter((key) => allowed.has(key));
 }

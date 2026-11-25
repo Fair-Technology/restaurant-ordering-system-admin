@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { firstNavKey, navGroups, navPath, shopNavItems, topNavItems } from './shopNav';
+import { firstNavKey, navGroups, navPath, shopNavItems, sidebarTopItems } from './shopNav';
 
 describe('shopNavItems', () => {
   it('staff sees only orders', () => {
@@ -51,19 +51,19 @@ describe('navGroups', () => {
     const all = ['view_orders', 'view_reports', 'manage_menu', 'manage_shop', 'manage_staff', 'manage_billing', 'view_audit'];
     const grouped = navGroups(all).flatMap((g) => g.items);
     expect(new Set(grouped).size).toBe(grouped.length);
-    expect([...topNavItems(all), ...grouped].sort()).toEqual([...shopNavItems(all)].sort());
-    for (const key of topNavItems(all)) expect(grouped).not.toContain(key);
+    expect([...sidebarTopItems(all), ...grouped].sort()).toEqual([...shopNavItems(all)].sort());
+    for (const key of sidebarTopItems(all)) expect(grouped).not.toContain(key);
     expect(grouped).not.toContain('reports');
   });
 });
 
-describe('topNavItems', () => {
+describe('sidebarTopItems', () => {
   it('lists the dashboard for view_reports', () => {
-    expect(topNavItems(['view_orders', 'view_reports'])).toEqual(['reports']);
+    expect(sidebarTopItems(['view_orders', 'view_reports'])).toEqual(['reports']);
   });
 
   it('is empty without view_reports', () => {
-    expect(topNavItems(['view_orders'])).toEqual([]);
+    expect(sidebarTopItems(['view_orders'])).toEqual([]);
   });
 });
 
