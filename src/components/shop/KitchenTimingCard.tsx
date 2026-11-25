@@ -61,7 +61,7 @@ export function KitchenTimingCard({ shop, onRefetch }: Props) {
   };
 
   return (
-    <Section id="kitchen-timing" className="scroll-mt-[72px]! lg:scroll-mt-6!" title={t('shops.kitchenTitle')} description={t('shops.kitchenHelp')} padded>
+    <Section title={t('shops.kitchenTitle')} description={t('shops.kitchenHelp')} padded>
       <div className="space-y-4">
       <MyInput
         type="number"

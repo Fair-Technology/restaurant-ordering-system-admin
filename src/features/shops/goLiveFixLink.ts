@@ -1,7 +1,7 @@
 export function goLiveFixLink(shopId: string, key: string): string {
   switch (key) {
     case 'stripe_connected':
-      return `/shops/${shopId}/settings#payments`;
+      return `/shops/${shopId}/settings?section=pay`;
     case 'has_products':
       return `/shops/${shopId}/products`;
     case 'has_categories':

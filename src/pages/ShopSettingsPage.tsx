@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   useGetShopByIdQuery,
@@ -22,7 +22,9 @@ import { bannerShownOf, brandingWithBanner } from '../features/shops/bannerSwitc
 import { MyCard } from '../components/ui/MyCard';
 import { PageHeader, Section } from '../components/layout/Page';
 import { badgeClass } from '../components/layout/pageStyles';
-import { SettingsNav } from '../components/shop/SettingsNav';
+import { SettingsSectionNav } from '../components/shop/SettingsSectionNav';
+import { buildSettingsSections, parseSettingsSection, type SettingsSectionKey } from '../features/shops/settingsSections';
+import { useNow } from '../features/orders/useNow';
 import { canDeleteShop } from '../features/shops/deleteShop';
 import { MySpinner } from '../components/ui/MySpinner';
 import { MyButton } from '../components/ui/MyButton';
@@ -69,10 +71,6 @@ function buildInitialHours(shopHours: Record<string, unknown> | undefined): Open
 
 const inputClass = 'h-10 w-full rounded-[10px] border border-[#e3d9ce] bg-white px-3 text-sm text-ink focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink';
 
-/** Anchor targets sit below the 56px phone header; on desktop the page scrolls from the top. */
-const SCROLL_TARGET_CLASS = 'scroll-mt-[72px]! lg:scroll-mt-6!';
-const GROUP_CLASS = `${SCROLL_TARGET_CLASS} pt-2`;
-const GROUP_LABEL_CLASS = 'mb-2.5 px-1 text-[12px] font-bold tracking-wide text-[#8a7f77] uppercase';
 const FOOTER_CLASS = 'mt-5 flex flex-wrap items-center gap-2 border-t border-line-soft pt-4';
 const ERROR_CLASS = 'text-sm text-[#b42318]';
 const FILE_INPUT_CLASS =
@@ -88,13 +86,8 @@ export function ShopSettingsPage() {
     { refetchOnMountOrArgChange: true },
   );
 
-  useEffect(() => {
-    if (!shop) return;
-    const hash = window.location.hash.slice(1);
-    if (!hash) return;
-    const el = document.getElementById(hash);
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, [shop]);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const nowMs = useNow(30_000);
   const [generateShopLogoUploadUrl] = useGenerateShopLogoUploadUrlMutation();
   const [setShopLogo] = useSetShopLogoMutation();
   const [removeShopLogo] = useRemoveShopLogoMutation();
@@ -499,16 +492,23 @@ export function ShopSettingsPage() {
   const currentCoverUrl = shop.branding?.heroImageUrl || null;
   const bannerShown = bannerShownOf(shop.branding);
 
-  const navItems = [
-    { id: 'shop-status', label: t('shops.shopStatusTitle') },
-    { id: 'settings-general', label: t('shops.settingsPage.groupGeneral') },
-    { id: 'settings-look', label: t('shops.settingsPage.groupLook') },
-    { id: 'opening-hours', label: t('shops.openingHours') },
-    { id: 'closures', label: t('shops.closuresTitle') },
-    { id: 'settings-orders', label: t('shops.settingsPage.groupOrders') },
-    { id: 'settings-payments', label: t('shops.settingsPage.groupPayments') },
-    ...(canDeleteShop(shop.callerRole) ? [{ id: 'settings-danger', label: t('shops.settingsPage.groupDanger') }] : []),
-  ];
+  const openDays = ALL_DAYS.filter((d) => currentHours[d].length > 0).length;
+  const showDanger = canDeleteShop(shop.callerRole);
+  const sections = buildSettingsSections({ shop, openDays, nowMs, t, showDanger });
+  const requested = parseSettingsSection(searchParams.get('section'));
+  const active: SettingsSectionKey = sections.some((s) => s.key === requested) ? requested : 'status';
+  const selectSection = (key: SettingsSectionKey) => {
+    setSearchParams({ section: key }, { replace: true });
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shopUrl);
+      toast.success(t('shops.settingsPage.linkCopied'));
+    } catch {
+      toast.error(t('shops.settingsPage.linkCopyFailed'));
+    }
+  };
 
   return (
     <div>
@@ -517,14 +517,33 @@ export function ShopSettingsPage() {
         title={t('nav.settings')}
         description={t('shops.settingsPage.intro')}
       />
-      <SettingsNav label={t('shops.settingsPage.navLabel')} items={navItems} />
-
-      <div className="max-w-3xl">
-        <ShopStatusCard shop={shop} onRefetch={refetch} />
-
-        <div id="settings-general" className={GROUP_CLASS}>
-          <p className={GROUP_LABEL_CLASS}>{t('shops.settingsPage.groupGeneral')}</p>
-
+      <div className="md:flex md:items-start md:gap-8">
+        <SettingsSectionNav
+          label={t('shops.settingsPage.navLabel')}
+          sections={sections}
+          activeKey={active}
+          onSelect={selectSection}
+        />
+        <div className="flex max-w-[720px] min-w-0 flex-1 flex-col gap-4 [&>section]:mb-0">
+          {active === 'status' && (
+            <>
+              <ShopStatusCard shop={shop} onRefetch={refetch} />
+              <Section
+                title={t('shops.settingsPage.storefrontLink')}
+                description={t('shops.settingsPage.storefrontLinkDescription')}
+                padded
+              >
+                <div className="flex flex-wrap items-center gap-3">
+                  <p className="min-w-0 flex-1 font-mono text-xs break-all text-muted">{shopUrl}</p>
+                  <MyButton type="button" variant="secondary" size="sm" onClick={handleCopyLink}>
+                    {t('shops.settingsPage.copyLink')}
+                  </MyButton>
+                </div>
+              </Section>
+            </>
+          )}
+          {active === 'details' && (
+            <>
           <Section
             title={t('shops.detailsTitle')}
             description={t('shops.settingsPage.detailsDescription')}
@@ -711,11 +730,10 @@ export function ShopSettingsPage() {
               </div>
             </div>
           </Section>
-        </div>
-
-        <div id="settings-look" className={GROUP_CLASS}>
-          <p className={GROUP_LABEL_CLASS}>{t('shops.settingsPage.groupLook')}</p>
-
+            </>
+          )}
+          {active === 'look' && (
+            <>
           <Section title={t('shops.logo')} description={t('shops.settingsPage.logoDescription')} padded>
             <div className="flex items-center gap-4">
               {currentLogoUrl ? (
@@ -928,11 +946,11 @@ export function ShopSettingsPage() {
               </MyButton>
             </div>
           </Section>
-        </div>
-
+            </>
+          )}
+          {active === 'hours' && (
+            <>
         <Section
-          id="opening-hours"
-          className={SCROLL_TARGET_CLASS}
           title={t('shops.openingHours')}
           description={t('shops.settingsPage.hoursDescription')}
         >
@@ -1008,21 +1026,21 @@ export function ShopSettingsPage() {
             </MyButton>
           </div>
         </Section>
-
-        <ClosuresCard shop={shop} onRefetch={refetch} />
-
-        <div id="settings-orders" className={GROUP_CLASS}>
-          <p className={GROUP_LABEL_CLASS}>{t('shops.settingsPage.groupOrders')}</p>
+              <ClosuresCard shop={shop} onRefetch={refetch} />
+            </>
+          )}
+          {active === 'orders' && (
+            <>
           <OrderAlertsCard shop={shop} onRefetch={refetch} />
           <AutoAcceptCard shop={shop} onRefetch={refetch} />
           <KitchenTimingCard shop={shop} onRefetch={refetch} />
           <ScheduledOrdersCard shop={shop} onRefetch={refetch} />
           <DeliveryCard shop={shop} refs={refs} onRefetch={refetch} />
           <DineInCard shop={shop} onRefetch={refetch} />
-        </div>
-
-        <div id="settings-payments" className={GROUP_CLASS}>
-          <p className={GROUP_LABEL_CLASS}>{t('shops.settingsPage.groupPayments')}</p>
+            </>
+          )}
+          {active === 'pay' && (
+            <>
           <PaymentsCard shop={shop} onRefetch={refetch} />
 
           <Section
@@ -1082,15 +1100,11 @@ export function ShopSettingsPage() {
               </p>
             )}
           </Section>
-        </div>
-
-        {canDeleteShop(shop.callerRole) && (
-          <div id="settings-danger" className={GROUP_CLASS}>
-            <p className={`${GROUP_LABEL_CLASS} text-[#b42318]`}>{t('shops.settingsPage.groupDanger')}</p>
+            </>
+          )}
+          {active === 'danger' && showDanger && (
             <DeleteShopCard shopId={shop.id ?? shopId!} shopName={shop.name ?? ''} callerRole={shop.callerRole} />
-          </div>
-        )}
-
+          )}
         {import.meta.env.DEV && (
           <details className="mt-2 rounded-2xl border border-line bg-white">
             <summary className="cursor-pointer px-4 py-3 text-[13px] font-semibold text-[#8a7f77]">{t('shops.debugLabel')}</summary>
@@ -1099,6 +1113,7 @@ export function ShopSettingsPage() {
             </pre>
           </details>
         )}
+        </div>
       </div>
     </div>
   );

@@ -493,7 +493,34 @@
       "qrDescription": "Drucken Sie den Code aus, damit Gäste Ihren Shop direkt am Handy öffnen.",
       "logoDescription": "Erscheint oben in Ihrem Shop. JPG, PNG oder WebP.",
       "hoursDescription": "Zu diesen Zeiten können Kunden bei Ihnen bestellen.",
-      "taxClassesDescription": "Die Steuersätze, die für Ihre Gerichte gelten."
+      "taxClassesDescription": "Die Steuersätze, die für Ihre Gerichte gelten.",
+      "sections": {
+        "status": "Shop-Status",
+        "details": "Details",
+        "look": "Auftritt",
+        "hours": "Zeiten und Schließtage",
+        "orders": "Bestellungen",
+        "pay": "Zahlungen und Steuern",
+        "danger": "Gefahrenzone"
+      },
+      "statusOffline": "Offline",
+      "statusPaused": "Bestellungen pausiert",
+      "statusOnline": "Online, nimmt Bestellungen an",
+      "bannerOn": "Banner an",
+      "bannerOff": "Banner aus",
+      "daysOpen": "{{count}} von 7 Tagen geöffnet",
+      "acceptAuto": "Automatisch annehmen",
+      "acceptScheduled": "Automatisch zu festen Zeiten",
+      "acceptManual": "Manuell annehmen",
+      "withDelivery": "{{status}} · Lieferung",
+      "stripeConnected": "Stripe verbunden",
+      "stripePending": "Stripe ausstehend",
+      "stripeNotConnected": "Stripe nicht verbunden",
+      "storefrontLink": "Shop-Link",
+      "storefrontLinkDescription": "Die öffentliche Adresse Ihres Shops.",
+      "copyLink": "Link kopieren",
+      "linkCopied": "Link kopiert",
+      "linkCopyFailed": "Link konnte nicht kopiert werden"
     }
   },
   "tables": {
@@ -1593,8 +1620,14 @@
     "attachGroup": "+ Vorhandene Gruppe zuordnen",
     "createGroup": "Neue Gruppe erstellen",
     "nothingToAttach": "Alle Gruppen sind diesem Gericht bereits zugeordnet.",
-    "variantSection": {"title": "Variante", "help": "Kunden wählen genau eine Option."},
-    "extrasSection": {"title": "Extras", "help": "Kunden können beliebig viele davon wählen, innerhalb der Grenzen jeder Gruppe."},
+    "variantSection": {
+      "title": "Variante",
+      "help": "Kunden wählen genau eine Option."
+    },
+    "extrasSection": {
+      "title": "Extras",
+      "help": "Kunden können beliebig viele davon wählen, innerhalb der Grenzen jeder Gruppe."
+    },
     "chooseVariantGroup": "Variantengruppe wählen",
     "replaceVariantGroup": "Ersetzen",
     "noVariantGroupsToAttach": "Jede Variantengruppe ist bereits zugeordnet.",

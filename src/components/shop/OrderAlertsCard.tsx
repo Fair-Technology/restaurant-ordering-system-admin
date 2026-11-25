@@ -45,7 +45,7 @@ export function OrderAlertsCard({ shop, onRefetch }: Props) {
   };
 
   return (
-    <Section id="order-alerts" className="scroll-mt-[72px]! lg:scroll-mt-6!" title={t('shops.orderAlertsTitle')} description={t('shops.orderAlertsHelp')} padded>
+    <Section title={t('shops.orderAlertsTitle')} description={t('shops.orderAlertsHelp')} padded>
       <div className="space-y-4">
       <MyInput
         type="number"

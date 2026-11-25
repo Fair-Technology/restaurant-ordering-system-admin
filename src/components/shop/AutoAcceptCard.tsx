@@ -44,7 +44,7 @@ export function AutoAcceptCard({ shop, onRefetch }: Props) {
   };
 
   return (
-    <Section id="auto-accept" className="scroll-mt-[72px]! lg:scroll-mt-6!" title={t('shops.autoAcceptTitle')} description={t('shops.autoAcceptHelp')} padded>
+    <Section title={t('shops.autoAcceptTitle')} description={t('shops.autoAcceptHelp')} padded>
       <div className="space-y-4">
       <div className="space-y-2">
         {AUTO_ACCEPT_CHOICES.map((c) => (

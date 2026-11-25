@@ -49,7 +49,7 @@ function ShopStatusSwitch({ shop, canManage }: { shop: GetShopResultDto; canMana
   if (live === 'offline') {
     return (
       <Link
-        to={`/shops/${shop.id}/settings#shop-status`}
+        to={`/shops/${shop.id}/settings?section=status`}
         className="mt-2.5 flex items-center gap-2 rounded-[10px] bg-[#f1ede8] px-2.5 py-2 text-[13px] font-bold text-[#4a413b] hover:bg-[#ebe5df]"
       >
         <span className="h-2 w-2 rounded-full bg-[#9a8f86]" aria-hidden="true" />

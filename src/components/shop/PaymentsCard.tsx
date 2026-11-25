@@ -99,8 +99,6 @@ export function PaymentsCard({ shop, onRefetch }: Props) {
   return (
     <>
       <Section
-        id="payments"
-        className="scroll-mt-[72px]! lg:scroll-mt-6!"
         title={t('shops.paymentsTitle')}
         actions={badge}
         description={t('shops.paymentsOnlineOnly')}

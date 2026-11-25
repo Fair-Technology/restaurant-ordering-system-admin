@@ -76,7 +76,7 @@ export function ClosuresCard({ shop, onRefetch }: Props) {
   };
 
   return (
-    <Section id="closures" className="scroll-mt-[72px]! lg:scroll-mt-6!" title={t('shops.closuresTitle')} description={t('shops.closuresHelp')} padded>
+    <Section title={t('shops.closuresTitle')} description={t('shops.closuresHelp')} padded>
       <div className="space-y-4">
         {current.length === 0 ? (
           <p className="text-sm text-muted">{t('shops.closuresEmpty')}</p>
