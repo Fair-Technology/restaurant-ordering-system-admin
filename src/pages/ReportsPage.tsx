@@ -209,7 +209,7 @@ export function ReportsPage() {
       {failed && (
         <div id={LOAD_ERROR_ID} role="alert" className="flex flex-wrap items-center gap-3 text-sm text-[#b42318]">
           <p>{timedOut ? t('reports.loadTimeout') : t('reports.loadError')}</p>
-          <MyButton variant="secondary" onClick={retry}>
+          <MyButton variant="secondary" isPending={isFetching} onClick={retry}>
             {t('reports.retry')}
           </MyButton>
         </div>
