@@ -117,6 +117,12 @@ export function withToggledRef(refs: readonly string[], id: string): string[] {
   return refs.includes(id) ? refs.filter((r) => r !== id) : [...refs, id];
 }
 
+/** Puts the given extras last, in the given order. Everything else keeps its place: a deliberate simplification that keeps variant membership and the extras' relative order right without tracking the original interleaving. */
+export function withReorderedExtras(refs: readonly string[], newOrderIds: readonly string[]): string[] {
+  const extras = new Set(newOrderIds);
+  return [...refs.filter((id) => !extras.has(id)), ...newOrderIds];
+}
+
 export function libraryGroupsForPicker(
   groups: ShopOptionGroupDto[],
 ): Array<{ id: string; kind: OptionGroupKind; name: string; optionCount: number }> {

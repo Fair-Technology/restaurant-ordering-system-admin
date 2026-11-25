@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
+import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
+import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Check, X } from 'lucide-react';
 import type { GetReferenceListsApiResponse, MenuLanguage, ShopOptionGroupDto, TranslationMap } from '../../services/api';
 import { useCreateCategoryMutation, useGetOptionGroupsQuery } from '../../services/api';
@@ -29,18 +32,19 @@ import {
   toggleMode,
 } from '../../features/menu/foodInfo';
 import { resolveActiveLanguage, withTranslation } from '../../features/menu/translations';
-import { withToggledRef } from '../../features/menu/optionGroupLibrary';
+import { withReorderedExtras, withToggledRef } from '../../features/menu/optionGroupLibrary';
 import {
   DESCRIPTION_LIMIT,
   DISH_SECTIONS,
   addNavStatus,
-  attachedGroupCount,
+  extraGroupCount,
   firstIncompleteAddSection,
   groupBadge,
   groupCategories,
   listStatus,
   navStatus,
   translationMissing,
+  variantSlotFilled,
   vatBreakdown,
   type AddRequiredItem,
   type DishFormState,
@@ -207,7 +211,8 @@ export function DishForm({
   const selectedCategories = categoriesList.filter((c) => value.categoryIds.includes(c.id));
   const categoriesText = selectedCategories.length ? selectedCategories.map((c) => c.name).join(', ') : t('dishForm.noCategory');
   const langName = (l: MenuLanguage) => t(`shops.languageName.${l}`);
-  const groupCount = attachedGroupCount(value, library);
+  const variantCount = variantSlotFilled(value, library);
+  const extraCount = extraGroupCount(value, library);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col text-ink">
@@ -269,14 +274,14 @@ export function DishForm({
           {DISH_SECTIONS.map((s) => {
             const st =
               mode === 'add'
-                ? addNavStatus(s, value, requiredChecklist ?? [], groupCount, tried)
-                : navStatus(s, value, extraLanguage, groupCount);
+                ? addNavStatus(s, value, requiredChecklist ?? [], variantCount, extraCount, tried)
+                : navStatus(s, value, extraLanguage, variantCount, extraCount);
             const active = s === section;
             const status =
               st.key === 'translationMissing'
                 ? t(`dishForm.descriptionMissing.${st.language}`)
-                : st.key === 'groups'
-                  ? t('dishForm.nav.groups', { count: st.count })
+                : st.key === 'variantExtras'
+                  ? t('dishForm.nav.variantExtras', { variant: st.variantCount, extra: st.extraCount })
                   : st.key === 'requiredLeft'
                     ? t('dishForm.nav.requiredLeft', { count: st.count })
                     : t(`dishForm.nav.${st.key}`);
@@ -928,6 +933,35 @@ function FoodSection({
   );
 }
 
+/** One extras card; the grip only exists when there is something to reorder. */
+function SortableExtra({
+  id, className, draggable, handleLabel, children,
+}: {
+  id: string;
+  className: string;
+  draggable: boolean;
+  handleLabel: string;
+  children: (handle: ReactNode) => ReactNode;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const handle = draggable ? (
+    <button
+      type="button"
+      {...attributes}
+      {...listeners}
+      aria-label={handleLabel}
+      className={`flex-none cursor-grab touch-none text-control hover:text-ink active:cursor-grabbing ${focusRing}`}
+    >
+      <GripVertical size={18} aria-hidden="true" />
+    </button>
+  ) : null;
+  return (
+    <li ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }} className={className}>
+      {children(handle)}
+    </li>
+  );
+}
+
 // ── 3. Options and extras ──────────────────────────────────────────────────────
 
 function OptionsSection({
@@ -942,17 +976,32 @@ function OptionsSection({
   translating: MenuLanguage | undefined;
 }) {
   const { t, i18n } = useTranslation();
-  const [picking, setPicking] = useState(false);
-  // `null` = closed, `'new'` = creating, otherwise the library group being edited
-  const [dialog, setDialog] = useState<null | 'new' | string>(null);
+  // Which kind's picker is open (the Variant one swaps, the Extras one adds)
+  const [picking, setPicking] = useState<null | 'variant' | 'addon'>(null);
+  // `null` = closed, `'new-variant'`/`'new-addon'` = creating, otherwise the library group being edited
+  const [dialog, setDialog] = useState<null | 'new-variant' | 'new-addon' | string>(null);
+  const creating = dialog === 'new-variant' || dialog === 'new-addon';
   const money = (cents: number) => formatCents(cents, currency, i18n.language);
 
   // Library groups the dish references, in the dish's own order; references to groups that no longer exist are skipped
   const attached = value.optionGroupRefs.map((id) => library.find((g) => g.id === id)).filter((g): g is ShopOptionGroupDto => !!g);
-  const available = library.filter((g) => !value.optionGroupRefs.includes(g.id));
-  const editing = dialog && dialog !== 'new' ? library.find((g) => g.id === dialog) : undefined;
+  const variantAttached = attached.filter((g) => g.kind === 'variant');
+  const extraAttached = attached.filter((g) => g.kind === 'addon');
+  const availableOf = (kind: 'variant' | 'addon') => library.filter((g) => g.kind === kind && !value.optionGroupRefs.includes(g.id));
+  const editing = dialog && !creating ? library.find((g) => g.id === dialog) : undefined;
+  const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
 
   const setRefs = (fn: (refs: string[]) => string[]) => setValue((v) => ({ ...v, optionGroupRefs: fn(v.optionGroupRefs) }));
+  // Local form state only; Save persists it, there is no call or toast on drop
+  const reorderExtras = (newOrderIds: string[]) => setRefs((refs) => withReorderedExtras(refs, newOrderIds));
+  const onExtrasDragEnd = ({ active, over }: DragEndEvent) => {
+    if (!over || active.id === over.id) return;
+    const ids = extraAttached.map((g) => g.id);
+    const from = ids.indexOf(String(active.id));
+    const to = ids.indexOf(String(over.id));
+    if (from < 0 || to < 0) return;
+    reorderExtras(arrayMove(ids, from, to));
+  };
 
   // Dish-only groups (saved on the dish itself, before the shared library existed) stay editable here
   const setVariantGroups = (fn: (gs: VariantGroup[]) => VariantGroup[]) => setValue((v) => ({ ...v, variantGroups: fn(v.variantGroups) }));
@@ -1002,6 +1051,47 @@ function OptionsSection({
     if (!b.required) return t('dishForm.badge.optionalUpTo', { max: b.max });
     return b.min === b.max ? t('dishForm.badge.requiredExact', { count: b.min }) : t('dishForm.badge.requiredRange', { min: b.min, max: b.max });
   };
+  const cardClass = 'flex flex-col gap-3 rounded-[18px] border-[1.5px] border-[#e6d9c6] bg-white px-[18px] py-4';
+  const groupCardBody = (g: ShopOptionGroupDto, handle?: ReactNode) => {
+    const cats = g.kind === 'addon' ? groupCategories(g) : [];
+    const required = groupBadge(g).required;
+    return (
+      <>
+        <div className="flex flex-wrap items-center gap-3">
+          {handle}
+          <h3 className="text-[17px] font-bold leading-6">{g.name}</h3>
+          <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold leading-[18px] ${required ? 'bg-warn-bg text-warn' : 'bg-sand text-ink'}`}>
+            {badgeText(g)}
+          </span>
+        </div>
+        <ul className="flex flex-wrap gap-1.5">
+          {g.options.map((o) => (
+            <li key={o.id} className="flex h-8 items-center gap-1.5 rounded-full border border-[#e6d9c6] bg-cream px-3 text-[13px] font-medium">
+              {o.name}
+              {o.priceDelta > 0 && <span className="text-muted">+ {money(o.priceDelta)}</span>}
+            </li>
+          ))}
+        </ul>
+        <div className="flex flex-wrap items-center gap-x-3 border-t border-line-soft pt-2.5">
+          {cats.length > 0 && <span className="text-[13px] leading-[18px] text-muted">{t('dishForm.groupedAs', { list: cats.join(', ') })}</span>}
+          <button
+            type="button"
+            onClick={() => setDialog(g.id)}
+            className={`ml-auto h-11 rounded-lg px-3.5 text-sm font-semibold text-warn-accent underline ${focusRing}`}
+          >
+            {t('dishForm.editGroup')}<span className="sr-only"> {g.name}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setRefs((r) => withToggledRef(r, g.id))}
+            className={`h-11 rounded-lg px-3.5 text-sm font-semibold ${focusRing}`}
+          >
+            {t('dishForm.removeFromDish')}<span className="sr-only"> {g.name}</span>
+          </button>
+        </div>
+      </>
+    );
+  };
   const hasDishOnly = value.variantGroups.length + value.addonGroups.length > 0;
 
   return (
@@ -1011,84 +1101,132 @@ function OptionsSection({
         <p className="text-sm leading-[21px] text-muted">{t('dishForm.optionsIntro')}</p>
       </div>
 
-      {attached.length > 0 && (
-        <ul className="flex flex-col gap-3.5">
-          {attached.map((g) => {
-            const cats = g.kind === 'addon' ? groupCategories(g) : [];
-            const required = groupBadge(g).required;
-            return (
-              <li key={g.id} className="flex flex-col gap-3 rounded-[18px] border-[1.5px] border-[#e6d9c6] bg-white px-[18px] py-4">
-                <div className="flex flex-wrap items-center gap-3">
-                  {/* Order is the order the groups were attached; dragging to reorder isn't offered yet */}
-                  <GripVertical size={18} className="flex-none text-control" aria-hidden="true" />
-                  <h3 className="text-[17px] font-bold leading-6">{g.name}</h3>
-                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold leading-[18px] ${required ? 'bg-warn-bg text-warn' : 'bg-sand text-ink'}`}>
-                    {badgeText(g)}
-                  </span>
-                  <span className="ml-auto text-[13px] leading-[18px] text-muted">{t(g.kind === 'variant' ? 'variants.title' : 'addons.title')}</span>
-                </div>
-                <ul className="flex flex-wrap gap-1.5">
-                  {g.options.map((o) => (
-                    <li key={o.id} className="flex h-8 items-center gap-1.5 rounded-full border border-[#e6d9c6] bg-cream px-3 text-[13px] font-medium">
-                      {o.name}
-                      {o.priceDelta > 0 && <span className="text-muted">+ {money(o.priceDelta)}</span>}
-                    </li>
-                  ))}
-                </ul>
-                <div className="flex flex-wrap items-center gap-x-3 border-t border-line-soft pt-2.5">
-                  {cats.length > 0 && <span className="text-[13px] leading-[18px] text-muted">{t('dishForm.groupedAs', { list: cats.join(', ') })}</span>}
-                  <button
-                    type="button"
-                    onClick={() => setDialog(g.id)}
-                    className={`ml-auto h-11 rounded-lg px-3.5 text-sm font-semibold text-warn-accent underline ${focusRing}`}
-                  >
-                    {t('dishForm.editGroup')}<span className="sr-only"> {g.name}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRefs((r) => withToggledRef(r, g.id))}
-                    className={`h-11 rounded-lg px-3.5 text-sm font-semibold ${focusRing}`}
-                  >
-                    {t('dishForm.removeFromDish')}<span className="sr-only"> {g.name}</span>
-                  </button>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-
+      {/* Variant: exactly one group is shown to customers */}
       <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-0.5">
+          <h3 className="text-[17px] font-bold leading-6">{t('dishForm.variantSection.title')}</h3>
+          <p className="text-[13px] leading-[19px] text-muted">{t('dishForm.variantSection.help')}</p>
+        </div>
+        {variantAttached.length > 0 && (
+          <ul className="flex flex-col gap-3.5">
+            <li className={cardClass}>{groupCardBody(variantAttached[0])}</li>
+            {/* Legacy dishes can still carry more than one; the extras aren't shown, and only an explicit click drops them */}
+            {variantAttached.slice(1).map((g) => (
+              <li key={g.id} className="flex flex-wrap items-center gap-3 rounded-[18px] border-[1.5px] border-dashed border-[#e6d9c6] bg-white px-[18px] py-3">
+                <span className="text-[15px] font-semibold">{g.name}</span>
+                <span className="rounded-full bg-warn-bg px-2.5 py-0.5 text-xs font-semibold leading-[18px] text-warn">{t('dishForm.notShownToCustomers')}</span>
+                <button
+                  type="button"
+                  onClick={() => setRefs((r) => withToggledRef(r, g.id))}
+                  className={`ml-auto h-11 rounded-lg px-3.5 text-sm font-semibold ${focusRing}`}
+                >
+                  {t('dishForm.removeFromDish')}<span className="sr-only"> {g.name}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
         <div className="flex flex-wrap gap-2.5">
           <button
             type="button"
-            aria-expanded={picking}
-            onClick={() => setPicking((p) => !p)}
+            aria-expanded={picking === 'variant'}
+            onClick={() => setPicking((p) => (p === 'variant' ? null : 'variant'))}
+            className={`h-12 rounded-full bg-ink px-5 text-[15px] font-semibold text-white ${focusRing}`}
+          >
+            {variantAttached.length === 0 ? t('dishForm.chooseVariantGroup') : t('dishForm.replaceVariantGroup')}
+          </button>
+          {variantAttached.length === 0 && (
+            <button
+              type="button"
+              onClick={() => setDialog('new-variant')}
+              className={`h-12 rounded-full border-[1.5px] border-control bg-white px-5 text-[15px] font-semibold hover:bg-cream ${focusRing}`}
+            >
+              {t('dishForm.createGroup')}
+            </button>
+          )}
+        </div>
+        {picking === 'variant' && (
+          <div className="rounded-2xl border border-[#e6d9c6] p-3.5">
+            {availableOf('variant').length === 0 ? (
+              <p className="text-sm text-muted">{t('dishForm.noVariantGroupsToAttach')}</p>
+            ) : (
+              <div
+                className="flex flex-wrap gap-2"
+                role="group"
+                aria-label={variantAttached.length === 0 ? t('dishForm.chooseVariantGroup') : t('dishForm.replaceVariantGroup')}
+              >
+                {availableOf('variant').map((g) => (
+                  <button
+                    key={g.id}
+                    type="button"
+                    onClick={() => {
+                      // Replace swaps the shown group; choosing into an empty slot just adds
+                      const current = variantAttached[0]?.id;
+                      setRefs((r) => [...r.filter((id) => id !== current), g.id]);
+                      setPicking(null);
+                    }}
+                    className={`inline-flex h-10 items-center gap-2 rounded-full border-[1.5px] border-control bg-white px-4 text-sm font-semibold hover:bg-cream ${focusRing}`}
+                  >
+                    {g.name}
+                    <span className="text-xs font-normal text-muted">{t('optionGroups.optionCount', { count: g.options.length })}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Extras: any number, in the order customers see them */}
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-0.5">
+          <h3 className="text-[17px] font-bold leading-6">{t('dishForm.extrasSection.title')}</h3>
+          <p className="text-[13px] leading-[19px] text-muted">{t('dishForm.extrasSection.help')}</p>
+        </div>
+        {extraAttached.length > 1 && <p className="text-[13px] leading-[19px] text-muted">{t('dishForm.extrasDragHint')}</p>}
+        {extraAttached.length > 0 && (
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onExtrasDragEnd}>
+            <SortableContext items={extraAttached.map((g) => g.id)} strategy={verticalListSortingStrategy}>
+              <ul className="flex flex-col gap-3.5">
+                {extraAttached.map((g) => (
+                  <SortableExtra key={g.id} id={g.id} className={cardClass} draggable={extraAttached.length > 1} handleLabel={t('categories.dragHandle')}>
+                    {(handle) => groupCardBody(g, handle)}
+                  </SortableExtra>
+                ))}
+              </ul>
+            </SortableContext>
+          </DndContext>
+        )}
+        <div className="flex flex-wrap gap-2.5">
+          <button
+            type="button"
+            aria-expanded={picking === 'addon'}
+            onClick={() => setPicking((p) => (p === 'addon' ? null : 'addon'))}
             className={`h-12 rounded-full bg-ink px-5 text-[15px] font-semibold text-white ${focusRing}`}
           >
             {t('dishForm.attachGroup')}
           </button>
           <button
             type="button"
-            onClick={() => setDialog('new')}
+            onClick={() => setDialog('new-addon')}
             className={`h-12 rounded-full border-[1.5px] border-control bg-white px-5 text-[15px] font-semibold hover:bg-cream ${focusRing}`}
           >
             {t('dishForm.createGroup')}
           </button>
         </div>
-        {picking && (
+        {picking === 'addon' && (
           <div className="rounded-2xl border border-[#e6d9c6] p-3.5">
-            {available.length === 0 ? (
+            {availableOf('addon').length === 0 ? (
               <p className="text-sm text-muted">{t('dishForm.nothingToAttach')}</p>
             ) : (
               <div className="flex flex-wrap gap-2" role="group" aria-label={t('dishForm.attachGroup')}>
-                {available.map((g) => (
+                {availableOf('addon').map((g) => (
                   <button
                     key={g.id}
                     type="button"
                     onClick={() => {
                       setRefs((r) => withToggledRef(r, g.id));
-                      setPicking(false);
+                      setPicking(null);
                     }}
                     className={`inline-flex h-10 items-center gap-2 rounded-full border-[1.5px] border-control bg-white px-4 text-sm font-semibold hover:bg-cream ${focusRing}`}
                   >
@@ -1118,16 +1256,17 @@ function OptionsSection({
         </div>
       )}
 
-      {(dialog === 'new' || editing) && (
+      {(creating || editing) && (
         <OptionGroupDialog
-          key={editing?.id ?? 'new'}
+          key={editing?.id ?? dialog}
           shopId={shopId}
           group={editing}
+          defaultKind={dialog === 'new-variant' ? 'variant' : 'addon'}
           currency={currency}
           onClose={() => setDialog(null)}
           // A group created from here is attached straight away; editing one changes it for every dish
           onSaved={(id) => {
-            if (dialog === 'new') setRefs((r) => (r.includes(id) ? r : [...r, id]));
+            if (creating) setRefs((r) => (r.includes(id) ? r : [...r, id]));
           }}
         />
       )}

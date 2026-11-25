@@ -6,7 +6,7 @@ import {
   addRequiredChecklist,
   addRequiredLeftCount,
   applySimilarDishCopy,
-  attachedGroupCount,
+  extraGroupCount,
   copyFromSimilarDish,
   emptyDishFormState,
   firstIncompleteAddSection,
@@ -15,6 +15,7 @@ import {
   groupCategories,
   listStatus,
   navStatus,
+  variantSlotFilled,
   translationMissing,
   vatBreakdown,
   type DishFormState,
@@ -35,34 +36,34 @@ const state = (over: Partial<DishFormState> = {}): DishFormState => ({
 
 describe('navStatus', () => {
   it('basics: complete, or the extra language is missing when its description is empty', () => {
-    expect(navStatus('basics', state(), 'en', 0)).toEqual({ key: 'complete', tone: 'ok' });
-    expect(navStatus('basics', state({ descriptionTranslations: { en: '  ' } }), 'en', 0)).toEqual({
+    expect(navStatus('basics', state(), 'en', 0, 0)).toEqual({ key: 'complete', tone: 'ok' });
+    expect(navStatus('basics', state({ descriptionTranslations: { en: '  ' } }), 'en', 0, 0)).toEqual({
       key: 'translationMissing',
       tone: 'warn',
       language: 'en',
     });
-    expect(navStatus('basics', state({ descriptionTranslations: {} }), 'en', 0).key).toBe('translationMissing');
+    expect(navStatus('basics', state({ descriptionTranslations: {} }), 'en', 0, 0).key).toBe('translationMissing');
   });
 
   it('basics: a one-language shop has nothing to translate', () => {
-    expect(navStatus('basics', state({ descriptionTranslations: {} }), undefined, 0).key).toBe('complete');
+    expect(navStatus('basics', state({ descriptionTranslations: {} }), undefined, 0, 0).key).toBe('complete');
   });
 
   it('food: complete only when allergens AND additives are each confirmed', () => {
-    expect(navStatus('food', state(), 'en', 0)).toEqual({ key: 'complete', tone: 'ok' });
+    expect(navStatus('food', state(), 'en', 0, 0)).toEqual({ key: 'complete', tone: 'ok' });
     const onlyAllergens = state({ foodInfo: { ...EMPTY_FOOD_INFO, allergenIds: ['milk'], additiveIds: null } });
-    expect(navStatus('food', onlyAllergens, 'en', 0)).toEqual({ key: 'confirmAllergens', tone: 'warn' });
+    expect(navStatus('food', onlyAllergens, 'en', 0, 0)).toEqual({ key: 'confirmAllergens', tone: 'warn' });
     const onlyAdditives = state({ foodInfo: { ...EMPTY_FOOD_INFO, allergenIds: null, additiveIds: [] } });
-    expect(navStatus('food', onlyAdditives, 'en', 0).key).toBe('confirmAllergens');
+    expect(navStatus('food', onlyAdditives, 'en', 0, 0).key).toBe('confirmAllergens');
   });
 
-  it('options: the number of attached groups, grey', () => {
-    expect(navStatus('options', state(), 'en', 3)).toEqual({ key: 'groups', tone: 'muted', count: 3 });
+  it('options: variant slot and extras counts, grey', () => {
+    expect(navStatus('options', state(), 'en', 1, 3)).toEqual({ key: 'variantExtras', tone: 'muted', variantCount: 1, extraCount: 3 });
   });
 
   it('availability mirrors the on-the-menu switch', () => {
-    expect(navStatus('availability', state(), 'en', 0)).toEqual({ key: 'onMenu', tone: 'muted' });
-    expect(navStatus('availability', state({ isAvailable: false }), 'en', 0)).toEqual({ key: 'hidden', tone: 'warn' });
+    expect(navStatus('availability', state(), 'en', 0, 0)).toEqual({ key: 'onMenu', tone: 'muted' });
+    expect(navStatus('availability', state({ isAvailable: false }), 'en', 0, 0)).toEqual({ key: 'hidden', tone: 'warn' });
   });
 });
 
@@ -110,11 +111,18 @@ describe('groupCategories', () => {
   });
 });
 
-describe('attachedGroupCount', () => {
-  const lib = [{ id: 'g1' }, { id: 'g2' }] as ShopOptionGroupDto[];
-  it('counts library groups that still exist plus the dish-only ones', () => {
-    const s = state({ optionGroupRefs: ['g1', 'gone', 'g2'], variantGroups: [{ id: 'v', name: 'V', options: [] }] });
-    expect(attachedGroupCount(s, lib)).toBe(3);
+describe('variantSlotFilled / extraGroupCount', () => {
+  const lib = [{ id: 'v1', kind: 'variant' }, { id: 'v2', kind: 'variant' }, { id: 'a1', kind: 'addon' }, { id: 'a2', kind: 'addon' }] as ShopOptionGroupDto[];
+  const dishOnly = { id: 'x', name: 'X', options: [] };
+  it('the slot is 0 or 1 whatever the number of variant groups', () => {
+    expect(variantSlotFilled(state({ optionGroupRefs: ['a1'] }), lib)).toBe(0);
+    expect(variantSlotFilled(state({ optionGroupRefs: ['v1', 'v2'] }), lib)).toBe(1);
+    expect(variantSlotFilled(state({ optionGroupRefs: ['gone'] }), lib)).toBe(0);
+    expect(variantSlotFilled(state({ variantGroups: [dishOnly] }), lib)).toBe(1);
+  });
+  it('counts addon refs that still exist plus dish-only extras', () => {
+    const s = state({ optionGroupRefs: ['a1', 'gone', 'v1', 'a2'], addonGroups: [{ ...dishOnly, minSelectable: 0, maxSelectable: 1 }] });
+    expect(extraGroupCount(s, lib)).toBe(3);
   });
 });
 
@@ -184,18 +192,18 @@ describe('add required checklist', () => {
   it('the nav lines: required left / complete, confirm food, optional or groups, everywhere or customised', () => {
     const empty = emptyDishFormState();
     const items = addRequiredChecklist(empty, true);
-    expect(addNavStatus('basics', empty, items, 0, false)).toEqual({ key: 'requiredLeft', tone: 'muted', count: 4 });
-    expect(addNavStatus('basics', empty, items, 0, true)).toEqual({ key: 'requiredLeft', tone: 'warn', count: 4 });
-    expect(addNavStatus('food', empty, items, 0, true)).toEqual({ key: 'confirmFood', tone: 'warn' });
-    expect(addNavStatus('options', empty, items, 0, false)).toEqual({ key: 'optional', tone: 'muted' });
-    expect(addNavStatus('options', empty, items, 2, false)).toEqual({ key: 'groups', tone: 'muted', count: 2 });
-    expect(addNavStatus('availability', empty, items, 0, false).key).toBe('everywhere');
+    expect(addNavStatus('basics', empty, items, 0, 0, false)).toEqual({ key: 'requiredLeft', tone: 'muted', count: 4 });
+    expect(addNavStatus('basics', empty, items, 0, 0, true)).toEqual({ key: 'requiredLeft', tone: 'warn', count: 4 });
+    expect(addNavStatus('food', empty, items, 0, 0, true)).toEqual({ key: 'confirmFood', tone: 'warn' });
+    expect(addNavStatus('options', empty, items, 0, 0, false)).toEqual({ key: 'variantExtras', tone: 'muted', variantCount: 0, extraCount: 0 });
+    expect(addNavStatus('options', empty, items, 1, 2, false)).toEqual({ key: 'variantExtras', tone: 'muted', variantCount: 1, extraCount: 2 });
+    expect(addNavStatus('availability', empty, items, 0, 0, false).key).toBe('everywhere');
     const custom = { ...empty, foodInfo: { ...empty.foodInfo, unavailableModes: ['delivery' as const] } };
-    expect(addNavStatus('availability', custom, items, 0, false).key).toBe('customised');
-    expect(addNavStatus('availability', { ...empty, foodInfo: { ...empty.foodInfo, ageRestricted: true } }, items, 0, false).key).toBe('customised');
+    expect(addNavStatus('availability', custom, items, 0, 0, false).key).toBe('customised');
+    expect(addNavStatus('availability', { ...empty, foodInfo: { ...empty.foodInfo, ageRestricted: true } }, items, 0, 0, false).key).toBe('customised');
     const done = full2();
-    expect(addNavStatus('basics', done, addRequiredChecklist(done, false), 0, false)).toEqual({ key: 'complete', tone: 'ok' });
-    expect(addNavStatus('food', done, addRequiredChecklist(done, false), 0, false)).toEqual({ key: 'complete', tone: 'ok' });
+    expect(addNavStatus('basics', done, addRequiredChecklist(done, false), 0, 0, false)).toEqual({ key: 'complete', tone: 'ok' });
+    expect(addNavStatus('food', done, addRequiredChecklist(done, false), 0, 0, false)).toEqual({ key: 'complete', tone: 'ok' });
   });
 });
 

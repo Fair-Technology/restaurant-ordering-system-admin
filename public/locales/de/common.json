@@ -1546,6 +1546,7 @@
       "confirmFood": "Allergene und Zusatzstoffe bestätigen",
       "optional": "Optional",
       "everywhere": "Überall verfügbar",
+      "variantExtras": "{{variant}} Variante · {{extra}} Extras",
       "customised": "Angepasst"
     },
     "descriptionMissing": {
@@ -1593,6 +1594,13 @@
     "attachGroup": "+ Vorhandene Gruppe zuordnen",
     "createGroup": "Neue Gruppe erstellen",
     "nothingToAttach": "Alle Gruppen sind diesem Gericht bereits zugeordnet.",
+    "variantSection": {"title": "Variante", "help": "Kunden wählen genau eine Option."},
+    "extrasSection": {"title": "Extras", "help": "Kunden können beliebig viele davon wählen, innerhalb der Grenzen jeder Gruppe."},
+    "chooseVariantGroup": "Variantengruppe wählen",
+    "replaceVariantGroup": "Ersetzen",
+    "noVariantGroupsToAttach": "Jede Variantengruppe ist bereits zugeordnet.",
+    "notShownToCustomers": "Wird Kunden nicht angezeigt",
+    "extrasDragHint": "Ziehen, um die Reihenfolge festzulegen, die Kunden sehen.",
     "groupsShared": "Gruppen werden geteilt. Eine Änderung gilt für jedes Gericht, das die Gruppe nutzt. „Vom Gericht entfernen“ löst sie nur hier.",
     "dishOnlyGroups": "Nur bei diesem Gericht",
     "dishOnlyGroupsHelp": "Diese Gruppen gehören nur zu diesem Gericht und werden nicht geteilt.",
