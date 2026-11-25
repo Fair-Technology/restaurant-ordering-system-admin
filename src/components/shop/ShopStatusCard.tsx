@@ -76,8 +76,6 @@ export function ShopStatusCard({ shop, onRefetch }: Props) {
 
   return (
     <Section
-      id="shop-status"
-      className="scroll-mt-[72px]! lg:scroll-mt-6!"
       title={t('shops.shopStatusTitle')}
       description={t('shops.settingsPage.statusDescription')}
       padded

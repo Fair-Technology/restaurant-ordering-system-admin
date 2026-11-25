@@ -36,7 +36,7 @@ export function DineInCard({ shop, onRefetch }: Props) {
   };
 
   return (
-    <Section id="dine-in" className="scroll-mt-[72px]! lg:scroll-mt-6!" title={t('shops.dineInTitle')} description={t('shops.dineInHelp')} padded>
+    <Section title={t('shops.dineInTitle')} description={t('shops.dineInHelp')} padded>
       <div className="space-y-4">
       <label className="flex items-start gap-3 text-sm text-ink">
         <input

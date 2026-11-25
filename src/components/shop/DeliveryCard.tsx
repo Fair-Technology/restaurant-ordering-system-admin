@@ -49,7 +49,7 @@ export function DeliveryCard({ shop, refs, onRefetch }: Props) {
   };
 
   return (
-    <Section id="delivery" className="scroll-mt-[72px]! lg:scroll-mt-6!" title={t('shops.deliveryTitle')} description={t('shops.deliveryHelp')} padded>
+    <Section title={t('shops.deliveryTitle')} description={t('shops.deliveryHelp')} padded>
       <div className="space-y-4">
       <label className="flex items-start gap-3 text-sm text-ink">
         <input

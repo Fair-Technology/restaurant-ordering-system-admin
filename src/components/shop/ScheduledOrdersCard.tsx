@@ -45,7 +45,7 @@ export function ScheduledOrdersCard({ shop, onRefetch }: Props) {
   };
 
   return (
-    <Section id="orders-for-later" className="scroll-mt-[72px]! lg:scroll-mt-6!" title={t('shops.scheduledTitle')} description={t('shops.scheduledHelp')} padded>
+    <Section title={t('shops.scheduledTitle')} description={t('shops.scheduledHelp')} padded>
       <div className="space-y-4">
       <label className="flex items-start gap-3 text-sm text-ink">
         <input

@@ -493,7 +493,34 @@
       "qrDescription": "Print this code so guests can open your shop straight on their phone.",
       "logoDescription": "Shown at the top of your shop. JPG, PNG or WebP.",
       "hoursDescription": "Customers can order from you during these times.",
-      "taxClassesDescription": "The tax rates that apply to your dishes."
+      "taxClassesDescription": "The tax rates that apply to your dishes.",
+      "sections": {
+        "status": "Shop status",
+        "details": "Details",
+        "look": "Look",
+        "hours": "Hours and closures",
+        "orders": "Orders",
+        "pay": "Payments and tax",
+        "danger": "Danger zone"
+      },
+      "statusOffline": "Offline",
+      "statusPaused": "Orders paused",
+      "statusOnline": "Online, taking orders",
+      "bannerOn": "Banner on",
+      "bannerOff": "Banner off",
+      "daysOpen": "{{count}} of 7 days open",
+      "acceptAuto": "Auto-accept",
+      "acceptScheduled": "Auto-accept at set times",
+      "acceptManual": "Manual accept",
+      "withDelivery": "{{status}} · delivery",
+      "stripeConnected": "Stripe connected",
+      "stripePending": "Stripe pending",
+      "stripeNotConnected": "Stripe not connected",
+      "storefrontLink": "Storefront link",
+      "storefrontLinkDescription": "The public address of your shop.",
+      "copyLink": "Copy link",
+      "linkCopied": "Link copied",
+      "linkCopyFailed": "Couldn't copy the link"
     }
   },
   "tables": {
@@ -1593,8 +1620,14 @@
     "attachGroup": "+ Attach existing group",
     "createGroup": "Create new group",
     "nothingToAttach": "Every group is already attached to this dish.",
-    "variantSection": {"title": "Variant", "help": "Customers pick exactly one."},
-    "extrasSection": {"title": "Extras", "help": "Customers can pick any of these, within each group's limits."},
+    "variantSection": {
+      "title": "Variant",
+      "help": "Customers pick exactly one."
+    },
+    "extrasSection": {
+      "title": "Extras",
+      "help": "Customers can pick any of these, within each group's limits."
+    },
     "chooseVariantGroup": "Choose variant group",
     "replaceVariantGroup": "Replace",
     "noVariantGroupsToAttach": "Every variant group is already attached.",

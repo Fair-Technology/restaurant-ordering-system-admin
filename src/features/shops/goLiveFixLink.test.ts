@@ -9,7 +9,7 @@ describe('goLiveFixLink', () => {
   });
 
   it('existing criteria keep their links', () => {
-    expect(goLiveFixLink('s1', 'stripe_connected')).toBe('/shops/s1/settings#payments');
+    expect(goLiveFixLink('s1', 'stripe_connected')).toBe('/shops/s1/settings?section=pay');
     expect(goLiveFixLink('s1', 'has_categories')).toBe('/shops/s1/categories');
   });
 
