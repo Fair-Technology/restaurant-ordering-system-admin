@@ -543,6 +543,8 @@
     "listTitle": "Tables"
   },
   "combos": {
+    "search": "Search combos",
+    "noMatch": "No combos match this filter.",
     "accessDenied": "Only people who edit the menu can change combos.",
     "help": "A combo is one price for a choice of dishes, e.g. any pasta and a drink for €12. Sizes and extras the customer picks are added on top. The VAT is split over the chosen dishes by their own prices.",
     "none": "No combos yet.",

@@ -543,6 +543,8 @@
     "listTitle": "Tische"
   },
   "combos": {
+    "search": "Menüs durchsuchen",
+    "noMatch": "Keine Menüs passen zu diesem Filter.",
     "accessDenied": "Nur wer die Speisekarte bearbeitet, kann Menüs ändern.",
     "help": "Ein Menü ist ein Preis für eine Auswahl von Gerichten, z. B. Pasta nach Wahl und ein Getränk für 12 €. Größen und Extras, die der Gast wählt, kommen dazu. Die Umsatzsteuer wird nach den eigenen Preisen der gewählten Gerichte aufgeteilt.",
     "none": "Noch keine Menüs.",

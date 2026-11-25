@@ -11,7 +11,6 @@ import {
 import { useSetCategoryDishOrderMutation } from '../services/dishOrderApi';
 import { MyButton } from '../components/ui/MyButton';
 import { MySpinner } from '../components/ui/MySpinner';
-import { PendingButton } from '../components/ui/PendingButton';
 import { getCurrencySymbolOrDefault } from '../utils/currency';
 import { formatCents } from '../utils/money';
 import {
@@ -32,6 +31,9 @@ import {
   sortableKeyboardCoordinates,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { Chip } from '../components/layout/Page';
+import { searchBoxClass } from '../components/layout/pageStyles';
+import { AvailabilitySwitch } from '../components/menu/AvailabilitySwitch';
 import { Download, GripVertical, Plus, Search, X } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 import { buildExampleMenuImportFile, parseMenuImport } from '../features/menu/menuImport';
@@ -429,32 +431,12 @@ function DishRow({
         {groups > 0 ? t('dishes.optionGroups', { count: groups }) : '–'}
       </span>
       <span className="min-w-14 flex-shrink-0 text-right text-[15px] font-bold sm:w-20">{currencyMoney(product.price ?? 0)}</span>
-      <PendingButton
-        type="button"
-        role="switch"
-        aria-checked={available}
-        aria-label={t('dishes.availableFor', { name: product.name })}
-        isPending={toggling}
-        spinner={false}
-        onClick={(e) => {
-          e.stopPropagation();
-          onToggle();
-        }}
-        onKeyDown={(e) => e.stopPropagation()}
-        className={`relative h-6 w-10 flex-shrink-0 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 disabled:opacity-50 ${
-          available ? 'bg-[#2f8a4c]' : 'bg-[#d6cdc4]'
-        }`}
-      >
-        <span className={`absolute top-[3px] h-[18px] w-[18px] rounded-full bg-white shadow transition-all ${available ? 'right-[3px]' : 'left-[3px]'}`}>
-          {toggling && (
-            <span
-              data-pending-spinner=""
-              aria-hidden="true"
-              className="absolute inset-0 m-auto h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent text-ink"
-            />
-          )}
-        </span>
-      </PendingButton>
+      <AvailabilitySwitch
+        available={available}
+        pending={toggling}
+        ariaLabel={t('dishes.availableFor', { name: product.name })}
+        onToggle={onToggle}
+      />
     </div>
   );
 }
@@ -679,11 +661,6 @@ export function ProductsPage() {
     }
   };
 
-  const chip = (on: boolean) =>
-    `inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-[13px] font-semibold transition-colors ${
-      on ? 'border-ink bg-ink text-white' : 'border-[#e3d9ce] bg-white text-[#4a413b] hover:bg-cream'
-    }`;
-
   const renderRow = (p: ProductDto, dragEnabled?: boolean, groupId?: string) => {
     const rowProps = {
       product: p,
@@ -723,7 +700,7 @@ export function ProductsPage() {
       </div>
 
       <div className="flex flex-wrap items-center gap-2 px-7 pb-3.5">
-        <label className="flex h-10 w-[260px] items-center gap-2 rounded-[10px] border border-[#e3d9ce] bg-white px-3 focus-within:border-ink">
+        <label className={`${searchBoxClass} focus-within:border-ink`}>
           <Search size={16} className="text-[#8a7f77]" aria-hidden="true" />
           <input
             type="search"
@@ -735,10 +712,9 @@ export function ProductsPage() {
           />
         </label>
         {(['all', 'onMenu', 'off', 'incomplete'] as const).map((f) => (
-          <button key={f} type="button" aria-pressed={filter === f} className={chip(filter === f)} onClick={() => setFilter(f)}>
+          <Chip key={f} active={filter === f} count={countOf(f)} onClick={() => setFilter(f)}>
             {t(`dishes.filter.${f}`)}
-            <span className="text-xs opacity-70">{countOf(f)}</span>
-          </button>
+          </Chip>
         ))}
         <span role="status" className="ml-auto flex items-center gap-2 text-[13px] text-[#6b6058]">
           {isRefreshing && (
