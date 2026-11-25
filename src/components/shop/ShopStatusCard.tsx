@@ -28,7 +28,8 @@ interface Props {
 
 /**
  * The shop's two status switches: Online (off = the storefront shows no menu at all) and
- * Pause orders (menu stays, ordering refused), plus the optional message diners see while paused.
+ * Accepting orders (off = paused: menu stays, ordering refused), plus the optional message
+ * diners see while paused. On always means normal operation.
  */
 export function ShopStatusCard({ shop, onRefetch }: Props) {
   const { t, i18n } = useTranslation();
@@ -104,11 +105,11 @@ export function ShopStatusCard({ shop, onRefetch }: Props) {
       <div className="mt-4 space-y-3 border-t border-line-soft pt-4">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p id="orders-paused-label" className="text-sm font-semibold text-ink">
-              {t('shops.statusPaused')}
+            <p id="accepting-orders-label" className="text-sm font-semibold text-ink">
+              {t('shops.statusAcceptingOrders')}
             </p>
-            <p id="orders-paused-help" className="text-[13px] text-muted">
-              {t('shops.statusPauseHelp')}
+            <p id="accepting-orders-help" className="text-[13px] text-muted">
+              {t('shops.statusAcceptingOrdersHelp')}
             </p>
             {liveState === 'ordersPaused' && shop.ordersPausedUntil && (
               <p className="text-[13px] text-muted">
@@ -119,12 +120,12 @@ export function ShopStatusCard({ shop, onRefetch }: Props) {
             )}
           </div>
           <MySwitch
-            checked={isOrdersPausedAt(shop, nowMs)}
-            onChange={(next) => (next ? setModal('pauseOrders') : save({ ordersPaused: false }))}
+            checked={!isOrdersPausedAt(shop, nowMs)}
+            onChange={(next) => (next ? save({ ordersPaused: false }) : setModal('pauseOrders'))}
             disabled={!canToggleOrdersPause(shop, nowMs)}
             isPending={busy}
-            labelledBy="orders-paused-label"
-            describedBy="orders-paused-help"
+            labelledBy="accepting-orders-label"
+            describedBy="accepting-orders-help"
           />
         </div>
         {liveState === 'ordersPaused' && (
