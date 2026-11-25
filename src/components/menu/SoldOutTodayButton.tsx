@@ -18,22 +18,24 @@ interface Props {
  */
 export function SoldOutTodayButton({ name, soldOut, busy, onToggle, className = '' }: Props) {
   const { t } = useTranslation();
+  const label = soldOut ? t('dishes.soldOutBackFor', { name }) : t('dishes.soldOutFor', { name });
   return (
     <PendingButton
       type="button"
       role="switch"
       aria-checked={soldOut}
-      aria-label={soldOut ? t('dishes.soldOutBackFor', { name }) : t('dishes.soldOutFor', { name })}
+      aria-label={label}
+      title={label}
       isPending={!!busy}
       onClick={(e) => {
         e.stopPropagation();
         onToggle();
       }}
       onKeyDown={(e) => e.stopPropagation()}
-      className={`inline-flex h-7 flex-shrink-0 items-center gap-1! rounded-full border px-2 text-xs font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 disabled:opacity-50 ${
+      className={`inline-flex h-7 flex-shrink-0 items-center gap-1! rounded-full px-2 text-xs font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 disabled:opacity-50 ${
         soldOut
-          ? 'border-[#f1dfae] bg-[#fff6e0] text-[#8a5a00] hover:bg-[#fdf1dc]'
-          : 'border-[#e3d9ce] bg-white text-[#6b6058] hover:bg-cream'
+          ? 'border border-[#cfe3d2] bg-[#f1f8f1] text-[#2f6b3f] hover:bg-[#e6f1e7]'
+          : 'border border-dashed border-[#d6cdc4] bg-transparent text-[#8a8077] hover:border-[#b9ada2] hover:bg-cream/60 hover:text-[#6b6058]'
       } ${className}`}
     >
       {soldOut ? <Undo2 size={13} aria-hidden="true" /> : <Ban size={13} aria-hidden="true" />}

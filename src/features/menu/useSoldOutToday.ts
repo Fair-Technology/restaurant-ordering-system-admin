@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useUpdateProductAvailabilityMutation } from '../../services/api';
+import { failureMessage } from '../api/errorMessage';
 import { useToast } from '../../contexts/ToastContext';
 import { clearSoldOutPatch, soldOutTodayPatch } from './soldOut';
 
@@ -21,6 +22,7 @@ export function useSoldOutToday(shopId: string, timeZone: string) {
       productId: string,
       body: { unavailableUntil: string | null } | { isAvailable: boolean },
       onDone?: (ok: boolean) => void,
+      successKey?: string,
     ) => {
       if (pending[productId]) return;
       setPending((p) => ({ ...p, [productId]: true }));
@@ -28,8 +30,9 @@ export function useSoldOutToday(shopId: string, timeZone: string) {
       try {
         await updateAvailability({ productId, body: { shopId, ...body } }).unwrap();
         ok = true;
-      } catch {
-        toast.error(t('dishes.soldOutFailed'));
+        if (successKey) toast.success(t(successKey));
+      } catch (err) {
+        toast.error(failureMessage(t('dishes.soldOutFailed'), err));
       } finally {
         setPending((p) => {
           const next = { ...p };
@@ -44,12 +47,12 @@ export function useSoldOutToday(shopId: string, timeZone: string) {
 
   const markSoldOutToday = useCallback(
     (productId: string, onDone?: (ok: boolean) => void) =>
-      run(productId, soldOutTodayPatch(timeZone), onDone),
+      run(productId, soldOutTodayPatch(timeZone), onDone, 'dishes.soldOutMarked'),
     [run, timeZone],
   );
 
   const clearSoldOut = useCallback(
-    (productId: string, onDone?: (ok: boolean) => void) => run(productId, clearSoldOutPatch, onDone),
+    (productId: string, onDone?: (ok: boolean) => void) => run(productId, clearSoldOutPatch, onDone, 'dishes.soldOutRestored'),
     [run],
   );
 
