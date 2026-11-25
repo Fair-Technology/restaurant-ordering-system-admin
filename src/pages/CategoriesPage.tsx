@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useId } from 'react';
-import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   DndContext,
@@ -32,9 +32,10 @@ import { useToast } from '../contexts/ToastContext';
 import { useShopReferenceLists } from '../features/menu/useShopReferenceLists';
 import { dishTaxClasses, labelFor, taxClassOptionLabel } from '../features/menu/foodInfo';
 import { formatSchedule } from '../features/menu/categorySchedule';
-import { selectClass, useIsWide } from '../features/menu/useIsWide';
-import { EmptyNote, PageHeader, Section, SideCard, SideColumn, SplitPage } from '../components/layout/Page';
+import { selectClass } from '../features/menu/useIsWide';
+import { EmptyNote, PageHeader, Section } from '../components/layout/Page';
 import { badgeClass } from '../components/layout/pageStyles';
+import { Drawer } from '../components/ui/Drawer';
 import { CategoryEditor } from '../components/categories/CategoryEditor';
 import { requiredName } from '../utils/validateName';
 import { usePageTitle } from '../features/layout/usePageTitle';
@@ -349,7 +350,7 @@ function SortableCategoryItem({ cat, shopId, selected, onOpen, reordering }: Sor
         />
       </span>
 
-      {/* Edit (a link, so it can be opened in a new tab; on wide screens it opens the side column) */}
+      {/* Edit (a link, so it can be opened in a new tab; a plain click opens the drawer) */}
       <Link
         to={`/shops/${shopId}/categories/${cat.id}/edit`}
         onClick={(e) => {
@@ -375,8 +376,6 @@ export function CategoriesPage() {
   const { shopId } = useParams<{ shopId: string }>();
   const { t } = useTranslation();
   const toast = useToast();
-  const navigate = useNavigate();
-  const wide = useIsWide();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: categories, isLoading, isError } = useGetCategoriesByShopQuery({ shopId: shopId! });
   const [updateCategory] = useUpdateCategoryMutation();
@@ -443,52 +442,12 @@ export function CategoriesPage() {
 
   const selectedId = searchParams.get('category');
   const selected = orderedCategories.find((c) => c.id === selectedId);
-  // Wide screens edit in the right column; smaller ones open the edit page
-  const open = (cat: Category) => {
-    if (wide) setParam('category', cat.id!);
-    else navigate(`/shops/${shopId}/categories/${cat.id}/edit`);
-  };
+  // The editor opens in a drawer over the list
+  const open = (cat: Category) => setParam('category', cat.id!);
   const closeEditor = () => setParam('category', null);
 
-  const side = wide ? (
-    <SideColumn
-      label={t('categories.editTitle')}
-      title={selected ? t('categories.editTitle') : t('nav.categories')}
-      hint={selected?.name}
-      actions={
-        selected && (
-          <button
-            type="button"
-            onClick={closeEditor}
-            aria-label={t('categories.close')}
-            className="rounded-full p-1.5 text-[#8a7f77] transition-colors hover:bg-sand hover:text-ink"
-          >
-            <X size={16} aria-hidden="true" />
-          </button>
-        )
-      }
-    >
-      {selected ? (
-        <div className="-mx-[18px] min-h-0 flex-1 overflow-y-auto px-[18px]">
-          <CategoryEditor
-            key={selected.id}
-            shopId={shopId!}
-            categoryId={selected.id!}
-            onSaved={() => undefined}
-            onCancel={closeEditor}
-            onDeleted={closeEditor}
-          />
-        </div>
-      ) : (
-        <SideCard>
-          <EmptyNote>{t('categories.selectHint')}</EmptyNote>
-        </SideCard>
-      )}
-    </SideColumn>
-  ) : undefined;
-
   return (
-    <SplitPage side={side}>
+    <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 pt-[22px] pb-7 sm:px-7">
       <PageHeader
         eyebrow={t('nav.group.menu')}
         title={t('nav.categories')}
@@ -524,7 +483,7 @@ export function CategoriesPage() {
                       key={cat.id}
                       cat={cat}
                       shopId={shopId!}
-                      selected={wide && cat.id === selectedId}
+                      selected={cat.id === selectedId}
                       onOpen={() => open(cat)}
                       reordering={savingOrder}
                     />
@@ -543,6 +502,34 @@ export function CategoriesPage() {
           onClose={closeModal}
         />
       )}
-    </SplitPage>
+      {selectedId && (
+        <Drawer
+          label={selected ? `${t('categories.editTitle')}: ${selected.name}` : t('categories.editTitle')}
+          onClose={closeEditor}
+        >
+          <header className="flex h-[72px] flex-none items-center gap-4 border-b border-line-soft pl-5 pr-7">
+            <button
+              type="button"
+              onClick={closeEditor}
+              aria-label={t('categories.close')}
+              className="inline-flex h-11 w-11 flex-none items-center justify-center rounded-full bg-sand hover:bg-[#ebe4dc]"
+            >
+              <X size={18} strokeWidth={2.5} aria-hidden="true" />
+            </button>
+            <h1 className="truncate text-[22px] leading-7 font-bold">{selected?.name ?? t('categories.editTitle')}</h1>
+          </header>
+          <div className="min-h-0 flex-1 overflow-y-auto px-[18px] py-[18px]">
+            <CategoryEditor
+              key={selectedId}
+              shopId={shopId!}
+              categoryId={selectedId}
+              onSaved={() => {}}
+              onCancel={closeEditor}
+              onDeleted={closeEditor}
+            />
+          </div>
+        </Drawer>
+      )}
+    </div>
   );
 }

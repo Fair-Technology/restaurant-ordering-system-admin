@@ -52,7 +52,7 @@ Enforced from now on by the scan in `src/components/ui/pendingControls.test.ts`.
 | src/pages/DashboardPage.tsx | refresh (two layouts) | `refetch()` | yes | none |
 | src/pages/ProductWizardSteps.tsx | create category inline | useCreateCategoryMutation | yes | none |
 | src/features/menu/productImage.ts | PUT image to blob (helper) | fetch | n/a, helper; callers covered above | none |
-| src/pages/ActivityPage.tsx, PromotionsPage.tsx, EditCategoryPage.tsx, LoginPage.tsx, RouteErrorPage.tsx | read-only pages / login redirect | queries only, no click-triggered call | n/a | none |
+| src/pages/ActivityPage.tsx, PromotionsPage.tsx, EditCategoryPage.tsx (redirect only), LoginPage.tsx, RouteErrorPage.tsx | read-only pages / login redirect | queries only, no click-triggered call | n/a | none |
 | src/components/ui/CategoryPicker.tsx, IconPicker.tsx | pickers | none | n/a, local state | none, stays spinner-free |
 
 Known limit of the automatic scan: it is per file, so a file that has one wired control passes even if a second control in it is not wired. The `ASYNC_CONTROLS` minimum counts in the same test still guard the per-control level for known files; for new files, review per control.
