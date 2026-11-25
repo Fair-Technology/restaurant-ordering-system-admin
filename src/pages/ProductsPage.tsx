@@ -34,24 +34,13 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { Download, GripVertical, Plus, Search, X } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
-import {
-  type VariantGroup, type VariantOption, type AddonGroup, type AddonOption,
-  type StepNum,
-  StepIndicator, Step1Basics, StepFoodInfo, StepCategories, Step4Customise, Step6Review,
-} from './ProductWizardSteps';
 import { buildExampleMenuImportFile, parseMenuImport } from '../features/menu/menuImport';
-import { useUploadProductImage } from '../features/menu/useUploadProductImage';
-import { createDishWithPhoto, dishPhotoMissing } from '../features/menu/productImage';
-import { isWrongSizeError } from '../features/images/imageRules';
-import { useShopReferenceLists } from '../features/menu/useShopReferenceLists';
-import { EMPTY_FOOD_INFO, effectiveTaxClassId, labelFor, taxClassOptionLabel } from '../features/menu/foodInfo';
-import type { FoodInfo } from '../features/menu/foodInfo';
 import { isIncomplete, isListRefreshing } from '../features/menu/productListStatus';
 import { useSetAvailable } from '../features/menu/useSetAvailable';
-import { wizardBackAction, wizardStepSequence } from '../features/menu/wizardSteps';
 import { importRowToCreateRequest, type MenuImportRow } from '../features/menu/menuImport';
 import { Drawer } from '../components/ui/Drawer';
 import { DishEditor } from '../components/menu/DishEditor';
+import { AddDishPanel } from '../components/menu/AddDishPanel';
 import { PageHeader, Section, SplitPage } from '../components/layout/Page';
 import { usePageTitle } from '../features/layout/usePageTitle';
 
@@ -59,263 +48,6 @@ import { usePageTitle } from '../features/layout/usePageTitle';
 
 type ImportRow = MenuImportRow;
 type ImportStep = 'upload' | 'preview' | 'importing' | 'done';
-// ── Add Product Modal (5-step wizard) ─────────────────────────────────────────
-
-interface AddProductModalProps {
-  shopId: string;
-  onClose: () => void;
-}
-
-function AddProductModal({ shopId, onClose }: AddProductModalProps) {
-  const { t, i18n } = useTranslation();
-  const toast = useToast();
-
-  const { data: shop } = useGetShopByIdQuery({ shopId });
-  const currencySymbol = getCurrencySymbolOrDefault(shop?.currency);
-  const { data: categories } = useGetCategoriesByShopQuery({ shopId });
-  const [createProduct, { isLoading, isError, error }] = useCreateProductMutation();
-  const uploadProductImage = useUploadProductImage();
-  const { refs } = useShopReferenceLists(shopId);
-
-  const categoriesList = (categories ?? []).filter(
-    (c): c is CategoryDto => !!c.id && !!c.name,
-  );
-
-  const [mode, setMode] = useState<'simple' | 'extended'>('simple');
-  const [step, setStep] = useState<StepNum>(1);
-  const [direction, setDirection] = useState<'forward' | 'back'>('forward');
-
-  const stepSequence = wizardStepSequence(mode);
-  const isFirstStep = step === stepSequence[0];
-  const isLastStep = step === stepSequence[stepSequence.length - 1];
-
-  const [form, setForm] = useState({ name: '', description: '', price: 0 });
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [photoTried, setPhotoTried] = useState(false);
-  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
-  const [foodInfo, setFoodInfo] = useState<FoodInfo>(EMPTY_FOOD_INFO);
-  const [variantGroups, setVariantGroups] = useState<VariantGroup[]>([]);
-  const [addonGroups, setAddonGroups] = useState<AddonGroup[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
-  // Set when the dish was created but its photo upload failed: the next attempt only retries the photo.
-  const [createdProductId, setCreatedProductId] = useState<string | null>(null);
-
-  const [nameError, setNameError] = useState(false);
-  const [descError, setDescError] = useState(false);
-  const [categoryError, setCategoryError] = useState(false);
-
-  // Variant helpers
-  const addVariantGroup = () => setVariantGroups((gs) => [...gs, { id: crypto.randomUUID(), name: '', options: [] }]);
-  const removeVariantGroup = (id: string) => setVariantGroups((gs) => gs.filter((g) => g.id !== id));
-  const updateVariantGroupName = (id: string, name: string) => setVariantGroups((gs) => gs.map((g) => g.id === id ? { ...g, name } : g));
-  const addVariantOption = (groupId: string) => setVariantGroups((gs) => gs.map((g) => g.id === groupId ? { ...g, options: [...g.options, { id: crypto.randomUUID(), name: '', priceDelta: 0, isAvailable: true }] } : g));
-  const removeVariantOption = (groupId: string, optionId: string) => setVariantGroups((gs) => gs.map((g) => g.id === groupId ? { ...g, options: g.options.filter((o) => o.id !== optionId) } : g));
-  const updateVariantOption = (groupId: string, optionId: string, patch: Partial<VariantOption>) => setVariantGroups((gs) => gs.map((g) => g.id === groupId ? { ...g, options: g.options.map((o) => o.id === optionId ? { ...o, ...patch } : o) } : g));
-
-  // Addon helpers
-  const addAddonGroup = () => setAddonGroups((gs) => [...gs, { id: crypto.randomUUID(), name: '', minSelectable: 0, maxSelectable: 1, options: [] }]);
-  const removeAddonGroup = (id: string) => setAddonGroups((gs) => gs.filter((g) => g.id !== id));
-  const updateAddonGroup = (id: string, patch: Partial<AddonGroup>) => setAddonGroups((gs) => gs.map((g) => g.id === id ? { ...g, ...patch } : g));
-  const addAddonOption = (groupId: string) => setAddonGroups((gs) => gs.map((g) => g.id === groupId ? { ...g, options: [...g.options, { id: crypto.randomUUID(), name: '', priceDelta: 0, isAvailable: true }] } : g));
-  const removeAddonOption = (groupId: string, optionId: string) => setAddonGroups((gs) => gs.map((g) => g.id === groupId ? { ...g, options: g.options.filter((o) => o.id !== optionId) } : g));
-  const updateAddonOption = (groupId: string, optionId: string, patch: Partial<AddonOption>) => setAddonGroups((gs) => gs.map((g) => g.id === groupId ? { ...g, options: g.options.map((o) => o.id === optionId ? { ...o, ...patch } : o) } : g));
-
-  function validateStep(s: StepNum): boolean {
-    if (s === 1) {
-      const ne = form.name.trim() === '';
-      const de = form.description.trim() === '';
-      const pe = dishPhotoMissing(imageFile, null);
-      setNameError(ne); setDescError(de); setPhotoTried(true);
-      return !ne && !de && !pe;
-    }
-    if (s === 2) {
-      const hasNoCategory = selectedCategoryIds.length === 0;
-      setCategoryError(hasNoCategory);
-      return !hasNoCategory;
-    }
-    return true;
-  }
-
-  function goNext() {
-    if (!validateStep(step)) return;
-    const idx = stepSequence.indexOf(step);
-    setDirection('forward');
-    setStep(stepSequence[idx + 1]);
-  }
-  function goBack() {
-    const back = wizardBackAction(stepSequence, step);
-    if (back.kind === 'exit') { onClose(); return; }
-    setDirection('back');
-    setStep(back.step);
-  }
-  function jumpTo(n: StepNum) { setDirection(n < step ? 'back' : 'forward'); setStep(n); }
-
-  const handleSubmit = async () => {
-    if (dishPhotoMissing(imageFile, null) || !imageFile) {
-      setPhotoTried(true);
-      setDirection('back');
-      setStep(1);
-      return;
-    }
-    try {
-      const result = await createDishWithPhoto({
-        existingProductId: createdProductId,
-        createDish: async () => {
-          const product = await createProduct({
-            createProductRequestDto: {
-              shopId,
-              name: form.name,
-              description: form.description,
-              price: form.price,
-              categoryIds: selectedCategoryIds,
-              variantGroups: variantGroups.length > 0 ? variantGroups : undefined,
-              addonGroups: addonGroups.length > 0 ? addonGroups : undefined,
-              allergenIds: foodInfo.allergenIds,
-              additiveIds: foodInfo.additiveIds,
-              dietaryTagIds: foodInfo.dietaryTagIds,
-              spiceLevel: foodInfo.spiceLevel ?? undefined,
-              prepMinutes: foodInfo.prepMinutes,
-              // The dish owns its class: the one picked by hand, else its category's suggestion
-          taxClassId: effectiveTaxClassId(selectedCategoryIds, categoriesList, foodInfo.taxClassId),
-              unavailableModes: foodInfo.unavailableModes,
-              ageRestricted: foodInfo.ageRestricted,
-            },
-          }).unwrap();
-          return product.id!;
-        },
-        uploadPhoto: async (productId) => {
-          setIsUploading(true);
-          try {
-            await uploadProductImage(shopId, productId, imageFile);
-          } finally {
-            setIsUploading(false);
-          }
-        },
-      });
-      if (result.status === 'photo-failed') {
-        // The dish exists but has no photo: keep the window open, say so, and let the owner retry just the upload.
-        setCreatedProductId(result.productId);
-        toast.error(t(isWrongSizeError(result.error) ? 'products.productImageWrongSize' : 'products.failedToUploadImage'));
-        return;
-      }
-      toast.success(t('products.created'));
-      onClose();
-    } catch {
-      // createProduct failed: nothing was created; the existing isError banner explains.
-    }
-  };
-
-  const isBusy = isLoading || isUploading;
-  const submitLabel = isLoading ? t('products.creating') : isUploading ? t('products.uploadingImage') : createdProductId ? t('products.retryPhotoUpload') : t('products.create');
-  const stepSubtitles: Record<StepNum, string> = {
-    1: t('products.wizardStep1Subtitle'),
-    2: t('products.wizardStep2Subtitle'),
-    3: t('products.wizardStep3Subtitle'),
-    4: t('products.wizardStep4Subtitle'),
-    6: t('products.wizardStep6Subtitle'),
-  };
-  const effectiveTaxClassLabelId = effectiveTaxClassId(selectedCategoryIds, categoriesList, foodInfo.taxClassId);
-  const effectiveTaxClassLabel = effectiveTaxClassLabelId
-    ? taxClassOptionLabel(
-        labelFor((refs?.taxClasses ?? []).find((c) => c.id === effectiveTaxClassLabelId)?.labels ?? { de: '', en: '' }, i18n.language),
-        effectiveTaxClassLabelId,
-        refs,
-        i18n.language,
-      )
-    : t('products.taxClassNoneYet');
-
-  return (
-    <>
-      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40" />
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col">
-          {/* Header */}
-          <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-gray-200 flex-shrink-0">
-            <div>
-              <h2 className="text-base font-semibold text-gray-900">{t('products.newProduct')}</h2>
-              <p className="text-xs text-gray-400 mt-0.5">{stepSubtitles[step]}</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="flex gap-1">
-                {(['simple', 'extended'] as const).map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => { setMode(m); setStep(1); setDirection('forward'); }}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
-                      mode === m ? 'bg-gray-900 text-white' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    {t(m === 'simple' ? 'products.modeSimple' : 'products.modeExtended')}
-                  </button>
-                ))}
-              </div>
-              <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
-                <X size={16} />
-              </button>
-            </div>
-          </div>
-
-          {/* Step indicator */}
-          <div className="px-6 pt-4 flex-shrink-0">
-            <StepIndicator currentStep={step} onJump={jumpTo} stepSequence={stepSequence} />
-          </div>
-
-          {/* Step content */}
-          <div className="flex-1 overflow-y-auto px-6 py-4">
-            {createdProductId && (
-              <div role="alert" className="mb-4 p-3 rounded-xl bg-amber-50 border border-amber-200">
-                <p className="text-sm text-amber-800">{t('products.createdWithoutPhoto')}</p>
-              </div>
-            )}
-            {isError && (
-              <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200">
-                <p className="text-sm text-red-600">
-                  {(error as { data?: { error?: string } })?.data?.error ?? t('products.failedToCreate')}
-                </p>
-              </div>
-            )}
-            <div key={step} className={direction === 'forward' ? 'animate-slide-in-right' : 'animate-slide-in-left'}>
-              {step === 1 && <Step1Basics form={form} setForm={setForm} imageFile={imageFile} setImageFile={setImageFile} currencySymbol={currencySymbol} nameError={nameError} descError={descError} photoError={photoTried && dishPhotoMissing(imageFile, null)} countryCode={shop?.countryCode} />}
-              {step === 2 && <StepCategories shopId={shopId} categories={categoriesList} selectedCategoryIds={selectedCategoryIds} setSelectedCategoryIds={setSelectedCategoryIds} taxClasses={refs?.taxClasses ?? []} taxRefs={refs} taxClassOverride={foodInfo.taxClassId} setTaxClassOverride={(id) => setFoodInfo({ ...foodInfo, taxClassId: id })} categoryError={categoryError} />}
-              {step === 3 && <StepFoodInfo foodInfo={foodInfo} setFoodInfo={setFoodInfo} refs={refs} showOptional={mode === 'extended'} />}
-              {step === 4 && <Step4Customise variantGroups={variantGroups} addVariantGroup={addVariantGroup} removeVariantGroup={removeVariantGroup} updateVariantGroupName={updateVariantGroupName} addVariantOption={addVariantOption} removeVariantOption={removeVariantOption} updateVariantOption={updateVariantOption} addonGroups={addonGroups} addAddonGroup={addAddonGroup} removeAddonGroup={removeAddonGroup} updateAddonGroup={updateAddonGroup} addAddonOption={addAddonOption} removeAddonOption={removeAddonOption} updateAddonOption={updateAddonOption} refs={refs} />}
-              {step === 6 && <Step6Review form={form} imageFile={imageFile} selectedCategoryIds={selectedCategoryIds} categories={categoriesList} variantGroups={variantGroups} addonGroups={addonGroups} currencySymbol={currencySymbol} foodInfo={foodInfo} refs={refs} effectiveTaxClassLabel={effectiveTaxClassLabel} />}
-            </div>
-          </div>
-
-          {/* Footer navigation */}
-          <div className="flex items-center gap-2 px-6 py-4 border-t border-gray-200 flex-shrink-0">
-            {isFirstStep && (
-              <>
-                <MyButton type="button" variant="secondary" onClick={onClose}>{t('products.cancel')}</MyButton>
-                <div className="flex-1" />
-                <MyButton type="button" onClick={goNext}>{t('products.wizardNext')} →</MyButton>
-              </>
-            )}
-            {!isFirstStep && !isLastStep && (
-              <>
-                <MyButton type="button" variant="secondary" onClick={goBack}>← {t('products.wizardBack')}</MyButton>
-                <div className="flex-1" />
-                {(step === 3 || (mode === 'extended' && step === 4)) && (
-                  <MyButton type="button" variant="ghost" onClick={goNext}>{t('products.wizardSkip')}</MyButton>
-                )}
-                <MyButton type="button" onClick={goNext}>{t('products.wizardNext')} →</MyButton>
-              </>
-            )}
-            {isLastStep && (
-              <>
-                <MyButton type="button" variant="secondary" onClick={goBack}>← {t('products.wizardBack')}</MyButton>
-                <div className="flex-1" />
-                <MyButton type="button" isPending={isBusy} onClick={handleSubmit}>{submitLabel}</MyButton>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-    </>
-  );
-}
-
 // ── Bulk Import Modal ──────────────────────────────────────────────────────────
 
 export function BulkImportModal({ shopId, onClose }: { shopId: string; onClose: () => void }) {
@@ -1078,7 +810,16 @@ export function ProductsPage() {
         </Drawer>
       )}
 
-      {showAddModal && <AddProductModal shopId={shopId!} onClose={() => setParam('addProduct', null)} />}
+      {showAddModal && (
+        <Drawer label={t('dishForm.newDish')} onClose={() => setParam('addProduct', null)} widthClassName="sm:w-[1240px] sm:max-w-full">
+          <AddDishPanel
+            shopId={shopId!}
+            currencySymbol={currencySymbol}
+            categoriesList={categoriesList}
+            onClose={() => setParam('addProduct', null)}
+          />
+        </Drawer>
+      )}
       {showImportModal && <BulkImportModal shopId={shopId!} onClose={() => setParam('importProducts', null)} />}
     </div>
   );

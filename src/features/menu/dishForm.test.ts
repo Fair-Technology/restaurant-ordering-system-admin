@@ -2,7 +2,14 @@ import { describe, expect, it } from 'vitest';
 import type { ProductDto, ShopOptionGroupDto } from '../../services/api';
 import { EMPTY_FOOD_INFO } from './foodInfo';
 import {
+  addNavStatus,
+  addRequiredChecklist,
+  addRequiredLeftCount,
+  applySimilarDishCopy,
   attachedGroupCount,
+  copyFromSimilarDish,
+  emptyDishFormState,
+  firstIncompleteAddSection,
   dishFormStateFromProduct,
   groupBadge,
   groupCategories,
@@ -119,5 +126,130 @@ describe('dishFormStateFromProduct', () => {
     expect(s.foodInfo.additiveIds).toBeNull();
     expect(s.optionGroupRefs).toEqual(['g1']);
     expect(s.isAvailable).toBe(true);
+  });
+});
+
+describe('emptyDishFormState', () => {
+  it('is a blank, unconfirmed, available-everywhere dish, with fresh arrays each call', () => {
+    const e = emptyDishFormState();
+    expect(e.form).toEqual({ name: '', description: '', price: 0 });
+    expect(e.foodInfo.allergenIds).toBeNull();
+    expect(e.foodInfo.additiveIds).toBeNull();
+    expect(e.foodInfo.unavailableModes).toEqual([]);
+    expect(e.isAvailable).toBe(true);
+    for (const k of ['categoryIds', 'optionGroupRefs', 'variantGroups', 'addonGroups'] as const) expect(e[k]).toEqual([]);
+    expect(emptyDishFormState().categoryIds).not.toBe(e.categoryIds);
+    expect(emptyDishFormState().foodInfo.unavailableModes).not.toBe(e.foodInfo.unavailableModes);
+  });
+});
+
+describe('add required checklist', () => {
+  const full = (): DishFormState =>
+    state({ form: { name: 'Pasta', description: '', price: 100 }, categoryIds: ['c1'], foodInfo: { ...EMPTY_FOOD_INFO, allergenIds: [], additiveIds: [] } });
+
+  it('an empty form has all six items open, Basics before Food', () => {
+    const items = addRequiredChecklist(emptyDishFormState(), true);
+    expect(items.map((i) => i.id)).toEqual(['photo', 'name', 'price', 'category', 'allergens', 'additives']);
+    expect(items.map((i) => i.section)).toEqual(['basics', 'basics', 'basics', 'basics', 'food', 'food']);
+    expect(addRequiredLeftCount(items)).toBe(6);
+    expect(firstIncompleteAddSection(items)).toBe('basics');
+  });
+
+  it('counts every item on its own', () => {
+    const base = full();
+    expect(addRequiredLeftCount(addRequiredChecklist(base, false))).toBe(0);
+    expect(addRequiredLeftCount(addRequiredChecklist(base, true))).toBe(1);
+    expect(addRequiredLeftCount(addRequiredChecklist({ ...base, form: { ...base.form, name: '   ' } }, false))).toBe(1);
+    expect(addRequiredLeftCount(addRequiredChecklist({ ...base, form: { ...base.form, price: 0 } }, false))).toBe(1);
+    expect(addRequiredLeftCount(addRequiredChecklist({ ...base, categoryIds: [] }, false))).toBe(1);
+    expect(addRequiredLeftCount(addRequiredChecklist({ ...base, foodInfo: { ...base.foodInfo, allergenIds: null } }, false))).toBe(1);
+    expect(addRequiredLeftCount(addRequiredChecklist({ ...base, foodInfo: { ...base.foodInfo, additiveIds: null } }, false))).toBe(1);
+  });
+
+  it('name + photo + price + category still leaves allergens and additives; "none" ([]) counts as confirmed', () => {
+    const basicsOnly = { ...full(), foodInfo: { ...EMPTY_FOOD_INFO } };
+    const items = addRequiredChecklist(basicsOnly, false);
+    expect(addRequiredLeftCount(items)).toBe(2);
+    expect(firstIncompleteAddSection(items)).toBe('food');
+    const picked = { ...basicsOnly, foodInfo: { ...EMPTY_FOOD_INFO, allergenIds: ['milk'], additiveIds: [] } };
+    expect(addRequiredLeftCount(addRequiredChecklist(picked, false))).toBe(0);
+    expect(firstIncompleteAddSection(addRequiredChecklist(picked, false))).toBeNull();
+  });
+
+  it('jumps to Basics whenever any Basics item is open, even if Food is open too', () => {
+    const items = addRequiredChecklist({ ...emptyDishFormState(), categoryIds: ['c1'] }, false);
+    expect(firstIncompleteAddSection(items)).toBe('basics');
+  });
+
+  it('the nav lines: required left / complete, confirm food, optional or groups, everywhere or customised', () => {
+    const empty = emptyDishFormState();
+    const items = addRequiredChecklist(empty, true);
+    expect(addNavStatus('basics', empty, items, 0, false)).toEqual({ key: 'requiredLeft', tone: 'muted', count: 4 });
+    expect(addNavStatus('basics', empty, items, 0, true)).toEqual({ key: 'requiredLeft', tone: 'warn', count: 4 });
+    expect(addNavStatus('food', empty, items, 0, true)).toEqual({ key: 'confirmFood', tone: 'warn' });
+    expect(addNavStatus('options', empty, items, 0, false)).toEqual({ key: 'optional', tone: 'muted' });
+    expect(addNavStatus('options', empty, items, 2, false)).toEqual({ key: 'groups', tone: 'muted', count: 2 });
+    expect(addNavStatus('availability', empty, items, 0, false).key).toBe('everywhere');
+    const custom = { ...empty, foodInfo: { ...empty.foodInfo, unavailableModes: ['delivery' as const] } };
+    expect(addNavStatus('availability', custom, items, 0, false).key).toBe('customised');
+    expect(addNavStatus('availability', { ...empty, foodInfo: { ...empty.foodInfo, ageRestricted: true } }, items, 0, false).key).toBe('customised');
+    const done = full2();
+    expect(addNavStatus('basics', done, addRequiredChecklist(done, false), 0, false)).toEqual({ key: 'complete', tone: 'ok' });
+    expect(addNavStatus('food', done, addRequiredChecklist(done, false), 0, false)).toEqual({ key: 'complete', tone: 'ok' });
+  });
+});
+
+function full2(): DishFormState {
+  return state({ form: { name: 'Pasta', description: '', price: 100 }, categoryIds: ['c1'] });
+}
+
+describe('copyFromSimilarDish', () => {
+  const source = {
+    name: 'Carbonara', description: 'x', price: 1200,
+    categories: [{ id: 'c1', name: 'Pasta', sortOrder: 0 }],
+    taxClassId: null,
+    allergenIds: ['milk'], additiveIds: ['a1'], dietaryTagIds: ['vegan'], spiceLevel: 'hot',
+    optionGroupRefs: ['g1', 'g2'],
+    variantGroups: [{ id: 'vg', name: 'Size', options: [{ id: 'vo', name: 'Large', priceDelta: 100, isAvailable: true }] }],
+    addonGroups: [{ id: 'ag', name: 'Extras', minSelectable: 0, maxSelectable: 2, options: [{ id: 'ao', name: 'Cheese', priceDelta: 50, isAvailable: true }] }],
+  } as unknown as ProductDto;
+  const categoriesList = [{ id: 'c1', taxClassId: 'food' }];
+
+  it('copies category, effective tax class, option groups and dish-only groups (with new ids)', () => {
+    const c = copyFromSimilarDish(source, categoriesList);
+    expect(c.categoryIds).toEqual(['c1']);
+    expect(c.foodInfo).toEqual({ taxClassId: 'food' });
+    expect(c.optionGroupRefs).toEqual(['g1', 'g2']);
+    expect(c.variantGroups[0].name).toBe('Size');
+    expect(c.variantGroups[0].id).not.toBe('vg');
+    expect(c.variantGroups[0].options[0]).toMatchObject({ name: 'Large', priceDelta: 100 });
+    expect(c.variantGroups[0].options[0].id).not.toBe('vo');
+    expect(c.addonGroups[0]).toMatchObject({ name: 'Extras', minSelectable: 0, maxSelectable: 2 });
+    expect(c.addonGroups[0].id).not.toBe('ag');
+  });
+
+  it("the dish's own tax class wins over its category's suggestion", () => {
+    expect(copyFromSimilarDish({ ...source, taxClassId: 'drink' } as ProductDto, categoriesList).foodInfo.taxClassId).toBe('drink');
+  });
+
+  it('never carries allergens, additives, dietary tags or spice level', () => {
+    const c = copyFromSimilarDish(source, categoriesList);
+    expect(Object.keys(c.foodInfo)).toEqual(['taxClassId']);
+    const target = { ...emptyDishFormState(), form: { name: 'New', description: '', price: 900 } };
+    const applied = applySimilarDishCopy(target, c);
+    expect(applied.foodInfo.allergenIds).toBeNull();
+    expect(applied.foodInfo.additiveIds).toBeNull();
+    expect(applied.foodInfo.dietaryTagIds).toEqual([]);
+    expect(applied.foodInfo.spiceLevel).toBeNull();
+    expect(applied.foodInfo.taxClassId).toBe('food');
+    expect(applied.categoryIds).toEqual(['c1']);
+    expect(applied.form).toEqual({ name: 'New', description: '', price: 900 });
+  });
+
+  it('leaves what the owner already confirmed alone', () => {
+    const target = { ...emptyDishFormState(), foodInfo: { ...emptyDishFormState().foodInfo, allergenIds: ['eggs'], additiveIds: [] } };
+    const applied = applySimilarDishCopy(target, copyFromSimilarDish(source, categoriesList));
+    expect(applied.foodInfo.allergenIds).toEqual(['eggs']);
+    expect(applied.foodInfo.additiveIds).toEqual([]);
   });
 });

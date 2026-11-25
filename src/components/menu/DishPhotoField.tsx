@@ -9,7 +9,7 @@ import { checkProductImageFile } from '../../features/menu/productImage';
  * The photo picker shared by dishes and combos: file input, 4:3 crop window, before/after preview.
  * The cropped file is handed up via setImageFile; uploading it is the caller's job.
  */
-export function DishPhotoField({ imageFile, setImageFile, existingImageUrl, photoError, label, large }: {
+export function DishPhotoField({ imageFile, setImageFile, existingImageUrl, photoError, label, large, requiredNote, errorText }: {
   imageFile: File | null;
   setImageFile: (f: File | null) => void;
   existingImageUrl?: string | null;
@@ -19,6 +19,10 @@ export function DishPhotoField({ imageFile, setImageFile, existingImageUrl, phot
   label?: string;
   /** The 176px edit-screen look: one big square photo with a "Replace photo" button under it. */
   large?: boolean;
+  /** Replaces the "(required)" note beside the label (the add screen says "Required"). */
+  requiredNote?: string;
+  /** Replaces the required-photo message. */
+  errorText?: string;
 }) {
   const { t } = useTranslation();
   const fieldLabel = label ?? t('products.image');
@@ -61,7 +65,7 @@ export function DishPhotoField({ imageFile, setImageFile, existingImageUrl, phot
     return (
       <div className="flex w-44 flex-none flex-col gap-2.5">
         <p className="text-sm font-semibold">
-          {fieldLabel} <span className="font-medium text-muted">{t('products.imageRequiredNote')}</span>
+          {fieldLabel} <span className="font-medium text-muted">{requiredNote ?? t('products.imageRequiredNote')}</span>
         </p>
         {shown ? (
           <img src={shown} alt={fieldLabel} className="h-44 w-44 rounded-2xl object-cover" />
@@ -83,7 +87,7 @@ export function DishPhotoField({ imageFile, setImageFile, existingImageUrl, phot
           {shown ? t('dishForm.replacePhoto') : t('dishForm.addPhoto')}
         </button>
         {imageError && <p role="alert" className="text-sm text-[#b42318]">{imageError}</p>}
-        {photoError && !imageError && <p role="alert" className="text-sm text-[#b42318]">{t('products.photoRequired')}</p>}
+        {photoError && !imageError && <p role="alert" className="text-sm text-[#b42318]">{errorText ?? t('products.photoRequired')}</p>}
         {cropDialog}
       </div>
     );

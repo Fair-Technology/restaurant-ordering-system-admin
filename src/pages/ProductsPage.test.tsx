@@ -76,6 +76,14 @@ vi.mock('../components/menu/DishEditor', () => ({
   },
 }));
 
+vi.mock('../components/menu/AddDishPanel', () => ({
+  AddDishPanel: ({ onClose }: { onClose: () => void }) => (
+    <div data-testid="add-panel">
+      <button type="button" aria-label="close-add" onClick={onClose} />
+    </div>
+  ),
+}));
+
 function Probe() {
   const loc = useLocation();
   return <div data-testid="search">{loc.search}</div>;
@@ -102,6 +110,24 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
+});
+
+describe('ProductsPage add dish drawer', () => {
+  it('?addProduct=1 opens the Add dish panel in a drawer, and closing it clears the param', () => {
+    renderAt('/shops/s1/dishes?addProduct=1');
+    const dialog = screen.getByRole('dialog');
+    expect(dialog.className).toContain('sm:w-[1240px]');
+    expect(within(dialog).getByTestId('add-panel')).toBeTruthy();
+    expect(screen.getByText('Tiramisu')).toBeTruthy();
+    fireEvent.click(screen.getByLabelText('close-add'));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(search()).toBe('');
+  });
+
+  it('is closed without the param', () => {
+    renderAt('/shops/s1/dishes');
+    expect(screen.queryByTestId('add-panel')).toBeNull();
+  });
 });
 
 describe('ProductsPage dish drawer', () => {

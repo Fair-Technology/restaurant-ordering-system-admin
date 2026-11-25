@@ -211,6 +211,25 @@ describe('DishForm header and nav', () => {
     expect(screen.queryByText('Missing translation')).toBeNull();
   });
 
+  it('"Use the German text" copies the German name and description into the English fields (edit)', () => {
+    render(<Harness start={initial({ nameTranslations: {}, descriptionTranslations: {} })} />);
+    expect(screen.queryByRole('button', { name: 'Use the German text' })).toBeNull(); // only on the English tab
+    fireEvent.click(screen.getByRole('button', { name: /^English/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Use the German text' }));
+    expect((screen.getByLabelText(/^Name \(English\)/) as HTMLInputElement).value).toBe('Peperoncino');
+    expect((screen.getByLabelText(/^Description \(English\)/) as HTMLTextAreaElement).value).toBe('Chili, Tomaten und Knoblauch');
+    expect(screen.queryByRole('button', { name: 'Use the German text' })).toBeNull(); // description is filled now
+    // the German side is untouched
+    fireEvent.click(screen.getByRole('button', { name: /^German/ }));
+    expect((screen.getByLabelText(/^Name \(German\)/) as HTMLInputElement).value).toBe('Peperoncino');
+  });
+
+  it('the English labels carry no required/optional badges in edit mode', () => {
+    render(<Harness start={initial()} />);
+    expect(screen.getByLabelText('Name (German)')).toBeTruthy();
+    expect(screen.getByLabelText('Description (German)')).toBeTruthy();
+  });
+
   it('caps the description at 160 characters and counts live', () => {
     render(<Harness start={initial()} />);
     const desc = screen.getByLabelText(/^Description/) as HTMLTextAreaElement;
@@ -250,10 +269,90 @@ describe('DishForm basics', () => {
     const slot = <div data-testid="similar">Start from a similar dish</div>;
     const { unmount } = render(<Harness start={initial()} props={{ mode: 'add', startFromSimilarDish: slot }} />);
     expect(screen.getByTestId('similar')).toBeTruthy();
-    expect(screen.getByText('New dish · Pasta')).toBeTruthy();
+    expect(screen.getByText('Add dish · not on the menu yet')).toBeTruthy();
     unmount();
     render(<Harness start={initial()} props={{ startFromSimilarDish: slot }} />);
     expect(screen.queryByTestId('similar')).toBeNull();
+  });
+});
+
+describe('DishForm add mode', () => {
+  const addProps = (over: Partial<DishFormProps> = {}): Partial<DishFormProps> => ({
+    mode: 'add',
+    addRequiredLeft: 1,
+    addStatus: { text: 'Draft · not on the menu yet', tone: 'muted' },
+    onSaveDraft: vi.fn(),
+    onAddToMenu: vi.fn(),
+    onCancel: vi.fn(),
+    requiredChecklist: [{ id: 'photo', label: 'Photo', done: false, section: 'basics' }],
+    ...over,
+  });
+  const blank = () => initial({ form: { name: '', description: '', price: 0 }, categoryIds: [] });
+
+  it('puts "Required"/"optional" badges on the labels and word-for-word errors after a try', () => {
+    render(<Harness start={blank()} props={addProps()} />);
+    expect(screen.getByLabelText('Name (German) · Required')).toBeTruthy();
+    expect(screen.getByLabelText('Description (German) · optional')).toBeTruthy();
+    expect(screen.getByRole('textbox', { name: /^Price/ })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: '1 required left' }));
+    expect(screen.getByText('Enter a German name.').getAttribute('role')).toBe('alert');
+    expect(screen.getByText('Choose at least one category.').getAttribute('role')).toBe('alert');
+    fireEvent.click(screen.getByRole('button', { name: /^English/ }));
+    expect(screen.getByLabelText('Name (English) · optional')).toBeTruthy();
+  });
+
+  it('calls onAddToMenu only when nothing is left, and the primary button is never disabled', () => {
+    const onAddToMenu = vi.fn();
+    const { unmount } = render(<Harness start={initial()} props={addProps({ onAddToMenu })} />);
+    const left = screen.getByRole('button', { name: '1 required left' }) as HTMLButtonElement;
+    expect(left.disabled).toBe(false);
+    fireEvent.click(left);
+    expect(onAddToMenu).not.toHaveBeenCalled();
+    unmount();
+    render(<Harness start={initial()} props={addProps({ onAddToMenu, addRequiredLeft: 0 })} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add to menu' }));
+    expect(onAddToMenu).toHaveBeenCalledTimes(1);
+  });
+
+  it('Save as draft is disabled only by an empty name', () => {
+    const onSaveDraft = vi.fn();
+    const { unmount } = render(<Harness start={blank()} props={addProps({ onSaveDraft })} />);
+    expect((screen.getByRole('button', { name: 'Save as draft' }) as HTMLButtonElement).disabled).toBe(true);
+    unmount();
+    render(<Harness start={initial({ categoryIds: [], form: { name: 'X', description: '', price: 0 } })} props={addProps({ onSaveDraft, addRequiredLeft: 5 })} />);
+    const draft = screen.getByRole('button', { name: 'Save as draft' }) as HTMLButtonElement;
+    expect(draft.disabled).toBe(false);
+    fireEvent.click(draft);
+    expect(onSaveDraft).toHaveBeenCalledTimes(1);
+  });
+
+  it('has no on-the-menu switch, and uses the Add footer (no Discard / Save changes)', () => {
+    render(<Harness start={blank()} props={addProps()} />);
+    expect(screen.queryByRole('switch', { name: /On the menu|Hidden/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Discard' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Save changes' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
+  });
+
+  it('after adding, swaps the footer buttons and shows the success banner at the top', () => {
+    const onViewInMenu = vi.fn();
+    const onAddAnother = vi.fn();
+    render(
+      <Harness
+        start={initial()}
+        props={addProps({
+          isAdded: true, addRequiredLeft: 0, onViewInMenu, onAddAnother,
+          addStatus: { text: 'On the menu', tone: 'ok' },
+          successBanner: <div role="status">Peperoncino was added to the menu.</div>,
+        })}
+      />,
+    );
+    expect(screen.getByText('Peperoncino was added to the menu.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Save as draft' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'View in menu' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add another dish' }));
+    expect(onViewInMenu).toHaveBeenCalledTimes(1);
+    expect(onAddAnother).toHaveBeenCalledTimes(1);
   });
 });
 

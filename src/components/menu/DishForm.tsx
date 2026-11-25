@@ -33,13 +33,16 @@ import { withToggledRef } from '../../features/menu/optionGroupLibrary';
 import {
   DESCRIPTION_LIMIT,
   DISH_SECTIONS,
+  addNavStatus,
   attachedGroupCount,
+  firstIncompleteAddSection,
   groupBadge,
   groupCategories,
   listStatus,
   navStatus,
   translationMissing,
   vatBreakdown,
+  type AddRequiredItem,
   type DishFormState,
   type DishSection,
   type ListStatus,
@@ -81,6 +84,26 @@ export interface DishFormProps {
   startFromSimilarDish?: ReactNode;
   /** Extra rows at the bottom of the Availability section (edit mode: schedule and delete). */
   availabilityExtras?: ReactNode;
+
+  // ── Add mode only (ignored when `mode` is `edit`) ──────────────────────────────
+  /** The "Before you add it" list under the nav; each row jumps to its section. */
+  requiredChecklist?: (AddRequiredItem & { label: string })[];
+  /** The footer's left status text. */
+  addStatus?: { text: string; tone: 'muted' | 'ok' };
+  /** How many of the six required items are still open; 0 turns the primary button into "Add to menu". */
+  addRequiredLeft?: number;
+  onSaveDraft?: () => void;
+  isSavingDraft?: boolean;
+  /** Called only once `addRequiredLeft` is 0. */
+  onAddToMenu?: () => void;
+  isAddingToMenu?: boolean;
+  onCancel?: () => void;
+  /** Shown at the top of the scrolling content after a successful add. */
+  successBanner?: ReactNode;
+  /** The dish was added: the footer offers "View in menu" and "Add another dish" instead. */
+  isAdded?: boolean;
+  onViewInMenu?: () => void;
+  onAddAnother?: () => void;
 }
 
 /**
@@ -109,6 +132,18 @@ export function DishForm({
   onClose,
   startFromSimilarDish,
   availabilityExtras,
+  requiredChecklist,
+  addStatus,
+  addRequiredLeft = 0,
+  onSaveDraft,
+  isSavingDraft = false,
+  onAddToMenu,
+  isAddingToMenu = false,
+  onCancel,
+  successBanner,
+  isAdded = false,
+  onViewInMenu,
+  onAddAnother,
 }: DishFormProps) {
   const { t } = useTranslation();
   const { data: libraryGroups } = useGetOptionGroupsQuery({ shopId });
@@ -151,6 +186,21 @@ export function DishForm({
     onDiscard();
   };
 
+  // Add mode: the primary button either shows what is still missing (and takes you there) or adds the dish.
+  const addPrimary = () => {
+    setTried(true);
+    if (addRequiredLeft > 0) {
+      setPickedLanguage(originalLanguage);
+      setSection(firstIncompleteAddSection(requiredChecklist ?? []) ?? 'basics');
+      return;
+    }
+    onAddToMenu?.();
+  };
+  const addDraft = () => {
+    setTried(true);
+    if (!nameMissing) onSaveDraft?.();
+  };
+
   const selectedCategories = categoriesList.filter((c) => value.categoryIds.includes(c.id));
   const categoriesText = selectedCategories.length ? selectedCategories.map((c) => c.name).join(', ') : t('dishForm.noCategory');
   const langName = (l: MenuLanguage) => t(`shops.languageName.${l}`);
@@ -169,15 +219,19 @@ export function DishForm({
           <X size={18} strokeWidth={2.5} aria-hidden="true" />
         </button>
         <div className="flex min-w-0 flex-col">
-          <h1 className="truncate text-[22px] font-bold leading-7">{value.form.name || t('dishes.editor.untitledDish')}</h1>
+          <h1 className="truncate text-[22px] font-bold leading-7">{value.form.name || t(mode === 'add' ? 'dishForm.newDish' : 'dishes.editor.untitledDish')}</h1>
           <span className="truncate text-[13px] leading-[18px] text-muted">
-            {t(mode === 'edit' ? 'dishForm.subtitleEdit' : 'dishForm.subtitleAdd', { categories: categoriesText })}
+            {mode === 'edit'
+              ? t('dishForm.subtitleEdit', { categories: categoriesText })
+              : t(isAdded ? 'dishForm.subtitleAdded' : 'dishForm.subtitleAdd')}
           </span>
         </div>
         <div className="ml-auto flex flex-none items-center gap-6">
-          <PillSwitch checked={value.isAvailable} onChange={(on) => patch({ isAvailable: on })}>
-            {value.isAvailable ? t('dishForm.menuOn') : t('dishForm.menuOff')}
-          </PillSwitch>
+          {mode === 'edit' && (
+            <PillSwitch checked={value.isAvailable} onChange={(on) => patch({ isAvailable: on })}>
+              {value.isAvailable ? t('dishForm.menuOn') : t('dishForm.menuOff')}
+            </PillSwitch>
+          )}
           {extraLanguage && activeLanguage && (
             <div role="group" aria-label={t('dishForm.language')} className="flex gap-0.5 rounded-full bg-sand p-[3px]">
               {languages.map((l) => {
@@ -191,7 +245,8 @@ export function DishForm({
                     className={`inline-flex h-[38px] items-center gap-2 rounded-full px-[18px] text-sm font-semibold ${focusRing} ${on ? 'bg-ink text-white' : 'text-ink'}`}
                   >
                     {langName(l)}
-                    {l === extraLanguage && extraMissing && (
+                    {mode === 'add' && l === extraLanguage && <span className="font-medium opacity-85">{t('dishForm.optionalBadge')}</span>}
+                    {mode === 'edit' && l === extraLanguage && extraMissing && (
                       <span role="img" aria-label={t('dishForm.translationMissingDot')} className="h-2 w-2 rounded-full bg-warn-accent" />
                     )}
                   </button>
@@ -209,14 +264,19 @@ export function DishForm({
           className="flex flex-none gap-1.5 overflow-x-auto border-b border-[#e6d9c6] p-3 md:w-[236px] md:flex-col md:overflow-visible md:border-b-0 md:border-r md:px-4 md:py-5"
         >
           {DISH_SECTIONS.map((s) => {
-            const st = navStatus(s, value, extraLanguage, groupCount);
+            const st =
+              mode === 'add'
+                ? addNavStatus(s, value, requiredChecklist ?? [], groupCount, tried)
+                : navStatus(s, value, extraLanguage, groupCount);
             const active = s === section;
             const status =
               st.key === 'translationMissing'
                 ? t(`dishForm.descriptionMissing.${st.language}`)
                 : st.key === 'groups'
                   ? t('dishForm.nav.groups', { count: st.count })
-                  : t(`dishForm.nav.${st.key}`);
+                  : st.key === 'requiredLeft'
+                    ? t('dishForm.nav.requiredLeft', { count: st.count })
+                    : t(`dishForm.nav.${st.key}`);
             return (
               <button
                 key={s}
@@ -230,15 +290,45 @@ export function DishForm({
               </button>
             );
           })}
+          {mode === 'add' && requiredChecklist && (
+            <div className="flex flex-none flex-col gap-1 md:mt-3.5 md:border-t md:border-line-soft md:pt-4">
+              <span className="px-3.5 text-xs font-semibold uppercase leading-4 tracking-[.06em] text-muted">{t('dishForm.checklist.title')}</span>
+              {requiredChecklist.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => {
+                    setSection(c.section);
+                    if (c.section === 'basics') setPickedLanguage(originalLanguage);
+                  }}
+                  aria-label={t(c.done ? 'dishForm.checklist.done' : 'dishForm.checklist.notDone', {
+                    label: c.label,
+                    section: t(`dishForm.sectionNames.${c.section}`),
+                  })}
+                  className={`flex min-h-11 items-center gap-2.5 rounded-xl px-3.5 text-left text-sm font-medium hover:bg-cream/60 ${focusRing}`}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`flex h-5 w-5 flex-none items-center justify-center rounded-full border-2 ${c.done ? 'border-ok bg-ok' : 'border-control bg-white'}`}
+                  >
+                    {c.done && <Check size={12} strokeWidth={3.5} className="text-white" />}
+                  </span>
+                  <span className="whitespace-nowrap">{c.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </nav>
 
         {/* Active section */}
         <section ref={mainRef} aria-label={t(`dishForm.sectionNames.${section}`)} className="min-w-0 flex-1 overflow-y-auto px-6 pb-10 pt-7 md:px-9">
           <div className="flex max-w-[720px] flex-col gap-7">
+            {mode === 'add' && isAdded && successBanner}
             {section === 'basics' && (
               <>
                 {mode === 'add' && startFromSimilarDish}
                 <BasicsSection
+                  mode={mode}
                   value={value}
                   patch={patch}
                   patchFood={patchFood}
@@ -251,6 +341,7 @@ export function DishForm({
                   currency={currency}
                   currencySymbol={currencySymbol}
                   translating={translating}
+                  originalLanguage={originalLanguage}
                   labelLanguage={extraLanguage ? activeLanguage : undefined}
                   langName={langName}
                   tried={tried}
@@ -274,8 +365,8 @@ export function DishForm({
               />
             )}
             {section === 'availability' && (
-              <AvailabilitySection value={value} patchFood={patchFood}>
-                {availabilityExtras}
+              <AvailabilitySection mode={mode} value={value} patchFood={patchFood}>
+                {mode === 'edit' && availabilityExtras}
               </AvailabilitySection>
             )}
           </div>
@@ -283,29 +374,92 @@ export function DishForm({
       </div>
 
       {/* Footer */}
-      <footer className="flex h-[72px] flex-none items-center gap-3 border-t border-[#e6d9c6] px-7">
-        <span role="status" className={`flex items-center gap-2 text-sm font-semibold leading-5 ${dirty ? 'text-warn' : 'text-ok'}`}>
-          <span aria-hidden="true" className={`h-2 w-2 rounded-full ${dirty ? 'bg-warn' : 'bg-ok'}`} />
-          {dirty ? t('dishes.editor.unsaved') : t('dishes.editor.allSaved')}
-        </span>
-        <button
-          type="button"
-          disabled={!dirty || isSaving}
-          onClick={discard}
-          className={`ml-auto h-12 rounded-full border-[1.5px] border-control bg-white px-6 text-[15px] font-semibold hover:bg-cream disabled:opacity-40 disabled:hover:bg-white ${focusRing}`}
-        >
-          {t('dishes.editor.discard')}
-        </button>
-        <PendingButton
-          type="button"
-          isPending={isSaving}
-          disabled={!dirty}
-          onClick={save}
-          className={`h-12 rounded-full bg-ink px-7 text-[15px] font-bold text-white hover:bg-black disabled:opacity-40 ${focusRing}`}
-        >
-          {saveLabel}
-        </PendingButton>
-      </footer>
+      {mode === 'edit' && (
+        <footer className="flex h-[72px] flex-none items-center gap-3 border-t border-[#e6d9c6] px-7">
+          <span role="status" className={`flex items-center gap-2 text-sm font-semibold leading-5 ${dirty ? 'text-warn' : 'text-ok'}`}>
+            <span aria-hidden="true" className={`h-2 w-2 rounded-full ${dirty ? 'bg-warn' : 'bg-ok'}`} />
+            {dirty ? t('dishes.editor.unsaved') : t('dishes.editor.allSaved')}
+          </span>
+          <button
+            type="button"
+            disabled={!dirty || isSaving}
+            onClick={discard}
+            className={`ml-auto h-12 rounded-full border-[1.5px] border-control bg-white px-6 text-[15px] font-semibold hover:bg-cream disabled:opacity-40 disabled:hover:bg-white ${focusRing}`}
+          >
+            {t('dishes.editor.discard')}
+          </button>
+          <PendingButton
+            type="button"
+            isPending={isSaving}
+            disabled={!dirty}
+            onClick={save}
+            className={`h-12 rounded-full bg-ink px-7 text-[15px] font-bold text-white hover:bg-black disabled:opacity-40 ${focusRing}`}
+          >
+            {saveLabel}
+          </PendingButton>
+        </footer>
+      )}
+      {mode === 'add' && (
+        <footer className="flex min-h-[72px] flex-none flex-wrap items-center gap-3 border-t border-[#e6d9c6] px-7 py-2">
+          <span role="status" className={`flex items-center gap-2 text-sm font-semibold leading-5 ${isAdded || addStatus?.tone === 'ok' ? 'text-ok' : 'text-muted'}`}>
+            <span aria-hidden="true" className={`h-2 w-2 rounded-full ${isAdded || addStatus?.tone === 'ok' ? 'bg-ok' : 'bg-muted'}`} />
+            {addStatus?.text}
+          </span>
+          {isAdded ? (
+            <>
+              <button
+                type="button"
+                onClick={onViewInMenu}
+                className={`ml-auto h-12 rounded-full border-[1.5px] border-control bg-white px-6 text-[15px] font-semibold hover:bg-cream ${focusRing}`}
+              >
+                {t('dishForm.viewInMenu')}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setTried(false);
+                  setSection('basics');
+                  setPickedLanguage(undefined);
+                  onAddAnother?.();
+                }}
+                className={`h-12 rounded-full bg-ink px-7 text-[15px] font-bold text-white hover:bg-black ${focusRing}`}
+              >
+                {t('dishForm.addAnother')}
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={onCancel}
+                className={`ml-auto h-12 rounded-full px-5 text-[15px] font-semibold hover:bg-cream ${focusRing}`}
+              >
+                {t('dishForm.cancel')}
+              </button>
+              <PendingButton
+                type="button"
+                isPending={isSavingDraft}
+                disabled={nameMissing || isAddingToMenu}
+                onClick={addDraft}
+                className={`h-12 rounded-full border-[1.5px] border-control bg-white px-6 text-[15px] font-semibold hover:bg-cream disabled:opacity-40 disabled:hover:bg-white ${focusRing}`}
+              >
+                {t('dishForm.saveDraft')}
+              </PendingButton>
+              <PendingButton
+                type="button"
+                isPending={isAddingToMenu}
+                disabled={isSavingDraft}
+                onClick={addPrimary}
+                className={`h-12 rounded-full border-2 border-ink px-7 text-[15px] font-bold disabled:opacity-40 ${focusRing} ${
+                  addRequiredLeft > 0 ? 'bg-white text-ink hover:bg-cream' : 'bg-ink text-white hover:bg-black'
+                }`}
+              >
+                {addRequiredLeft > 0 ? t('dishForm.requiredLeft', { count: addRequiredLeft }) : t('dishForm.addToMenu')}
+              </PendingButton>
+            </>
+          )}
+        </footer>
+      )}
     </div>
   );
 }
@@ -335,6 +489,7 @@ function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; chi
 // ── 1. Basics ──────────────────────────────────────────────────────────────────
 
 interface BasicsProps {
+  mode: DishFormProps['mode'];
   value: DishFormState;
   patch: (p: Partial<DishFormState>) => void;
   patchFood: (p: Partial<DishFormState['foodInfo']>) => void;
@@ -347,6 +502,8 @@ interface BasicsProps {
   currency: string;
   currencySymbol: string;
   translating: MenuLanguage | undefined;
+  /** The shop's original (first) language: what "Use the German text" copies from. */
+  originalLanguage: MenuLanguage | undefined;
   /** The language shown in the field labels, e.g. "Name (German)"; absent when the shop has one language. */
   labelLanguage: MenuLanguage | undefined;
   langName: (l: MenuLanguage) => string;
@@ -358,10 +515,13 @@ interface BasicsProps {
 }
 
 function BasicsSection({
-  value, patch, patchFood, shopId, imageFile, setImageFile, existingImageUrl, categoriesList, refs, currency, currencySymbol,
-  translating, labelLanguage, langName, tried, nameMissing, descMissing, photoMissing, categoryMissing,
+  mode, value, patch, patchFood, shopId, imageFile, setImageFile, existingImageUrl, categoriesList, refs, currency, currencySymbol,
+  translating, originalLanguage, labelLanguage, langName, tried, nameMissing, descMissing, photoMissing, categoryMissing,
 }: BasicsProps) {
   const { t, i18n } = useTranslation();
+  const adding = mode === 'add';
+  /** Add mode marks each field "Required" or "optional" beside its label; edit mode keeps the plain labels. */
+  const withBadge = (label: string, badge: string | null) => (adding && badge ? `${label} · ${badge}` : label);
 
   // The language being edited: the original fields, or the extra language's translation map.
   const nameValue = translating ? value.nameTranslations[translating] ?? '' : value.form.name;
@@ -402,21 +562,32 @@ function BasicsSection({
           existingImageUrl={existingImageUrl}
           photoError={tried && photoMissing}
           label={t('dishes.editor.dishPhoto')}
+          {...(adding ? { requiredNote: t('dishForm.requiredBadge'), errorText: t('dishForm.errors.photo') } : {})}
         />
         <div className="flex min-w-0 flex-1 flex-col gap-[18px]">
           <div>
             <MyInput
-              label={labelLanguage ? t('dishForm.nameLabel', { language: langName(labelLanguage) }) : t('products.name')}
+              label={withBadge(
+                labelLanguage ? t('dishForm.nameLabel', { language: langName(labelLanguage) }) : t('products.name'),
+                translating ? t('dishForm.optionalBadge') : t('dishForm.requiredBadge'),
+              )}
               value={nameValue}
               placeholder={translating ? value.form.name : t('products.namePlaceholder')}
               onChange={(e) => setName(e.target.value)}
               className="h-12 text-base!"
             />
-            {tried && nameMissing && !translating && <p className="mt-1 text-xs text-[#b42318]">{t('dishes.editor.nameRequired')}</p>}
+            {tried && nameMissing && !translating && (
+              <p role="alert" className="mt-1 text-xs text-[#b42318]">
+                {t(adding ? 'dishForm.errors.name' : 'dishes.editor.nameRequired')}
+              </p>
+            )}
           </div>
           <div>
             <MyTextarea
-              label={labelLanguage ? t('dishForm.descriptionLabel', { language: langName(labelLanguage) }) : t('products.description')}
+              label={withBadge(
+                labelLanguage ? t('dishForm.descriptionLabel', { language: langName(labelLanguage) }) : t('products.description'),
+                t('dishForm.optionalBadge'),
+              )}
               rows={3}
               maxLength={DESCRIPTION_LIMIT}
               value={descValue}
@@ -428,9 +599,23 @@ function BasicsSection({
             <div className="mt-1.5 flex justify-between gap-3 text-[13px] leading-[18px] text-muted">
               {missingHere ? (
                 <span className="font-semibold text-warn">{t('dishForm.missingTranslation')}</span>
-              ) : tried && descMissing && !translating ? (
-                <span className="text-[#b42318]">{t('dishes.editor.descriptionRequired')}</span>
+              ) : mode === 'edit' && tried && descMissing && !translating ? (
+                <span role="alert" className="text-[#b42318]">{t('dishes.editor.descriptionRequired')}</span>
               ) : null}
+              {translating && descEmptyHere && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    patch({
+                      nameTranslations: withTranslation(value.nameTranslations, translating, value.form.name),
+                      descriptionTranslations: withTranslation(value.descriptionTranslations, translating, value.form.description),
+                    })
+                  }
+                  className={`-my-2 min-h-11 text-[13px] font-semibold text-warn-accent underline ${focusRing}`}
+                >
+                  {t('dishForm.useGerman', { language: langName(originalLanguage ?? translating) })}
+                </button>
+              )}
               <span className="ml-auto">{t('dishForm.counter', { count: descValue.length, max: DESCRIPTION_LIMIT })}</span>
             </div>
           </div>
@@ -439,7 +624,7 @@ function BasicsSection({
 
       <div className="grid grid-cols-1 gap-x-5 gap-y-2 sm:grid-cols-2">
         <CurrencyInput
-          label={t('products.price', { symbol: currencySymbol })}
+          label={withBadge(t('products.price', { symbol: currencySymbol }), t('dishForm.requiredBadge'))}
           valueCents={value.form.price}
           onChange={(cents) => patch({ form: { ...value.form, price: cents } })}
           labelClassName="text-[13px] font-semibold text-[#4a413b]"
@@ -462,6 +647,9 @@ function BasicsSection({
             </option>
           ))}
         </MySelect>
+        {adding && tried && value.form.price <= 0 && (
+          <p role="alert" className="text-xs text-[#b42318] sm:col-span-2">{t('dishForm.errors.price', { amount: money(0) })}</p>
+        )}
         <p className="text-[13px] leading-[18px] text-muted sm:col-span-2">
           {vat
             ? t('dishForm.priceSummary', { price: money(value.form.price), vat: money(vat.vat), net: money(vat.net) })
@@ -480,19 +668,22 @@ function BasicsSection({
         selectedIds={value.categoryIds}
         onChange={(ids) => patch({ categoryIds: ids })}
         error={tried && categoryMissing}
+        addMode={adding}
       />
     </>
   );
 }
 
 function CategoriesField({
-  shopId, categories, selectedIds, onChange, error,
+  shopId, categories, selectedIds, onChange, error, addMode,
 }: {
   shopId: string;
   categories: DishFormProps['categoriesList'];
   selectedIds: string[];
   onChange: (ids: string[]) => void;
   error: boolean;
+  /** Add mode: mark the field "Required" and word the error like the other add-screen errors. */
+  addMode: boolean;
 }) {
   const { t } = useTranslation();
   const [createCategory, { isLoading: creating }] = useCreateCategoryMutation();
@@ -527,7 +718,10 @@ function CategoriesField({
 
   return (
     <div className="flex flex-col gap-2.5">
-      <span className="text-sm font-semibold leading-5">{t('products.categories')}</span>
+      <span className="text-sm font-semibold leading-5">
+        {t('products.categories')}
+        {addMode && <span className="font-medium text-muted"> · {t('dishForm.requiredBadge')}</span>}
+      </span>
       <div className="flex flex-wrap gap-2">
         {selected.map((c) => (
           <span key={c.id} className="flex h-10 items-center gap-1 rounded-full bg-sand pl-4 pr-1.5 text-sm font-semibold">
@@ -591,7 +785,7 @@ function CategoriesField({
           {createError && <p role="alert" className="text-xs text-[#b42318]">{t('dishForm.createCategoryFailed')}</p>}
         </div>
       )}
-      {error && <p role="alert" className="text-xs text-[#b42318]">{t('products.categoryRequired')}</p>}
+      {error && <p role="alert" className="text-xs text-[#b42318]">{t(addMode ? 'dishForm.errors.category' : 'products.categoryRequired')}</p>}
     </div>
   );
 }
@@ -946,8 +1140,9 @@ const MODE_HELP: Record<FulfilmentMode, string> = {
 };
 
 function AvailabilitySection({
-  value, patchFood, children,
+  mode, value, patchFood, children,
 }: {
+  mode: DishFormProps['mode'];
   value: DishFormState;
   patchFood: (p: Partial<DishFormState['foodInfo']>) => void;
   children?: ReactNode;
@@ -958,7 +1153,14 @@ function AvailabilitySection({
 
   return (
     <>
-      <SectionTitle>{t('dishForm.sectionNames.availability')}</SectionTitle>
+      {mode === 'add' ? (
+        <div className="flex flex-col gap-1.5">
+          <SectionTitle>{t('dishForm.sectionNames.availability')}</SectionTitle>
+          <p className="text-sm leading-[21px] text-muted">{t('dishForm.availabilityIntroAdd')}</p>
+        </div>
+      ) : (
+        <SectionTitle>{t('dishForm.sectionNames.availability')}</SectionTitle>
+      )}
       <div className="flex flex-col gap-3">
         <h3 className="text-[17px] font-bold leading-6">{t('dishForm.availableFor')}</h3>
         <ul className="flex flex-col">

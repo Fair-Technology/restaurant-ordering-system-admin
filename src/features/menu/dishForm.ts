@@ -1,6 +1,6 @@
 import type { MenuLanguage, ProductDto, ShopOptionGroupDto, TranslationMap } from '../../services/api';
 import type { AddonGroup, VariantGroup } from '../../pages/ProductWizardSteps';
-import { foodInfoFromProduct, isFoodInfoDeclared, type FoodInfo } from './foodInfo';
+import { EMPTY_FOOD_INFO, effectiveTaxClassId, foodInfoFromProduct, isFoodInfoDeclared, type FoodInfo } from './foodInfo';
 import { optionGroupsFromProduct } from './optionFoodInfo';
 
 export const DESCRIPTION_LIMIT = 160;
@@ -56,9 +56,12 @@ export function foodInfoComplete(f: Pick<FoodInfo, 'allergenIds' | 'additiveIds'
 
 export interface NavStatus {
   /** i18n key suffix under `dishForm.nav.` */
-  key: 'complete' | 'translationMissing' | 'confirmAllergens' | 'groups' | 'onMenu' | 'hidden';
+  key:
+    | 'complete' | 'translationMissing' | 'confirmAllergens' | 'groups' | 'onMenu' | 'hidden'
+    // Add mode only
+    | 'requiredLeft' | 'confirmFood' | 'optional' | 'everywhere' | 'customised';
   tone: NavTone;
-  /** Count for `groups`; the language for `translationMissing`. */
+  /** Count for `groups` and `requiredLeft`; the language for `translationMissing`. */
   count?: number;
   language?: MenuLanguage;
 }
@@ -112,4 +115,108 @@ export function groupBadge(g: Pick<ShopOptionGroupDto, 'kind' | 'minSelectable' 
 /** Distinct, non-empty option categories of an extras group, in first-seen order ("Cheese, Protein"). */
 export function groupCategories(g: Pick<ShopOptionGroupDto, 'options'>): string[] {
   return [...new Set(g.options.map((o) => o.category?.trim()).filter((c): c is string => !!c))];
+}
+
+
+// ── Add dish ───────────────────────────────────────────────────────────────────
+
+/** A blank starting point for a new dish: allergens and additives unconfirmed (`null`), available everywhere. */
+export function emptyDishFormState(): DishFormState {
+  return {
+    form: { name: '', description: '', price: 0 },
+    nameTranslations: {},
+    descriptionTranslations: {},
+    categoryIds: [],
+    foodInfo: { ...EMPTY_FOOD_INFO, dietaryTagIds: [], unavailableModes: [] },
+    variantGroups: [],
+    addonGroups: [],
+    optionGroupRefs: [],
+    isAvailable: true,
+  };
+}
+
+export type AddRequiredId = 'photo' | 'name' | 'price' | 'category' | 'allergens' | 'additives';
+
+export interface AddRequiredItem {
+  id: AddRequiredId;
+  done: boolean;
+  /** The section where the item is fixed. */
+  section: DishSection;
+}
+
+/** What a new dish needs before it can go on the menu, Basics first, then Food info (the order errors are shown in). */
+export function addRequiredChecklist(
+  value: Pick<DishFormState, 'form' | 'categoryIds' | 'foodInfo'>,
+  photoMissing: boolean,
+): AddRequiredItem[] {
+  return [
+    { id: 'photo', done: !photoMissing, section: 'basics' },
+    { id: 'name', done: value.form.name.trim() !== '', section: 'basics' },
+    { id: 'price', done: value.form.price > 0, section: 'basics' },
+    { id: 'category', done: value.categoryIds.length > 0, section: 'basics' },
+    { id: 'allergens', done: Array.isArray(value.foodInfo.allergenIds), section: 'food' },
+    { id: 'additives', done: Array.isArray(value.foodInfo.additiveIds), section: 'food' },
+  ];
+}
+
+export function addRequiredLeftCount(items: readonly Pick<AddRequiredItem, 'done'>[]): number {
+  return items.filter((i) => !i.done).length;
+}
+
+/** The section of the first unfinished item, or null when everything is done. */
+export function firstIncompleteAddSection(items: readonly Pick<AddRequiredItem, 'done' | 'section'>[]): DishSection | null {
+  return items.find((i) => !i.done)?.section ?? null;
+}
+
+/** The status line under each section label in Add mode. */
+export function addNavStatus(
+  section: DishSection,
+  state: DishFormState,
+  items: readonly AddRequiredItem[],
+  attachedGroupCount: number,
+  tried: boolean,
+): NavStatus {
+  const warnOrMuted: NavTone = tried ? 'warn' : 'muted';
+  switch (section) {
+    case 'basics': {
+      const left = addRequiredLeftCount(items.filter((i) => i.section === 'basics'));
+      return left > 0 ? { key: 'requiredLeft', tone: warnOrMuted, count: left } : { key: 'complete', tone: 'ok' };
+    }
+    case 'food':
+      return foodInfoComplete(state.foodInfo) ? { key: 'complete', tone: 'ok' } : { key: 'confirmFood', tone: warnOrMuted };
+    case 'options':
+      return attachedGroupCount > 0 ? { key: 'groups', tone: 'muted', count: attachedGroupCount } : { key: 'optional', tone: 'muted' };
+    case 'availability': {
+      const customised = state.foodInfo.unavailableModes.length > 0 || state.foodInfo.ageRestricted;
+      return { key: customised ? 'customised' : 'everywhere', tone: 'muted' };
+    }
+  }
+}
+
+/** What "Start from a similar dish" copies: category, tax class and option groups; never allergens, additives, tags or spice. */
+export type SimilarDishCopy = Pick<DishFormState, 'categoryIds' | 'optionGroupRefs' | 'variantGroups' | 'addonGroups'> & {
+  foodInfo: Pick<FoodInfo, 'taxClassId'>;
+};
+
+export function copyFromSimilarDish(
+  source: ProductDto,
+  categoriesList: ReadonlyArray<{ id?: string; taxClassId?: string | null }>,
+): SimilarDishCopy {
+  const categoryIds = source.categories?.map((c) => c.id).filter(Boolean) ?? [];
+  const groups = optionGroupsFromProduct(source);
+  // Dish-only groups get fresh ids so the new dish does not share ids with the one it was copied from.
+  const fresh = <O extends { id: string }>(options: O[]): O[] => options.map((o) => ({ ...o, id: crypto.randomUUID() }));
+  return {
+    categoryIds,
+    optionGroupRefs: [...(source.optionGroupRefs ?? [])],
+    variantGroups: groups.variantGroups.map((g) => ({ ...g, id: crypto.randomUUID(), options: fresh(g.options) })),
+    addonGroups: groups.addonGroups.map((g) => ({ ...g, id: crypto.randomUUID(), options: fresh(g.options) })),
+    foodInfo: { taxClassId: effectiveTaxClassId(categoryIds, categoriesList, source.taxClassId ?? null) },
+  };
+}
+
+/** Lays a similar dish's copy over the form, leaving every other field (allergens, additives, name, price …) as it was. */
+export function applySimilarDishCopy(state: DishFormState, copy: SimilarDishCopy): DishFormState {
+  const { foodInfo, ...rest } = copy;
+  return { ...state, ...rest, foodInfo: { ...state.foodInfo, taxClassId: foodInfo.taxClassId } };
 }
