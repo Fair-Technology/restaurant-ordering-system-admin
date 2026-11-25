@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { CategoryDto, ProductDto } from '../services/api';
@@ -13,13 +13,14 @@ import { MySpinner } from '../components/ui/MySpinner';
 import { PendingButton } from '../components/ui/PendingButton';
 import { getCurrencySymbolOrDefault } from '../utils/currency';
 import { formatCents } from '../utils/money';
-import { Plus, Search, X } from 'lucide-react';
+import { Download, Plus, Search, X } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 import {
   type VariantGroup, type VariantOption, type AddonGroup, type AddonOption,
   type StepNum,
   StepIndicator, Step1Basics, StepFoodInfo, StepCategories, Step4Customise, Step6Review,
 } from './ProductWizardSteps';
+import { buildExampleMenuImportFile, parseMenuImport } from '../features/menu/menuImport';
 import { useUploadProductImage } from '../features/menu/useUploadProductImage';
 import { createDishWithPhoto, dishPhotoMissing } from '../features/menu/productImage';
 import { isWrongSizeError } from '../features/images/imageRules';
@@ -300,10 +301,12 @@ function AddProductModal({ shopId, onClose }: AddProductModalProps) {
 
 // ── Bulk Import Modal ──────────────────────────────────────────────────────────
 
-function BulkImportModal({ shopId, onClose }: { shopId: string; onClose: () => void }) {
+export function BulkImportModal({ shopId, onClose }: { shopId: string; onClose: () => void }) {
   const { data: shop } = useGetShopByIdQuery({ shopId });
   const currencySymbol = getCurrencySymbolOrDefault(shop?.currency);
+  const { t } = useTranslation();
   const [createProduct] = useCreateProductMutation();
+  const mouseDownOnOverlayRef = useRef(false);
 
   const [step, setStep] = useState<ImportStep>('upload');
   const [rows, setRows] = useState<ImportRow[]>([]);
@@ -317,19 +320,7 @@ function BulkImportModal({ shopId, onClose }: { shopId: string; onClose: () => v
     const reader = new FileReader();
     reader.onload = (ev) => {
       try {
-        const parsed = JSON.parse(ev.target?.result as string);
-        if (!Array.isArray(parsed)) throw new Error('JSON must be an array');
-        const mapped: ImportRow[] = parsed.map((item: Record<string, unknown>, idx: number) => {
-          if (typeof item.name !== 'string' || !item.name.trim())
-            throw new Error(`Item ${idx + 1}: "name" is required`);
-          if (typeof item.description !== 'string')
-            throw new Error(`Item ${idx + 1}: "description" is required`);
-          return {
-            name: item.name,
-            description: item.description,
-            price: item.price == null ? null : Number(item.price),
-          };
-        });
+        const mapped: ImportRow[] = parseMenuImport(ev.target?.result as string);
         setParseError(null);
         setRows(mapped);
         setStep('preview');
@@ -338,6 +329,38 @@ function BulkImportModal({ shopId, onClose }: { shopId: string; onClose: () => v
       }
     };
     reader.readAsText(file);
+  };
+
+  const attemptClose = () => {
+    if (step === 'importing') return;
+    if (step === 'preview' && rows.length > 0) {
+      if (!window.confirm(t('dishes.importModal.confirmDiscard'))) return;
+    }
+    onClose();
+  };
+  const attemptCloseRef = useRef(attemptClose);
+  useEffect(() => {
+    attemptCloseRef.current = attemptClose;
+  });
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') attemptCloseRef.current();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, []);
+
+  const downloadExample = () => {
+    const url = URL.createObjectURL(new Blob([buildExampleMenuImportFile()], { type: 'application/json' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'dishes-import-example.json';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
   };
 
   const updatePrice = (idx: number, value: string) => {
@@ -371,14 +394,22 @@ function BulkImportModal({ shopId, onClose }: { shopId: string; onClose: () => v
   return (
     <>
       <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40" />
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        onMouseDown={(e) => { mouseDownOnOverlayRef.current = e.target === e.currentTarget; }}
+        onMouseUp={(e) => {
+          const started = mouseDownOnOverlayRef.current;
+          mouseDownOnOverlayRef.current = false;
+          if (started && e.target === e.currentTarget) attemptClose();
+        }}
+      >
         <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
 
           {/* Header */}
           <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-200 flex-shrink-0">
             <h2 className="text-base font-semibold text-gray-900">Import Products</h2>
             {step !== 'importing' && (
-              <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
+              <button onClick={attemptClose} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
                 <X size={16} />
               </button>
             )}
@@ -390,13 +421,16 @@ function BulkImportModal({ shopId, onClose }: { shopId: string; onClose: () => v
             {/* Upload step */}
             {step === 'upload' && (
               <div className="space-y-4">
-                <p className="text-sm text-gray-500">
-                  Upload a JSON file containing an array of products with{' '}
-                  <code className="text-xs bg-gray-100 px-1 rounded">name</code>,{' '}
-                  <code className="text-xs bg-gray-100 px-1 rounded">description</code>,{' '}
-                  <code className="text-xs bg-gray-100 px-1 rounded">price</code>.
-                  Photos are not imported (any image_url is ignored) — add each dish's photo in the dish editor afterwards.
-                </p>
+                <p className="text-sm text-gray-500">{t('dishes.importModal.uploadHint')}</p>
+                <button
+                  type="button"
+                  data-testid="download-example-file"
+                  onClick={downloadExample}
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 underline-offset-2 hover:underline"
+                >
+                  <Download size={14} />
+                  {t('dishes.importModal.downloadExample')}
+                </button>
                 <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-gray-400 transition-colors">
                   <span className="text-sm text-gray-400">Click to select a .json file</span>
                   <input type="file" accept=".json" className="hidden" onChange={handleFile} />

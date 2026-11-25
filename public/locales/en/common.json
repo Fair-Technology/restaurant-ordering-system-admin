@@ -1470,6 +1470,11 @@
   "dishes": {
     "add": "Add dish",
     "import": "Import",
+    "importModal": {
+      "uploadHint": "Upload a JSON file containing an array of dishes. Each dish needs a name (text, required), a description (text, required, may be empty) and a price (a plain number in your shop's currency, e.g. 12.5). Photos are not imported (any image_url is ignored) — add each dish's photo in the dish editor afterwards.",
+      "downloadExample": "Download example file",
+      "confirmDiscard": "Discard the products you haven't imported yet?"
+    },
     "search": "Search dishes",
     "filter": {
       "all": "All",

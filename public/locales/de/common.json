@@ -1470,6 +1470,11 @@
   "dishes": {
     "add": "Gericht hinzufügen",
     "import": "Importieren",
+    "importModal": {
+      "uploadHint": "Lade eine JSON-Datei mit einer Liste von Gerichten hoch. Jedes Gericht braucht einen Namen (Text, Pflicht), eine Beschreibung (Text, Pflicht, darf leer sein) und einen Preis (eine einfache Zahl in der Währung deines Shops, z. B. 12.5). Fotos werden nicht importiert (image_url wird ignoriert) – füge das Foto jedes Gerichts anschließend im Gerichte-Editor hinzu.",
+      "downloadExample": "Beispieldatei herunterladen",
+      "confirmDiscard": "Die noch nicht importierten Produkte verwerfen?"
+    },
     "search": "Gerichte durchsuchen",
     "filter": {
       "all": "Alle",
