@@ -1,8 +1,10 @@
 @import "tailwindcss";
 
-/* Shared look with the storefront: warm neutrals, Fraunces for page titles (self-hosted, no Google request) */
+/* Warm neutrals shared with the storefront, but Roboto (self-hosted, no Google request) for ALL text incl. page titles.
+   Intentionally differs from the storefront, which keeps Fraunces for titles. */
 @theme {
-  --font-display: "Fraunces Variable", Georgia, serif;
+  --font-sans: "Roboto", system-ui, sans-serif;
+  --font-display: "Roboto", system-ui, sans-serif;
   --color-ink: #1f1a17;
   --color-paper: #f7f5f2;
   --color-line: #ece6df;
