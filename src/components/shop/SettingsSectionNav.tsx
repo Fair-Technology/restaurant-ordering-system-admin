@@ -1,16 +1,21 @@
-import type { SettingsSectionItem, SettingsSectionKey } from '../../features/shops/settingsSections';
+export interface SectionNavItem<K extends string = string> {
+  key: K;
+  title: string;
+  status?: string;
+  danger?: boolean;
+}
 
-interface Props {
+interface Props<K extends string> {
   label: string;
-  sections: SettingsSectionItem[];
-  activeKey: SettingsSectionKey;
-  onSelect: (key: SettingsSectionKey) => void;
+  sections: SectionNavItem<K>[];
+  activeKey: K;
+  onSelect: (key: K) => void;
 }
 
 const FOCUS = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink';
 
 /** Section picker for the settings page: a vertical list from `md`, a scrolling chip row below. */
-export function SettingsSectionNav({ label, sections, activeKey, onSelect }: Props) {
+export function SettingsSectionNav<K extends string>({ label, sections, activeKey, onSelect }: Props<K>) {
   return (
     <nav aria-label={label} className="mb-4 md:mb-0 md:w-[232px] md:flex-shrink-0">
       <ul className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 md:mx-0 md:flex-col md:gap-0.5 md:overflow-visible md:px-0 md:pb-0">

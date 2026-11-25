@@ -1265,7 +1265,6 @@
   },
   "legal": {
     "accessDenied": "You don't have permission to manage the legal settings for this restaurant.",
-    "title": "Legal & data",
     "loading": "Loading legal settings…",
     "loadError": "Could not load the legal settings.",
     "saved": "Saved.",
@@ -1369,21 +1368,39 @@
     "eraseHelp": "When a customer asks to be forgotten, enter their email. Their orders stay for your tax records, but their name, email, phone and notes are removed. This cannot be undone.",
     "eraseEmail": "Customer email",
     "eraseButton": "Anonymise customer",
-    "eraseConfirm": "Remove {{email}}'s details from all their orders? This cannot be undone.",
     "eraseDone_one": "Done — {{count}} order anonymised.",
     "eraseDone_other": "Done — {{count}} orders anonymised.",
     "eraseFailed": "Could not anonymise the customer.",
     "ownerOnly": "Only the restaurant owner can export data or handle erasure requests.",
-    "jumpLabel": "Jump to a section",
-    "jump": {
-      "dpa": "DPA",
+    "subtitle": "What customers see about your business, and what you must have in place before going live.",
+    "navLabel": "Legal sections",
+    "sections": {
+      "dpa": "Data processing agreement",
       "impressum": "Impressum",
-      "invoiceExtras": "Invoice extras",
       "terms": "Terms",
-      "withdrawal": "Withdrawal",
-      "privacy": "Privacy",
+      "withdrawal": "Withdrawal policy",
+      "privacy": "Privacy notice",
+      "invoiceExtras": "Invoice details",
       "data": "Your data"
-    }
+    },
+    "status": {
+      "dpaAccepted": "Accepted {{date}}, version {{version}}",
+      "dpaNotAccepted": "Not accepted",
+      "dpaNewVersion": "New version {{version}} to accept",
+      "impressumMissing_one": "{{count}} field missing",
+      "impressumMissing_other": "{{count}} fields missing",
+      "missing": "Missing",
+      "privacyNeedsAttention": "Needs attention",
+      "invoiceIbanSet": "IBAN set",
+      "invoiceOptionalNotSet": "Optional, not set"
+    },
+    "summary": {
+      "title": "{{count}} of {{total}} required items complete",
+      "ready": "Ready to go live"
+    },
+    "eraseTypeToConfirm": "Type {{email}} to confirm",
+    "eraseConfirmButton": "Erase customer data",
+    "eraseCancel": "Cancel"
   },
   "orderLimit": {
     "bannerWarning_one": "{{count}} of {{limit}} order used this month ({{percent}} %). At {{limit}} online ordering pauses until the month ends.",

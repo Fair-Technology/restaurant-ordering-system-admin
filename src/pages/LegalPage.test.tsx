@@ -5,7 +5,10 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { LegalPage } from './LegalPage';
 
 vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (key: string) => key, i18n: { language: 'en' } }),
+  useTranslation: () => ({
+    t: (key: string, o?: Record<string, unknown>) => (o && 'email' in o ? `${key}|${o.email}` : o && 'count' in o && !('total' in o) ? `${key}|${o.count}` : o && 'total' in o ? `${key}|${o.count}/${o.total}` : key),
+    i18n: { language: 'en' },
+  }),
 }));
 vi.mock('../services/api', async (importOriginal) => ({
   // legalApi.ts injects endpoints into the real `api`, so keep it.
@@ -24,6 +27,7 @@ vi.mock('../services/api', async (importOriginal) => ({
 const legalState = vi.hoisted(() => ({
   current: null as unknown,
   trigger: undefined as unknown as ReturnType<typeof vi.fn>,
+  erase: undefined as unknown as ReturnType<typeof vi.fn>,
 }));
 
 vi.mock('../contexts/ToastContext', () => ({
@@ -37,7 +41,7 @@ vi.mock('../services/legalApi', async () => {
     useGetShopLegalQuery: () => ({ data: legalState.current, isError: false }),
     useUpdateShopLegalMutation: () => [legalState.trigger, { isLoading: false }],
     useAcceptDpaMutation: idleMutation,
-    useEraseCustomerMutation: idleMutation,
+    useEraseCustomerMutation: () => [legalState.erase, { isLoading: false }],
     useGetDpaDocumentQuery: () => ({ data: undefined, isFetching: false }),
     useGetPlatformLegalQuery: () => ({ data: undefined }),
     useLazyGetShopDataExportQuery: () => [vi.fn(), { isFetching: false }],
@@ -52,7 +56,7 @@ type Extras = {
   bic: string;
 };
 
-function legalFixture(invoiceLegalExtras: Extras | null) {
+function legalFixture(invoiceLegalExtras: Extras | null, over: Record<string, unknown> = {}) {
   return {
     impressum: null,
     terms: null,
@@ -65,6 +69,7 @@ function legalFixture(invoiceLegalExtras: Extras | null) {
     callerIsOwner: true,
     taxNumber: '',
     invoiceLegalExtras,
+    ...over,
   };
 }
 
@@ -79,16 +84,17 @@ const EMPTY: Extras = { managingDirector: '', court: '', registerNumber: '', iba
 
 beforeEach(() => {
   legalState.trigger = vi.fn(() => ({ unwrap: () => Promise.resolve({}) }));
+  legalState.erase = vi.fn(() => ({ unwrap: () => Promise.resolve({ anonymisedOrderCount: 2 }) }));
 });
 
 afterEach(() => {
   cleanup();
 });
 
-function renderPage(extras: Extras | null) {
-  legalState.current = legalFixture(extras);
+function renderPage(extras: Extras | null, entry = '/shops/s1/legal?section=invoiceExtras', over: Record<string, unknown> = {}) {
+  legalState.current = legalFixture(extras, over);
   render(
-    <MemoryRouter initialEntries={['/shops/s1/legal']}>
+    <MemoryRouter initialEntries={[entry]}>
       <Routes>
         <Route path="/shops/:shopId/legal" element={<LegalPage />} />
       </Routes>
@@ -99,10 +105,10 @@ function renderPage(extras: Extras | null) {
 const input = (key: string) => screen.getByLabelText(`legal.f2.${key}`) as HTMLInputElement;
 
 describe('LegalPage invoice extras card', () => {
-  it('renders as its own section with a jump chip', () => {
+  it('renders as its own section reachable from the nav', () => {
     renderPage(null);
     expect(screen.getByRole('heading', { name: 'legal.invoiceExtrasTitle' })).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'legal.jump.invoiceExtras' }).getAttribute('href')).toBe('#invoiceExtras');
+    expect(screen.getByRole('button', { name: /legal\.sections\.invoiceExtras/ }).getAttribute('aria-current')).toBe('page');
   });
 
   it('saves invoice extras with all fields filled', async () => {
@@ -160,5 +166,80 @@ describe('LegalPage invoice extras card', () => {
     fireEvent.change(input('bic'), { target: { value: 'xx' } });
     expect(screen.getByText('legal.bicFormatHint').id).toBe('bic-hint-error');
     expect(input('bic').getAttribute('aria-describedby')).toBe('bic-hint-error');
+  });
+});
+
+describe('LegalPage shell', () => {
+  it('shows the go-live summary with clickable missing items that switch section', () => {
+    renderPage(null, '/shops/s1/legal', { completeness: { dpa: true, impressum: false, terms: true, withdrawal: true, privacyNotice: false } });
+    expect(screen.getByText('legal.summary.title|3/5')).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'legal.dpaTitle' })).toBeTruthy();
+    const link = screen.getByRole('button', { name: /legal\.sections\.impressum: legal\.status\.impressumMissing/ });
+    fireEvent.click(link);
+    expect(screen.getByRole('heading', { name: 'legal.impressumTitle' })).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'legal.dpaTitle' })).toBeNull();
+  });
+
+  it('shows Ready when everything required is complete', () => {
+    renderPage(null, '/shops/s1/legal', { completeness: { dpa: true, impressum: true, terms: true, withdrawal: true, privacyNotice: true } });
+    expect(screen.getByText('legal.summary.ready')).toBeTruthy();
+  });
+
+  it('honours ?section= and falls back to dpa for unknown values', () => {
+    renderPage(null, '/shops/s1/legal?section=impressum');
+    expect(screen.getByRole('heading', { name: 'legal.impressumTitle' })).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'legal.dpaTitle' })).toBeNull();
+    cleanup();
+    renderPage(null, '/shops/s1/legal?section=bogus');
+    expect(screen.getByRole('heading', { name: 'legal.dpaTitle' })).toBeTruthy();
+  });
+
+  it('nav status lines: invoice extras never flagged even with empty iban', () => {
+    renderPage(EMPTY, '/shops/s1/legal');
+    const nav = screen.getByRole('navigation', { name: 'legal.navLabel' });
+    expect(nav.textContent).toContain('legal.status.invoiceOptionalNotSet');
+    expect(nav.textContent).toContain('legal.status.dpaNotAccepted');
+    expect(nav.textContent).toContain('legal.status.missing');
+    expect(nav.textContent).toContain('legal.status.privacyNeedsAttention');
+  });
+
+  it('nav status lines for complete states', () => {
+    renderPage(FILLED, '/shops/s1/legal', { completeness: { dpa: true, impressum: true, terms: true, withdrawal: true, privacyNotice: true } });
+    const nav = screen.getByRole('navigation', { name: 'legal.navLabel' });
+    expect(nav.textContent).toContain('legal.status.invoiceIbanSet');
+    expect(nav.textContent).not.toContain('legal.status.missing');
+  });
+});
+
+describe('LegalPage erase flow', () => {
+  const open = () => {
+    renderPage(null, '/shops/s1/legal?section=data');
+    fireEvent.change(screen.getByLabelText('legal.eraseEmail'), { target: { value: 'Jane@Example.com' } });
+    fireEvent.click(screen.getByRole('button', { name: 'legal.eraseButton' }));
+  };
+
+  it('requires typing the email, case-insensitively, and never uses window.confirm', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm');
+    open();
+    expect(legalState.erase).not.toHaveBeenCalled();
+    const confirmBtn = screen.getByRole('button', { name: 'legal.eraseConfirmButton' }) as HTMLButtonElement;
+    const typed = screen.getByLabelText('legal.eraseTypeToConfirm|Jane@Example.com');
+    expect(confirmBtn.disabled).toBe(true);
+    fireEvent.change(typed, { target: { value: 'other@example.com' } });
+    expect(confirmBtn.disabled).toBe(true);
+    fireEvent.change(typed, { target: { value: 'jane@example.com' } });
+    expect(confirmBtn.disabled).toBe(false);
+    fireEvent.click(confirmBtn);
+    await waitFor(() => expect(legalState.erase).toHaveBeenCalledWith({ shopId: 's1', email: 'Jane@Example.com' }));
+    expect(confirmSpy).not.toHaveBeenCalled();
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'legal.eraseConfirmButton' })).toBeNull());
+    confirmSpy.mockRestore();
+  });
+
+  it('cancel closes the panel without erasing', () => {
+    open();
+    fireEvent.click(screen.getByRole('button', { name: 'legal.eraseCancel' }));
+    expect(screen.queryByRole('button', { name: 'legal.eraseConfirmButton' })).toBeNull();
+    expect(legalState.erase).not.toHaveBeenCalled();
   });
 });

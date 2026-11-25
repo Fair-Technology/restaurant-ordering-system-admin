@@ -1265,7 +1265,6 @@
   },
   "legal": {
     "accessDenied": "Sie haben keine Berechtigung, die rechtlichen Einstellungen dieses Restaurants zu verwalten.",
-    "title": "Rechtliches & Daten",
     "loading": "Rechtliche Einstellungen werden geladen…",
     "loadError": "Die rechtlichen Einstellungen konnten nicht geladen werden.",
     "saved": "Gespeichert.",
@@ -1369,21 +1368,39 @@
     "eraseHelp": "Wenn ein Kunde Löschung verlangt, geben Sie seine E-Mail ein. Die Bestellungen bleiben für Ihre Steuerunterlagen erhalten, Name, E-Mail, Telefon und Anmerkungen werden entfernt. Das ist endgültig.",
     "eraseEmail": "E-Mail des Kunden",
     "eraseButton": "Kunden anonymisieren",
-    "eraseConfirm": "Die Daten von {{email}} aus allen Bestellungen entfernen? Das ist endgültig.",
     "eraseDone_one": "Erledigt – {{count}} Bestellung anonymisiert.",
     "eraseDone_other": "Erledigt – {{count}} Bestellungen anonymisiert.",
     "eraseFailed": "Anonymisierung fehlgeschlagen.",
     "ownerOnly": "Nur der Inhaber kann Daten exportieren oder Löschanfragen bearbeiten.",
-    "jumpLabel": "Zu einem Abschnitt springen",
-    "jump": {
+    "subtitle": "Was Kunden über Ihr Unternehmen sehen und was vor dem Livegang vorliegen muss.",
+    "navLabel": "Rechtliche Abschnitte",
+    "sections": {
       "dpa": "AV-Vertrag",
       "impressum": "Impressum",
-      "invoiceExtras": "Rechnungsdaten",
       "terms": "AGB",
-      "withdrawal": "Widerruf",
-      "privacy": "Datenschutz",
+      "withdrawal": "Widerrufsbelehrung",
+      "privacy": "Datenschutzerklärung",
+      "invoiceExtras": "Rechnungsdaten",
       "data": "Ihre Daten"
-    }
+    },
+    "status": {
+      "dpaAccepted": "Akzeptiert am {{date}}, Version {{version}}",
+      "dpaNotAccepted": "Nicht akzeptiert",
+      "dpaNewVersion": "Neue Version {{version}} zu akzeptieren",
+      "impressumMissing_one": "{{count}} Angabe fehlt",
+      "impressumMissing_other": "{{count}} Angaben fehlen",
+      "missing": "Fehlt",
+      "privacyNeedsAttention": "Handlungsbedarf",
+      "invoiceIbanSet": "IBAN hinterlegt",
+      "invoiceOptionalNotSet": "Optional, nicht hinterlegt"
+    },
+    "summary": {
+      "title": "{{count}} von {{total}} Pflichtangaben vollständig",
+      "ready": "Bereit zum Livegang"
+    },
+    "eraseTypeToConfirm": "Geben Sie {{email}} zur Bestätigung ein",
+    "eraseConfirmButton": "Kundendaten löschen",
+    "eraseCancel": "Abbrechen"
   },
   "orderLimit": {
     "bannerWarning_one": "{{count}} von {{limit}} Bestellung in diesem Monat genutzt ({{percent}} %). Bei {{limit}} pausieren Online-Bestellungen bis Monatsende.",

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useState } from 'react';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Download } from 'lucide-react';
 import { useGetShopByIdQuery } from '../services/api';
@@ -28,12 +28,22 @@ import type {
   UpdateShopLegalBody,
 } from '../services/legalApi';
 import { PageHeader, Section } from '../components/layout/Page';
-import { badgeClass, chipClass } from '../components/layout/pageStyles';
+import { badgeClass } from '../components/layout/pageStyles';
 import { MyButton } from '../components/ui/MyButton';
 import { MyInput, MyTextarea } from '../components/ui/MyInput';
 import { MySpinner } from '../components/ui/MySpinner';
 import { useToast } from '../contexts/ToastContext';
 import { formatShopDate } from '../utils/locale';
+import { SettingsSectionNav } from '../components/shop/SettingsSectionNav';
+import { LegalGoLiveSummary } from '../components/legal/LegalGoLiveSummary';
+import { isEraseEmailMatch } from '../features/legal/eraseConfirm';
+import {
+  buildLegalGoLiveSummary,
+  buildLegalSections,
+  dpaStatusLine,
+  parseLegalSection,
+  type LegalSectionKey,
+} from '../features/legal/legalSections';
 import { buildCustomersCsv, buildOrdersCsv } from '../features/legal/exportCsv';
 import { usePageTitle } from '../features/layout/usePageTitle';
 
@@ -41,9 +51,6 @@ const IMPRESSUM_TEXT_FIELDS: ImpressumFieldKey[] = [
   'legalName', 'representatives', 'street', 'postcode', 'city', 'country', 'phone', 'email',
   'registerCourt', 'registerNumber', 'vatId', 'supervisoryAuthority',
 ];
-
-/** Section ids on this page, in order; the chips under the header jump to them. */
-const LEGAL_PARTS = ['dpa', 'impressum', 'invoiceExtras', 'terms', 'withdrawal', 'privacy', 'data'] as const;
 
 // Loose, non-blocking format hints for the invoice extras (save is always allowed).
 const IBAN_PATTERN = /^[A-Z]{2}[0-9A-Z]{2,30}$/;
@@ -121,14 +128,7 @@ function DpaCard({ shopId, shopName, legal, lang, countryCode }: {
   const [acceptDpa, { isLoading }] = useAcceptDpaMutation();
 
   const { accepted, currentVersion, currentIsDraft } = legal.dpa;
-  const status = !accepted
-    ? t('legal.dpaNotAccepted')
-    : accepted.version === currentVersion
-      ? t('legal.dpaAcceptedOn', {
-          version: accepted.version,
-          date: formatShopDate(accepted.acceptedAt, i18n.language, countryCode),
-        })
-      : t('legal.dpaNewVersion', { version: currentVersion });
+  const status = dpaStatusLine(legal.dpa, t, i18n.language, countryCode);
   const needsAcceptance = accepted?.version !== currentVersion;
 
   const handleAccept = async () => {
@@ -148,11 +148,22 @@ function DpaCard({ shopId, shopName, legal, lang, countryCode }: {
         <p className="text-sm font-medium text-ink">{status}</p>
         {currentIsDraft && <DraftBadge />}
         <div>
-          <MyButton type="button" variant="secondary" size="sm" onClick={() => setShowDoc((v) => !v)}>
+          <MyButton
+            type="button"
+            variant="secondary"
+            size="sm"
+            aria-expanded={showDoc}
+            aria-controls="dpa-document"
+            onClick={() => setShowDoc((v) => !v)}
+          >
             {showDoc ? t('legal.dpaHide') : t('legal.dpaRead')}
           </MyButton>
         </div>
-        {showDoc && doc && <DocumentSections sections={doc.sections[lang]} />}
+        {showDoc && doc && (
+          <div id="dpa-document">
+            <DocumentSections sections={doc.sections[lang]} />
+          </div>
+        )}
         {platform && (
           <div>
             <h3 className="text-sm font-bold mb-1">{t('legal.subProcessorsTitle')}</h3>
@@ -391,6 +402,7 @@ function TextEditor({ label, saved, max, minLength, onSave, saveLabel, countryCo
       <MyTextarea
         label={label}
         rows={12}
+        className="max-h-[420px] overflow-y-auto"
         maxLength={max}
         value={value}
         onChange={(e) => setDraft(e.target.value)}
@@ -530,6 +542,8 @@ function DataCard({ shopId, slug, legal }: { shopId: string; slug: string; legal
   const [exportingKind, setExportingKind] = useState<'json' | 'orders' | 'customers' | null>(null);
   const exporting = exportingKind !== null;
   const [email, setEmail] = useState('');
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmTyped, setConfirmTyped] = useState('');
 
   const handleExport = async (kind: 'json' | 'orders' | 'customers') => {
     setExportingKind(kind);
@@ -553,11 +567,12 @@ function DataCard({ shopId, slug, legal }: { shopId: string; slug: string; legal
   const handleErase = async () => {
     const trimmed = email.trim();
     if (!trimmed) return;
-    if (!window.confirm(t('legal.eraseConfirm', { email: trimmed }))) return;
     try {
       const result = await eraseCustomer({ shopId, email: trimmed }).unwrap();
       toast.success(t('legal.eraseDone', { count: result.anonymisedOrderCount }));
       setEmail('');
+      setConfirmOpen(false);
+      setConfirmTyped('');
     } catch (err) {
       toast.error(errorMessage(err, t('legal.eraseFailed')));
     }
@@ -604,9 +619,40 @@ function DataCard({ shopId, slug, legal }: { shopId: string; slug: string; legal
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
-              <MyButton type="button" variant="danger" isPending={isErasing} disabled={!email.trim()} onClick={handleErase}>
+              <MyButton type="button" variant="danger" disabled={!email.trim()} onClick={() => setConfirmOpen(true)}>
                 {t('legal.eraseButton')}
               </MyButton>
+              {confirmOpen && (
+                <div className="space-y-3 rounded-xl bg-[#fbe6dc] p-4">
+                  <MyInput
+                    label={t('legal.eraseTypeToConfirm', { email: email.trim() })}
+                    aria-label={t('legal.eraseTypeToConfirm', { email: email.trim() })}
+                    value={confirmTyped}
+                    onChange={(e) => setConfirmTyped(e.target.value)}
+                  />
+                  <div className="flex flex-wrap gap-2">
+                    <MyButton
+                      type="button"
+                      variant="danger"
+                      isPending={isErasing}
+                      disabled={!isEraseEmailMatch(confirmTyped, email)}
+                      onClick={handleErase}
+                    >
+                      {t('legal.eraseConfirmButton')}
+                    </MyButton>
+                    <MyButton
+                      type="button"
+                      variant="ghost"
+                      onClick={() => {
+                        setConfirmOpen(false);
+                        setConfirmTyped('');
+                      }}
+                    >
+                      {t('legal.eraseCancel')}
+                    </MyButton>
+                  </div>
+                </div>
+              )}
             </div>
           </>
         )}
@@ -620,23 +666,17 @@ function DataCard({ shopId, slug, legal }: { shopId: string; slug: string; legal
 export function LegalPage() {
   usePageTitle('nav.legal');
   const { shopId } = useParams<{ shopId: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { t, i18n } = useTranslation();
   const { data: shop } = useGetShopByIdQuery({ shopId: shopId! });
   const canManage = (shop?.callerPermissions ?? []).includes('manage_shop');
   const { data: legal, isError } = useGetShopLegalQuery({ shopId: shopId! }, { skip: !canManage });
   const lang: LegalLanguage = i18n.language.startsWith('de') ? 'de' : 'en';
 
-  useEffect(() => {
-    if (!legal) return;
-    const hash = window.location.hash.slice(1);
-    if (!hash) return;
-    document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, [legal]);
-
   if (shop && !canManage) {
     return (
       <div className="max-w-3xl">
-        <PageHeader eyebrow={t('nav.group.shop')} title={t('legal.title')} />
+        <PageHeader eyebrow={t('nav.group.shop')} title={t('nav.legal')} />
         <Section padded>
           <p className="text-sm text-[#4a413b]">{t('legal.accessDenied')}</p>
         </Section>
@@ -647,42 +687,47 @@ export function LegalPage() {
   if (isError) return <p className="text-sm text-[#b42318]">{t('legal.loadError')}</p>;
   if (!legal || !shop) return <MySpinner label={t('legal.loading')} />;
 
-  const jump = (id: string) => {
-    window.history.replaceState(null, '', `#${id}`);
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const sections = buildLegalSections({ legal, t, lang, countryCode: shop.countryCode });
+  const summary = buildLegalGoLiveSummary(sections, legal, t);
+  const requested = parseLegalSection(searchParams.get('section'));
+  const active: LegalSectionKey = sections.some((s) => s.key === requested) ? requested : 'dpa';
+  const selectSection = (key: LegalSectionKey) => {
+    setSearchParams({ section: key }, { replace: true });
   };
 
   return (
-    <div className="max-w-3xl">
-      <PageHeader eyebrow={t('nav.group.shop')} title={t('legal.title')} />
-      <nav aria-label={t('legal.jumpLabel')} className="mb-3.5 flex flex-wrap items-center gap-2">
-        {LEGAL_PARTS.map((part) => (
-          <a
-            key={part}
-            href={`#${part}`}
-            className={chipClass(false)}
-            onClick={(e) => {
-              e.preventDefault();
-              jump(part);
-            }}
-          >
-            {t(`legal.jump.${part}`)}
-          </a>
-        ))}
-      </nav>
-      <DpaCard shopId={shopId!} shopName={shop.name ?? ''} legal={legal} lang={lang} countryCode={shop.countryCode} />
-      <ImpressumCard shopId={shopId!} legal={legal} shopAddress={shop.address} />
-      <InvoiceLegalExtrasCard shopId={shopId!} legal={legal} />
-      <TextCard
-        id="terms" kind="terms" title={t('legal.termsTitle')} shopId={shopId!} countryCode={shop.countryCode}
-        complete={legal.completeness.terms} saved={legal.terms} guideCount={TERMS_GUIDE_COUNT}
-      />
-      <TextCard
-        id="withdrawal" kind="withdrawal" title={t('legal.withdrawalTitle')} shopId={shopId!} countryCode={shop.countryCode}
-        complete={legal.completeness.withdrawal} saved={legal.withdrawal} guideCount={WITHDRAWAL_GUIDE_COUNT}
-      />
-      <PrivacyCard shopId={shopId!} slug={shop.slug ?? ''} legal={legal} countryCode={shop.countryCode} />
-      <DataCard shopId={shopId!} slug={shop.slug ?? ''} legal={legal} />
+    <div>
+      <PageHeader eyebrow={t('nav.group.shop')} title={t('nav.legal')} description={t('legal.subtitle')} />
+      <LegalGoLiveSummary data={summary} onSelectSection={selectSection} />
+      <div className="md:flex md:items-start md:gap-8">
+        <SettingsSectionNav<LegalSectionKey>
+          label={t('legal.navLabel')}
+          sections={sections}
+          activeKey={active}
+          onSelect={selectSection}
+        />
+        <div className="flex max-w-[720px] min-w-0 flex-1 flex-col gap-4">
+          {active === 'dpa' && (
+            <DpaCard shopId={shopId!} shopName={shop.name ?? ''} legal={legal} lang={lang} countryCode={shop.countryCode} />
+          )}
+          {active === 'impressum' && <ImpressumCard shopId={shopId!} legal={legal} shopAddress={shop.address} />}
+          {active === 'terms' && (
+            <TextCard
+              id="terms" kind="terms" title={t('legal.termsTitle')} shopId={shopId!} countryCode={shop.countryCode}
+              complete={legal.completeness.terms} saved={legal.terms} guideCount={TERMS_GUIDE_COUNT}
+            />
+          )}
+          {active === 'withdrawal' && (
+            <TextCard
+              id="withdrawal" kind="withdrawal" title={t('legal.withdrawalTitle')} shopId={shopId!} countryCode={shop.countryCode}
+              complete={legal.completeness.withdrawal} saved={legal.withdrawal} guideCount={WITHDRAWAL_GUIDE_COUNT}
+            />
+          )}
+          {active === 'privacy' && <PrivacyCard shopId={shopId!} slug={shop.slug ?? ''} legal={legal} countryCode={shop.countryCode} />}
+          {active === 'invoiceExtras' && <InvoiceLegalExtrasCard shopId={shopId!} legal={legal} />}
+          {active === 'data' && <DataCard shopId={shopId!} slug={shop.slug ?? ''} legal={legal} />}
+        </div>
+      </div>
     </div>
   );
 }
