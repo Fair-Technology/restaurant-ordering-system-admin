@@ -1533,5 +1533,79 @@
     "newShop": "New shop",
     "newProduct": "New product",
     "newCategory": "New category"
+  },
+  "dishForm": {
+    "sections": "Sections",
+    "sectionNames": {
+      "basics": "Basics",
+      "food": "Food info",
+      "options": "Options and extras",
+      "availability": "Availability"
+    },
+    "nav": {
+      "complete": "Complete",
+      "confirmAllergens": "Confirm allergens",
+      "groups_one": "{{count}} group",
+      "groups_other": "{{count}} groups",
+      "onMenu": "On the menu",
+      "hidden": "Hidden from the menu"
+    },
+    "descriptionMissing": {
+      "de": "German description missing",
+      "en": "English description missing"
+    },
+    "subtitleEdit": "Edit dish · {{categories}}",
+    "subtitleAdd": "New dish · {{categories}}",
+    "noCategory": "No category",
+    "menuOn": "On the menu",
+    "menuOff": "Hidden",
+    "language": "Language",
+    "translationMissingDot": "Translation missing",
+    "noPhoto": "No photo yet",
+    "replacePhoto": "Replace photo",
+    "addPhoto": "Add photo",
+    "nameLabel": "Name ({{language}})",
+    "descriptionLabel": "Description ({{language}})",
+    "missingTranslation": "Missing translation",
+    "counter": "{{count}} / {{max}}",
+    "priceSummary": "Customers pay {{price}}. That includes {{vat}} VAT; net {{net}}.",
+    "priceSummaryNoRate": "Customers pay {{price}}.",
+    "addCategory": "+ Add category",
+    "removeCategory": "Remove {{name}}",
+    "pickCategory": "Choose a category",
+    "newCategory": "New category",
+    "createCategory": "Create",
+    "createCategoryFailed": "Failed to create the category. Please try again.",
+    "status": {
+      "selected": "{{count}} selected",
+      "none": "None",
+      "unconfirmed": "Not confirmed"
+    },
+    "allergensNone": "Contains none of the {{count}} allergens",
+    "additivesNone": "Contains no declarable additives",
+    "optionsIntro": "These are the choices customers see in the dish popup, in this order.",
+    "badge": {
+      "requiredExact": "Required · choose {{count}}",
+      "requiredRange": "Required · choose {{min}}–{{max}}",
+      "optionalUpTo": "Optional · up to {{max}}"
+    },
+    "groupedAs": "Grouped on the storefront as {{list}}",
+    "editGroup": "Edit group",
+    "removeFromDish": "Remove from dish",
+    "attachGroup": "+ Attach existing group",
+    "createGroup": "Create new group",
+    "nothingToAttach": "Every group is already attached to this dish.",
+    "groupsShared": "Groups are shared. Editing a group changes every dish that uses it. Remove from dish only detaches it here.",
+    "dishOnlyGroups": "Only on this dish",
+    "dishOnlyGroupsHelp": "These groups belong to this dish alone and are not shared.",
+    "availableFor": "Available for",
+    "modeHelp": {
+      "collection": "Customers can order this dish for pick-up.",
+      "delivery": "Turn off for dishes that travel badly, like draught beer.",
+      "dine_in": "Shown to guests ordering from the table."
+    },
+    "prepTime": "Preparation time",
+    "prepUnit": "minutes",
+    "save": "Save changes"
   }
 }

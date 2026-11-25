@@ -1533,5 +1533,79 @@
     "newShop": "Neuer Shop",
     "newProduct": "Neues Gericht",
     "newCategory": "Neue Kategorie"
+  },
+  "dishForm": {
+    "sections": "Bereiche",
+    "sectionNames": {
+      "basics": "Grundlagen",
+      "food": "Lebensmittelinfos",
+      "options": "Optionen und Extras",
+      "availability": "Verfügbarkeit"
+    },
+    "nav": {
+      "complete": "Vollständig",
+      "confirmAllergens": "Allergene bestätigen",
+      "groups_one": "{{count}} Gruppe",
+      "groups_other": "{{count}} Gruppen",
+      "onMenu": "Auf der Karte",
+      "hidden": "Nicht auf der Karte"
+    },
+    "descriptionMissing": {
+      "de": "Deutsche Beschreibung fehlt",
+      "en": "Englische Beschreibung fehlt"
+    },
+    "subtitleEdit": "Gericht bearbeiten · {{categories}}",
+    "subtitleAdd": "Neues Gericht · {{categories}}",
+    "noCategory": "Keine Kategorie",
+    "menuOn": "Auf der Karte",
+    "menuOff": "Ausgeblendet",
+    "language": "Sprache",
+    "translationMissingDot": "Übersetzung fehlt",
+    "noPhoto": "Noch kein Foto",
+    "replacePhoto": "Foto ersetzen",
+    "addPhoto": "Foto hinzufügen",
+    "nameLabel": "Name ({{language}})",
+    "descriptionLabel": "Beschreibung ({{language}})",
+    "missingTranslation": "Übersetzung fehlt",
+    "counter": "{{count}} / {{max}}",
+    "priceSummary": "Gäste zahlen {{price}}. Darin enthalten sind {{vat}} MwSt.; netto {{net}}.",
+    "priceSummaryNoRate": "Gäste zahlen {{price}}.",
+    "addCategory": "+ Kategorie hinzufügen",
+    "removeCategory": "{{name}} entfernen",
+    "pickCategory": "Kategorie wählen",
+    "newCategory": "Neue Kategorie",
+    "createCategory": "Erstellen",
+    "createCategoryFailed": "Die Kategorie konnte nicht erstellt werden. Bitte erneut versuchen.",
+    "status": {
+      "selected": "{{count}} gewählt",
+      "none": "Keine",
+      "unconfirmed": "Nicht bestätigt"
+    },
+    "allergensNone": "Enthält keines der {{count}} Allergene",
+    "additivesNone": "Enthält keine kennzeichnungspflichtigen Zusatzstoffe",
+    "optionsIntro": "Das sind die Auswahlmöglichkeiten, die Gäste im Gericht-Popup sehen, in dieser Reihenfolge.",
+    "badge": {
+      "requiredExact": "Pflicht · {{count}} wählen",
+      "requiredRange": "Pflicht · {{min}}–{{max}} wählen",
+      "optionalUpTo": "Optional · bis zu {{max}}"
+    },
+    "groupedAs": "Im Shop gruppiert nach {{list}}",
+    "editGroup": "Gruppe bearbeiten",
+    "removeFromDish": "Vom Gericht entfernen",
+    "attachGroup": "+ Vorhandene Gruppe zuordnen",
+    "createGroup": "Neue Gruppe erstellen",
+    "nothingToAttach": "Alle Gruppen sind diesem Gericht bereits zugeordnet.",
+    "groupsShared": "Gruppen werden geteilt. Eine Änderung gilt für jedes Gericht, das die Gruppe nutzt. „Vom Gericht entfernen“ löst sie nur hier.",
+    "dishOnlyGroups": "Nur bei diesem Gericht",
+    "dishOnlyGroupsHelp": "Diese Gruppen gehören nur zu diesem Gericht und werden nicht geteilt.",
+    "availableFor": "Verfügbar für",
+    "modeHelp": {
+      "collection": "Gäste können dieses Gericht zur Abholung bestellen.",
+      "delivery": "Ausschalten bei Gerichten, die den Transport schlecht vertragen, etwa Fassbier.",
+      "dine_in": "Wird Gästen angezeigt, die am Tisch bestellen."
+    },
+    "prepTime": "Zubereitungszeit",
+    "prepUnit": "Minuten",
+    "save": "Änderungen speichern"
   }
 }

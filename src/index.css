@@ -13,6 +13,14 @@
   --color-cream: #faf6f1;
   --color-muted: #6b6058;
 
+  /* Status colours for the dish screen: warning orange (text, accent, tint) and ok green (text, tint) */
+  --color-warn: #9a3412;
+  --color-warn-accent: #c8410b;
+  --color-warn-bg: #fbe6dc;
+  --color-ok: #2f6b3a;
+  --color-ok-bg: #e4ecdf;
+  --color-control: #928779;
+
   /* Tailwind's grays, warmed to the same palette, so every older screen and dialog matches */
   --color-gray-50: #faf6f1;
   --color-gray-100: #f4efe9;

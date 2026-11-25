@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowRight } from 'lucide-react';
 import { ImageCropDialog } from '../ui/ImageCropDialog';
@@ -9,7 +9,7 @@ import { checkProductImageFile } from '../../features/menu/productImage';
  * The photo picker shared by dishes and combos: file input, 4:3 crop window, before/after preview.
  * The cropped file is handed up via setImageFile; uploading it is the caller's job.
  */
-export function DishPhotoField({ imageFile, setImageFile, existingImageUrl, photoError, label }: {
+export function DishPhotoField({ imageFile, setImageFile, existingImageUrl, photoError, label, large }: {
   imageFile: File | null;
   setImageFile: (f: File | null) => void;
   existingImageUrl?: string | null;
@@ -17,11 +17,78 @@ export function DishPhotoField({ imageFile, setImageFile, existingImageUrl, phot
   photoError?: boolean;
   /** Field label; defaults to the shared product wording. */
   label?: string;
+  /** The 176px edit-screen look: one big square photo with a "Replace photo" button under it. */
+  large?: boolean;
 }) {
   const { t } = useTranslation();
   const fieldLabel = label ?? t('products.image');
   const [pendingImage, setPendingImage] = useState<File | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const previewUrl = useMemo(() => (imageFile ? URL.createObjectURL(imageFile) : null), [imageFile]);
+  useEffect(() => () => { if (previewUrl) URL.revokeObjectURL(previewUrl); }, [previewUrl]);
+
+  const onPick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const picked = e.target.files?.[0] ?? null;
+    const err = picked ? checkProductImageFile(picked) : null;
+    setImageError(err ? t(`products.${err}`) : null);
+    setPendingImage(picked && !err ? picked : null);
+    e.target.value = '';
+  };
+  const cropDialog = pendingImage && (
+    <ImageCropDialog
+      file={pendingImage}
+      rule={DISH_IMAGE_RULE}
+      title={t('products.imageCropTitle')}
+      hint={t('products.imageCropHint')}
+      safeAreaLabel={t('products.imageVisibleInList')}
+      tooSmallMessage={t('products.productImageTooSmall')}
+      previews={[
+        { label: t('products.imagePreviewCard'), aspect: 4 / 3 },
+        { label: t('products.imagePreviewPhoneList'), aspect: 1 },
+      ]}
+      onCancel={() => setPendingImage(null)}
+      onConfirm={(blob) => {
+        const baseName = pendingImage.name.replace(/\.[^.]+$/, '') || 'dish';
+        setImageFile(new File([blob], `${baseName}.jpg`, { type: blob.type || DISH_IMAGE_RULE.outputMime }));
+        setPendingImage(null);
+      }}
+    />
+  );
+
+  if (large) {
+    const shown = previewUrl ?? existingImageUrl ?? null;
+    return (
+      <div className="flex w-44 flex-none flex-col gap-2.5">
+        <p className="text-sm font-semibold">
+          {fieldLabel} <span className="font-medium text-muted">{t('products.imageRequiredNote')}</span>
+        </p>
+        {shown ? (
+          <img src={shown} alt={fieldLabel} className="h-44 w-44 rounded-2xl object-cover" />
+        ) : (
+          <div
+            className={`flex h-44 w-44 items-center justify-center rounded-2xl border-2 border-dashed px-3 text-center text-[13px] text-muted ${
+              photoError ? 'border-warn' : 'border-control'
+            }`}
+          >
+            {t('dishForm.noPhoto')}
+          </div>
+        )}
+        <input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp" aria-label={fieldLabel} aria-required="true" onChange={onPick} className="sr-only" tabIndex={-1} />
+        <button
+          type="button"
+          onClick={() => fileInput.current?.click()}
+          className="h-11 rounded-full border-[1.5px] border-control bg-white text-sm font-semibold hover:bg-cream focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2563eb]"
+        >
+          {shown ? t('dishForm.replacePhoto') : t('dishForm.addPhoto')}
+        </button>
+        {imageError && <p role="alert" className="text-sm text-[#b42318]">{imageError}</p>}
+        {photoError && !imageError && <p role="alert" className="text-sm text-[#b42318]">{t('products.photoRequired')}</p>}
+        {cropDialog}
+      </div>
+    );
+  }
+
   return (
       <div className="flex flex-col gap-1.5">
         <p className="text-sm font-medium text-gray-700">
@@ -47,7 +114,7 @@ export function DishPhotoField({ imageFile, setImageFile, existingImageUrl, phot
 
             <div className="flex flex-col items-center gap-1">
               <img
-                src={URL.createObjectURL(imageFile)}
+                src={previewUrl ?? ''}
                 alt={t('products.newImage')}
                 className="w-16 h-16 rounded-xl object-cover border border-gray-200 flex-shrink-0"
               />
@@ -68,7 +135,7 @@ export function DishPhotoField({ imageFile, setImageFile, existingImageUrl, phot
           /* No existing image, new file selected */
           <div className="flex items-center gap-2">
             <img
-              src={URL.createObjectURL(imageFile)}
+              src={previewUrl ?? ''}
               alt="preview"
               className="w-12 h-12 rounded-lg object-cover border border-gray-200"
             />
@@ -80,37 +147,12 @@ export function DishPhotoField({ imageFile, setImageFile, existingImageUrl, phot
           accept="image/jpeg,image/png,image/webp"
           aria-label={fieldLabel}
           aria-required="true"
-          onChange={(e) => {
-            const picked = e.target.files?.[0] ?? null;
-            const err = picked ? checkProductImageFile(picked) : null;
-            setImageError(err ? t(`products.${err}`) : null);
-            setPendingImage(picked && !err ? picked : null);
-            e.target.value = '';
-          }}
+          onChange={onPick}
           className="block w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer"
         />
         {imageError && <p role="alert" className="text-sm text-red-600">{imageError}</p>}
         {photoError && !imageError && <p role="alert" className="text-sm text-red-600">{t('products.photoRequired')}</p>}
-        {pendingImage && (
-          <ImageCropDialog
-            file={pendingImage}
-            rule={DISH_IMAGE_RULE}
-            title={t('products.imageCropTitle')}
-            hint={t('products.imageCropHint')}
-            safeAreaLabel={t('products.imageVisibleInList')}
-            tooSmallMessage={t('products.productImageTooSmall')}
-            previews={[
-              { label: t('products.imagePreviewCard'), aspect: 4 / 3 },
-              { label: t('products.imagePreviewPhoneList'), aspect: 1 },
-            ]}
-            onCancel={() => setPendingImage(null)}
-            onConfirm={(blob) => {
-              const baseName = pendingImage.name.replace(/\.[^.]+$/, '') || 'dish';
-              setImageFile(new File([blob], `${baseName}.jpg`, { type: blob.type || DISH_IMAGE_RULE.outputMime }));
-              setPendingImage(null);
-            }}
-          />
-        )}
+        {cropDialog}
       </div>
   );
 }

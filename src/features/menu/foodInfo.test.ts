@@ -151,3 +151,15 @@ describe('dishTaxClasses', () => {
     expect(dishTaxClasses([E('food'), E('beverage'), E('delivery'), E('old', false)]).map((c) => c.id)).toEqual(['food', 'beverage']);
   });
 });
+
+describe('foodInfoFromProduct allergen confirmation', () => {
+  it('reads [] as "confirmed none" and a missing list as "not confirmed"', () => {
+    expect(foodInfoFromProduct({ allergenIds: [], additiveIds: undefined })).toMatchObject({ allergenIds: [], additiveIds: null });
+    expect(foodInfoFromProduct({ allergenIds: null })).toMatchObject({ allergenIds: null });
+  });
+
+  it('removing the last chip from a confirmed-none list adds then clears back to not confirmed', () => {
+    expect(toggleId([], 'milk')).toEqual(['milk']);
+    expect(toggleId(toggleId([], 'milk'), 'milk')).toBeNull();
+  });
+});

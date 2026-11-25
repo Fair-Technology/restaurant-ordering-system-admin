@@ -12,11 +12,13 @@ interface CurrencyInputProps {
   valueCents: number;
   onChange: (cents: number) => void;
   className?: string;
+  /** Replaces the default small-caps label look (e.g. to match a neighbouring field's label). */
+  labelClassName?: string;
   /** Shop's country code, for de-AT/de-CH etc; omitted falls back to the UI-language default (de-DE / en-GB). */
   countryCode?: string | null;
 }
 
-export function CurrencyInput({ label, valueCents, onChange, className = '', countryCode }: CurrencyInputProps) {
+export function CurrencyInput({ label, valueCents, onChange, className = '', labelClassName, countryCode }: CurrencyInputProps) {
   const { i18n } = useTranslation();
   const id = useId();
   const formatted = new Intl.NumberFormat(shopLocale(i18n.language, countryCode), {
@@ -38,7 +40,7 @@ export function CurrencyInput({ label, valueCents, onChange, className = '', cou
   return (
     <div className="flex flex-col gap-1.5">
       {label && (
-        <label htmlFor={id} className="text-xs font-medium text-gray-500 uppercase tracking-wide">{label}</label>
+        <label htmlFor={id} className={labelClassName ?? 'text-xs font-medium text-gray-500 uppercase tracking-wide'}>{label}</label>
       )}
       <input
         id={id}

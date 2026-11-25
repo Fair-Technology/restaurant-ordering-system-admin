@@ -111,6 +111,8 @@ describe('ProductsPage dish drawer', () => {
     fireEvent.click(row('Margherita'));
     const dialog = screen.getByRole('dialog');
     expect(dialog.getAttribute('aria-label')).toBe('dishes.editor.dialogLabel:Margherita');
+    // the new dish screen is a 1240px right-hand panel (full width on small screens)
+    expect(dialog.className).toContain('sm:w-[1240px]');
     expect(screen.getByTestId('editor').getAttribute('data-product')).toBe('p1');
     expect(screen.getByText('Tiramisu')).toBeTruthy();
     expect(search()).toBe('?dish=p1');

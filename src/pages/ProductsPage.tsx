@@ -1063,7 +1063,7 @@ export function ProductsPage() {
         <Drawer
           label={selectedDish ? t('dishes.editor.dialogLabel', { name: selectedDish.name }) : t('dishes.editor.untitledDish')}
           onClose={() => setParam('dish', null)}
-          widthClassName="sm:w-[65%] sm:min-w-[560px]"
+          widthClassName="sm:w-[1240px] sm:max-w-full"
         >
           <DishEditor
             key={selectedId}
