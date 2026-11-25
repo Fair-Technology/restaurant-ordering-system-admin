@@ -8470,6 +8470,10 @@
             "items": {
               "$ref": "#/components/schemas/CatalogAdditiveDto"
             }
+          },
+          "category": {
+            "type": "string",
+            "nullable": true
           }
         },
         "required": [
@@ -8478,7 +8482,8 @@
           "priceDelta",
           "isAvailable",
           "allergens",
-          "additives"
+          "additives",
+          "category"
         ],
         "additionalProperties": false
       },
@@ -9155,6 +9160,9 @@
             "items": {
               "type": "string"
             }
+          },
+          "category": {
+            "type": "string"
           }
         },
         "required": [
@@ -9294,9 +9302,9 @@
         "additionalProperties": false
       },
       "ExportOrder": {
-        "$ref": "#/components/schemas/Pick_Order_Exclude_id_shopId_orderRef_st_08d1799a"
+        "$ref": "#/components/schemas/Pick_Order_Exclude_id_shopId_orderRef_st_dd9f5955"
       },
-      "Pick_Order_Exclude_id_shopId_orderRef_st_08d1799a": {
+      "Pick_Order_Exclude_id_shopId_orderRef_st_dd9f5955": {
         "type": "object",
         "properties": {
           "id": {
@@ -9435,6 +9443,9 @@
           },
           "legalRevisions": {
             "$ref": "#/components/schemas/LegalRevisions"
+          },
+          "ageConfirmedAt": {
+            "type": "string"
           },
           "autoRejectAt": {
             "type": "string"
@@ -10497,6 +10508,9 @@
             "items": {
               "type": "string"
             }
+          },
+          "category": {
+            "type": "string"
           }
         },
         "required": [
@@ -10536,6 +10550,10 @@
             "items": {
               "type": "string"
             }
+          },
+          "category": {
+            "type": "string",
+            "nullable": true
           }
         },
         "required": [
@@ -15840,6 +15858,9 @@
           },
           "legalRevisions": {
             "$ref": "#/components/schemas/LegalRevisions"
+          },
+          "ageConfirmedAt": {
+            "type": "string"
           }
         },
         "required": [

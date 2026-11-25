@@ -18,6 +18,7 @@ export interface OptionGroupFormOption {
   nameTranslations?: TranslationMap;
   allergenIds?: string[];
   additiveIds?: string[];
+  category?: string;
 }
 
 export interface OptionGroupForm {
@@ -61,6 +62,7 @@ export function groupFormFromLibrary(g: ShopOptionGroupDto): OptionGroupForm {
       ...(o.nameTranslations ? { nameTranslations: o.nameTranslations } : {}),
       ...(o.allergenIds ? { allergenIds: o.allergenIds } : {}),
       ...(o.additiveIds ? { additiveIds: o.additiveIds } : {}),
+      ...(o.category ? { category: o.category } : {}),
     })),
   };
 }
@@ -86,6 +88,8 @@ export function optionGroupBodyFromForm(form: OptionGroupForm): {
       ...(o.nameTranslations ? { nameTranslations: o.nameTranslations } : {}),
       ...(o.allergenIds ? { allergenIds: o.allergenIds } : {}),
       ...(o.additiveIds ? { additiveIds: o.additiveIds } : {}),
+      // null clears a category the owner just emptied; the backend keeps it when the field is omitted
+      category: o.category?.trim() || null,
     })),
   };
 }

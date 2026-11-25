@@ -18,9 +18,9 @@ import { TranslationField } from '../components/menu/LanguageTabs';
 
 // ── Shared types ──────────────────────────────────────────────────────────────
 
-export type VariantOption = { id: string; name: string; nameTranslations?: TranslationMap; priceDelta: number; isAvailable: boolean; allergenIds?: string[]; additiveIds?: string[] };
+export type VariantOption = { id: string; name: string; nameTranslations?: TranslationMap; priceDelta: number; isAvailable: boolean; allergenIds?: string[]; additiveIds?: string[]; category?: string };
 export type VariantGroup  = { id: string; name: string; nameTranslations?: TranslationMap; options: VariantOption[] };
-export type AddonOption   = { id: string; name: string; nameTranslations?: TranslationMap; priceDelta: number; isAvailable: boolean; allergenIds?: string[]; additiveIds?: string[] };
+export type AddonOption   = { id: string; name: string; nameTranslations?: TranslationMap; priceDelta: number; isAvailable: boolean; allergenIds?: string[]; additiveIds?: string[]; category?: string };
 export type AddonGroup    = { id: string; name: string; nameTranslations?: TranslationMap; minSelectable: number; maxSelectable: number; options: AddonOption[] };
 export type StepNum = 1 | 2 | 3 | 4 | 6;
 
@@ -757,6 +757,13 @@ export function Step4Customise({
                     ×
                   </MyButton>
                 </div>
+                <MyInput
+                  aria-label={t('addons.category')}
+                  placeholder={t('addons.categoryPlaceholder')}
+                  maxLength={40}
+                  value={option.category ?? ''}
+                  onChange={(e) => updateAddonOption(group.id, option.id, { category: e.target.value })}
+                />
                 <OptionFoodInfoField allergenIds={option.allergenIds ?? []} additiveIds={option.additiveIds ?? []} refs={refs} onChange={(p) => updateAddonOption(group.id, option.id, p)} />
                 </div>
               ))}

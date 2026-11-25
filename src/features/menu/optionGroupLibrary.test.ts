@@ -42,6 +42,17 @@ describe('optionGroupBodyFromForm', () => {
     expect(optionGroupBodyFromForm(valid())).toMatchObject({ minSelectable: 0, maxSelectable: 1 });
   });
 
+  it('sends a trimmed category, and null to clear an emptied one', () => {
+    const f = valid();
+    f.options = [
+      { key: 'a', name: 'Mozzarella', priceDelta: 250, isAvailable: true, category: ' Cheese ' },
+      { key: 'b', name: 'Tuna', priceDelta: 250, isAvailable: true, category: '  ' },
+    ];
+    const body = optionGroupBodyFromForm(f);
+    expect(body.options[0].category).toBe('Cheese');
+    expect(body.options[1].category).toBeNull();
+  });
+
   it('keeps ids, translations, allergens and additives and trims names', () => {
     const form = groupFormFromLibrary(group());
     form.name = '  Drinks  ';
@@ -50,16 +61,16 @@ describe('optionGroupBodyFromForm', () => {
     expect(body.name).toBe('Drinks');
     expect(body.options[0]).toEqual({
       id: 'o1', name: 'Coke', priceDelta: 150, isAvailable: true,
-      nameTranslations: { de: 'Cola' }, allergenIds: ['a1'], additiveIds: ['x1'],
+      nameTranslations: { de: 'Cola' }, allergenIds: ['a1'], additiveIds: ['x1'], category: null,
     });
-    expect(body.options[1]).toEqual({ id: 'o2', name: 'Water', priceDelta: 0, isAvailable: false });
+    expect(body.options[1]).toEqual({ id: 'o2', name: 'Water', priceDelta: 0, isAvailable: false, category: null });
   });
 
   it('omits id for new rows and defaults isAvailable to true', () => {
     const f = valid();
     const o = { ...f.options[0], isAvailable: undefined } as unknown as OptionGroupForm['options'][number];
     const body = optionGroupBodyFromForm({ ...f, options: [o] });
-    expect(body.options[0]).toEqual({ name: 'Cheese', priceDelta: 100, isAvailable: true });
+    expect(body.options[0]).toEqual({ name: 'Cheese', priceDelta: 100, isAvailable: true, category: null });
   });
 });
 

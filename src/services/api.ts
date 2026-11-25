@@ -2394,6 +2394,7 @@ export type CheckoutRequestDto = {
   idempotencyKey?: string;
   language?: string;
   legalRevisions?: LegalRevisions;
+  ageConfirmedAt?: string;
 };
 export type GetOrderByPaymentIntentResultDto = {
   orderId: string;
@@ -2788,6 +2789,7 @@ export type ProductOption = {
   isAvailable: boolean;
   allergenIds?: string[];
   additiveIds?: string[];
+  category?: string;
 };
 export type ProductVariantGroup = {
   id: string;
@@ -3285,6 +3287,7 @@ export type CatalogOptionDto = {
   isAvailable: boolean;
   allergens: CatalogLabelDto[];
   additives: CatalogAdditiveDto[];
+  category: string | null;
 };
 export type CatalogVariantGroupDto = {
   id: string;
@@ -3635,7 +3638,7 @@ export type OrderHistoryEntry = {
   actor: OrderActor;
   reason?: string;
 };
-export type PickOrderExcludeIdShopIdOrderRefSt08D1799A = {
+export type PickOrderExcludeIdShopIdOrderRefStDd9F5955 = {
   id: string;
   shopId: string;
   orderRef: string;
@@ -3676,6 +3679,7 @@ export type PickOrderExcludeIdShopIdOrderRefSt08D1799A = {
   taxBreakdown?: TaxBreakdownEntry[];
   language?: MenuLanguage;
   legalRevisions?: LegalRevisions;
+  ageConfirmedAt?: string;
   autoRejectAt?: string;
   escalatedAt?: string;
   rejectionNote?: string;
@@ -3813,7 +3817,7 @@ export type ShopDataExportDto = {
   };
   categories: Category[];
   products: Product[];
-  orders: PickOrderExcludeIdShopIdOrderRefSt08D1799A[];
+  orders: PickOrderExcludeIdShopIdOrderRefStDd9F5955[];
   customers: ExportCustomer[];
   invoices: InvoiceDoc[];
 };
@@ -3957,6 +3961,7 @@ export type ShopOptionGroupOption = {
   isAvailable: boolean;
   allergenIds?: string[];
   additiveIds?: string[];
+  category?: string;
 };
 export type ShopOptionGroupDto = {
   id: string;
@@ -3978,6 +3983,7 @@ export type ShopOptionGroupOptionInputDto = {
   isAvailable?: boolean;
   allergenIds?: string[];
   additiveIds?: string[];
+  category?: string | null;
 };
 export type GetOptionGroupsResultDto = ShopOptionGroupDto[];
 export type DeleteOptionGroupResultDto = {

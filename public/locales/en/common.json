@@ -796,6 +796,8 @@
     "min": "Min",
     "max": "Max",
     "optionNamePlaceholder": "e.g. Extra cheese",
+    "category": "Category (optional)",
+    "categoryPlaceholder": "e.g. Cheese",
     "priceDelta": "Price delta ($)",
     "available": "Available",
     "addOption": "+ Add Option",
@@ -1135,6 +1137,8 @@
     "name": "Name",
     "groupName": "Group name",
     "optionName": "Option name",
+    "category": "Category",
+    "categoryPlaceholder": "e.g. Cheese",
     "namePlaceholder": "e.g. Drinks",
     "kindLabel": "Type",
     "kind": {

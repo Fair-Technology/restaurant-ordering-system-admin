@@ -796,6 +796,8 @@
     "min": "Min",
     "max": "Max",
     "optionNamePlaceholder": "z.B. Extra Käse",
+    "category": "Kategorie (optional)",
+    "categoryPlaceholder": "z.B. Käse",
     "priceDelta": "Preisaufschlag ($)",
     "available": "Verfügbar",
     "addOption": "+ Option hinzufügen",
@@ -1135,6 +1137,8 @@
     "name": "Name",
     "groupName": "Name der Gruppe",
     "optionName": "Name der Option",
+    "category": "Kategorie",
+    "categoryPlaceholder": "z.B. Käse",
     "namePlaceholder": "z. B. Getränke",
     "kindLabel": "Art",
     "kind": {

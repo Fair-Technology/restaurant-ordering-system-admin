@@ -4,12 +4,12 @@ import { optionDeclarationCount, optionFromApi, optionGroupsFromProduct, toggleO
 describe('optionFoodInfo', () => {
   it("optionGroupsFromProduct keeps each option's allergens and additives", () => {
     const result = optionGroupsFromProduct({
-      variantGroups: [{ id: 'g1', name: 'Größe', options: [{ id: 'o1', name: 'Groß', priceDelta: 300, isAvailable: true, allergenIds: ['milk'], additiveIds: ['preservative'] }] }],
-      addonGroups: [{ id: 'a1', name: 'Extras', minSelectable: 0, maxSelectable: 2, options: [{ id: 'x1', name: 'Thunfisch', priceDelta: 150, isAvailable: true, allergenIds: ['fish'], additiveIds: [] }] }],
+      variantGroups: [{ id: 'g1', name: 'Größe', options: [{ id: 'o1', name: 'Groß', priceDelta: 300, isAvailable: true, allergenIds: ['milk'], additiveIds: ['preservative'], category: '' }] }],
+      addonGroups: [{ id: 'a1', name: 'Extras', minSelectable: 0, maxSelectable: 2, options: [{ id: 'x1', name: 'Thunfisch', priceDelta: 150, isAvailable: true, allergenIds: ['fish'], additiveIds: [], category: 'Protein' }] }],
     });
     expect(result).toEqual({
-      variantGroups: [{ id: 'g1', name: 'Größe', nameTranslations: {}, options: [{ id: 'o1', name: 'Groß', nameTranslations: {}, priceDelta: 300, isAvailable: true, allergenIds: ['milk'], additiveIds: ['preservative'] }] }],
-      addonGroups: [{ id: 'a1', name: 'Extras', nameTranslations: {}, minSelectable: 0, maxSelectable: 2, options: [{ id: 'x1', name: 'Thunfisch', nameTranslations: {}, priceDelta: 150, isAvailable: true, allergenIds: ['fish'], additiveIds: [] }] }],
+      variantGroups: [{ id: 'g1', name: 'Größe', nameTranslations: {}, options: [{ id: 'o1', name: 'Groß', nameTranslations: {}, priceDelta: 300, isAvailable: true, allergenIds: ['milk'], additiveIds: ['preservative'], category: '' }] }],
+      addonGroups: [{ id: 'a1', name: 'Extras', nameTranslations: {}, minSelectable: 0, maxSelectable: 2, options: [{ id: 'x1', name: 'Thunfisch', nameTranslations: {}, priceDelta: 150, isAvailable: true, allergenIds: ['fish'], additiveIds: [], category: 'Protein' }] }],
     });
   });
 

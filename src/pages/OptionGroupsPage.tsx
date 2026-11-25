@@ -204,6 +204,17 @@ function GroupDialog({
                           onChange={(e) => patchOption(o.key, { name: e.target.value })}
                         />
                       </div>
+                      {form.kind === 'addon' && (
+                        <div className="w-32 flex-shrink-0">
+                          <MyInput
+                            aria-label={t('optionGroups.category')}
+                            placeholder={t('optionGroups.categoryPlaceholder')}
+                            maxLength={40}
+                            value={o.category ?? ''}
+                            onChange={(e) => patchOption(o.key, { category: e.target.value })}
+                          />
+                        </div>
+                      )}
                       <div className="w-28 flex-shrink-0">
                         <CurrencyInput
                           label={`${t('optionGroups.priceDelta')} (${symbol})`}

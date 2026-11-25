@@ -4,7 +4,7 @@ import type { AddonGroup, VariantGroup, VariantOption } from '../../pages/Produc
 /** An option as the API returns it; every field is untrusted. */
 export interface ApiOption {
   id?: string; name?: string; nameTranslations?: TranslationMap; priceDelta?: number; isAvailable?: boolean;
-  allergenIds?: string[] | null; additiveIds?: string[] | null;
+  allergenIds?: string[] | null; additiveIds?: string[] | null; category?: string | null;
 }
 
 /** Options saved before option allergens existed have no lists; they read as "adds nothing". */
@@ -17,6 +17,7 @@ export function optionFromApi(o: ApiOption): VariantOption {
     isAvailable: o.isAvailable ?? true,
     allergenIds: Array.isArray(o.allergenIds) ? o.allergenIds : [],
     additiveIds: Array.isArray(o.additiveIds) ? o.additiveIds : [],
+    category: o.category ?? '',
   };
 }
 
