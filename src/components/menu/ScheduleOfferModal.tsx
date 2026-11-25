@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
 import type { MenuLanguage, ProductDto, TranslationMap } from '../../services/api';
 import { useUpdateProductMutation } from '../../services/api';
+import { failureMessage } from '../../features/api/errorMessage';
 import { useToast } from '../../contexts/ToastContext';
 import { MyButton } from '../ui/MyButton';
 import { CurrencyInput } from '../ui/CurrencyInput';
@@ -99,10 +100,10 @@ export function ScheduleOfferModal({
         productId: product.id!,
         body: { shopId: product.shopId!, schedule: payload ?? undefined },
       }).unwrap();
-      toast.success(t('products.saved'));
+      toast.success(t('products.scheduleSaved'));
       onClose();
-    } catch {
-      // error shown via toast by RTK middleware
+    } catch (err) {
+      toast.error(failureMessage(t('products.failedToSaveSchedule'), err));
     }
   };
 

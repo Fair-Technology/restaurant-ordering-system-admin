@@ -670,6 +670,8 @@
     "productNotFound": "This dish no longer exists. It may have been deleted.",
     "failedToLoad": "Failed to load product.",
     "failedToUpdate": "Failed to update product.",
+    "failedToSaveSchedule": "Failed to save the schedule.",
+    "scheduleSaved": "Schedule saved.",
     "failedToCreate": "Failed to create product.",
     "categoryRequired": "At least one category is required.",
     "saving": "Saving...",

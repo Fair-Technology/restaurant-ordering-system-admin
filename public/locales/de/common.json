@@ -670,6 +670,8 @@
     "productNotFound": "Dieses Gericht existiert nicht mehr. Es wurde möglicherweise gelöscht.",
     "failedToLoad": "Produkt konnte nicht geladen werden.",
     "failedToUpdate": "Produkt konnte nicht aktualisiert werden.",
+    "failedToSaveSchedule": "Zeitplan konnte nicht gespeichert werden.",
+    "scheduleSaved": "Zeitplan gespeichert.",
     "failedToCreate": "Produkt konnte nicht erstellt werden.",
     "categoryRequired": "Mindestens eine Kategorie ist erforderlich.",
     "saving": "Wird gespeichert...",
