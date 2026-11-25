@@ -339,7 +339,7 @@ export function DishEditor({ productId, shopId, currencySymbol, categoriesList, 
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-7 pb-6 pt-5">
-        <div className="flex max-w-[860px] flex-col gap-4">
+        <div className="flex flex-col gap-4">
           {/* Basics */}
           <section ref={basicsRef} className={`${section} scroll-mt-4`}>
             <h2 className={sectionTitle}>{t('dishes.editor.basics')}</h2>

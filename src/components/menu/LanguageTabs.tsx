@@ -8,7 +8,7 @@ export function LanguageTabs({ languages, active, onChange }: { languages: MenuL
   const { t } = useTranslation();
   return (
     <div role="tablist" className="flex gap-1 border-b border-gray-200" data-testid="language-tabs">
-      {languages.map((lang, i) => {
+      {languages.map((lang) => {
         const name = t(`shops.languageName.${lang}`);
         const selected = lang === active;
         return (
@@ -22,7 +22,7 @@ export function LanguageTabs({ languages, active, onChange }: { languages: MenuL
               selected ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-400 hover:text-gray-700'
             }`}
           >
-            {i === 0 ? t('translationFields.originalTab', { language: name }) : name}
+            {name}
           </button>
         );
       })}

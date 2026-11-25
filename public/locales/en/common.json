@@ -1236,7 +1236,6 @@
   },
   "translationFields": {
     "original": "Original: {{text}}",
-    "originalTab": "{{language}} (original)",
     "nothingToTranslate": "Nothing to translate on this step."
   },
   "legal": {
