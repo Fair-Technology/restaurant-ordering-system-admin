@@ -1156,7 +1156,17 @@
     "optionRequired": "Fügen Sie mindestens eine Option hinzu.",
     "optionNameRequired": "Jede Option braucht einen Namen.",
     "rangeInvalid": "Das Maximum muss mindestens so groß sein wie das Minimum.",
-    "priceInvalid": "Preise dürfen nicht negativ sein."
+    "priceInvalid": "Preise dürfen nicht negativ sein.",
+    "tabsLabel": "Nach Typ filtern",
+    "tabAll": "Alle",
+    "tabVariants": "Varianten",
+    "tabExtras": "Extras",
+    "emptyVariants": "Noch keine Varianten. Erstelle eine, um sie bei mehreren Gerichten zu verwenden.",
+    "emptyExtras": "Noch keine Extras. Erstelle eines, um es bei mehreren Gerichten zu verwenden.",
+    "unavailableCount_one": "{{count}} nicht verfügbar",
+    "unavailableCount_other": "{{count}} nicht verfügbar",
+    "expandAll": "Alle ausklappen",
+    "collapseAll": "Alle einklappen"
   },
   "categories": {
     "addCategory": "+ Neue Kategorie",

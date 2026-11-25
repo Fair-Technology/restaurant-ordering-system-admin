@@ -1156,7 +1156,17 @@
     "optionRequired": "Add at least one option.",
     "optionNameRequired": "Every option needs a name.",
     "rangeInvalid": "The maximum must be at least the minimum.",
-    "priceInvalid": "Prices cannot be negative."
+    "priceInvalid": "Prices cannot be negative.",
+    "tabsLabel": "Filter by type",
+    "tabAll": "All",
+    "tabVariants": "Variants",
+    "tabExtras": "Extras",
+    "emptyVariants": "No variants yet. Create one to reuse it across dishes.",
+    "emptyExtras": "No extras yet. Create one to reuse it across dishes.",
+    "unavailableCount_one": "{{count}} unavailable",
+    "unavailableCount_other": "{{count}} unavailable",
+    "expandAll": "Expand all",
+    "collapseAll": "Collapse all"
   },
   "categories": {
     "addCategory": "+ New Category",
