@@ -82,8 +82,10 @@ export interface DishFormProps {
    * (Its content and behaviour belong to the Add dish ticket.)
    */
   startFromSimilarDish?: ReactNode;
-  /** Extra rows at the bottom of the Availability section (edit mode: schedule and delete). */
+  /** Extra rows at the bottom of the Availability section (edit mode: the schedule / special price card). */
   availabilityExtras?: ReactNode;
+  /** Edit-mode only: the Delete dish control. Rendered at the left of the footer, so it shows on every section. */
+  deleteDish?: ReactNode;
 
   // ── Add mode only (ignored when `mode` is `edit`) ──────────────────────────────
   /** The "Before you add it" list under the nav; each row jumps to its section. */
@@ -132,6 +134,7 @@ export function DishForm({
   onClose,
   startFromSimilarDish,
   availabilityExtras,
+  deleteDish,
   requiredChecklist,
   addStatus,
   addRequiredLeft = 0,
@@ -375,7 +378,8 @@ export function DishForm({
 
       {/* Footer */}
       {mode === 'edit' && (
-        <footer className="flex h-[72px] flex-none items-center gap-3 border-t border-[#e6d9c6] px-7">
+        <footer className="flex min-h-[72px] flex-none flex-wrap items-center gap-3 border-t border-[#e6d9c6] px-7 py-2">
+          {deleteDish}
           <span role="status" className={`flex items-center gap-2 text-sm font-semibold leading-5 ${dirty ? 'text-warn' : 'text-ok'}`}>
             <span aria-hidden="true" className={`h-2 w-2 rounded-full ${dirty ? 'bg-warn' : 'bg-ok'}`} />
             {dirty ? t('dishes.editor.unsaved') : t('dishes.editor.allSaved')}
