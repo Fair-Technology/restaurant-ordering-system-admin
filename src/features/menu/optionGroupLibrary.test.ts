@@ -10,6 +10,7 @@ import {
   libraryGroupsForPicker,
   optionGroupBodyFromForm,
   validateGroupForm,
+  withReorderedExtras,
   withToggledRef,
   type OptionGroupForm,
 } from './optionGroupLibrary';
@@ -176,5 +177,14 @@ describe('option group page helpers', () => {
     expect(emptyGroupForm().kind).toBe('addon');
     expect(emptyGroupForm('variant').kind).toBe('variant');
     expect(emptyGroupForm('addon').kind).toBe('addon');
+  });
+});
+
+describe('withReorderedExtras', () => {
+  it('moves the extras to the end in the new order and leaves other refs (variant, stale) in place', () => {
+    expect(withReorderedExtras(['v', 'a', 'stale', 'b', 'c'], ['c', 'a', 'b'])).toEqual(['v', 'stale', 'c', 'a', 'b']);
+  });
+  it('is a no-op for an unchanged order with only extras', () => {
+    expect(withReorderedExtras(['a', 'b'], ['a', 'b'])).toEqual(['a', 'b']);
   });
 });

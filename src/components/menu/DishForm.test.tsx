@@ -419,32 +419,101 @@ describe('DishForm food info', () => {
 });
 
 describe('DishForm options and extras', () => {
-  it('lists attached groups in the dish order with real badges, categories and price deltas', () => {
-    render(<Harness start={initial({ optionGroupRefs: ['g2', 'g1'] })} />);
-    expect(nav('Options and extras').textContent).toContain('2 groups');
+  const extraOf = (id: string, name: string) =>
+    ({ id, kind: 'addon', name, minSelectable: 0, maxSelectable: 2, nameTranslations: {}, options: [] }) as unknown as ShopOptionGroupDto;
+  const variantOf = (id: string, name: string) =>
+    ({ id, kind: 'variant', name, minSelectable: 1, maxSelectable: 1, nameTranslations: {}, options: [] }) as unknown as ShopOptionGroupDto;
+
+  it('splits Variant and Extras, each with its own heading, in extras order with real badges and price deltas', () => {
+    render(<Harness start={initial({ optionGroupRefs: ['g3', 'g1', 'g2'] })} />);
+    expect(nav('Options and extras').textContent).toContain('1 variant · 2 extras');
     go('options');
-    const cards = screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent);
-    expect(cards).toEqual(['Extras', 'Your pasta']);
+    const heads = screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent);
+    expect(heads).toEqual(['Variant', 'Your pasta', 'Extras', 'Sauces', 'Extras']);
+    expect(screen.getByText('Customers pick exactly one.')).toBeTruthy();
+    expect(screen.getByText('Drag to set the order customers see.')).toBeTruthy();
     expect(screen.getByText('Optional · up to 4')).toBeTruthy();
     expect(screen.getByText('Required · choose 1')).toBeTruthy();
     expect(screen.getByText('Grouped on the storefront as Cheese')).toBeTruthy();
     expect(screen.getByText(/\+ .*1\.00/)).toBeTruthy(); // Gnocchi
   });
 
-  it('remove-from-dish detaches the group and attach-existing puts it back, offering only unattached groups', () => {
+  it('the variant card never has a drag handle; extras only get one when there are two or more', () => {
+    const { unmount } = render(<Harness start={initial()} />); // one variant, one extra
+    go('options');
+    expect(screen.queryAllByRole('button', { name: 'Drag to reorder' })).toHaveLength(0);
+    expect(screen.queryByText('Drag to set the order customers see.')).toBeNull();
+    unmount();
+    render(<Harness start={initial({ optionGroupRefs: ['g1', 'g2', 'g3'] })} />);
+    go('options');
+    const handles = screen.getAllByRole('button', { name: 'Drag to reorder' });
+    expect(handles).toHaveLength(2);
+    // keyboard sensor is wired: dnd-kit gives each handle role/tabindex and its instructions
+    for (const h of handles) {
+      expect(h.getAttribute('aria-roledescription')).toBe('sortable');
+      expect(h.getAttribute('tabindex')).toBe('0');
+      expect(within(screen.getByRole('heading', { name: 'Your pasta' }).closest('li')!).queryByRole('button', { name: 'Drag to reorder' })).toBeNull();
+    }
+  });
+
+  it('remove-from-dish detaches the variant and shows the two empty-state buttons; choosing offers only variant groups', () => {
     render(<Harness start={initial()} />);
     go('options');
+    expect(screen.queryByRole('button', { name: 'Choose variant group' })).toBeNull();
     const card = screen.getByRole('heading', { name: 'Your pasta' }).closest('li')!;
     fireEvent.click(within(card).getByRole('button', { name: /^Remove from dish/ }));
     expect(screen.queryByRole('heading', { name: 'Your pasta' })).toBeNull();
-    expect(nav('Options and extras').textContent).toContain('1 group');
+    expect(nav('Options and extras').textContent).toContain('0 variant · 1 extras');
     expect(saveBtn().disabled).toBe(false);
 
-    fireEvent.click(screen.getByRole('button', { name: /Attach existing group/ }));
-    const picker = screen.getByRole('group', { name: /Attach existing group/ });
-    expect(within(picker).getAllByRole('button').map((b) => b.textContent?.split(/\d/)[0].trim())).toEqual(['Your pasta', 'Sauces']);
-    fireEvent.click(within(picker).getByRole('button', { name: /Sauces/ }));
-    expect(screen.getByRole('heading', { name: 'Sauces' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Choose variant group' }));
+    const picker = screen.getByRole('group', { name: 'Choose variant group' });
+    expect(within(picker).getAllByRole('button').map((b) => b.textContent?.split(/\d/)[0].trim())).toEqual(['Your pasta']);
+    fireEvent.click(within(picker).getByRole('button', { name: /Your pasta/ }));
+    expect(screen.getByRole('heading', { name: 'Your pasta' })).toBeTruthy();
+    // Now filled: Replace instead of the empty-state buttons
+    expect(screen.queryByRole('button', { name: 'Choose variant group' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Replace' })).toBeTruthy();
+  });
+
+  it('with a variant attached, Replace swaps it; the extras picker never offers variant groups', () => {
+    library.push(variantOf('g4', 'Size'), extraOf('g5', 'Dips'));
+    try {
+      render(<Harness start={initial()} />);
+      go('options');
+      expect(screen.queryByRole('button', { name: 'Create new group', hidden: false })).not.toBeNull(); // extras' own create button
+      expect(screen.getAllByRole('button', { name: 'Create new group' })).toHaveLength(1);
+      fireEvent.click(screen.getByRole('button', { name: 'Replace' }));
+      const picker = screen.getByRole('group', { name: 'Replace' });
+      expect(within(picker).getAllByRole('button').map((b) => b.textContent?.split(/\d/)[0].trim())).toEqual(['Size']);
+      fireEvent.click(within(picker).getByRole('button', { name: /Size/ }));
+      expect(screen.queryByRole('heading', { name: 'Your pasta' })).toBeNull();
+      expect(screen.getByRole('heading', { name: 'Size' })).toBeTruthy();
+      expect(nav('Options and extras').textContent).toContain('1 variant · 1 extras');
+
+      fireEvent.click(screen.getByRole('button', { name: /Attach existing group/ }));
+      const extras = screen.getByRole('group', { name: /Attach existing group/ });
+      expect(within(extras).getAllByRole('button').map((b) => b.textContent?.split(/\d/)[0].trim())).toEqual(['Sauces', 'Dips']);
+    } finally {
+      library.splice(3, 2);
+    }
+  });
+
+  it('a legacy dish with two variant groups marks the second "Not shown to customers" and Remove drops only it', () => {
+    library.push(variantOf('g4', 'Size'));
+    try {
+      render(<Harness start={initial({ optionGroupRefs: ['g1', 'g4', 'g2'] })} />);
+      go('options');
+      expect(screen.getAllByText('Not shown to customers')).toHaveLength(1);
+      const legacy = screen.getByText('Not shown to customers').closest('li')!;
+      expect(within(legacy).getByText('Not shown to customers')).toBeTruthy();
+      expect(nav('Options and extras').textContent).toContain('1 variant · 1 extras');
+      fireEvent.click(within(legacy).getByRole('button', { name: /^Remove from dish/ }));
+      expect(screen.queryByText('Not shown to customers')).toBeNull();
+      expect(screen.getByRole('heading', { name: 'Your pasta' })).toBeTruthy();
+    } finally {
+      library.splice(3, 1);
+    }
   });
 });
 

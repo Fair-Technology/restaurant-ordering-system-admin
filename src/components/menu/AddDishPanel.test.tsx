@@ -301,7 +301,7 @@ describe('AddDishPanel start from a similar dish', () => {
     expect(screen.getByText(/^Copied category, tax class and option groups from Carbonara\. Allergens and additives are not copied/)).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Remove Pasta' })).toBeTruthy();
     expect((screen.getByLabelText('Tax class') as HTMLSelectElement).value).toBe('food');
-    expect(nav('Options and extras').textContent).toContain('1 group');
+    expect(nav('Options and extras').textContent).toContain('1 variant · 0 extras');
     expect(nav('Food info').textContent).toContain('Confirm allergens and additives');
     expect(primary('5 required left')).toBeTruthy(); // category is copied; photo, name, price, allergens, additives are not
   });

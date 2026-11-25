@@ -1546,6 +1546,7 @@
       "confirmFood": "Confirm allergens and additives",
       "optional": "Optional",
       "everywhere": "Available everywhere",
+      "variantExtras": "{{variant}} variant · {{extra}} extras",
       "customised": "Customised"
     },
     "descriptionMissing": {
@@ -1593,6 +1594,13 @@
     "attachGroup": "+ Attach existing group",
     "createGroup": "Create new group",
     "nothingToAttach": "Every group is already attached to this dish.",
+    "variantSection": {"title": "Variant", "help": "Customers pick exactly one."},
+    "extrasSection": {"title": "Extras", "help": "Customers can pick any of these, within each group's limits."},
+    "chooseVariantGroup": "Choose variant group",
+    "replaceVariantGroup": "Replace",
+    "noVariantGroupsToAttach": "Every variant group is already attached.",
+    "notShownToCustomers": "Not shown to customers",
+    "extrasDragHint": "Drag to set the order customers see.",
     "groupsShared": "Groups are shared. Editing a group changes every dish that uses it. Remove from dish only detaches it here.",
     "dishOnlyGroups": "Only on this dish",
     "dishOnlyGroupsHelp": "These groups belong to this dish alone and are not shared.",

@@ -57,12 +57,15 @@ export function foodInfoComplete(f: Pick<FoodInfo, 'allergenIds' | 'additiveIds'
 export interface NavStatus {
   /** i18n key suffix under `dishForm.nav.` */
   key:
-    | 'complete' | 'translationMissing' | 'confirmAllergens' | 'groups' | 'onMenu' | 'hidden'
+    | 'complete' | 'translationMissing' | 'confirmAllergens' | 'variantExtras' | 'onMenu' | 'hidden'
     // Add mode only
-    | 'requiredLeft' | 'confirmFood' | 'optional' | 'everywhere' | 'customised';
+    | 'requiredLeft' | 'confirmFood' | 'everywhere' | 'customised';
   tone: NavTone;
-  /** Count for `groups` and `requiredLeft`; the language for `translationMissing`. */
+  /** Count for `requiredLeft`; the language for `translationMissing`. */
   count?: number;
+  /** For `variantExtras`: whether the Variant slot is filled (0 or 1), and how many extras are attached. */
+  variantCount?: number;
+  extraCount?: number;
   language?: MenuLanguage;
 }
 
@@ -71,7 +74,8 @@ export function navStatus(
   section: DishSection,
   state: DishFormState,
   extraLanguage: MenuLanguage | undefined,
-  attachedGroupCount: number,
+  variantCount: number,
+  extraCount: number,
 ): NavStatus {
   switch (section) {
     case 'basics':
@@ -81,16 +85,22 @@ export function navStatus(
     case 'food':
       return foodInfoComplete(state.foodInfo) ? { key: 'complete', tone: 'ok' } : { key: 'confirmAllergens', tone: 'warn' };
     case 'options':
-      return { key: 'groups', tone: 'muted', count: attachedGroupCount };
+      return { key: 'variantExtras', tone: 'muted', variantCount, extraCount };
     case 'availability':
       return state.isAvailable ? { key: 'onMenu', tone: 'muted' } : { key: 'hidden', tone: 'warn' };
   }
 }
 
-/** Groups attached to the dish: library groups by reference (dish order), plus the dish-only ones it still carries. */
-export function attachedGroupCount(state: Pick<DishFormState, 'optionGroupRefs' | 'variantGroups' | 'addonGroups'>, library: readonly ShopOptionGroupDto[]): number {
-  const known = state.optionGroupRefs.filter((id) => library.some((g) => g.id === id)).length;
-  return known + state.variantGroups.length + state.addonGroups.length;
+/** 0 or 1: whether the dish's single Variant slot is filled (dish-only variant groups and any ref resolving to a live variant library group count, but only the first is ever shown). */
+export function variantSlotFilled(state: Pick<DishFormState, 'optionGroupRefs' | 'variantGroups'>, library: readonly ShopOptionGroupDto[]): 0 | 1 {
+  const refVariant = state.optionGroupRefs.some((id) => library.some((g) => g.id === id && g.kind === 'variant'));
+  return refVariant || state.variantGroups.length > 0 ? 1 : 0;
+}
+
+/** Total extras attached: addon refs (resolved against the library) plus dish-only addon groups. */
+export function extraGroupCount(state: Pick<DishFormState, 'optionGroupRefs' | 'addonGroups'>, library: readonly ShopOptionGroupDto[]): number {
+  const refExtras = state.optionGroupRefs.filter((id) => library.some((g) => g.id === id && g.kind === 'addon')).length;
+  return refExtras + state.addonGroups.length;
 }
 
 /** Splits a gross price (cents) into VAT and net for a rate in basis points. Net is rounded, VAT is the remainder, so they always add up. */
@@ -173,7 +183,8 @@ export function addNavStatus(
   section: DishSection,
   state: DishFormState,
   items: readonly AddRequiredItem[],
-  attachedGroupCount: number,
+  variantCount: number,
+  extraCount: number,
   tried: boolean,
 ): NavStatus {
   const warnOrMuted: NavTone = tried ? 'warn' : 'muted';
@@ -185,7 +196,7 @@ export function addNavStatus(
     case 'food':
       return foodInfoComplete(state.foodInfo) ? { key: 'complete', tone: 'ok' } : { key: 'confirmFood', tone: warnOrMuted };
     case 'options':
-      return attachedGroupCount > 0 ? { key: 'groups', tone: 'muted', count: attachedGroupCount } : { key: 'optional', tone: 'muted' };
+      return { key: 'variantExtras', tone: 'muted', variantCount, extraCount };
     case 'availability': {
       const customised = state.foodInfo.unavailableModes.length > 0 || state.foodInfo.ageRestricted;
       return { key: customised ? 'customised' : 'everywhere', tone: 'muted' };
