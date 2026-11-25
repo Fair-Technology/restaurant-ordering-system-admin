@@ -1464,7 +1464,6 @@ export type UpdateProductAvailabilityApiArg = {
   body: {
     shopId: string;
     isAvailable?: boolean;
-    unavailableUntil?: string | null;
   };
 };
 export type GetReferenceListsApiResponse =
@@ -2880,7 +2879,6 @@ export type ProductDto = {
   addonGroups?: ProductAddonGroup[];
   schedule?: ProductSchedule | null;
   isAvailable: boolean;
-  unavailableUntil: string | null;
   isDeleted: boolean;
   createdAt: string;
   updatedAt: string;
@@ -2908,7 +2906,6 @@ export type GetProductResultDto = {
   description: string;
   price: number;
   isAvailable: boolean;
-  unavailableUntil: string | null;
   isDeleted: boolean;
   createdAt: string;
   updatedAt: string;
@@ -2942,7 +2939,6 @@ export type UpdateProductResultDto = {
   description: string;
   price: number;
   isAvailable: boolean;
-  unavailableUntil: string | null;
   isDeleted: boolean;
   schedule?: ProductSchedule | null;
   createdAt: string;
@@ -2952,8 +2948,6 @@ export type UpdateProductAvailabilityResultDto = {
   id: string;
   shopId: string;
   isAvailable: boolean;
-  unavailableUntil: string | null;
-  soldOut: boolean;
   updatedAt: string;
 };
 export type CreateShopResultDto = {
@@ -3347,8 +3341,6 @@ export type CatalogProductDto = {
   variants: CatalogVariantGroupDto[];
   addons: CatalogAddonGroupDto[];
   isAvailable: boolean;
-  unavailableUntil: string | null;
-  soldOut: boolean;
   allergens: CatalogLabelDto[];
   additives: CatalogAdditiveDto[];
   dietaryTags: CatalogLabelDto[];
@@ -3569,7 +3561,6 @@ export type Product = {
   schedule?: ProductSchedule | null;
   combo?: ProductCombo | null;
   isAvailable: boolean;
-  unavailableUntil?: string | null;
   isDeleted: boolean;
   createdAt: string;
   updatedAt: string;
