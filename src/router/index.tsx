@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components -- router config, not a fast-refresh boundary */
 import { lazy, Suspense, type ComponentType } from 'react';
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { Layout } from '../components/layout/Layout';
 import { ShopLayout } from '../components/layout/ShopLayout';
 import { ShopIndexRedirect } from '../components/layout/ShopIndexRedirect';
@@ -10,7 +10,6 @@ import { MySpinner } from '../components/ui/MySpinner';
 
 // Route-level code splitting: each page is its own chunk.
 const LoginPage = lazy(() => import('../pages/LoginPage').then((m) => ({ default: m.LoginPage })));
-const DashboardPage = lazy(() => import('../pages/DashboardPage').then((m) => ({ default: m.DashboardPage })));
 const ShopsPage = lazy(() => import('../pages/ShopsPage').then((m) => ({ default: m.ShopsPage })));
 const ShopSettingsPage = lazy(() => import('../pages/ShopSettingsPage').then((m) => ({ default: m.ShopSettingsPage })));
 const CategoriesPage = lazy(() => import('../pages/CategoriesPage').then((m) => ({ default: m.CategoriesPage })));
@@ -52,7 +51,7 @@ export const router = createBrowserRouter([
       {
         element: <Layout />,
         children: [
-          { path: '/', element: <Lazy page={DashboardPage} /> },
+          { path: '/', element: <Navigate to="/shops" replace /> },
           { path: '/shops', element: <Lazy page={ShopsPage} /> },
           {
             path: '/shops/:shopId',
