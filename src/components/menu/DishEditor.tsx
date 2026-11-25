@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBlocker } from 'react-router-dom';
-import { X } from 'lucide-react';
+import { Trash2, X } from 'lucide-react';
 import type { ProductDto, ProductImage } from '../../services/api';
 import {
   useDeleteProductMutation,
@@ -219,6 +219,38 @@ export function DishEditor({ productId, shopId, currencySymbol, categoriesList, 
         onSave={() => void save()}
         onDiscard={discard}
         onClose={onClose}
+        deleteDish={
+          confirmDelete ? (
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-sm text-[#8f1c13]">{t('products.deleteWarning')}</span>
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(false)}
+                className="h-11 rounded-full border border-[#e3d9ce] px-4 text-[13px] font-semibold hover:bg-cream"
+              >
+                {t('products.cancel')}
+              </button>
+              <PendingButton
+                type="button"
+                isPending={isDeleting}
+                onClick={() => void remove()}
+                className="h-11 rounded-full bg-[#b42318] px-4 text-[13px] font-bold text-white hover:bg-[#981b14] disabled:opacity-50"
+              >
+                {isDeleting ? t('products.deleting') : t('products.confirmDelete')}
+              </PendingButton>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setConfirmDelete(true)}
+              title={t('dishes.editor.deleteHint')}
+              className="inline-flex h-11 items-center gap-1.5 rounded-full border border-[#f0c4ad] px-4 text-[13px] font-semibold text-[#b42318] hover:bg-[#fdeceb]"
+            >
+              <Trash2 size={15} strokeWidth={2.2} aria-hidden="true" />
+              {t('dishes.editor.deleteDish')}
+            </button>
+          )
+        }
         availabilityExtras={
           <>
             <div className="flex items-center justify-between gap-3 rounded-xl bg-cream px-3.5 py-3">
@@ -236,39 +268,6 @@ export function DishEditor({ productId, shopId, currencySymbol, categoriesList, 
               <button type="button" onClick={() => setScheduleOpen(true)} className="h-11 text-[13px] font-semibold underline underline-offset-2">
                 {schedule ? t('products.editSchedule') : t('dishes.editor.scheduleSetUp')}
               </button>
-            </div>
-            <div className="rounded-2xl border border-[#f5c2bd] bg-white px-5 py-4">
-              {confirmDelete ? (
-                <div className="flex flex-wrap items-center gap-3">
-                  <span className="flex-1 text-sm text-[#8f1c13]">{t('products.deleteWarning')}</span>
-                  <button
-                    type="button"
-                    onClick={() => setConfirmDelete(false)}
-                    className="h-11 rounded-full border border-[#e3d9ce] px-4 text-[13px] font-semibold hover:bg-cream"
-                  >
-                    {t('products.cancel')}
-                  </button>
-                  <PendingButton
-                    type="button"
-                    isPending={isDeleting}
-                    onClick={() => void remove()}
-                    className="h-11 rounded-full bg-[#b42318] px-4 text-[13px] font-bold text-white hover:bg-[#981b14] disabled:opacity-50"
-                  >
-                    {isDeleting ? t('products.deleting') : t('products.confirmDelete')}
-                  </PendingButton>
-                </div>
-              ) : (
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm text-muted">{t('dishes.editor.deleteHint')}</span>
-                  <button
-                    type="button"
-                    onClick={() => setConfirmDelete(true)}
-                    className="h-11 rounded-full border border-[#f0c4ad] px-4 text-[13px] font-semibold text-[#b42318] hover:bg-[#fdeceb]"
-                  >
-                    {t('dishes.editor.deleteDish')}
-                  </button>
-                </div>
-              )}
             </div>
           </>
         }
