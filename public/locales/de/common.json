@@ -1508,6 +1508,8 @@
       "deleteHint": "Das Gericht wird von der Karte entfernt. Bestehende Bestellungen bleiben erhalten.",
       "unsaved": "Ungespeicherte Änderungen",
       "allSaved": "Alle Änderungen gespeichert",
+      "closeEditor": "Gericht-Editor schließen",
+      "dialogLabel": "„{{name}}“ bearbeiten",
       "confirmLeave": "Du hast ungespeicherte Änderungen. Ohne Speichern verlassen?",
       "untitledDish": "Unbenanntes Gericht",
       "deleteDish": "Gericht löschen",

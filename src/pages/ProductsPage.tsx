@@ -32,6 +32,7 @@ import { useSoldOutToday } from '../features/menu/useSoldOutToday';
 import { SoldOutTodayButton } from '../components/menu/SoldOutTodayButton';
 import { wizardBackAction, wizardStepSequence } from '../features/menu/wizardSteps';
 import { importRowToCreateRequest, type MenuImportRow } from '../features/menu/menuImport';
+import { Drawer } from '../components/ui/Drawer';
 import { DishEditor } from '../components/menu/DishEditor';
 import { PageHeader, Section, SplitPage } from '../components/layout/Page';
 import { usePageTitle } from '../features/layout/usePageTitle';
@@ -761,6 +762,7 @@ export function ProductsPage() {
   };
 
   const all = products ?? [];
+  const selectedDish = selectedId ? all.find((p) => p.id === selectedId) : undefined;
   const q = query.trim().toLowerCase();
   const shown = all.filter((p) => passes(p, filter, availableOf(p), soldOutOf(p), brokenImageIds) && (!q || (p.name ?? '').toLowerCase().includes(q)));
   const countOf = (f: DishFilter) => all.filter((p) => passes(p, f, availableOf(p), soldOutOf(p), brokenImageIds)).length;
@@ -872,7 +874,17 @@ export function ProductsPage() {
           <MySpinner label={t('products.loading')} />
         ) : isError ? (
           <p className="p-7 text-[#b42318]">{t('products.loadError')}</p>
-        ) : selectedId ? (
+        ) : (
+          list
+        )}
+      </div>
+
+      {selectedId && (
+        <Drawer
+          label={selectedDish ? t('dishes.editor.dialogLabel', { name: selectedDish.name }) : t('dishes.editor.untitledDish')}
+          onClose={() => setParam('dish', null)}
+          widthClassName="sm:w-[560px]"
+        >
           <DishEditor
             key={selectedId}
             productId={selectedId}
@@ -883,10 +895,8 @@ export function ProductsPage() {
             onSaved={() => {}}
             onDeleted={() => setParam('dish', null)}
           />
-        ) : (
-          list
-        )}
-      </div>
+        </Drawer>
+      )}
 
       {showAddModal && <AddProductModal shopId={shopId!} onClose={() => setParam('addProduct', null)} />}
       {showImportModal && <BulkImportModal shopId={shopId!} onClose={() => setParam('importProducts', null)} />}
