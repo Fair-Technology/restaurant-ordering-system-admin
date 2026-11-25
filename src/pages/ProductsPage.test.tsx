@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { RouterProvider, createMemoryRouter, useBlocker, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import { ProductsPage } from './ProductsPage';
@@ -11,7 +11,34 @@ vi.mock('react-i18next', () => ({
     i18n: { language: 'en' },
   }),
 }));
-vi.mock('../contexts/ToastContext', () => ({ useToast: () => ({ success: vi.fn(), error: vi.fn() }) }));
+const { toastSuccess, toastError, setCategoryDishOrderMock, dragEvent } = vi.hoisted(() => ({
+  toastSuccess: vi.fn(),
+  toastError: vi.fn(),
+  setCategoryDishOrderMock: vi.fn(),
+  dragEvent: { current: null as unknown },
+}));
+vi.mock('../contexts/ToastContext', () => ({ useToast: () => ({ success: toastSuccess, error: toastError }) }));
+vi.mock('../services/dishOrderApi', () => ({
+  useSetCategoryDishOrderMutation: () => [
+    (...args: unknown[]) => ({ unwrap: () => setCategoryDishOrderMock(...args) }),
+    {},
+  ],
+}));
+// Real pointer/touch drag physics are impractical in jsdom: DndContext becomes a pass-through with a
+// hidden trigger that feeds the queued drag event to that group's own onDragEnd. useSortable and
+// SortableContext stay real.
+vi.mock('@dnd-kit/core', async () => {
+  const actual = await vi.importActual<typeof import('@dnd-kit/core')>('@dnd-kit/core');
+  return {
+    ...actual,
+    DndContext: ({ children, onDragEnd }: { children: React.ReactNode; onDragEnd: (e: unknown) => void }) => (
+      <div>
+        {children}
+        <button type="button" data-testid="dnd-trigger" hidden onClick={() => onDragEnd(dragEvent.current)} />
+      </div>
+    ),
+  };
+});
 vi.mock('../features/menu/useSoldOutToday', () => ({
   useSoldOutToday: () => ({ markSoldOutToday: vi.fn(), clearSoldOut: vi.fn(), setAvailable: vi.fn(), isPending: () => false }),
 }));
@@ -21,6 +48,7 @@ vi.mock('../features/menu/useShopReferenceLists', () => ({ useShopReferenceLists
 const products = [
   { id: 'p1', name: 'Margherita', categories: [{ id: 'c1', name: 'Pizza', sortOrder: 1 }], isAvailable: true },
   { id: 'p2', name: 'Tiramisu', categories: [{ id: 'c1', name: 'Pizza', sortOrder: 1 }], isAvailable: true },
+  { id: 'p3', name: 'Cola', categories: [], isAvailable: true },
 ];
 vi.mock('../services/api', () => ({
   useGetShopByIdQuery: () => ({ data: { id: 's1', currency: 'EUR', timezone: 'UTC', callerPermissions: ['manage_menu'] } }),
@@ -66,6 +94,9 @@ const row = (name: string) => screen.getByText(name).closest('[role="button"]') 
 
 let confirmSpy: ReturnType<typeof vi.spyOn>;
 beforeEach(() => {
+  toastSuccess.mockReset();
+  toastError.mockReset();
+  setCategoryDishOrderMock.mockReset();
   confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
 });
 afterEach(() => {
@@ -152,5 +183,60 @@ describe('ProductsPage dish drawer', () => {
     expect(screen.getByRole('dialog')).toBeTruthy();
     await act(async () => { await router.navigate(-1); });
     expect(screen.queryByRole('dialog')).toBeNull();
+  });
+});
+
+describe('ProductsPage dish reordering', () => {
+  const names = () => ['Margherita', 'Tiramisu'].sort((a, b) => (row(a).compareDocumentPosition(row(b)) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
+  const dragMargheritaPastTiramisu = async () => {
+    dragEvent.current = { active: { id: 'p1' }, over: { id: 'p2' } };
+    const section = row('Margherita').closest('section') as HTMLElement;
+    await act(async () => { fireEvent.click(within(section).getByTestId('dnd-trigger')); });
+  };
+
+  it('sorts dishes by name by default and flips them after a successful save', async () => {
+    setCategoryDishOrderMock.mockResolvedValueOnce({ categoryId: 'c1', products: [] });
+    renderAt('/shops/s1/dishes');
+    expect(names()).toEqual(['Margherita', 'Tiramisu']);
+    await dragMargheritaPastTiramisu();
+    await waitFor(() => expect(names()).toEqual(['Tiramisu', 'Margherita']));
+    expect(setCategoryDishOrderMock).toHaveBeenCalledWith({ shopId: 's1', categoryId: 'c1', body: { productIds: ['p2', 'p1'] } });
+    expect(toastSuccess).toHaveBeenCalledWith('dishes.reordered');
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('reverts the order and shows an error when the save fails', async () => {
+    setCategoryDishOrderMock.mockRejectedValueOnce(new Error('boom'));
+    renderAt('/shops/s1/dishes');
+    await dragMargheritaPastTiramisu();
+    await waitFor(() => expect(screen.getByRole('alert').textContent).toBe('dishes.failedToReorder'));
+    expect(names()).toEqual(['Margherita', 'Tiramisu']);
+    expect(toastSuccess).not.toHaveBeenCalled();
+  });
+
+  it('clicking a handle does not open the dish, a row click still does', () => {
+    renderAt('/shops/s1/dishes');
+    fireEvent.click(within(row('Margherita')).getByLabelText('dishes.dragHandle'));
+    expect(search()).toBe('');
+    fireEvent.click(row('Margherita'));
+    expect(search()).toBe('?dish=p1');
+  });
+
+  it('greys out the handles while a filter or search is active; uncategorized dishes never get one', () => {
+    renderAt('/shops/s1/dishes');
+    const handle = () => within(row('Margherita')).getByLabelText('dishes.dragHandle');
+    expect(handle().getAttribute('aria-disabled')).toBeNull();
+    expect(handle().getAttribute('title')).toBeNull();
+    expect(within(row('Cola')).queryByLabelText('dishes.dragHandle')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: /dishes\.filter\.onMenu/ }));
+    expect(handle().getAttribute('aria-disabled')).toBe('true');
+    expect(handle().getAttribute('title')).toBe('dishes.reorderDisabledHint');
+    expect(handle().className).toContain('cursor-not-allowed');
+    expect(within(row('Cola')).queryByLabelText('dishes.dragHandle')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: /dishes\.filter\.all/ }));
+    fireEvent.change(screen.getByLabelText('dishes.search'), { target: { value: 'marg' } });
+    expect(handle().getAttribute('aria-disabled')).toBe('true');
   });
 });

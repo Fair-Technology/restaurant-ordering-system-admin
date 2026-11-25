@@ -463,6 +463,17 @@ const injectedRtkApi = api
         }),
         invalidatesTags: ["Categories"],
       }),
+      setCategoryDishOrder: build.mutation<
+        SetCategoryDishOrderApiResponse,
+        SetCategoryDishOrderApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/shops/${queryArg.shopId}/categories/${queryArg.categoryId}/dish-order`,
+          method: "PUT",
+          body: queryArg.body,
+        }),
+        invalidatesTags: ["Categories"],
+      }),
       createCombo: build.mutation<CreateComboApiResponse, CreateComboApiArg>({
         query: (queryArg) => ({
           url: `/shops/${queryArg.shopId}/combos`,
@@ -1607,6 +1618,15 @@ export type ApplyCategoryTaxClassApiResponse =
 export type ApplyCategoryTaxClassApiArg = {
   shopId: string;
   categoryId: string;
+};
+export type SetCategoryDishOrderApiResponse =
+  /** status 200 Dish order saved */ SetCategoryDishOrderResultDto;
+export type SetCategoryDishOrderApiArg = {
+  shopId: string;
+  categoryId: string;
+  body: {
+    productIds: string[];
+  };
 };
 export type CreateComboApiResponse = /** status 200 Success */ ComboDto;
 export type CreateComboApiArg = {
@@ -2852,6 +2872,9 @@ export type ProductDto = {
     sortOrder: number;
     icon?: string;
   }[];
+  categoryOrder?: {
+    [key: string]: number;
+  };
   images: ProductImage[];
   variantGroups?: ProductVariantGroup[];
   addonGroups?: ProductAddonGroup[];
@@ -3426,6 +3449,13 @@ export type ApplyCategoryTaxClassResultDto = {
   taxClassId: string;
   updatedCount: number;
 };
+export type SetCategoryDishOrderResultDto = {
+  categoryId: string;
+  products: {
+    id: string;
+    name: string;
+  }[];
+};
 export type ComboDto = {
   id: string;
   name: string;
@@ -3521,6 +3551,9 @@ export type Product = {
   descriptionTranslations?: TranslationMap;
   price: number;
   categoryIds: string[];
+  categoryOrder?: {
+    [key: string]: number;
+  };
   images: ProductImage[];
   variantGroups?: ProductVariantGroup[];
   optionGroupRefs?: string[];
@@ -4719,6 +4752,7 @@ export const {
   useLazyGetCategoryByIdQuery,
   useUpdateCategoryMutation,
   useApplyCategoryTaxClassMutation,
+  useSetCategoryDishOrderMutation,
   useCreateComboMutation,
   useGetCombosQuery,
   useLazyGetCombosQuery,

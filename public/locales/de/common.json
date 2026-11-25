@@ -1471,6 +1471,10 @@
     "genericError": "Etwas ist schiefgelaufen. Bitte erneut versuchen."
   },
   "dishes": {
+    "dragHandle": "Zum Neuanordnen ziehen",
+    "reordered": "Reihenfolge der Gerichte gespeichert.",
+    "failedToReorder": "Neue Reihenfolge konnte nicht gespeichert werden. Änderungen zurückgesetzt.",
+    "reorderDisabledHint": "Filter und Suche zurücksetzen, um Gerichte neu zu sortieren.",
     "add": "Gericht hinzufügen",
     "import": "Importieren",
     "importModal": {
