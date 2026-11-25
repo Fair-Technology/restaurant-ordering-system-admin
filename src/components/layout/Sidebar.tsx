@@ -3,7 +3,7 @@ import { useDispatch } from 'react-redux';
 import { Link, NavLink, useNavigate, useParams } from 'react-router-dom';
 import { useMsal } from '@azure/msal-react';
 import { useTranslation } from 'react-i18next';
-import { ChevronsUpDown, LayoutDashboard, LogOut, Menu, PanelLeftClose, Store, X } from 'lucide-react';
+import { ChevronsUpDown, LogOut, Menu, PanelLeftClose, Store, X } from 'lucide-react';
 import { useGetMyShopsQuery, useGetShopByIdQuery, useUpdateShopMutation, type GetShopResultDto } from '../../services/api';
 import { useGetOrderQueueQuery } from '../../services/ordersApi';
 import { baseApi } from '../../services/baseApi';
@@ -303,12 +303,6 @@ export function Sidebar({ sidebarHidden, onToggleSidebar }: { sidebarHidden: boo
     </div>
   ) : (
     <div className="flex flex-col gap-px">
-      <NavLink to="/" end className={({ isActive }) => linkClass(isActive)}>
-        <span className="flex items-center gap-2">
-          <LayoutDashboard size={16} aria-hidden="true" />
-          {t('nav.overview')}
-        </span>
-      </NavLink>
       <NavLink to="/shops" className={({ isActive }) => linkClass(isActive)}>
         <span className="flex items-center gap-2">
           <Store size={16} aria-hidden="true" />
