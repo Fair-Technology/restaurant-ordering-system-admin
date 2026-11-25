@@ -10,6 +10,8 @@ cp .env.example .env.local   # then fill in the values (see below)
 npm run dev
 ```
 
+The dev server must run on port 5173 (`npm run dev` enforces this via `strictPort`): it is the only local origin allowlisted in the dev storage account's CORS rules for direct blob uploads from the dish/shop image editors.
+
 `.env.local` holds the Vite build-time variables. The dev values come from this repo's
 `dev` environment Actions variables (Settings -> Environments -> dev). They are
 compile-time values and end up in the shipped bundle, so they are public — still, do

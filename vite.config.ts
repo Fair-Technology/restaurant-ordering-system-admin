@@ -7,6 +7,8 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
+    // Fail loudly if 5173 is taken: dev storage CORS only allows http://localhost:5173.
+    strictPort: true,
     // Nested git worktrees under `.worktrees/` are full repo copies; edits or tsconfig changes
     // inside them must not clear this dev server's dependency cache (white page, 504 Outdated Optimize Dep).
     watch: { ignored: ['**/.worktrees/**'] },
