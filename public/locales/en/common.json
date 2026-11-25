@@ -1471,6 +1471,10 @@
     "genericError": "Something went wrong. Please try again."
   },
   "dishes": {
+    "dragHandle": "Drag to reorder",
+    "reordered": "Dish order saved.",
+    "failedToReorder": "Failed to save new order. Changes reverted.",
+    "reorderDisabledHint": "Clear the filter and search to reorder dishes.",
     "add": "Add dish",
     "import": "Import",
     "importModal": {

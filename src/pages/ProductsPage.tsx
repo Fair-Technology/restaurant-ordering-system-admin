@@ -8,12 +8,31 @@ import {
   useGetShopByIdQuery,
   useCreateProductMutation,
 } from '../services/api';
+import { useSetCategoryDishOrderMutation } from '../services/dishOrderApi';
 import { MyButton } from '../components/ui/MyButton';
 import { MySpinner } from '../components/ui/MySpinner';
 import { PendingButton } from '../components/ui/PendingButton';
 import { getCurrencySymbolOrDefault } from '../utils/currency';
 import { formatCents } from '../utils/money';
-import { Download, Plus, Search, X } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  TouchSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+  sortableKeyboardCoordinates,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { Download, GripVertical, Plus, Search, X } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 import {
   type VariantGroup, type VariantOption, type AddonGroup, type AddonOption,
@@ -554,6 +573,35 @@ function passes(
 }
 
 /**
+ * A category's dishes in menu order: ordered dishes by position, then dishes without a position
+ * (by name) after every ordered one.
+ */
+function sortDishesForCategory(items: ProductDto[], categoryId: string): ProductDto[] {
+  return [...items].sort((a, b) => {
+    const pa = a.categoryOrder?.[categoryId];
+    const pb = b.categoryOrder?.[categoryId];
+    if (pa != null && pb != null && pa !== pb) return pa - pb;
+    if (pa != null && pb == null) return -1;
+    if (pa == null && pb != null) return 1;
+    return (a.name ?? '').localeCompare(b.name ?? '');
+  });
+}
+
+/** Applies a locally held id order; ids no longer present are skipped, unlisted dishes go last. */
+function applyOrder(items: ProductDto[], ids: string[]): ProductDto[] {
+  const byId = new Map(items.map((p) => [p.id!, p]));
+  const ordered = ids.flatMap((id) => {
+    const p = byId.get(id);
+    return p ? [p] : [];
+  });
+  const listed = new Set(ids);
+  return [...ordered, ...items.filter((p) => !listed.has(p.id!))];
+}
+
+/** Stops clicks on the controls inside a row from also opening the dish. */
+const keepInside = (e: React.SyntheticEvent) => e.stopPropagation();
+
+/**
  * Invisible probe that loads every dish's stored photo regardless of the active filter, so a
  * dead/broken image URL is caught even if the dish is never scrolled into view under the
  * current filter (e.g. the owner only ever looks at the "Incomplete" tab). `onBroken` fires at
@@ -588,6 +636,9 @@ function DishRow({
   onOpen,
   onToggle,
   onToggleSoldOut,
+  dragHandle,
+  rowRef,
+  rowStyle,
 }: {
   product: ProductDto;
   available: boolean;
@@ -600,6 +651,10 @@ function DishRow({
   onOpen: () => void;
   onToggle: () => void;
   onToggleSoldOut: () => void;
+  /** Drag handle, rendered first in the row; absent for rows that cannot be reordered. */
+  dragHandle?: React.ReactNode;
+  rowRef?: (node: HTMLElement | null) => void;
+  rowStyle?: React.CSSProperties;
 }) {
   const { t } = useTranslation();
   const imageUrl = product.images?.length ? product.images[product.images.length - 1].url : undefined;
@@ -609,11 +664,13 @@ function DishRow({
 
   return (
     <div
+      ref={rowRef}
+      style={rowStyle}
       role="button"
       tabIndex={0}
       onClick={onOpen}
       onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
+        if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
           e.preventDefault();
           onOpen();
         }
@@ -622,6 +679,7 @@ function DishRow({
         selected ? 'bg-cream shadow-[inset_3px_0_0_#1f1a17]' : ''
       }`}
     >
+      {dragHandle}
       {effectiveImageUrl ? (
         <img src={effectiveImageUrl} alt="" className={`h-[42px] w-14 flex-shrink-0 rounded-lg object-cover ${available ? '' : 'opacity-50'}`} />
       ) : (
@@ -690,6 +748,42 @@ function DishRow({
   );
 }
 
+type DishRowProps = Parameters<typeof DishRow>[0];
+
+/** A dish row with a drag handle. When `dragEnabled` is false the handle stays visible but inert. */
+function SortableDishRow({ dragEnabled, ...rowProps }: Omit<DishRowProps, 'dragHandle' | 'rowRef' | 'rowStyle'> & { dragEnabled: boolean }) {
+  const { t } = useTranslation();
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: rowProps.product.id!,
+    disabled: !dragEnabled,
+  });
+  const handle = (
+    <button
+      type="button"
+      {...attributes}
+      {...listeners}
+      onClick={keepInside}
+      aria-label={t('dishes.dragHandle')}
+      aria-disabled={!dragEnabled || undefined}
+      tabIndex={dragEnabled ? attributes.tabIndex : -1}
+      title={dragEnabled ? undefined : t('dishes.reorderDisabledHint')}
+      className={`flex-shrink-0 touch-none ${
+        dragEnabled ? 'cursor-grab text-[#b9ada2] hover:text-ink active:cursor-grabbing' : 'cursor-not-allowed text-[#d6cdc4]'
+      }`}
+    >
+      <GripVertical size={18} aria-hidden="true" />
+    </button>
+  );
+  return (
+    <DishRow
+      {...rowProps}
+      dragHandle={handle}
+      rowRef={setNodeRef}
+      rowStyle={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }}
+    />
+  );
+}
+
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 /**
@@ -737,6 +831,25 @@ export function ProductsPage() {
   const markImageBroken = useCallback((id: string) => {
     setBrokenImageIds((prev) => (prev.has(id) ? prev : new Set(prev).add(id)));
   }, []);
+
+  const [orderOverrides, setOrderOverrides] = useState<Record<string, string[]>>({});
+  const reorderingRef = useRef<Set<string>>(new Set());
+  const [reorderError, setReorderError] = useState(false);
+  const [setCategoryDishOrder] = useSetCategoryDishOrderMutation();
+
+  // Once fresh data arrives, the server's order replaces local overrides (except for a save still in flight).
+  useEffect(() => {
+    setOrderOverrides((o) => {
+      const keep = Object.fromEntries(Object.entries(o).filter(([id]) => reorderingRef.current.has(id)));
+      return Object.keys(keep).length === Object.keys(o).length ? o : keep;
+    });
+  }, [products]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   if (shop && !canManage) {
     return (
@@ -810,15 +923,66 @@ export function ProductsPage() {
   }
   const groups = [...categoryMap.values()]
     .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
-    .map((cat) => ({ id: cat.id, name: cat.name, items: shown.filter((p) => p.categories?.some((c) => c.id === cat.id)) }));
+    .map((cat) => {
+      const inCat = sortDishesForCategory(shown.filter((p) => p.categories?.some((c) => c.id === cat.id)), cat.id);
+      return { id: cat.id, name: cat.name, items: orderOverrides[cat.id] ? applyOrder(inCat, orderOverrides[cat.id]) : inCat };
+    });
   const uncategorized = shown.filter((p) => !p.categories?.length);
   if (uncategorized.length) groups.push({ id: '_none', name: t('products.uncategorized'), items: uncategorized });
   const visibleGroups = groups.filter((g) => g.items.length > 0);
+
+  const canReorder = canManage;
+  // Reordering only makes sense on the natural, unfiltered list
+  const dragActive = filter === 'all' && q === '';
+
+  const handleDragEnd = (groupId: string, items: ProductDto[]) => async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const current = orderOverrides[groupId] ?? items.map((p) => p.id!);
+    const oldIndex = current.indexOf(active.id as string);
+    const newIndex = current.indexOf(over.id as string);
+    if (oldIndex === -1 || newIndex === -1) return;
+    const snapshot = current;
+    const reordered = arrayMove(current, oldIndex, newIndex);
+    reorderingRef.current.add(groupId);
+    setOrderOverrides((o) => ({ ...o, [groupId]: reordered }));
+    setReorderError(false);
+    try {
+      await setCategoryDishOrder({ shopId: shopId!, categoryId: groupId, body: { productIds: reordered } }).unwrap();
+      toast.success(t('dishes.reordered'));
+    } catch {
+      setOrderOverrides((o) => ({ ...o, [groupId]: snapshot }));
+      setReorderError(true);
+    } finally {
+      reorderingRef.current.delete(groupId);
+    }
+  };
 
   const chip = (on: boolean) =>
     `inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-[13px] font-semibold transition-colors ${
       on ? 'border-ink bg-ink text-white' : 'border-[#e3d9ce] bg-white text-[#4a413b] hover:bg-cream'
     }`;
+
+  const renderRow = (p: ProductDto, dragEnabled?: boolean) => {
+    const rowProps = {
+      product: p,
+      available: availableOf(p),
+      toggling: toggling.has(p.id!),
+      soldOut: soldOutOf(p),
+      soldOutBusy: soldOutPending(p.id!),
+      selected: p.id === selectedId,
+      broken: brokenImageIds.has(p.id!),
+      currencyMoney: money,
+      onOpen: () => setParam('dish', p.id!),
+      onToggle: () => toggle(p),
+      onToggleSoldOut: () => toggleSoldOut(p),
+    };
+    return dragEnabled === undefined ? (
+      <DishRow key={p.id} {...rowProps} />
+    ) : (
+      <SortableDishRow key={p.id} dragEnabled={dragEnabled} {...rowProps} />
+    );
+  };
 
   const list = (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -871,6 +1035,11 @@ export function ProductsPage() {
       <ImageHealthProbe products={all} onBroken={markImageBroken} />
 
       <div aria-busy={isRefreshing} className="min-h-0 flex-1 overflow-y-auto px-7 pb-7">
+        {reorderError && (
+          <p role="alert" className="mb-[18px] rounded-2xl border border-[#f5c2bd] bg-[#fdeceb] px-4 py-3 text-sm text-[#b42318]">
+            {t('dishes.failedToReorder')}
+          </p>
+        )}
         {all.length === 0 && <p className="text-sm text-[#8a7f77]">{t('products.empty')}</p>}
         {all.length > 0 && visibleGroups.length === 0 && <p className="text-sm text-[#8a7f77]">{t('dishes.noMatch')}</p>}
         {visibleGroups.map((g) => (
@@ -879,22 +1048,13 @@ export function ProductsPage() {
               <h2 className="text-[15px] font-bold">{g.name}</h2>
               <span className="text-[13px] text-[#8a7f77]">{g.items.length}</span>
             </div>
-            {g.items.map((p) => (
-              <DishRow
-                key={p.id}
-                product={p}
-                available={availableOf(p)}
-                toggling={toggling.has(p.id!)}
-                soldOut={soldOutOf(p)}
-                soldOutBusy={soldOutPending(p.id!)}
-                selected={p.id === selectedId}
-                broken={brokenImageIds.has(p.id!)}
-                currencyMoney={money}
-                onOpen={() => setParam('dish', p.id!)}
-                onToggle={() => toggle(p)}
-                onToggleSoldOut={() => toggleSoldOut(p)}
-              />
-            ))}
+            {g.id === '_none' ? g.items.map((p) => renderRow(p)) : (
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd(g.id, g.items)}>
+                <SortableContext items={g.items.map((p) => p.id!)} strategy={verticalListSortingStrategy}>
+                  {g.items.map((p) => renderRow(p, canReorder && dragActive))}
+                </SortableContext>
+              </DndContext>
+            )}
           </section>
         ))}
       </div>
