@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useBlocker } from 'react-router-dom';
-import { Check, ChevronLeft } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import type { MenuLanguage, ProductDto, ProductImage, TranslationMap } from '../../services/api';
 import {
   useDeleteProductMutation,
@@ -160,8 +160,8 @@ export function DishEditor({ productId, shopId, currencySymbol, categoriesList, 
           onClick={onClose}
           className="inline-flex h-9 items-center gap-1 rounded-full bg-sand pl-2 pr-3 text-[13px] font-semibold hover:bg-[#ebe4dc]"
         >
-          <ChevronLeft size={16} strokeWidth={2.4} aria-hidden="true" />
-          {t('nav.dishes')}
+          <X size={16} strokeWidth={2.4} aria-hidden="true" />
+          {t('dishes.editor.closeEditor')}
         </button>
       </div>
     );
@@ -325,10 +325,10 @@ export function DishEditor({ productId, shopId, currencySymbol, categoriesList, 
         <button
           type="button"
           onClick={onClose}
-          className="inline-flex h-9 items-center gap-1 rounded-full bg-sand pl-2 pr-3 text-[13px] font-semibold hover:bg-[#ebe4dc]"
+          aria-label={t('dishes.editor.closeEditor')}
+          className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-sand hover:bg-[#ebe4dc]"
         >
-          <ChevronLeft size={16} strokeWidth={2.4} aria-hidden="true" />
-          {t('nav.dishes')}
+          <X size={18} aria-hidden="true" />
         </button>
         <h1 className="min-w-0 truncate font-display text-2xl font-semibold">{edit.form.name || t('dishes.editor.untitledDish')}</h1>
         {extraLanguage && activeLanguage && (

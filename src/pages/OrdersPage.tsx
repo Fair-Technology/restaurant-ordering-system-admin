@@ -26,7 +26,7 @@ import { useLiveQueue } from '../features/orders/useLiveQueue';
 import { nextActionLabelKey, useOrderActions } from '../features/orders/useOrderActions';
 import { chargedCents } from '../features/orders/refunds';
 import { formatCents } from '../utils/money';
-import { useModalA11y } from '../hooks/useModalA11y';
+import { Drawer } from '../components/ui/Drawer';
 import { MySpinner } from '../components/ui/MySpinner';
 import { PendingButton } from '../components/ui/PendingButton';
 import { AgeRestrictedBadge, ModeBadge, StateBadge } from '../components/orders/OrderBadges';
@@ -111,23 +111,10 @@ function OrderRow({ order, selected, onSelect, time, urgent = false, stale = fal
 
 /** Floating order-detail dialog: Escape closes, Tab is trapped, focus returns to the opener. */
 function OrderDetailPanel({ label, onClose, children }: { label: string; onClose: () => void; children: ReactNode }) {
-  const panelRef = useRef<HTMLDivElement>(null);
-  const onKeyDown = useModalA11y({ onClose, containerRef: panelRef });
   return (
-    <div className="fixed inset-0 z-40 flex justify-end bg-ink/30" onClick={onClose}>
-      <div
-        ref={panelRef}
-        role="dialog"
-        aria-modal="true"
-        aria-label={label}
-        tabIndex={-1}
-        onKeyDown={onKeyDown}
-        className="flex h-full w-full max-w-[452px] flex-col bg-[#efebe6] p-3 outline-none"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {children}
-      </div>
-    </div>
+    <Drawer label={label} onClose={onClose} widthClassName="max-w-[452px]" panelClassName="bg-[#efebe6] p-3">
+      {children}
+    </Drawer>
   );
 }
 
