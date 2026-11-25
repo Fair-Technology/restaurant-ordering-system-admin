@@ -15,10 +15,9 @@ interface CriteriaProps {
 }
 
 export function GoLiveCriteriaModal({ shopId, status, onClose }: CriteriaProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const unmet = status.criteria.filter((c) => !c.met);
-  const current = unmet[0];
   const remaining = unmet.length;
 
   return (
@@ -42,21 +41,30 @@ export function GoLiveCriteriaModal({ shopId, status, onClose }: CriteriaProps) 
               <span className="ml-1 text-xs text-gray-400">({remaining} {t('shops.goLiveRemaining')})</span>
             )}
           </p>
-          {current && (
-            <div className="flex items-center justify-between gap-3 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
-              <div className="flex items-center gap-2">
-                <XCircle size={16} className="text-red-400 shrink-0" />
-                <span className="text-sm text-gray-800">{current.description}</span>
-              </div>
-              <Link
-                to={goLiveFixLink(shopId, current.key)}
-                onClick={onClose}
-                className="text-xs font-medium text-blue-600 hover:underline shrink-0"
-              >
-                {t('shops.goLiveFix')}
-              </Link>
-            </div>
-          )}
+          <ul className="space-y-2">
+            {unmet.map((criterion) => {
+              const i18nKey = `shops.goLiveCriteria.${criterion.key}`;
+              const label = i18n.exists(i18nKey) ? t(i18nKey) : criterion.description;
+              return (
+                <li
+                  key={criterion.key}
+                  className="flex items-center justify-between gap-3 bg-red-50 border border-red-100 rounded-xl px-4 py-3"
+                >
+                  <div className="flex items-center gap-2">
+                    <XCircle size={16} className="text-red-400 shrink-0" />
+                    <span className="text-sm text-gray-800">{label}</span>
+                  </div>
+                  <Link
+                    to={goLiveFixLink(shopId, criterion.key)}
+                    onClick={onClose}
+                    className="text-xs font-medium text-blue-600 hover:underline shrink-0"
+                  >
+                    {t('shops.goLiveFix')}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
         </div>
         <div className="px-6 py-4 border-t border-gray-100 flex justify-end">
           <MyButton variant="secondary" size="sm" onClick={onClose}>
