@@ -49,6 +49,7 @@ const submit = async () => {
 };
 
 beforeEach(() => {
+  vi.stubEnv('VITE_SHOP_BASE_URL', 'https://www.example.com');
   vi.useFakeTimers();
   api.check.mockReset();
   api.create.mockReset();
@@ -58,6 +59,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
+  vi.unstubAllEnvs();
   vi.useRealTimers();
 });
 
