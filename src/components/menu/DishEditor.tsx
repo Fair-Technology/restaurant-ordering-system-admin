@@ -29,6 +29,7 @@ import {
 } from '../../pages/ProductWizardSteps';
 import { useUploadProductImage } from '../../features/menu/useUploadProductImage';
 import { dishPhotoMissing, isPhotoRequiredError, replaceDishPhoto } from '../../features/menu/productImage';
+import { failureMessage } from '../../features/api/errorMessage';
 import { isWrongSizeError } from '../../features/images/imageRules';
 import { useShopReferenceLists } from '../../features/menu/useShopReferenceLists';
 import { optionGroupsFromProduct } from '../../features/menu/optionFoodInfo';
@@ -252,7 +253,7 @@ export function DishEditor({ productId, shopId, currencySymbol, categoriesList, 
       setIsUploading(false);
       if (uploadStage) toast.error(t(isWrongSizeError(err) ? 'products.productImageWrongSize' : 'products.failedToUploadImage'));
       else if (isPhotoRequiredError(err)) toast.error(t('products.photoRequired'));
-      else toast.error(t('products.failedToUpdate'));
+      else toast.error(failureMessage(t('products.failedToUpdate'), err));
     }
   };
 
@@ -268,8 +269,8 @@ export function DishEditor({ productId, shopId, currencySymbol, categoriesList, 
       toast.success(t('products.deleted'));
       skipLeaveGuard.current = true;
       onDeleted();
-    } catch {
-      toast.error(t('products.failedToDelete'));
+    } catch (err) {
+      toast.error(failureMessage(t('products.failedToDelete'), err));
     }
   };
 
