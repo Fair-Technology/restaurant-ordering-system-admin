@@ -29,6 +29,7 @@ export function OptionGroupDialog({
   shopId,
   group,
   currency,
+  defaultKind,
   onClose,
   onSaved,
 }: {
@@ -36,6 +37,8 @@ export function OptionGroupDialog({
   /** The group being edited; absent when creating */
   group?: ShopOptionGroupDto;
   currency: string;
+  /** Kind preselected when creating; ignored when editing. */
+  defaultKind?: OptionGroupKind;
   onClose: () => void;
   /** Called with the group's id after a successful create or save. */
   onSaved?: (groupId: string) => void;
@@ -44,7 +47,7 @@ export function OptionGroupDialog({
   const toast = useToast();
   const [createGroup, { isLoading: creating }] = useCreateOptionGroupMutation();
   const [updateGroup, { isLoading: updating }] = useUpdateOptionGroupMutation();
-  const [form, setForm] = useState<OptionGroupForm>(() => (group ? groupFormFromLibrary(group) : emptyGroupForm()));
+  const [form, setForm] = useState<OptionGroupForm>(() => (group ? groupFormFromLibrary(group) : emptyGroupForm(defaultKind)));
   const [errors, setErrors] = useState<string[]>([]);
   const [serverError, setServerError] = useState<string | null>(null);
   const busy = creating || updating;

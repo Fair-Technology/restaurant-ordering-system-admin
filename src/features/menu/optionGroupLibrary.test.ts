@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { ShopOptionGroupDto } from '../../services/api';
 import {
+  defaultGroupOpen,
   emptyGroupForm,
+  filterGroupsByKind,
+  parseKindFilter,
+  unavailableOptionCount,
   groupFormFromLibrary,
   libraryGroupsForPicker,
   optionGroupBodyFromForm,
@@ -132,5 +136,45 @@ describe('libraryGroupsForPicker', () => {
     ]);
     expect(out.map((g) => g.id)).toEqual(['2', '3', '1']);
     expect(out[0].optionCount).toBe(2);
+  });
+});
+
+describe('option group page helpers', () => {
+  const groups = [
+    { id: 'a', kind: 'variant' as const },
+    { id: 'b', kind: 'addon' as const },
+    { id: 'c', kind: 'addon' as const },
+  ];
+
+  it('filters by kind', () => {
+    expect(filterGroupsByKind(groups, 'all')).toHaveLength(3);
+    expect(filterGroupsByKind(groups, 'variant').map((g) => g.id)).toEqual(['a']);
+    expect(filterGroupsByKind(groups, 'addon').map((g) => g.id)).toEqual(['b', 'c']);
+    expect(filterGroupsByKind([], 'variant')).toEqual([]);
+  });
+
+  it('parses the kind tab from the URL, defaulting to all', () => {
+    expect(parseKindFilter('variant')).toBe('variant');
+    expect(parseKindFilter('addon')).toBe('addon');
+    expect(parseKindFilter(null)).toBe('all');
+    expect(parseKindFilter('nonsense')).toBe('all');
+  });
+
+  it('collapses lists longer than five options by default', () => {
+    expect(defaultGroupOpen(0)).toBe(true);
+    expect(defaultGroupOpen(5)).toBe(true);
+    expect(defaultGroupOpen(6)).toBe(false);
+  });
+
+  it('counts unavailable options', () => {
+    expect(unavailableOptionCount([{ isAvailable: true }, { isAvailable: false }, { isAvailable: false }])).toBe(2);
+    expect(unavailableOptionCount([{ isAvailable: true }])).toBe(0);
+    expect(unavailableOptionCount([])).toBe(0);
+  });
+
+  it('preselects the requested kind for a new group', () => {
+    expect(emptyGroupForm().kind).toBe('addon');
+    expect(emptyGroupForm('variant').kind).toBe('variant');
+    expect(emptyGroupForm('addon').kind).toBe('addon');
   });
 });

@@ -125,3 +125,25 @@ export function libraryGroupsForPicker(
     .map((g) => ({ id: g.id, kind: g.kind, name: g.name, optionCount: g.options.length }))
     .sort((a, b) => rank(a.kind) - rank(b.kind) || a.name.localeCompare(b.name));
 }
+
+export type OptionGroupKindFilter = 'all' | OptionGroupKind;
+
+/** Reads the `?kind=` tab; anything but `variant`/`addon` means All. */
+export function parseKindFilter(value: string | null): OptionGroupKindFilter {
+  return value === 'variant' || value === 'addon' ? value : 'all';
+}
+
+export function filterGroupsByKind<T extends { kind: OptionGroupKind }>(groups: readonly T[], kind: OptionGroupKindFilter): T[] {
+  return groups.filter((g) => kind === 'all' || g.kind === kind);
+}
+
+/** Lists with more options than this start collapsed. */
+export const COLLAPSE_OPTION_THRESHOLD = 5;
+
+export function defaultGroupOpen(optionCount: number): boolean {
+  return optionCount <= COLLAPSE_OPTION_THRESHOLD;
+}
+
+export function unavailableOptionCount(options: ReadonlyArray<{ isAvailable: boolean }>): number {
+  return options.filter((o) => !o.isAvailable).length;
+}
