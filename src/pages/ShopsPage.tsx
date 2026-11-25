@@ -30,20 +30,6 @@ import { defaultNewShopForm, newShopFormError, withCountry } from '../features/s
 import { SLUG_PATTERN, slugFromName } from '../features/shops/slugFromName';
 import { usePageTitle } from '../features/layout/usePageTitle';
 
-const INDUSTRY_OPTIONS = [
-  'Food & Beverage',
-  'Fashion & Apparel',
-  'Beauty & Personal Care',
-  'Grocery & Essentials',
-  'Toys, Kids & Baby',
-  'Electronics & Gadgets',
-  'Home & Living',
-  'Health & Fitness',
-  'Pet Supplies',
-  'Services & Custom Orders',
-  'Other',
-] as const;
-
 export function CreateShopModal({ onClose }: { onClose: () => void }) {
   const { t, i18n } = useTranslation();
   const toast = useToast();
@@ -54,7 +40,6 @@ export function CreateShopModal({ onClose }: { onClose: () => void }) {
   const [showDpa, setShowDpa] = useState(false);
   const dpaLang = i18n.language.startsWith('de') ? 'de' : 'en';
 
-  const [industryOther, setIndustryOther] = useState('');
   const [countryError, setCountryError] = useState(false);
   const [form, setForm] = useState<Partial<CreateShopRequestDto>>(() => ({
     ...defaultNewShopForm(defaultMenuLanguageForUiLanguage(i18n.language)),
@@ -112,10 +97,8 @@ export function CreateShopModal({ onClose }: { onClose: () => void }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const resolvedIndustry =
-      form.industry === 'Other' ? industryOther.trim() : form.industry;
     const problem = newShopFormError(
-      { ...form, industry: resolvedIndustry },
+      form,
       dpaTicked && !!dpa,
       slugIsAvailable,
     );
@@ -125,7 +108,6 @@ export function CreateShopModal({ onClose }: { onClose: () => void }) {
       const shop = await createShop({
         createShopRequestDto: {
           ...form,
-          industry: resolvedIndustry,
           slug,
           acceptDpaVersion: dpa.version,
         } as CreateShopRequestDto,
@@ -212,32 +194,6 @@ export function CreateShopModal({ onClose }: { onClose: () => void }) {
                   )}
                 </p>
                 <p className="text-xs break-all text-muted" data-testid="slug-url">{shopUrl}</p>
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="shop-industry" className="text-[13px] font-semibold text-[#4a413b]">Industry</label>
-                <select
-                  id="shop-industry"
-                  required
-                  value={form.industry ?? ''}
-                  onChange={(e) => setForm((f) => ({ ...f, industry: e.target.value }))}
-                  className="h-10 w-full rounded-[10px] border border-[#e3d9ce] bg-white px-3 text-sm text-ink focus:border-ink focus:outline-none"
-                >
-                  <option value="" disabled>Select an industry…</option>
-                  {INDUSTRY_OPTIONS.map((opt) => (
-                    <option key={opt} value={opt}>{opt}</option>
-                  ))}
-                </select>
-
-                {form.industry === 'Other' && (
-                  <input
-                    type="text"
-                    placeholder="Describe your industry…"
-                    value={industryOther}
-                    onChange={(e) => setIndustryOther(e.target.value)}
-                    className="h-10 w-full rounded-[10px] border border-[#e3d9ce] bg-white px-3 text-sm text-ink focus:border-ink focus:outline-none"
-                  />
-                )}
               </div>
 
               <div className="flex flex-col gap-1.5">

@@ -224,6 +224,17 @@ const injectedRtkApi = api
         }),
         invalidatesTags: ["Legal"],
       }),
+      listOwners: build.query<ListOwnersApiResponse, ListOwnersApiArg>({
+        query: (queryArg) => ({
+          url: `/platform/owners`,
+          params: {
+            search: queryArg.search,
+            page: queryArg.page,
+            pageSize: queryArg.pageSize,
+          },
+        }),
+        providesTags: ["Platform"],
+      }),
       updateReferenceLists: build.mutation<
         UpdateReferenceListsApiResponse,
         UpdateReferenceListsApiArg
@@ -1379,6 +1390,13 @@ export type UpdatePlatformLegalIdentityApiArg = {
   body: {
     [key: string]: any;
   };
+};
+export type ListOwnersApiResponse =
+  /** status 200 Owners page */ ListOwnersResultDto;
+export type ListOwnersApiArg = {
+  search?: string;
+  page?: number;
+  pageSize?: number;
 };
 export type UpdateReferenceListsApiResponse =
   /** status 200 Success */ ReferenceListsResultDto;
@@ -2672,6 +2690,20 @@ export type PlatformLegalIdentityDto = {
   updatedAt: string | null;
   updatedBy: string | null;
 };
+export type OwnerSummaryDto = {
+  userId: string;
+  email?: string;
+  name?: string;
+  maxShops: number | null;
+  effectiveLimit: number;
+  shopCount: number;
+};
+export type ListOwnersResultDto = {
+  owners: OwnerSummaryDto[];
+  total: number;
+  page: number;
+  pageSize: number;
+};
 export type LocalizedLabel = {
   de: string;
   en: string;
@@ -2827,7 +2859,7 @@ export type ProductAddonGroup = {
 export type CreateProductRequestDto = {
   shopId: string;
   name: string;
-  description: string;
+  description?: string;
   price: number;
   categoryIds?: string[];
   images?: ProductImage[];
@@ -3008,7 +3040,7 @@ export type CreateShopRequestDto = {
       close: string;
     }[];
   };
-  industry: string;
+  industry?: string;
   pausedMessage?: string;
   orderAcceptanceMode?: "auto";
   closures?: {
@@ -4708,6 +4740,8 @@ export const {
   useGetPlatformLegalIdentityQuery,
   useLazyGetPlatformLegalIdentityQuery,
   useUpdatePlatformLegalIdentityMutation,
+  useListOwnersQuery,
+  useLazyListOwnersQuery,
   useUpdateReferenceListsMutation,
   useGetRolePermissionsQuery,
   useLazyGetRolePermissionsQuery,
