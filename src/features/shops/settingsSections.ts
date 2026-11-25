@@ -2,17 +2,13 @@ import type { TFunction } from 'i18next';
 import type { GetShopResultDto } from '../../services/api';
 import { autoAcceptChoiceOf } from './kitchenSettings';
 import { bannerShownOf } from './bannerSwitch';
+import type { SectionNavItem } from '../../components/shop/SettingsSectionNav';
 import { shopLiveState } from './shopStatus';
 
 export const SETTINGS_SECTION_KEYS = ['status', 'details', 'look', 'hours', 'orders', 'pay', 'danger'] as const;
 export type SettingsSectionKey = (typeof SETTINGS_SECTION_KEYS)[number];
 
-export interface SettingsSectionItem {
-  key: SettingsSectionKey;
-  title: string;
-  status?: string;
-  danger?: boolean;
-}
+export type SettingsSectionItem = SectionNavItem<SettingsSectionKey>;
 
 /** The section named in `?section=`; anything missing or unknown falls back to the first. */
 export function parseSettingsSection(raw: string | null): SettingsSectionKey {

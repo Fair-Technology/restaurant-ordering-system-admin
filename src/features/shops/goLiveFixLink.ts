@@ -7,17 +7,17 @@ export function goLiveFixLink(shopId: string, key: string): string {
     case 'has_categories':
       return `/shops/${shopId}/categories`;
     case 'dpa_accepted':
-      return `/shops/${shopId}/legal#dpa`;
+      return `/shops/${shopId}/legal?section=dpa`;
     case 'impressum':
-      return `/shops/${shopId}/legal#impressum`;
+      return `/shops/${shopId}/legal?section=impressum`;
     case 'terms':
-      return `/shops/${shopId}/legal#terms`;
+      return `/shops/${shopId}/legal?section=terms`;
     case 'withdrawal':
-      return `/shops/${shopId}/legal#withdrawal`;
+      return `/shops/${shopId}/legal?section=withdrawal`;
     case 'privacy_notice':
-      return `/shops/${shopId}/legal#privacy`;
+      return `/shops/${shopId}/legal?section=privacy`;
     case 'invoice_tax_id':
-      return `/shops/${shopId}/legal#impressum`;
+      return `/shops/${shopId}/legal?section=impressum`;
     default:
       return `/shops/${shopId}/settings`;
   }
