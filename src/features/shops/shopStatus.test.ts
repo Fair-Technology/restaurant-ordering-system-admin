@@ -7,6 +7,7 @@ import {
   autoPausedCount,
   shopPauseOutOfDate,
   cleanOrdersPausedMessage,
+  isOrdersPausedAt,
   shopLiveState,
 } from './shopStatus';
 
@@ -99,5 +100,19 @@ describe('timed pauses', () => {
     expect(shopPauseOutOfDate({ ordersPaused: true, ordersPausedUntil: none, ordersAutoPaused: auto(4) }, 2000, { ordersPaused: true, ordersAutoPaused: auto(3) }, 1000, 0)).toBe(true);
     // queue fetched at the same instant as the shop is not newer
     expect(shopPauseOutOfDate({ ordersPaused: true, ordersPausedUntil: none, ordersAutoPaused: none }, 1000, { ordersPaused: false }, 1000, 0)).toBe(false);
+  });
+});
+
+describe('isOrdersPausedAt (drives the inverted Accepting orders switch)', () => {
+  const until = '2026-10-17T12:30:00.000Z';
+  it('is true during an active pause', () => {
+    expect(isOrdersPausedAt({ ordersPaused: true, ordersPausedUntil: null }, 0)).toBe(true);
+    expect(isOrdersPausedAt({ ordersPaused: true, ordersPausedUntil: until }, Date.parse(until) - 1)).toBe(true);
+  });
+  it('is false once a timed pause has ended', () => {
+    expect(isOrdersPausedAt({ ordersPaused: true, ordersPausedUntil: until }, Date.parse(until))).toBe(false);
+  });
+  it('is false with no pause', () => {
+    expect(isOrdersPausedAt({ ordersPaused: false, ordersPausedUntil: null }, 0)).toBe(false);
   });
 });
