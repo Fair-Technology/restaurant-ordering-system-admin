@@ -22,3 +22,6 @@ Branch + PR only. Never push to `main` (it deploys dev).
 ## Context files
 Only one context file loads per session, first match wins: `.hermes.md` → `AGENTS.md` → `CLAUDE.md` → `.cursorrules`.
 With this file present, `.claude/CLAUDE.md` is no longer loaded, so keep rules here.
+
+## Git hooks
+Run `git config core.hooksPath scripts/git-hooks` once per clone/worktree to enable the post-merge hook that deletes branches already merged into `main` (`scripts/cleanup-merged-branches.sh [--dry-run]`).
