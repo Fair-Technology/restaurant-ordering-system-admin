@@ -47,9 +47,7 @@ import { useShopReferenceLists } from '../features/menu/useShopReferenceLists';
 import { EMPTY_FOOD_INFO, effectiveTaxClassId, labelFor, taxClassOptionLabel } from '../features/menu/foodInfo';
 import type { FoodInfo } from '../features/menu/foodInfo';
 import { isIncomplete, isListRefreshing } from '../features/menu/productListStatus';
-import { isSoldOutUntil } from '../features/menu/soldOut';
-import { useSoldOutToday } from '../features/menu/useSoldOutToday';
-import { SoldOutTodayButton } from '../components/menu/SoldOutTodayButton';
+import { useSetAvailable } from '../features/menu/useSetAvailable';
 import { wizardBackAction, wizardStepSequence } from '../features/menu/wizardSteps';
 import { importRowToCreateRequest, type MenuImportRow } from '../features/menu/menuImport';
 import { Drawer } from '../components/ui/Drawer';
@@ -556,16 +554,14 @@ export function BulkImportModal({ shopId, onClose }: { shopId: string; onClose: 
 
 // ── Dish list ──────────────────────────────────────────────────────────────────
 
-type DishFilter = 'all' | 'onMenu' | 'off' | 'incomplete' | 'soldOut';
+type DishFilter = 'all' | 'onMenu' | 'off' | 'incomplete';
 
 function passes(
   p: ProductDto,
   filter: DishFilter,
   available: boolean,
-  soldOut: boolean,
   brokenImageIds: ReadonlySet<string>,
 ): boolean {
-  if (filter === 'soldOut') return soldOut;
   if (filter === 'onMenu') return available && p.isDeclared !== false;
   if (filter === 'off') return !available;
   if (filter === 'incomplete') return isIncomplete(p, brokenImageIds);
@@ -628,14 +624,11 @@ function DishRow({
   product,
   available,
   toggling,
-  soldOut,
-  soldOutBusy,
   selected,
   broken,
   currencyMoney,
   onOpen,
   onToggle,
-  onToggleSoldOut,
   dragHandle,
   rowRef,
   rowStyle,
@@ -643,14 +636,11 @@ function DishRow({
   product: ProductDto;
   available: boolean;
   toggling: boolean;
-  soldOut: boolean;
-  soldOutBusy: boolean;
   selected: boolean;
   broken: boolean;
   currencyMoney: (cents: number) => string;
   onOpen: () => void;
   onToggle: () => void;
-  onToggleSoldOut: () => void;
   /** Drag handle, rendered first in the row; absent for rows that cannot be reordered. */
   dragHandle?: React.ReactNode;
   rowRef?: (node: HTMLElement | null) => void;
@@ -695,11 +685,6 @@ function DishRow({
               {offer.offerLabel || t('products.offerBadge')} · {currencyMoney(offer.offerPrice!)}
             </span>
           )}
-          {soldOut && (
-            <span className="rounded-full bg-[#fdeceb] px-2 py-0.5 text-[11px] font-bold text-[#8f1c13]">
-              {t('dishes.soldOutBadge')}
-            </span>
-          )}
         </div>
         {product.description && <span className="truncate text-[13px] text-[#6b6058]">{product.description}</span>}
         {product.isDeclared === false ? (
@@ -712,12 +697,6 @@ function DishRow({
         {groups > 0 ? t('dishes.optionGroups', { count: groups }) : '–'}
       </span>
       <span className="min-w-14 flex-shrink-0 text-right text-[15px] font-bold sm:w-20">{currencyMoney(product.price ?? 0)}</span>
-      <SoldOutTodayButton
-        name={product.name ?? ''}
-        soldOut={soldOut}
-        busy={soldOutBusy}
-        onToggle={onToggleSoldOut}
-      />
       <PendingButton
         type="button"
         role="switch"
@@ -804,8 +783,7 @@ export function ProductsPage() {
   );
   const isRefreshing = isListRefreshing({ isLoading, isFetching });
   const { data: categories } = useGetCategoriesByShopQuery({ shopId: shopId! }, { skip: !canManage });
-  const timeZone = shop?.timezone ?? 'UTC';
-  const { markSoldOutToday, clearSoldOut, setAvailable, isPending: soldOutPending } = useSoldOutToday(shopId!, timeZone);
+  const { setAvailable } = useSetAvailable(shopId!);
   const currencySymbol = getCurrencySymbolOrDefault(shop?.currency);
   const money = (cents: number) => formatCents(cents, shop?.currency ?? 'EUR', i18n.language);
 
@@ -825,7 +803,6 @@ export function ProductsPage() {
   const [query, setQuery] = useState('');
   const [toggling, setToggling] = useState<Set<string>>(new Set());
   const [optimistic, setOptimistic] = useState<Record<string, boolean>>({});
-  const [soldOutOverride, setSoldOutOverride] = useState<Record<string, boolean>>({});
 
   const [brokenImageIds, setBrokenImageIds] = useState<Set<string>>(new Set());
   const markImageBroken = useCallback((id: string) => {
@@ -869,7 +846,6 @@ export function ProductsPage() {
   );
 
   const availableOf = (p: ProductDto) => optimistic[p.id!] ?? p.isAvailable !== false;
-  const soldOutOf = (p: ProductDto) => soldOutOverride[p.id!] ?? isSoldOutUntil(p.unavailableUntil);
 
   const toggle = (product: ProductDto) => {
     const id = product.id!;
@@ -890,29 +866,15 @@ export function ProductsPage() {
       });
       if (!ok) {
         setOptimistic((o) => ({ ...o, [id]: current }));
-        toast.error(t('products.failedToUpdate'));
       }
     });
-  };
-
-  // "Sold out today": hide the dish for the rest of the shop's day, or bring it
-  // back. Writes the sold-out window only — the dish stays on the menu.
-  const toggleSoldOut = (product: ProductDto) => {
-    const id = product.id!;
-    const next = !soldOutOf(product);
-    setSoldOutOverride((o) => ({ ...o, [id]: next }));
-    const done = (ok: boolean) => {
-      if (!ok) setSoldOutOverride((o) => ({ ...o, [id]: !next }));
-    };
-    if (next) markSoldOutToday(id, done);
-    else clearSoldOut(id, done);
   };
 
   const all = products ?? [];
   const selectedDish = selectedId ? all.find((p) => p.id === selectedId) : undefined;
   const q = query.trim().toLowerCase();
-  const shown = all.filter((p) => passes(p, filter, availableOf(p), soldOutOf(p), brokenImageIds) && (!q || (p.name ?? '').toLowerCase().includes(q)));
-  const countOf = (f: DishFilter) => all.filter((p) => passes(p, f, availableOf(p), soldOutOf(p), brokenImageIds)).length;
+  const shown = all.filter((p) => passes(p, filter, availableOf(p), brokenImageIds) && (!q || (p.name ?? '').toLowerCase().includes(q)));
+  const countOf = (f: DishFilter) => all.filter((p) => passes(p, f, availableOf(p), brokenImageIds)).length;
 
   // Group by category (sorted as on the menu); dishes without one at the end
   const categoryMap = new Map<string, { id: string; name: string; sortOrder: number }>();
@@ -968,14 +930,11 @@ export function ProductsPage() {
       product: p,
       available: availableOf(p),
       toggling: toggling.has(p.id!),
-      soldOut: soldOutOf(p),
-      soldOutBusy: soldOutPending(p.id!),
       selected: p.id === selectedId,
       broken: brokenImageIds.has(p.id!),
       currencyMoney: money,
       onOpen: () => setParam('dish', p.id!),
       onToggle: () => toggle(p),
-      onToggleSoldOut: () => toggleSoldOut(p),
     };
     return dragEnabled === undefined ? (
       <DishRow key={p.id} {...rowProps} />
@@ -1016,7 +975,7 @@ export function ProductsPage() {
             className="min-w-0 flex-1 bg-transparent text-sm outline-none"
           />
         </label>
-        {(['all', 'onMenu', 'off', 'soldOut', 'incomplete'] as const).map((f) => (
+        {(['all', 'onMenu', 'off', 'incomplete'] as const).map((f) => (
           <button key={f} type="button" aria-pressed={filter === f} className={chip(filter === f)} onClick={() => setFilter(f)}>
             {t(`dishes.filter.${f}`)}
             <span className="text-xs opacity-70">{countOf(f)}</span>
