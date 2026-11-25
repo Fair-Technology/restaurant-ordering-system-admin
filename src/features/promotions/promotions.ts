@@ -91,3 +91,43 @@ export function shopToday(timeZone: string, nowMs: number): string {
     day: '2-digit',
   }).format(new Date(nowMs));
 }
+
+/** The most discount codes a shop can have (the server refuses more). */
+export const CODES_LIMIT = 50;
+
+export function codesLimitReached(count: number): boolean {
+  return count >= CODES_LIMIT;
+}
+
+/** How many codes customers can use right now. */
+export function activeCodeCount(
+  codes: Array<Pick<DiscountCodeDto, 'active' | 'validFrom' | 'validUntil' | 'totalLimit' | 'uses'>>,
+  today: string,
+): number {
+  return codes.filter((c) => codeStatus(c, today) === 'active').length;
+}
+
+export const EMPTY_CODE_FORM: CodeForm = {
+  code: '',
+  kind: 'percent',
+  value: '',
+  minOrder: '',
+  validFrom: '',
+  validUntil: '',
+  totalLimit: '',
+  perEmailLimit: '1',
+};
+
+/** True when any field differs from the empty form (so closing it would lose typing). */
+export function isCodeFormDirty(form: CodeForm): boolean {
+  return (Object.keys(EMPTY_CODE_FORM) as Array<keyof CodeForm>).some((key) => form[key] !== EMPTY_CODE_FORM[key]);
+}
+
+/** What the loyalty status line says, from the saved rule: off, or on with its count and reward. */
+export function loyaltyStatus(
+  loyalty: { enabled: boolean; everyOrders: number; rewardCents: number },
+): { enabled: false } | { enabled: true; every: number; rewardCents: number } {
+  return loyalty.enabled
+    ? { enabled: true, every: loyalty.everyOrders, rewardCents: loyalty.rewardCents }
+    : { enabled: false };
+}

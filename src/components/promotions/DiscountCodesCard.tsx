@@ -8,24 +8,24 @@ import {
 } from '../../services/promotionsApi';
 import { useToast } from '../../contexts/ToastContext';
 import { formatCents } from '../../utils/money';
-import { codeFormToBody, codeStatus, codeValueLabel, shopToday, type CodeForm, type CodeFormError } from '../../features/promotions/promotions';
+import {
+  EMPTY_CODE_FORM,
+  activeCodeCount,
+  codeFormToBody,
+  codeStatus,
+  codeValueLabel,
+  codesLimitReached,
+  isCodeFormDirty,
+  shopToday,
+  type CodeForm,
+  type CodeFormError,
+} from '../../features/promotions/promotions';
 import { STATUS_TONE } from './statusTone';
 import { MyButton } from '../ui/MyButton';
-import { PendingButton } from '../ui/PendingButton';
-import { EmptyNote, Row, Section } from '../layout/Page';
-import { badgeClass, chipClass, pillClass } from '../layout/pageStyles';
+import { PillSwitch } from '../ui/PillSwitch';
+import { Row, Section } from '../layout/Page';
+import { badgeClass, chipClass } from '../layout/pageStyles';
 import { MyInput } from '../ui/MyInput';
-
-const EMPTY_FORM: CodeForm = {
-  code: '',
-  kind: 'percent',
-  value: '',
-  minOrder: '',
-  validFrom: '',
-  validUntil: '',
-  totalLimit: '',
-  perEmailLimit: '1',
-};
 
 // dates are stored as YYYY-MM-DD; German owners read DD.MM.YYYY
 function showDate(date: string | null, language: string): string {
@@ -46,8 +46,9 @@ export function DiscountCodesCard({ shopId, shop, data }: DiscountCodesCardProps
   const toast = useToast();
   const [createDiscountCode, { isLoading: creating }] = useCreateDiscountCodeMutation();
   const [setDiscountCodeActive, { isLoading: switching, originalArgs: switchingArgs }] = useSetDiscountCodeActiveMutation();
-  const [form, setForm] = useState<CodeForm>(EMPTY_FORM);
+  const [form, setForm] = useState<CodeForm>(EMPTY_CODE_FORM);
   const [formError, setFormError] = useState<CodeFormError | null>(null);
+  const [showForm, setShowForm] = useState(false);
 
   const currency = shop.currency ?? 'EUR';
   const [nowMs] = useState(() => Date.now());
@@ -66,6 +67,16 @@ export function DiscountCodesCard({ shopId, shop, data }: DiscountCodesCardProps
     }
   };
 
+  const limitReached = codesLimitReached(data.codes.length);
+
+  const closeForm = () => {
+    if (isCodeFormDirty(form) && !window.confirm(t('promotions.discardCodeConfirm'))) return;
+    setShowForm(false);
+    setForm(EMPTY_CODE_FORM);
+    setFormError(null);
+  };
+  const toggleForm = () => (showForm ? closeForm() : setShowForm(true));
+
   const submit = async () => {
     const body = codeFormToBody(form);
     if ('error' in body) {
@@ -75,7 +86,8 @@ export function DiscountCodesCard({ shopId, shop, data }: DiscountCodesCardProps
     setFormError(null);
     try {
       await createDiscountCode({ shopId, body }).unwrap();
-      setForm(EMPTY_FORM);
+      setForm(EMPTY_CODE_FORM);
+      setShowForm(false);
       toast.success(t('promotions.codeCreated'));
     } catch (err) {
       toast.error(serverMessage(err));
@@ -83,9 +95,24 @@ export function DiscountCodesCard({ shopId, shop, data }: DiscountCodesCardProps
   };
 
   return (
-    <Section id="discount-codes" title={t('promotions.codesTitle')} count={data.codes.length} description={t('promotions.codesHelp')}>
+    <Section
+      id="discount-codes"
+      title={t('promotions.codesTitle')}
+      hint={t('promotions.activeCodesCount', { count: activeCodeCount(data.codes, today) })}
+      description={t('promotions.codesHelp')}
+      actions={
+        <MyButton type="button" disabled={limitReached} aria-expanded={showForm} onClick={toggleForm}>
+          {t('promotions.newCode')}
+        </MyButton>
+      }
+    >
       {data.codes.length === 0 ? (
-        <EmptyNote>{t('promotions.noCodes')}</EmptyNote>
+        <div className="m-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-cream p-4">
+          <p className="text-sm text-[#8a7f77]">{t('promotions.noCodes')}</p>
+          <MyButton type="button" onClick={() => setShowForm(true)}>
+            {t('promotions.newCode')}
+          </MyButton>
+        </div>
       ) : (
         data.codes.map((c) => {
           const status = codeStatus(c, today);
@@ -115,21 +142,23 @@ export function DiscountCodesCard({ shopId, shop, data }: DiscountCodesCardProps
                   {c.perEmailLimit !== null && <span>{t('promotions.perDiner', { n: c.perEmailLimit })}</span>}
                 </div>
               </div>
-              <PendingButton
-                type="button"
-                className={pillClass(false)}
+              <PillSwitch
+                className="ml-auto"
+                checked={c.active}
+                label={t(c.active ? 'promotions.switchOffNamed' : 'promotions.switchOnNamed', { code: c.code })}
                 isPending={switching && switchingArgs?.codeId === c.id}
                 disabled={switching}
-                onClick={() => toggle(c.id, !c.active)}
-              >
-                {c.active ? t('promotions.switchOff') : t('promotions.switchOn')}
-              </PendingButton>
+                onChange={(on) => toggle(c.id, on)}
+              />
             </Row>
           );
         })
       )}
 
-      <div className="space-y-3 border-t border-line-soft p-4 sm:p-5">
+      {limitReached && <p className="border-t border-line-soft px-4 py-3 text-[13px] text-muted">{t('promotions.codesLimitReached')}</p>}
+
+      {showForm && (
+      <div className="m-4 space-y-3 rounded-xl border border-line p-4 sm:p-5">
         <h3 className="text-[15px] font-bold">{t('promotions.newCode')}</h3>
         <MyInput label={t('promotions.code')} hint={t('promotions.codeHint')} value={form.code} onChange={(e) => set({ code: e.target.value })} />
         <div className="flex flex-wrap gap-2">
@@ -156,6 +185,7 @@ export function DiscountCodesCard({ shopId, shop, data }: DiscountCodesCardProps
           value={form.value}
           onChange={(e) => set({ value: e.target.value })}
         />
+        <p className="text-[13px] text-muted">{t('promotions.minimumChargeHint')}</p>
         <MyInput
           label={t('promotions.minOrderLabel')}
           hint={t('promotions.minOrderLabelHint')}
@@ -192,11 +222,17 @@ export function DiscountCodesCard({ shopId, shop, data }: DiscountCodesCardProps
             onChange={(e) => set({ perEmailLimit: e.target.value })}
           />
         </div>
-        {formError && <p className="text-sm text-[#b42318]">{t(`promotions.formError.${formError}`)}</p>}
-        <MyButton type="button" isPending={creating} onClick={submit}>
-          {t('promotions.create')}
-        </MyButton>
+        {formError && <p role="alert" className="text-sm text-[#b42318]">{t(`promotions.formError.${formError}`)}</p>}
+        <div className="flex flex-wrap gap-2">
+          <MyButton type="button" isPending={creating} onClick={submit}>
+            {t('promotions.create')}
+          </MyButton>
+          <MyButton type="button" variant="secondary" disabled={creating} onClick={closeForm}>
+            {t('common.cancel')}
+          </MyButton>
+        </div>
       </div>
+      )}
     </Section>
   );
 }

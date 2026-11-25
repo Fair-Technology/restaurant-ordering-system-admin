@@ -592,6 +592,18 @@
     "selectHint": "Select a combo on the left to edit it, or create a new one."
   },
   "promotions": {
+    "pageSubtitle": "Discount codes customers type at checkout, and loyalty vouchers for repeat orders.",
+    "activeCodesCount_one": "{{count}} active code",
+    "activeCodesCount_other": "{{count}} active codes",
+    "codesLimitReached": "You've reached the limit of 50 codes. Switch an old one off to make room.",
+    "switchOffNamed": "Switch off {{code}}",
+    "switchOnNamed": "Switch on {{code}}",
+    "minimumChargeHint": "The customer is always charged at least €0.50, even with a bigger discount.",
+    "discardCodeConfirm": "Discard this new code? What you typed will be lost.",
+    "loyaltyStatusOn": "On, every {{every}}th order earns {{amount}}.",
+    "loyaltyStatusOff": "Off.",
+    "loyaltyOffNote": "Turn this on to set the rule and start counting orders.",
+    "loyaltyConsentNote": "Vouchers are only emailed to diners who tick an unticked consent box at checkout — never sent without it.",
     "accessDenied": "Only people who manage the restaurant can change discounts.",
     "codesTitle": "Discount codes",
     "codesHelp": "Customers type a code at checkout. One code per order; the delivery fee is never discounted. A code can't be changed once created — switch it off and create a new one.",
@@ -609,8 +621,6 @@
       "expired": "expired",
       "used_up": "used up"
     },
-    "switchOff": "Switch off",
-    "switchOn": "Switch on",
     "newCode": "New code",
     "code": "Code",
     "codeHint": "(3–20 letters, digits or dashes)",

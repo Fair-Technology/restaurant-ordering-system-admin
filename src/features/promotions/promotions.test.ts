@@ -1,6 +1,18 @@
 import { describe, expect, it } from 'vitest';
 
-import { codeFormToBody, codeStatus, codeValueLabel, shopToday, type CodeForm } from './promotions';
+import {
+  CODES_LIMIT,
+  EMPTY_CODE_FORM,
+  activeCodeCount,
+  codeFormToBody,
+  codeStatus,
+  codeValueLabel,
+  codesLimitReached,
+  isCodeFormDirty,
+  loyaltyStatus,
+  shopToday,
+  type CodeForm,
+} from './promotions';
 
 describe('discount code helpers', () => {
   it('says what state a code is in', () => {
@@ -59,5 +71,43 @@ describe('discount code helpers', () => {
 
   it("gives today in the restaurant's zone", () => {
     expect(shopToday('Europe/Berlin', Date.parse('2026-10-09T22:30:00Z'))).toBe('2026-10-10');
+  });
+
+  it('stops at 50 codes', () => {
+    expect(CODES_LIMIT).toBe(50);
+    expect(codesLimitReached(49)).toBe(false);
+    expect(codesLimitReached(50)).toBe(true);
+    expect(codesLimitReached(51)).toBe(true);
+  });
+
+  it('counts only the codes that work today', () => {
+    const base = { active: true, validFrom: null, validUntil: null, totalLimit: null, uses: 0 };
+    const codes = [
+      base,
+      { ...base, active: false },
+      { ...base, validUntil: '2026-10-08' },
+      { ...base, totalLimit: 1, uses: 1 },
+      { ...base, validFrom: '2026-10-10' },
+      { ...base, totalLimit: 5, uses: 2 },
+    ];
+    expect(activeCodeCount(codes, '2026-10-09')).toBe(2);
+    expect(activeCodeCount([], '2026-10-09')).toBe(0);
+  });
+
+  it('knows when the form has unsaved typing', () => {
+    expect(isCodeFormDirty(EMPTY_CODE_FORM)).toBe(false);
+    expect(isCodeFormDirty({ ...EMPTY_CODE_FORM })).toBe(false);
+    expect(isCodeFormDirty({ ...EMPTY_CODE_FORM, code: 'A' })).toBe(true);
+    expect(isCodeFormDirty({ ...EMPTY_CODE_FORM, kind: 'amount' })).toBe(true);
+    expect(isCodeFormDirty({ ...EMPTY_CODE_FORM, perEmailLimit: '' })).toBe(true);
+  });
+
+  it('summarises the saved loyalty rule', () => {
+    expect(loyaltyStatus({ enabled: false, everyOrders: 5, rewardCents: 500 })).toEqual({ enabled: false });
+    expect(loyaltyStatus({ enabled: true, everyOrders: 5, rewardCents: 500 })).toEqual({
+      enabled: true,
+      every: 5,
+      rewardCents: 500,
+    });
   });
 });
