@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Plus, X } from 'lucide-react';
+import { Plus, Search, X } from 'lucide-react';
 import {
   useDeleteProductMutation,
   useGetCategoriesByShopQuery,
@@ -11,15 +11,18 @@ import {
 import { useGetCombosQuery, useUpdateComboMutation, type ComboBody, type ComboDto } from '../services/combosApi';
 import { useToast } from '../contexts/ToastContext';
 import { formatCents } from '../utils/money';
-import { comboFormToBody, comboPhotoUrl, formFromCombo } from '../features/combos/combos';
+import { comboFormToBody, formFromCombo } from '../features/combos/combos';
 import { useIsWide } from '../features/menu/useIsWide';
 import { ComboEditor } from '../components/combos/ComboEditor';
-import { EmptyNote, PageHeader, Row, Section, SideCard, SideColumn, SplitPage } from '../components/layout/Page';
-import { badgeClass, pillClass } from '../components/layout/pageStyles';
+import { Chip, EmptyNote, PageHeader, Section, SideCard, SideColumn, SplitPage, Toolbar } from '../components/layout/Page';
+import { searchBoxClass } from '../components/layout/pageStyles';
 import { MyButton } from '../components/ui/MyButton';
 import { MySpinner } from '../components/ui/MySpinner';
-import { PendingButton } from '../components/ui/PendingButton';
+import { ComboRow } from '../components/combos/ComboRow';
 import { usePageTitle } from '../features/layout/usePageTitle';
+
+type ComboFilter = 'all' | 'onMenu' | 'off';
+const COMBO_FILTERS: ComboFilter[] = ['all', 'onMenu', 'off'];
 
 export function CombosPage() {
   usePageTitle('nav.combos');
@@ -36,6 +39,8 @@ export function CombosPage() {
   const [updateCombo, { isLoading: switching, originalArgs: switchingArgs }] = useUpdateComboMutation();
   const [deleteProduct, { isLoading: deleting }] = useDeleteProductMutation();
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState<ComboFilter>('all');
 
   // The open editor lives in the address (?combo=<id> or ?combo=new), so it survives a reload
   const comboParam = searchParams.get('combo');
@@ -144,90 +149,37 @@ export function CombosPage() {
     </button>
   );
 
+  const q = query.trim().toLowerCase();
+  const matchesFilter = (c: ComboDto, f: ComboFilter) => f === 'all' || (f === 'onMenu' ? c.isAvailable : !c.isAvailable);
+  const countOf = (f: ComboFilter) => combos.data.filter((c) => matchesFilter(c, f)).length;
+  const visible = combos.data.filter((c) => matchesFilter(c, filter) && (!q || c.name.toLowerCase().includes(q)));
+
   // Combos grouped under the category they are shown in, in menu order; any without one at the end
   const groups = liveCategories
     .slice()
     .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
-    .map((cat) => ({ id: cat.id!, name: cat.name ?? '', items: combos.data.filter((c) => c.categoryId === cat.id) }))
+    .map((cat) => ({ id: cat.id!, name: cat.name ?? '', items: visible.filter((c) => c.categoryId === cat.id) }))
     .filter((g) => g.items.length > 0);
-  const homeless = combos.data.filter((c) => !liveCategories.some((cat) => cat.id === c.categoryId));
+  const homeless = visible.filter((c) => !liveCategories.some((cat) => cat.id === c.categoryId));
   if (homeless.length) groups.push({ id: '_none', name: t('products.uncategorized'), items: homeless });
 
-  const stop = (e: React.SyntheticEvent) => e.stopPropagation();
-
-  const comboRow = (c: ComboDto) => {
-    const photo = comboPhotoUrl(c);
-    const selected = editing !== 'new' && editing?.id === c.id;
-    return (
-      <div key={c.id}>
-        <Row selected={selected} onSelect={() => setEditing(c)} className="flex-wrap">
-          {photo ? (
-            <img src={photo} alt="" className={`h-[42px] w-14 flex-shrink-0 rounded-lg object-cover ${c.isAvailable ? '' : 'opacity-50'}`} />
-          ) : (
-            <span className="flex h-[42px] w-14 flex-shrink-0 items-center justify-center rounded-lg border border-[#f1dfae] bg-[#fff6e0] text-center text-[11px] leading-tight font-semibold text-[#8a5a00]">
-              {t('combos.noPhoto')}
-            </span>
-          )}
-          <div className={`flex min-w-0 flex-1 flex-col gap-0.5 ${c.isAvailable ? '' : 'opacity-60'}`}>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[15px] font-bold">{c.name}</span>
-              <span className={c.isAvailable ? badgeClass.good : badgeClass.neutral}>
-                {c.isAvailable ? t('combos.statusOn') : t('combos.statusOff')}
-              </span>
-              {c.bmfDrinkShare && (
-                <span className={badgeClass.neutral} title={t('combos.bmfHelp')}>
-                  {t('combos.bmfBadge')}
-                </span>
-              )}
-            </div>
-            <span className="text-[13px] text-[#6b6058]">
-              {c.groups
-                .map((g) => t('combos.groupSummary', { name: g.name, count: dishCount(g.productIds) }))
-                .join(' · ')}
-            </span>
-          </div>
-          <span className="text-right text-[15px] font-bold">{money(c.priceCents)}</span>
-          <span className="flex w-full flex-wrap justify-end gap-2 sm:w-auto" onClick={stop} onKeyDown={stop}>
-            <button type="button" className={pillClass(false)} onClick={() => setEditing(c)}>
-              {t('combos.edit')}
-            </button>
-            <PendingButton
-              type="button"
-              className={pillClass(false)}
-              isPending={switching && switchingArgs?.comboId === c.id}
-              disabled={switching}
-              onClick={() => toggle(c)}
-            >
-              {c.isAvailable ? t('combos.switchOff') : t('combos.switchOn')}
-            </PendingButton>
-            <button
-              type="button"
-              className={`${pillClass(false)} !text-[#b42318]`}
-              onClick={() => setConfirmingId(c.id)}
-            >
-              {t('combos.delete')}
-            </button>
-          </span>
-        </Row>
-        {confirmingId === c.id && (
-          <div className="flex flex-wrap items-center gap-3 border-b border-[#f5c2bd] bg-[#fdeceb] px-4 py-2.5">
-            <span className="min-w-0 flex-1 text-sm text-[#b42318]">{t('combos.deleteConfirm', { name: c.name })}</span>
-            <PendingButton
-              type="button"
-              isPending={deleting}
-              onClick={() => remove(c)}
-              className="h-[34px] rounded-full bg-[#b42318] px-3.5 text-[13px] font-bold text-white hover:bg-[#912018] disabled:opacity-40"
-            >
-              {deleting ? '…' : t('combos.delete')}
-            </PendingButton>
-            <button type="button" className={pillClass(false)} onClick={() => setConfirmingId(null)}>
-              {t('combos.cancel')}
-            </button>
-          </div>
-        )}
-      </div>
-    );
-  };
+  const comboRow = (c: ComboDto) => (
+    <ComboRow
+      key={c.id}
+      combo={c}
+      selected={editing !== 'new' && editing?.id === c.id}
+      switching={switching && switchingArgs?.comboId === c.id}
+      confirmingDelete={confirmingId === c.id}
+      deleting={deleting}
+      money={money}
+      dishCount={dishCount}
+      onOpen={() => setEditing(c)}
+      onToggle={() => toggle(c)}
+      onAskDelete={() => setConfirmingId(c.id)}
+      onConfirmDelete={() => remove(c)}
+      onCancelDelete={() => setConfirmingId(null)}
+    />
+  );
 
   const side = wide ? (
     <SideColumn label={editorTitle} title={editorTitle} actions={editing && closeButton}>
@@ -246,9 +198,34 @@ export function CombosPage() {
         </Section>
       )}
 
+      {combos.data.length > 0 && (
+        <Toolbar>
+          <label className={`${searchBoxClass} focus-within:border-ink`}>
+            <Search size={16} className="text-[#8a7f77]" aria-hidden="true" />
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t('combos.search')}
+              aria-label={t('combos.search')}
+              className="min-w-0 flex-1 bg-transparent text-sm outline-none"
+            />
+          </label>
+          {COMBO_FILTERS.map((f) => (
+            <Chip key={f} active={filter === f} count={countOf(f)} onClick={() => setFilter(f)}>
+              {t(`dishes.filter.${f}`)}
+            </Chip>
+          ))}
+        </Toolbar>
+      )}
+
       {combos.data.length === 0 ? (
         <Section>
           <EmptyNote>{t('combos.none')}</EmptyNote>
+        </Section>
+      ) : groups.length === 0 ? (
+        <Section>
+          <EmptyNote>{t('combos.noMatch')}</EmptyNote>
         </Section>
       ) : (
         groups.map((g) => (

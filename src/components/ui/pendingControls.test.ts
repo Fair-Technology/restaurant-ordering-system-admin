@@ -73,9 +73,11 @@ describe('pending wrapper contract', () => {
 const ASYNC_CONTROLS: Array<{ file: string; control: string; min: number }> = [
   { file: 'src/components/categories/CategoryEditor.tsx', control: 'apply tax class, save, delete category', min: 3 },
   { file: 'src/components/combos/ComboEditor.tsx', control: 'save combo (create and edit forms)', min: 2 },
+  { file: 'src/components/combos/ComboRow.tsx', control: 'delete combo (confirm bar)', min: 1 },
   { file: 'src/components/layout/AccountSettingsModal.tsx', control: 'language chips, sign out', min: 2 },
   { file: 'src/components/layout/AutoPausedBanner.tsx', control: 'resume orders', min: 1 },
   { file: 'src/components/layout/Sidebar.tsx', control: 'taking-orders switch', min: 1 },
+  { file: 'src/components/menu/AvailabilitySwitch.tsx', control: 'availability switch (dish and combo rows)', min: 1 },
   { file: 'src/components/menu/DishEditor.tsx', control: 'delete dish', min: 1 },
   { file: 'src/components/menu/DishForm.tsx', control: 'save dish, create category inline, save as draft, add to menu', min: 4 },
   { file: 'src/components/menu/OptionGroupDialog.tsx', control: 'save group', min: 1 },
@@ -99,11 +101,9 @@ const ASYNC_CONTROLS: Array<{ file: string; control: string; min: number }> = [
   { file: 'src/components/shop/ShopStatusCard.tsx', control: 'online switch, paused switch, save paused message', min: 3 },
   { file: 'src/components/ui/ImageCropDialog.tsx', control: 'save crop', min: 1 },
   { file: 'src/pages/CategoriesPage.tsx', control: 'create category, category active switch', min: 2 },
-  { file: 'src/pages/CombosPage.tsx', control: 'combo active toggle, delete combo', min: 2 },
   { file: 'src/pages/DashboardPage.tsx', control: 'refresh (two layouts)', min: 2 },
   { file: 'src/pages/LegalPage.tsx', control: 'accept DPA, save impressum, save legal, export, erase customer', min: 5 },
   { file: 'src/pages/OptionGroupsPage.tsx', control: 'delete group, option switch, retry', min: 3 },
-  { file: 'src/pages/ProductsPage.tsx', control: 'product available switch', min: 1 },
   { file: 'src/pages/ReportsPage.tsx', control: 'retry report (the CSV download only formats the loaded report: instant)', min: 1 },
   { file: 'src/pages/ShopSettingsPage.tsx', control: 'name change, details, address, logo, banner, cover, colours, languages, hours', min: 11 },
   { file: 'src/pages/ShopsPage.tsx', control: 'create shop, shop online switch', min: 2 },
@@ -202,7 +202,7 @@ const API_EXEMPT_FILES: Array<{ file: string; reason: string }> = [
   { file: 'src/features/auth/AccountLanguageSync.tsx', reason: 'not a click: saves the browser-chosen language once after sign-in' },
   { file: 'src/components/shop/StripeOnboardingModal.tsx', reason: 'Stripe Connect draws its own loading UI while it fetches the client secret' },
   { file: 'src/features/orders/useOrderActions.ts', reason: 'hook: exposes isWorking(orderId); OrdersPage and OrderDetail feed it to PendingButton' },
-  { file: 'src/features/menu/useSetAvailable.ts', reason: 'hook: exposes isPending(id); the dish switch in ProductsPage renders it' },
+  { file: 'src/features/menu/useSetAvailable.ts', reason: 'hook: exposes isPending(id); ProductsPage feeds it to AvailabilitySwitch' },
   { file: 'src/features/menu/useUploadProductImage.ts', reason: 'hook: DishEditor shows its isUploading state on the save button' },
 ];
 
