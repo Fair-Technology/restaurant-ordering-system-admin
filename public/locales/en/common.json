@@ -1489,8 +1489,7 @@
       "all": "All",
       "onMenu": "On the menu",
       "off": "Unavailable",
-      "incomplete": "Incomplete",
-      "soldOut": "Sold out today"
+      "incomplete": "Incomplete"
     },
     "photo": "Photo",
     "missingPhoto": "Photo missing",
@@ -1498,14 +1497,6 @@
     "optionGroups_other": "{{count}} groups",
     "availableFor": "{{name}} on the menu",
     "noMatch": "No dishes match this filter.",
-    "soldOutToday": "Mark sold out",
-    "soldOutBack": "Back on sale",
-    "soldOutFor": "Mark {{name}} sold out for today",
-    "soldOutBackFor": "Put {{name}} back on the menu now",
-    "soldOutBadge": "Sold out today",
-    "soldOutFailed": "Couldn't update the dish's availability.",
-    "soldOutMarked": "Marked sold out",
-    "soldOutRestored": "Back on sale",
     "editor": {
       "basics": "Basics",
       "categories": "Categories",

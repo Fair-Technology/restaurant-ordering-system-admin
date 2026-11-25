@@ -39,8 +39,8 @@ vi.mock('@dnd-kit/core', async () => {
     ),
   };
 });
-vi.mock('../features/menu/useSoldOutToday', () => ({
-  useSoldOutToday: () => ({ markSoldOutToday: vi.fn(), clearSoldOut: vi.fn(), setAvailable: vi.fn(), isPending: () => false }),
+vi.mock('../features/menu/useSetAvailable', () => ({
+  useSetAvailable: () => ({ setAvailable: vi.fn(), isPending: () => false }),
 }));
 vi.mock('../features/menu/useUploadProductImage', () => ({ useUploadProductImage: () => vi.fn() }));
 vi.mock('../features/menu/useShopReferenceLists', () => ({ useShopReferenceLists: () => ({ refs: {} }) }));

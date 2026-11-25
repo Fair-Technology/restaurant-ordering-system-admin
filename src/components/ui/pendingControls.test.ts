@@ -77,7 +77,6 @@ const ASYNC_CONTROLS: Array<{ file: string; control: string; min: number }> = [
   { file: 'src/components/layout/TopNav.tsx', control: 'taking-orders switch', min: 1 },
   { file: 'src/components/menu/DishEditor.tsx', control: 'save dish, delete dish', min: 2 },
   { file: 'src/components/menu/ScheduleOfferModal.tsx', control: 'save schedule', min: 1 },
-  { file: 'src/components/menu/SoldOutTodayButton.tsx', control: 'sold out today switch', min: 1 },
   { file: 'src/components/orders/OrderHistoryList.tsx', control: 'document download', min: 1 },
   { file: 'src/components/orders/ReceiptsArchiveButton.tsx', control: 'receipts archive download', min: 1 },
   { file: 'src/components/orders/RefundPanel.tsx', control: 'confirm refund', min: 1 },
@@ -124,7 +123,6 @@ const ANCHORS: Array<{ file: string; anchor: string }> = [
   { file: 'src/components/shop/DeleteShopCard.tsx', anchor: '<PendingButton' },
   { file: 'src/components/shop/AutoAcceptCard.tsx', anchor: 'isPending={isLoading}' },
   { file: 'src/components/orders/ReceiptsArchiveButton.tsx', anchor: 'isPending={isFetching}' },
-  { file: 'src/components/menu/SoldOutTodayButton.tsx', anchor: 'isPending={!!busy}' },
   { file: 'src/pages/TablesPage.tsx', anchor: "isPending={building === 'all'}" },
 ];
 

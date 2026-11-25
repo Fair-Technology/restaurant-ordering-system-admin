@@ -91,21 +91,6 @@ describe('mutation request bodies', () => {
     expectRequest(r, 'PATCH', `/shops/${shopId}/discount-codes/c1`, { active: true });
   });
 
-  it('updateProductAvailability sends the sold-out window', async () => {
-    const r = await capture((d) =>
-      d(
-        api.endpoints.updateProductAvailability.initiate({
-          productId: 'p1',
-          body: { shopId, unavailableUntil: '2026-11-17T00:00:00.000Z' },
-        }),
-      ),
-    );
-    expectRequest(r, 'PATCH', '/products/p1/availability', {
-      shopId,
-      unavailableUntil: '2026-11-17T00:00:00.000Z',
-    });
-  });
-
   it('updateProductAvailability sends the plain switch', async () => {
     const r = await capture((d) =>
       d(api.endpoints.updateProductAvailability.initiate({ productId: 'p1', body: { shopId, isAvailable: false } })),
