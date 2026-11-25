@@ -7,7 +7,9 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
-    // Fail loudly if 5173 is taken: dev storage CORS only allows http://localhost:5173.
+    // Fail loudly if 5174 is taken: the dev storage account's CORS allow-list for admin blob uploads
+    // (dish/shop images) is http://localhost:5174.
+    port: 5174,
     strictPort: true,
     // Nested git worktrees under `.worktrees/` are full repo copies; edits or tsconfig changes
     // inside them must not clear this dev server's dependency cache (white page, 504 Outdated Optimize Dep).
