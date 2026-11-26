@@ -159,7 +159,7 @@ export function Pager({ page, totalPages, onPage }: { page: number; totalPages: 
   const { t } = useTranslation();
   if (totalPages <= 1) return null;
   const btn =
-    'h-[34px] rounded-full border border-[#e3d9ce] bg-white px-3.5 text-[13px] font-bold text-ink hover:bg-sand disabled:opacity-40';
+    'h-11 rounded-full border border-[#e3d9ce] bg-white px-3.5 text-[13px] font-bold text-ink hover:bg-sand disabled:opacity-40';
   return (
     <div className="flex items-center justify-between gap-3">
       <button type="button" className={btn} disabled={page <= 1} onClick={() => onPage(page - 1)}>
