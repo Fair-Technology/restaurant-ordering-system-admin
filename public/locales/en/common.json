@@ -182,7 +182,7 @@
     "createSubtitle": "Fill in the details to create your shop.",
     "loading": "Loading shops...",
     "loadError": "Failed to load shops.",
-    "empty": "No shops yet.",
+    "empty": "No shops yet. Choose New Shop to create your first one. You'll then get a checklist for the rest of the setup, including connecting Stripe, before you can go live.",
     "createTitle": "Create Shop",
     "shopName": "Shop Name",
     "shopNamePlaceholder": "My Shop",

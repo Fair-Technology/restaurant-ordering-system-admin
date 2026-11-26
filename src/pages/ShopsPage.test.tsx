@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { CreateShopModal } from './ShopsPage';
+import { CreateShopModal, ShopsPage } from './ShopsPage';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -18,10 +18,12 @@ vi.mock('../services/legalApi', () => ({
 const api = vi.hoisted(() => ({
   check: vi.fn(),
   create: vi.fn(),
+  shops: { state: {} as Record<string, unknown> },
   createState: { isLoading: false, isError: false, error: undefined as unknown },
 }));
 vi.mock('../services/api', () => ({
-  useGetMyShopsQuery: () => ({}),
+  useGetMyShopsQuery: () => api.shops.state,
+  useGetShopByIdQuery: () => ({}),
   useGetShopSubscriptionQuery: () => ({}),
   useUpdateShopMutation: () => [vi.fn(), {}],
   useCreateShopMutation: () => [api.create, api.createState],
@@ -158,5 +160,33 @@ describe('create 400', () => {
     api.createState.error = { status: 400, data: { error: 'This web address is already taken. Please choose another.' } };
     render(<MemoryRouter><CreateShopModal onClose={vi.fn()} /></MemoryRouter>);
     expect(screen.getByText('This web address is already taken. Please choose another.')).toBeTruthy();
+  });
+});
+
+describe('ShopsPage empty state', () => {
+  const renderPage = (state: Record<string, unknown>) => {
+    cleanup(); // drop the CreateShopModal rendered by the file-level beforeEach
+    api.shops.state = state;
+    render(<MemoryRouter><ShopsPage /></MemoryRouter>);
+  };
+
+  it('shows the empty text and no hint with zero shops', () => {
+    renderPage({ data: { shops: [] }, isLoading: false, isError: false });
+    expect(screen.getByText('shops.empty')).toBeTruthy();
+    expect(screen.queryByText('shops.listHint')).toBeNull();
+  });
+  it('shows the hint and no empty text with at least one shop', () => {
+    renderPage({ data: { shops: [{ id: 's1', name: 'Shop One', slug: 'shop-one' }] }, isLoading: false, isError: false });
+    expect(screen.getByText('shops.listHint')).toBeTruthy();
+    expect(screen.queryByText('shops.empty')).toBeNull();
+  });
+  it('never flashes the empty text while loading', () => {
+    renderPage({ data: undefined, isLoading: true, isError: false });
+    expect(screen.queryByText('shops.empty')).toBeNull();
+  });
+  it('never flashes the empty text on error', () => {
+    renderPage({ data: undefined, isLoading: false, isError: true });
+    expect(screen.getByText('shops.loadError')).toBeTruthy();
+    expect(screen.queryByText('shops.empty')).toBeNull();
   });
 });
