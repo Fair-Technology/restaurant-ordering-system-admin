@@ -27,4 +27,12 @@ describe('resolveLoginLanguage', () => {
   it('is not hard-coded to en: unsupported browser + de restaurant gives de', () => {
     expect(resolveLoginLanguage(null, 'de', { language: 'fr-FR' })).toEqual({ language: 'de', persist: true });
   });
+  it.each([undefined, null])('shows en without persisting when unsupported browser and no restaurant (%s)', (r) => {
+    expect(resolveLoginLanguage(null, r, { language: 'tr-TR' })).toEqual({ language: 'en', persist: false });
+  });
+  it('no shop -> shop created: nothing persisted until the restaurant language exists', () => {
+    const fr = { language: 'fr-FR' };
+    expect(resolveLoginLanguage(null, null, fr)).toEqual({ language: 'en', persist: false });
+    expect(resolveLoginLanguage(null, 'de', fr)).toEqual({ language: 'de', persist: true });
+  });
 });
