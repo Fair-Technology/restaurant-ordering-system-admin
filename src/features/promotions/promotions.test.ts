@@ -10,6 +10,10 @@ import {
   codesLimitReached,
   isCodeFormDirty,
   loyaltyStatus,
+  matchesCodeFilter,
+  validLabel,
+  CODE_FILTERS,
+  type CodeStatus,
   shopToday,
   type CodeForm,
 } from './promotions';
@@ -108,6 +112,34 @@ describe('discount code helpers', () => {
       enabled: true,
       every: 5,
       rewardCents: 500,
+    });
+  });
+});
+
+describe('code filters and valid label', () => {
+  const statuses: CodeStatus[] = ['active', 'off', 'scheduled', 'expired', 'used_up'];
+  it('all matches every status', () => {
+    expect(statuses.every((s) => matchesCodeFilter(s, 'all'))).toBe(true);
+  });
+  it('active, scheduled and off match only their own status', () => {
+    for (const f of ['active', 'scheduled', 'off'] as const) {
+      expect(statuses.filter((s) => matchesCodeFilter(s, f))).toEqual([f]);
+    }
+  });
+  it('ended matches expired and used up', () => {
+    expect(statuses.filter((s) => matchesCodeFilter(s, 'ended'))).toEqual(['expired', 'used_up']);
+  });
+  it('lists the five filters in order', () => {
+    expect(CODE_FILTERS).toEqual(['all', 'active', 'scheduled', 'ended', 'off']);
+  });
+  it('describes the valid window', () => {
+    expect(validLabel({ validFrom: null, validUntil: null })).toEqual({ kind: 'always' });
+    expect(validLabel({ validFrom: '2026-01-01', validUntil: null })).toEqual({ kind: 'from', date: '2026-01-01' });
+    expect(validLabel({ validFrom: null, validUntil: '2026-02-01' })).toEqual({ kind: 'until', date: '2026-02-01' });
+    expect(validLabel({ validFrom: '2026-01-01', validUntil: '2026-02-01' })).toEqual({
+      kind: 'range',
+      from: '2026-01-01',
+      until: '2026-02-01',
     });
   });
 });

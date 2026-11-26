@@ -94,11 +94,11 @@ export function LoyaltyCard({ shopId, shop, loyalty }: LoyaltyCardProps) {
               <MyInput label={t('promotions.validDays')} hint={t('promotions.validDaysHint')} value={validDays} onChange={(e) => setValidDays(e.target.value)} />
             </div>
             {since && <p className="text-xs text-muted">{t('promotions.loyaltySince', { date: since })}</p>}
-            <p className="text-[13px] text-muted">{t('promotions.loyaltyConsentNote')}</p>
           </>
         ) : (
           <p className="text-[13px] text-muted">{t('promotions.loyaltyOffNote')}</p>
         )}
+        <p className="text-[13px] text-muted">{t('promotions.loyaltyConsentNote')}</p>
         {invalid && <p role="alert" className="text-sm text-[#b42318]">{t('promotions.loyaltyInvalid')}</p>}
         <MyButton type="button" isPending={isLoading} onClick={save}>
           {t('promotions.loyaltySave')}

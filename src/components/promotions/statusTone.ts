@@ -7,5 +7,5 @@ export const STATUS_TONE: Record<CodeStatus, keyof typeof badgeClass> = {
   scheduled: 'warn',
   off: 'neutral',
   used_up: 'neutral',
-  expired: 'bad',
+  expired: 'neutral',
 };
