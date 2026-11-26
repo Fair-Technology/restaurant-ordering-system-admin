@@ -13,29 +13,18 @@ import { MyButton } from '../components/ui/MyButton';
 import { MySpinner } from '../components/ui/MySpinner';
 import { getCurrencySymbolOrDefault } from '../utils/currency';
 import { formatCents } from '../utils/money';
-import {
-  DndContext,
-  closestCenter,
-  PointerSensor,
-  TouchSensor,
-  KeyboardSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from '@dnd-kit/core';
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-  useSortable,
-  arrayMove,
-  sortableKeyboardCoordinates,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { DndContext, closestCenter } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { DragHandleButton } from '../components/menu/DragHandle';
+import { useDragHandleProps } from '../components/menu/useDragHandleProps';
+import { applyOrder, sortByCategoryOrder } from '../features/menu/categoryOrder';
+import { useCategoryDragReorder } from '../features/menu/useCategoryDragReorder';
+import { useReorderSensors } from '../features/menu/useReorderSensors';
 import { Chip } from '../components/layout/Page';
 import { searchBoxClass } from '../components/layout/pageStyles';
 import { AvailabilitySwitch } from '../components/menu/AvailabilitySwitch';
 import { PhotoBlockedNote } from '../components/menu/PhotoBlockedNote';
-import { Copy, Download, GripVertical, Plus, Search, X } from 'lucide-react';
+import { Copy, Download, Plus, Search, X } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 import { buildExampleMenuImportFile, parseMenuImport } from '../features/menu/menuImport';
 import { isIncomplete, isListRefreshing } from '../features/menu/productListStatus';
@@ -303,32 +292,6 @@ function passes(
   return true;
 }
 
-/**
- * A category's dishes in menu order: ordered dishes by position, then dishes without a position
- * (by name) after every ordered one.
- */
-function sortDishesForCategory(items: ProductDto[], categoryId: string): ProductDto[] {
-  return [...items].sort((a, b) => {
-    const pa = a.categoryOrder?.[categoryId];
-    const pb = b.categoryOrder?.[categoryId];
-    if (pa != null && pb != null && pa !== pb) return pa - pb;
-    if (pa != null && pb == null) return -1;
-    if (pa == null && pb != null) return 1;
-    return (a.name ?? '').localeCompare(b.name ?? '');
-  });
-}
-
-/** Applies a locally held id order; ids no longer present are skipped, unlisted dishes go last. */
-function applyOrder(items: ProductDto[], ids: string[]): ProductDto[] {
-  const byId = new Map(items.map((p) => [p.id!, p]));
-  const ordered = ids.flatMap((id) => {
-    const p = byId.get(id);
-    return p ? [p] : [];
-  });
-  const listed = new Set(ids);
-  return [...ordered, ...items.filter((p) => !listed.has(p.id!))];
-}
-
 /** Stops clicks on the controls inside a row from also opening the dish. */
 const keepInside = (e: React.SyntheticEvent) => e.stopPropagation();
 
@@ -476,50 +439,21 @@ function SortableDishRow({
   ...rowProps
 }: Omit<DishRowProps, 'dragHandle' | 'rowRef' | 'rowStyle'> & { dragEnabled: boolean; reordering: boolean }) {
   const { t } = useTranslation();
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: rowProps.product.id!,
-    disabled: !dragEnabled || reordering,
+  const { attributes, listeners, setNodeRef, style } = useDragHandleProps(rowProps.product.id!, {
+    dragEnabled,
+    pending: reordering,
   });
   const handle = (
-    <button
-      type="button"
-      {...attributes}
-      {...listeners}
-      onClick={keepInside}
-      aria-label={t('dishes.dragHandle')}
-      aria-disabled={!dragEnabled || undefined}
-      aria-busy={reordering ? true : undefined}
-      data-pending={reordering ? 'true' : undefined}
-      disabled={reordering}
-      tabIndex={dragEnabled ? attributes.tabIndex : -1}
-      title={dragEnabled ? undefined : t('dishes.reorderDisabledHint')}
-      className={`flex-shrink-0 touch-none ${
-        reordering
-          ? 'cursor-progress text-[#b9ada2]'
-          : dragEnabled
-            ? 'cursor-grab text-[#b9ada2] hover:text-ink active:cursor-grabbing'
-            : 'cursor-not-allowed text-[#d6cdc4]'
-      }`}
-    >
-      {reordering ? (
-        <span
-          data-pending-spinner=""
-          aria-hidden="true"
-          className="block h-[18px] w-[18px] animate-spin rounded-full border-2 border-current border-t-transparent text-ink"
-        />
-      ) : (
-        <GripVertical size={18} aria-hidden="true" />
-      )}
-    </button>
-  );
-  return (
-    <DishRow
-      {...rowProps}
-      dragHandle={handle}
-      rowRef={setNodeRef}
-      rowStyle={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }}
+    <DragHandleButton
+      attributes={attributes}
+      listeners={listeners}
+      pending={reordering}
+      dragEnabled={dragEnabled}
+      label={t('dishes.dragHandle')}
+      disabledHint={t('dishes.reorderDisabledHint')}
     />
   );
+  return <DishRow {...rowProps} dragHandle={handle} rowRef={setNodeRef} rowStyle={style} />;
 }
 
 // ── Page ───────────────────────────────────────────────────────────────────────
@@ -593,26 +527,17 @@ export function ProductsPage() {
     setBrokenImageIds((prev) => (prev.has(id) ? prev : new Set(prev).add(id)));
   }, []);
 
-  const [orderOverrides, setOrderOverrides] = useState<Record<string, string[]>>({});
-  const reorderingRef = useRef<Set<string>>(new Set());
-  const [reorderError, setReorderError] = useState(false);
-  // Categories whose new dish order is being saved: their handles spin and refuse another drag
-  const [savingOrderIds, setSavingOrderIds] = useState<ReadonlySet<string>>(new Set());
   const [setCategoryDishOrder] = useSetCategoryDishOrderMutation();
+  const { orderOverrides, reorderError, savingOrderIds, handleDragEnd, clearStaleOverrides } = useCategoryDragReorder(
+    (categoryId, productIds) => setCategoryDishOrder({ shopId: shopId!, categoryId, body: { productIds } }).unwrap(),
+  );
 
   // Once fresh data arrives, the server's order replaces local overrides (except for a save still in flight).
   useEffect(() => {
-    setOrderOverrides((o) => {
-      const keep = Object.fromEntries(Object.entries(o).filter(([id]) => reorderingRef.current.has(id)));
-      return Object.keys(keep).length === Object.keys(o).length ? o : keep;
-    });
-  }, [products]);
+    clearStaleOverrides();
+  }, [products, clearStaleOverrides]);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  );
+  const sensors = useReorderSensors();
 
   if (shop && !canManage) {
     return (
@@ -679,8 +604,13 @@ export function ProductsPage() {
   const groups = [...categoryMap.values()]
     .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
     .map((cat) => {
-      const inCat = sortDishesForCategory(shown.filter((p) => p.categories?.some((c) => c.id === cat.id)), cat.id);
-      return { id: cat.id, name: cat.name, items: orderOverrides[cat.id] ? applyOrder(inCat, orderOverrides[cat.id]) : inCat };
+      const inCat = sortByCategoryOrder(
+        shown.filter((p) => p.categories?.some((c) => c.id === cat.id)),
+        cat.id,
+        (p) => p.categoryOrder?.[cat.id],
+        (p) => p.name ?? '',
+      );
+      return { id: cat.id, name: cat.name, items: orderOverrides[cat.id] ? applyOrder(inCat, orderOverrides[cat.id], (p) => p.id!) : inCat };
     });
   const uncategorized = shown.filter((p) => !p.categories?.length);
   if (uncategorized.length) groups.push({ id: '_none', name: t('products.uncategorized'), items: uncategorized });
@@ -689,35 +619,6 @@ export function ProductsPage() {
   const canReorder = canManage;
   // Reordering only makes sense on the natural, unfiltered list
   const dragActive = filter === 'all' && q === '';
-
-  const handleDragEnd = (groupId: string, items: ProductDto[]) => async (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id || reorderingRef.current.has(groupId)) return;
-    const current = orderOverrides[groupId] ?? items.map((p) => p.id!);
-    const oldIndex = current.indexOf(active.id as string);
-    const newIndex = current.indexOf(over.id as string);
-    if (oldIndex === -1 || newIndex === -1) return;
-    const snapshot = current;
-    const reordered = arrayMove(current, oldIndex, newIndex);
-    reorderingRef.current.add(groupId);
-    setSavingOrderIds((ids) => new Set(ids).add(groupId));
-    setOrderOverrides((o) => ({ ...o, [groupId]: reordered }));
-    setReorderError(false);
-    try {
-      await setCategoryDishOrder({ shopId: shopId!, categoryId: groupId, body: { productIds: reordered } }).unwrap();
-      toast.success(t('dishes.reordered'));
-    } catch {
-      setOrderOverrides((o) => ({ ...o, [groupId]: snapshot }));
-      setReorderError(true);
-    } finally {
-      reorderingRef.current.delete(groupId);
-      setSavingOrderIds((ids) => {
-        const next = new Set(ids);
-        next.delete(groupId);
-        return next;
-      });
-    }
-  };
 
   const renderRow = (p: ProductDto, dragEnabled?: boolean, groupId?: string) => {
     const rowProps = {
@@ -804,7 +705,7 @@ export function ProductsPage() {
               <span className="text-[13px] text-[#8a7f77]">{g.items.length}</span>
             </div>
             {g.id === '_none' ? g.items.map((p) => renderRow(p)) : (
-              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd(g.id, g.items)}>
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd(g.id, g.items.map((p) => p.id!), () => toast.success(t('dishes.reordered')))}>
                 <SortableContext items={g.items.map((p) => p.id!)} strategy={verticalListSortingStrategy}>
                   {g.items.map((p) => renderRow(p, canReorder && dragActive, g.id))}
                 </SortableContext>

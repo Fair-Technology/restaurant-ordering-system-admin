@@ -1,3 +1,4 @@
+import type React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ComboDto } from '../../services/combosApi';
 import { comboPhotoUrl } from '../../features/combos/combos';
@@ -15,6 +16,9 @@ export function ComboRow({
   onOpen,
   onToggle,
   photoBlockedMessage,
+  dragHandle,
+  rowRef,
+  rowStyle,
 }: {
   combo: ComboDto;
   selected: boolean;
@@ -25,12 +29,15 @@ export function ComboRow({
   onToggle: () => void;
   /** Shown under the name right after the switch was refused because the combo has no photo. */
   photoBlockedMessage?: string;
+  dragHandle?: React.ReactNode;
+  rowRef?: (node: HTMLElement | null) => void;
+  rowStyle?: React.CSSProperties;
 }) {
   const { t } = useTranslation();
   const c = combo;
   const photo = comboPhotoUrl(c);
   return (
-    <div>
+    <div ref={rowRef} style={rowStyle}>
       <div
         role="button"
         tabIndex={0}
@@ -46,6 +53,7 @@ export function ComboRow({
           selected ? 'bg-cream shadow-[inset_3px_0_0_#1f1a17]' : ''
         }`}
       >
+        {dragHandle}
         {photo ? (
           <img src={photo} alt="" className={`h-[42px] w-14 flex-shrink-0 rounded-lg object-cover ${c.isAvailable ? '' : 'opacity-50'}`} />
         ) : (

@@ -543,6 +543,10 @@
     "listTitle": "Tables"
   },
   "combos": {
+    "dragHandle": "Drag to reorder",
+    "reordered": "Combo order saved.",
+    "failedToReorder": "Failed to save new order. Changes reverted.",
+    "reorderDisabledHint": "Clear the filter and search to reorder combos.",
     "search": "Search combos",
     "noMatch": "No combos match this filter.",
     "accessDenied": "Only people who edit the menu can change combos.",

@@ -543,6 +543,10 @@
     "listTitle": "Tische"
   },
   "combos": {
+    "dragHandle": "Zum Neuanordnen ziehen",
+    "reordered": "Menü-Reihenfolge gespeichert.",
+    "failedToReorder": "Neue Reihenfolge konnte nicht gespeichert werden. Änderungen zurückgesetzt.",
+    "reorderDisabledHint": "Filter und Suche zurücksetzen, um Menüs neu zu sortieren.",
     "search": "Menüs durchsuchen",
     "noMatch": "Keine Menüs passen zu diesem Filter.",
     "accessDenied": "Nur wer die Speisekarte bearbeitet, kann Menüs ändern.",
