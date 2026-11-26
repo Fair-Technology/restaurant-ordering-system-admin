@@ -65,9 +65,3 @@ body {
   to   { transform: translateX(0); }
 }
 .animate-drawer-in-right { animation: drawer-in-right 0.22s ease-out; }
-
-@keyframes fab-up {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.animate-fab-up { animation: fab-up 0.15s ease-out; }
