@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
+import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Check } from 'lucide-react';
 import type { ProductDto, ProductImage } from '../../services/api';
@@ -20,7 +20,9 @@ import { menuLanguagesOf } from '../../features/menu/translations';
 import {
   addRequiredChecklist,
   addRequiredLeftCount,
+  applyDuplicateDishCopy,
   applySimilarDishCopy,
+  copyFromDuplicateDish,
   copyFromSimilarDish,
   emptyDishFormState,
   type DishFormState,
@@ -33,6 +35,8 @@ interface Props {
   onClose: () => void;
   /** Called once a dish has really been added to the menu (not for drafts). */
   onAdded?: (productId: string) => void;
+  /** Opens the panel pre-filled from this dish ("Duplicate"). Nothing is saved until the owner saves. */
+  duplicateFrom?: ProductDto;
 }
 
 type Saving = null | 'draft' | 'add';
@@ -42,7 +46,7 @@ type Saving = null | 'draft' | 'add';
  * create mutation. "Save as draft" needs only a name and keeps the dish off the menu; "Add to menu" needs the
  * whole checklist. Everything you see lives in the shared `DishForm`.
  */
-export function AddDishPanel({ shopId, currencySymbol, categoriesList, onClose, onAdded }: Props) {
+export function AddDishPanel({ shopId, currencySymbol, categoriesList, onClose, onAdded, duplicateFrom }: Props) {
   const { t } = useTranslation();
   const toast = useToast();
   const { data: shop } = useGetShopByIdQuery({ shopId });
@@ -55,8 +59,17 @@ export function AddDishPanel({ shopId, currencySymbol, categoriesList, onClose, 
   const languages = shop ? menuLanguagesOf(shop) : [];
   const extraLanguage = languages[1];
 
-  const [value, setValueRaw] = useState<DishFormState>(emptyDishFormState);
+  // Duplicate: the prefill is computed once, on open (fresh ids for dish-only groups come from here, so they must not change per render).
+  const [duplicate] = useState(() =>
+    duplicateFrom
+      ? copyFromDuplicateDish(duplicateFrom, categoriesList, t('dishForm.duplicate.namePlaceholder', { name: duplicateFrom.name }))
+      : null,
+  );
+  const [duplicating, setDuplicating] = useState(duplicate !== null);
+  const duplicateSchedule = useRef(duplicate?.schedule ?? null);
+  const [value, setValueRaw] = useState<DishFormState>(() => (duplicate ? applyDuplicateDishCopy(duplicate) : emptyDishFormState()));
   const [imageFile, setImageFileRaw] = useState<File | null>(null);
+  const [photoCopyFailed, setPhotoCopyFailed] = useState(false);
   const [saving, setSaving] = useState<Saving>(null);
   // Set once the dish exists (a saved draft, or a dish whose photo upload failed): later saves update it instead of creating another.
   const [productId, setProductId] = useState<string | null>(null);
@@ -72,8 +85,35 @@ export function AddDishPanel({ shopId, currencySymbol, categoriesList, onClose, 
   };
   const setImageFile = (f: File | null) => {
     setDraftSaved(false);
+    setPhotoCopyFailed(false);
     setImageFileRaw(f);
   };
+
+  // Duplicate: give the copy its own photo by downloading the source's and uploading it again on save through the normal
+  // path, so the two dishes never share a stored image. If the download fails (e.g. no CORS on the image host), the copy simply has no photo yet.
+  const sourcePhotoUrl = duplicateFrom?.images?.length ? duplicateFrom.images[duplicateFrom.images.length - 1].url : undefined;
+  useEffect(() => {
+    if (!sourcePhotoUrl) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch(sourcePhotoUrl);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const blob = await res.blob();
+        const type = blob.type || 'image/jpeg';
+        const ext = type.split('/')[1]?.split('+')[0] || 'jpg';
+        if (!cancelled) setImageFileRaw(new File([blob], `dish-copy.${ext}`, { type }));
+      } catch {
+        if (cancelled) return;
+        setPhotoCopyFailed(true);
+        toast.error(t('dishForm.duplicate.photoCopyFailed'));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, when the panel opens
+  }, [sourcePhotoUrl]);
 
   const photoMissing = dishPhotoMissing(imageFile, null);
   const checklist = addRequiredChecklist(value);
@@ -124,6 +164,8 @@ export function AddDishPanel({ shopId, currencySymbol, categoriesList, onClose, 
               variantGroups: value.variantGroups.length > 0 ? value.variantGroups : undefined,
               addonGroups: value.addonGroups.length > 0 ? value.addonGroups : undefined,
               spiceLevel: value.foodInfo.spiceLevel ?? undefined,
+              // Only a duplicate carries a schedule; a plain Add has no schedule control
+              ...(duplicateSchedule.current ? { schedule: duplicateSchedule.current } : {}),
             },
           }).unwrap();
           setProductId(created.id);
@@ -173,6 +215,9 @@ export function AddDishPanel({ shopId, currencySymbol, categoriesList, onClose, 
   const addAnother = () => {
     setValueRaw(emptyDishFormState());
     setImageFileRaw(null);
+    setPhotoCopyFailed(false);
+    duplicateSchedule.current = null;
+    setDuplicating(false);
     setProductId(null);
     uploadedPhoto.current = null;
     setDraftSaved(false);
@@ -207,7 +252,12 @@ export function AddDishPanel({ shopId, currencySymbol, categoriesList, onClose, 
       onSave={() => {}}
       onDiscard={() => {}}
       onClose={onClose}
+      autoFocusName={!!duplicate}
+      photoCopyError={photoCopyFailed ? t('dishForm.duplicate.photoCopyFailed') : undefined}
       startFromSimilarDish={
+        duplicating ? (
+          <p className="rounded-2xl bg-cream px-[18px] py-4 text-[13px] leading-[19px] text-muted">{t('dishForm.duplicate.notCopied')}</p>
+        ) : (
         <SimilarDishBox
           dishes={(shopDishes ?? []).filter((p) => !p.isDeleted)}
           selected={similar}
@@ -220,6 +270,7 @@ export function AddDishPanel({ shopId, currencySymbol, categoriesList, onClose, 
             setValue((v) => applySimilarDishCopy(v, copyFromSimilarDish(dish, categoriesList)));
           }}
         />
+        )
       }
       requiredChecklist={labelled}
       addStatus={status}

@@ -1578,8 +1578,11 @@
       "save": "Save",
       "nameRequired": "Please enter a name.",
       "descriptionRequired": "Please enter a description.",
-      "descriptionHint": "{{count}} / {{max}} characters"
-    }
+      "descriptionHint": "{{count}} / {{max}} characters",
+      "duplicateDish": "Duplicate",
+      "duplicateHint": "Opens a new dish pre-filled from this one. Nothing is saved until you save it."
+    },
+    "duplicateDish": "Duplicate {{name}}"
   },
   "fab": {
     "quickActions": "Quick actions",
@@ -1723,6 +1726,11 @@
       "draft": "Draft · not on the menu yet",
       "draftSaved": "Draft saved",
       "onMenu": "On the menu"
+    },
+    "duplicate": {
+      "namePlaceholder": "{{name}} (copy)",
+      "notCopied": "Allergens and additives are not copied; please confirm them yourself.",
+      "photoCopyFailed": "Could not copy the photo; add one and turn the dish on when you're ready."
     }
   }
 }

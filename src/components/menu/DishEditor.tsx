@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBlocker } from 'react-router-dom';
-import { Trash2, X } from 'lucide-react';
+import { Copy, Trash2, X } from 'lucide-react';
 import type { ProductDto, ProductImage } from '../../services/api';
 import {
   useDeleteProductMutation,
@@ -32,13 +32,17 @@ interface Props {
   onClose: () => void;
   onSaved: () => void;
   onDeleted: () => void;
+  /** Only people who can manage the menu get Delete and Duplicate. */
+  canManage?: boolean;
+  /** Closes the editor and opens Add dish pre-filled from this dish. */
+  onDuplicate?: () => void;
 }
 
 /**
  * DishEditor — the edit path of the dish screen: loads one saved dish, keeps the unsaved changes locally,
  * and saves them with the existing update mutation. Everything you see lives in the shared `DishForm`.
  */
-export function DishEditor({ productId, shopId, currencySymbol, categoriesList, onClose, onSaved, onDeleted }: Props) {
+export function DishEditor({ productId, shopId, currencySymbol, categoriesList, onClose, onSaved, onDeleted, canManage = false, onDuplicate }: Props) {
   const { t, i18n } = useTranslation();
   const toast = useToast();
   const { data: product, isLoading, isError } = useGetProductByIdQuery({ productId, shopId }, { refetchOnMountOrArgChange: true });
@@ -241,6 +245,18 @@ export function DishEditor({ productId, shopId, currencySymbol, categoriesList, 
               </PendingButton>
             </div>
           ) : (
+            <>
+              {canManage && onDuplicate && (
+                <button
+                  type="button"
+                  onClick={onDuplicate}
+                  title={t('dishes.editor.duplicateHint')}
+                  className="inline-flex h-11 items-center gap-1.5 rounded-full border border-[#e3d9ce] px-4 text-[13px] font-semibold hover:bg-cream"
+                >
+                  <Copy size={15} strokeWidth={2.2} aria-hidden="true" />
+                  {t('dishes.editor.duplicateDish')}
+                </button>
+              )}
             <button
               type="button"
               onClick={() => setConfirmDelete(true)}
@@ -250,6 +266,7 @@ export function DishEditor({ productId, shopId, currencySymbol, categoriesList, 
               <Trash2 size={15} strokeWidth={2.2} aria-hidden="true" />
               {t('dishes.editor.deleteDish')}
             </button>
+            </>
           )
         }
         availabilityExtras={

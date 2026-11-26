@@ -60,7 +60,7 @@ vi.mock('../services/api', () => ({
 // The real DishEditor needs a large API surface. Stand in for it with the same unsaved-changes
 // contract (useBlocker + window.confirm) so we test the drawer/page wiring against the real router.
 vi.mock('../components/menu/DishEditor', () => ({
-  DishEditor: ({ productId, onClose }: { productId: string; onClose: () => void }) => {
+  DishEditor: ({ productId, onClose, onDuplicate }: { productId: string; onClose: () => void; onDuplicate?: () => void }) => {
     const [dirty, setDirty] = useState(false);
     const blocker = useBlocker(() => dirty);
     if (blocker.state === 'blocked') {
@@ -71,14 +71,15 @@ vi.mock('../components/menu/DishEditor', () => ({
       <div data-testid="editor" data-product={productId}>
         <button type="button" aria-label="dishes.editor.closeEditor" onClick={onClose} />
         <button type="button" onClick={() => setDirty(true)}>make-dirty</button>
+        <button type="button" onClick={onDuplicate}>editor-duplicate</button>
       </div>
     );
   },
 }));
 
 vi.mock('../components/menu/AddDishPanel', () => ({
-  AddDishPanel: ({ onClose }: { onClose: () => void }) => (
-    <div data-testid="add-panel">
+  AddDishPanel: ({ onClose, duplicateFrom }: { onClose: () => void; duplicateFrom?: { id: string } }) => (
+    <div data-testid="add-panel" data-duplicate-from={duplicateFrom?.id}>
       <button type="button" aria-label="close-add" onClick={onClose} />
     </div>
   ),
@@ -127,6 +128,39 @@ describe('ProductsPage add dish drawer', () => {
   it('is closed without the param', () => {
     renderAt('/shops/s1/dishes');
     expect(screen.queryByTestId('add-panel')).toBeNull();
+  });
+});
+
+describe('ProductsPage Duplicate', () => {
+  it('the row action opens Add dish pre-filled from that dish, without opening the editor', () => {
+    renderAt('/shops/s1/dishes');
+    const btn = screen.getByRole('button', { name: 'dishes.duplicateDish:Margherita' });
+    expect(btn.className).toContain('h-11');
+    expect(btn.className).toContain('w-11');
+    fireEvent.click(btn);
+    expect(search()).toBe('?duplicateFrom=p1');
+    expect(screen.queryByTestId('editor')).toBeNull();
+    expect(screen.getByTestId('add-panel').getAttribute('data-duplicate-from')).toBe('p1');
+  });
+
+  it('closing the duplicate drawer clears the param', () => {
+    renderAt('/shops/s1/dishes?duplicateFrom=p2');
+    fireEvent.click(screen.getByRole('button', { name: 'close-add' }));
+    expect(search()).toBe('');
+    expect(screen.queryByTestId('add-panel')).toBeNull();
+  });
+
+  it('an unknown dish id opens nothing', () => {
+    renderAt('/shops/s1/dishes?duplicateFrom=nope');
+    expect(screen.queryByTestId('add-panel')).toBeNull();
+  });
+
+  it("the editor's Duplicate closes the editor and opens Add dish for the same dish", () => {
+    renderAt('/shops/s1/dishes?dish=p1');
+    fireEvent.click(screen.getByRole('button', { name: 'editor-duplicate' }));
+    expect(search()).toBe('?duplicateFrom=p1');
+    expect(screen.queryByTestId('editor')).toBeNull();
+    expect(screen.getByTestId('add-panel').getAttribute('data-duplicate-from')).toBe('p1');
   });
 });
 

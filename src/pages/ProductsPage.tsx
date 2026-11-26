@@ -35,7 +35,7 @@ import { Chip } from '../components/layout/Page';
 import { searchBoxClass } from '../components/layout/pageStyles';
 import { AvailabilitySwitch } from '../components/menu/AvailabilitySwitch';
 import { PhotoBlockedNote } from '../components/menu/PhotoBlockedNote';
-import { Download, GripVertical, Plus, Search, X } from 'lucide-react';
+import { Copy, Download, GripVertical, Plus, Search, X } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 import { buildExampleMenuImportFile, parseMenuImport } from '../features/menu/menuImport';
 import { isIncomplete, isListRefreshing } from '../features/menu/productListStatus';
@@ -364,6 +364,8 @@ function DishRow({
   currencyMoney,
   onOpen,
   onToggle,
+  canManage,
+  onDuplicate,
   photoBlockedMessage,
   dragHandle,
   rowRef,
@@ -377,6 +379,10 @@ function DishRow({
   currencyMoney: (cents: number) => string;
   onOpen: () => void;
   onToggle: () => void;
+  /** Only people who can manage the menu get the Duplicate action. */
+  canManage: boolean;
+  /** Opens the Add dish drawer pre-filled from this dish. */
+  onDuplicate: () => void;
   /** Shown under the name right after the switch was refused because the dish has no photo. */
   photoBlockedMessage?: string;
   /** Drag handle, rendered first in the row; absent for rows that cannot be reordered. */
@@ -436,6 +442,21 @@ function DishRow({
         {groups > 0 ? t('dishes.optionGroups', { count: groups }) : '–'}
       </span>
       <span className="min-w-14 flex-shrink-0 text-right text-[15px] font-bold sm:w-20">{currencyMoney(product.price ?? 0)}</span>
+      {canManage && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDuplicate();
+          }}
+          onKeyDown={keepInside}
+          aria-label={t('dishes.duplicateDish', { name: product.name })}
+          title={t('dishes.duplicateDish', { name: product.name })}
+          className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full text-[#6b6058] hover:bg-sand hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2563eb]"
+        >
+          <Copy size={18} aria-hidden="true" />
+        </button>
+      )}
       <AvailabilitySwitch
         available={available}
         pending={toggling}
@@ -535,6 +556,24 @@ export function ProductsPage() {
     });
   };
   const showAddModal = searchParams.get('addProduct') === '1';
+  const duplicateFromId = searchParams.get('duplicateFrom');
+  // Opens Add dish pre-filled from a dish (closing the editor if it was open), in one URL change.
+  const closeAdd = () => {
+    setSearchParams((p) => {
+      const n = new URLSearchParams(p);
+      n.delete('addProduct');
+      n.delete('duplicateFrom');
+      return n;
+    });
+  };
+  const openDuplicate = (id: string) => {
+    setSearchParams((p) => {
+      const n = new URLSearchParams(p);
+      n.delete('dish');
+      n.set('duplicateFrom', id);
+      return n;
+    });
+  };
   const showImportModal = searchParams.get('importProducts') === '1';
 
   const [filter, setFilter] = useState<DishFilter>('all');
@@ -625,6 +664,7 @@ export function ProductsPage() {
 
   const all = products ?? [];
   const selectedDish = selectedId ? all.find((p) => p.id === selectedId) : undefined;
+  const duplicateSource = duplicateFromId ? all.find((p) => p.id === duplicateFromId) : undefined;
   const q = query.trim().toLowerCase();
   const shown = all.filter((p) => passes(p, filter, availableOf(p), brokenImageIds) && (!q || (p.name ?? '').toLowerCase().includes(q)));
   const countOf = (f: DishFilter) => all.filter((p) => passes(p, f, availableOf(p), brokenImageIds)).length;
@@ -689,6 +729,8 @@ export function ProductsPage() {
       currencyMoney: money,
       onOpen: () => setParam('dish', p.id!),
       onToggle: () => toggle(p),
+      canManage,
+      onDuplicate: () => openDuplicate(p.id!),
       photoBlockedMessage: photoBlockedId === p.id ? t('products.enableNeedsPhotoInline') : undefined,
     };
     return dragEnabled === undefined ? (
@@ -801,17 +843,21 @@ export function ProductsPage() {
             onClose={() => setParam('dish', null)}
             onSaved={() => {}}
             onDeleted={() => setParam('dish', null)}
+            canManage={canManage}
+            onDuplicate={() => openDuplicate(selectedId)}
           />
         </Drawer>
       )}
 
-      {showAddModal && (
-        <Drawer label={t('dishForm.newDish')} onClose={() => setParam('addProduct', null)} widthClassName="sm:w-[1240px] sm:max-w-full">
+      {(showAddModal || duplicateSource) && (
+        <Drawer label={t('dishForm.newDish')} onClose={closeAdd} widthClassName="sm:w-[1240px] sm:max-w-full">
           <AddDishPanel
+            key={duplicateSource?.id ?? 'new'}
             shopId={shopId!}
             currencySymbol={currencySymbol}
             categoriesList={categoriesList}
-            onClose={() => setParam('addProduct', null)}
+            onClose={closeAdd}
+            duplicateFrom={duplicateSource}
           />
         </Drawer>
       )}

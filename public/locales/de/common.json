@@ -1578,8 +1578,11 @@
       "save": "Speichern",
       "nameRequired": "Bitte geben Sie einen Namen ein.",
       "descriptionRequired": "Bitte geben Sie eine Beschreibung ein.",
-      "descriptionHint": "{{count}} / {{max}} Zeichen"
-    }
+      "descriptionHint": "{{count}} / {{max}} Zeichen",
+      "duplicateDish": "Duplizieren",
+      "duplicateHint": "Öffnet ein neues Gericht, vorausgefüllt mit den Angaben dieses Gerichts. Erst beim Speichern wird etwas angelegt."
+    },
+    "duplicateDish": "{{name}} duplizieren"
   },
   "fab": {
     "quickActions": "Schnellaktionen",
@@ -1723,6 +1726,11 @@
       "draft": "Entwurf · noch nicht auf der Karte",
       "draftSaved": "Entwurf gespeichert",
       "onMenu": "Auf der Karte"
+    },
+    "duplicate": {
+      "namePlaceholder": "{{name}} (Kopie)",
+      "notCopied": "Allergene und Zusatzstoffe werden nicht kopiert; bitte bestätige sie selbst.",
+      "photoCopyFailed": "Das Foto konnte nicht kopiert werden; füge eines hinzu und schalte das Gericht ein, wenn du bereit bist."
     }
   }
 }
