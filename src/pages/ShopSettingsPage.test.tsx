@@ -28,7 +28,7 @@ const shop = {
   callerPermissions: ['manage_shop'],
   openingHours: { mon: [{ open: '09:00', close: '17:00' }], tue: [{ open: '09:00', close: '17:00' }] },
 };
-const h = vi.hoisted(() => ({ shop: null as unknown, updateShop: null as unknown as ReturnType<typeof vi.fn> }));
+const h = vi.hoisted(() => ({ library: [] as unknown[], shop: null as unknown, updateShop: null as unknown as ReturnType<typeof vi.fn> }));
 vi.mock('../services/api', () => {
   const mut = () => [vi.fn(), { isLoading: false }];
   return {
@@ -40,6 +40,8 @@ vi.mock('../services/api', () => {
     useGenerateShopCoverImageUploadUrlMutation: mut,
     useSetShopCoverImageMutation: mut,
     useRemoveShopCoverImageMutation: mut,
+    useExecuteListCoverImageLibraryForShopQuery: () => ({ data: { images: h.library }, isLoading: false, isError: false, refetch: vi.fn() }),
+    useExecuteUseLibraryCoverImageForShopMutation: mut,
     useRequestShopNameChangeMutation: mut,
     useRejectShopNameChangeMutation: mut,
     useDeleteShopMutation: mut,
@@ -73,6 +75,7 @@ const nav = () => within(screen.getByRole('navigation', { name: en.shops.setting
 
 beforeEach(() => {
   h.shop = shop;
+  h.library = [];
   h.updateShop = vi.fn(() => ({ unwrap: () => Promise.resolve({}) }));
 });
 afterEach(() => {
@@ -132,6 +135,18 @@ describe('ShopSettingsPage sections', () => {
     headings('look', [en.shops.logo, en.shops.coverImage, en.shops.accentTitle, en.shops.menuLanguagesTitle]);
     headings('hours', [en.shops.openingHours]);
     headings('pay', [en.shops.taxClassesTitle]);
+  });
+
+  it('hides "Choose from our images" when the library is empty', () => {
+    renderAt('/shops/s1/settings?section=look');
+    expect(screen.queryByRole('button', { name: en.shops.coverLibraryChoose })).toBeNull();
+  });
+
+  it('shows "Choose from our images" when the library has images and opens the gallery', () => {
+    h.library = [{ id: 'a', name: 'Pasta', imageUrl: 'u', cardImageUrl: 'c', createdAt: '' }];
+    renderAt('/shops/s1/settings?section=look');
+    fireEvent.click(screen.getByRole('button', { name: en.shops.coverLibraryChoose }));
+    expect(screen.getByRole('dialog', { name: en.shops.coverLibraryTitle })).toBeTruthy();
   });
 
   it('delete confirm in the danger zone needs the exact shop name', () => {

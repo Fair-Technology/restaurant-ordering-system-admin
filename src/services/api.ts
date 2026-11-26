@@ -6,6 +6,7 @@ export const addTagTypes = [
   "Plans",
   "Platform",
   "Content Reports",
+  "Cover Image Library",
   "Reference Lists",
   "Products",
   "Shops",
@@ -205,6 +206,56 @@ const injectedRtkApi = api
           body: queryArg.decideContentReportBody,
         }),
         invalidatesTags: ["Content Reports"],
+      }),
+      executeListCoverImageLibraryForPlatform: build.query<
+        ExecuteListCoverImageLibraryForPlatformApiResponse,
+        ExecuteListCoverImageLibraryForPlatformApiArg
+      >({
+        query: () => ({ url: `/platform/cover-images` }),
+        providesTags: ["Cover Image Library"],
+      }),
+      executeRegisterCoverLibraryImage: build.mutation<
+        ExecuteRegisterCoverLibraryImageApiResponse,
+        ExecuteRegisterCoverLibraryImageApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/platform/cover-images`,
+          method: "POST",
+          body: queryArg.registerCoverLibraryImageRequestDto,
+        }),
+        invalidatesTags: ["Cover Image Library"],
+      }),
+      executeDeleteCoverLibraryImage: build.mutation<
+        ExecuteDeleteCoverLibraryImageApiResponse,
+        ExecuteDeleteCoverLibraryImageApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/platform/cover-images/${queryArg.imageId}`,
+          method: "DELETE",
+        }),
+        invalidatesTags: ["Cover Image Library"],
+      }),
+      executeRenameCoverLibraryImage: build.mutation<
+        ExecuteRenameCoverLibraryImageApiResponse,
+        ExecuteRenameCoverLibraryImageApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/platform/cover-images/${queryArg.imageId}`,
+          method: "PATCH",
+          body: queryArg.body,
+        }),
+        invalidatesTags: ["Cover Image Library"],
+      }),
+      executeGenerateCoverLibraryUploadUrl: build.mutation<
+        ExecuteGenerateCoverLibraryUploadUrlApiResponse,
+        ExecuteGenerateCoverLibraryUploadUrlApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/platform/cover-images/upload-url`,
+          method: "POST",
+          body: queryArg.generateCoverLibraryUploadUrlRequestDto,
+        }),
+        invalidatesTags: ["Cover Image Library"],
       }),
       getPlatformLegalIdentity: build.query<
         GetPlatformLegalIdentityApiResponse,
@@ -550,6 +601,26 @@ const injectedRtkApi = api
           body: queryArg.body,
         }),
         invalidatesTags: ["Shop Cover Image"],
+      }),
+      executeListCoverImageLibraryForShop: build.query<
+        ExecuteListCoverImageLibraryForShopApiResponse,
+        ExecuteListCoverImageLibraryForShopApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/shops/${queryArg.shopId}/cover-image-library`,
+        }),
+        providesTags: ["Cover Image Library"],
+      }),
+      executeUseLibraryCoverImageForShop: build.mutation<
+        ExecuteUseLibraryCoverImageForShopApiResponse,
+        ExecuteUseLibraryCoverImageForShopApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/shops/${queryArg.shopId}/cover-image/from-library`,
+          method: "POST",
+          body: queryArg.body,
+        }),
+        invalidatesTags: ["Cover Image Library"],
       }),
       generateShopCoverImageUploadUrl: build.mutation<
         GenerateShopCoverImageUploadUrlApiResponse,
@@ -1395,6 +1466,32 @@ export type DecideContentReportApiArg = {
   reportId: string;
   decideContentReportBody: DecideContentReportBody;
 };
+export type ExecuteListCoverImageLibraryForPlatformApiResponse =
+  /** status 200 Cover image library retrieved successfully */ ListCoverImageLibraryResultDto;
+export type ExecuteListCoverImageLibraryForPlatformApiArg = void;
+export type ExecuteRegisterCoverLibraryImageApiResponse =
+  /** status 200 Library cover image registered successfully */ CoverLibraryImage;
+export type ExecuteRegisterCoverLibraryImageApiArg = {
+  registerCoverLibraryImageRequestDto: RegisterCoverLibraryImageRequestDto;
+};
+export type ExecuteDeleteCoverLibraryImageApiResponse =
+  /** status 200 Library cover image deleted successfully */ DeleteCoverLibraryImageResultDto;
+export type ExecuteDeleteCoverLibraryImageApiArg = {
+  imageId: string;
+};
+export type ExecuteRenameCoverLibraryImageApiResponse =
+  /** status 200 Library cover image renamed successfully */ CoverLibraryImage;
+export type ExecuteRenameCoverLibraryImageApiArg = {
+  imageId: string;
+  body: {
+    name: string;
+  };
+};
+export type ExecuteGenerateCoverLibraryUploadUrlApiResponse =
+  /** status 200 Upload URL generated successfully */ GenerateCoverLibraryUploadUrlResultDto;
+export type ExecuteGenerateCoverLibraryUploadUrlApiArg = {
+  generateCoverLibraryUploadUrlRequestDto: GenerateCoverLibraryUploadUrlRequestDto;
+};
 export type GetPlatformLegalIdentityApiResponse =
   /** status 200 Success */ PlatformLegalIdentityDto;
 export type GetPlatformLegalIdentityApiArg = void;
@@ -1708,6 +1805,19 @@ export type SetShopCoverImageApiArg = {
   body: {
     imageId: string;
     url: string;
+  };
+};
+export type ExecuteListCoverImageLibraryForShopApiResponse =
+  /** status 200 Cover image library retrieved successfully */ ListCoverImageLibraryResultDto;
+export type ExecuteListCoverImageLibraryForShopApiArg = {
+  shopId: string;
+};
+export type ExecuteUseLibraryCoverImageForShopApiResponse =
+  /** status 200 Shop cover image updated successfully */ ShopCoverImageResultDto;
+export type ExecuteUseLibraryCoverImageForShopApiArg = {
+  shopId: string;
+  body: {
+    libraryImageId: string;
   };
 };
 export type GenerateShopCoverImageUploadUrlApiResponse =
@@ -2709,6 +2819,35 @@ export type DecideContentReportBody = {
   decision: "actioned" | "dismissed";
   reason: string;
 };
+export type CoverLibraryImage = {
+  id: string;
+  name: string;
+  imageUrl: string;
+  cardImageUrl: string;
+  createdAt: string;
+  order: number;
+};
+export type ListCoverImageLibraryResultDto = {
+  images: CoverLibraryImage[];
+};
+export type RegisterCoverLibraryImageRequestDto = {
+  imageId: string;
+  url: string;
+  name: string;
+};
+export type DeleteCoverLibraryImageResultDto = {
+  id: string;
+  deleted: true;
+};
+export type GenerateCoverLibraryUploadUrlResultDto = {
+  imageId: string;
+  uploadUrl: string;
+  blobUrl: string;
+  expiresAt: string;
+};
+export type GenerateCoverLibraryUploadUrlRequestDto = {
+  contentType: string;
+};
 export type PlatformLegalIdentityDto = {
   platformName: string;
   salesSiteUrl: string | null;
@@ -3112,7 +3251,6 @@ export type ShopSummaryDto = {
   currency: string;
   timezone: string;
   minOrderAmountCents: number;
-  addressLocked: boolean;
   address: {
     street?: string;
     city?: string;
@@ -3248,7 +3386,6 @@ export type GetShopResultDto = {
   currency: string;
   timezone: string;
   minOrderAmountCents: number;
-  addressLocked: boolean;
   address: {
     street?: string;
     city?: string;
@@ -4803,6 +4940,12 @@ export const {
   useListContentReportsQuery,
   useLazyListContentReportsQuery,
   useDecideContentReportMutation,
+  useExecuteListCoverImageLibraryForPlatformQuery,
+  useLazyExecuteListCoverImageLibraryForPlatformQuery,
+  useExecuteRegisterCoverLibraryImageMutation,
+  useExecuteDeleteCoverLibraryImageMutation,
+  useExecuteRenameCoverLibraryImageMutation,
+  useExecuteGenerateCoverLibraryUploadUrlMutation,
   useGetPlatformLegalIdentityQuery,
   useLazyGetPlatformLegalIdentityQuery,
   useUpdatePlatformLegalIdentityMutation,
@@ -4852,6 +4995,9 @@ export const {
   useSubmitContentReportMutation,
   useRemoveShopCoverImageMutation,
   useSetShopCoverImageMutation,
+  useExecuteListCoverImageLibraryForShopQuery,
+  useLazyExecuteListCoverImageLibraryForShopQuery,
+  useExecuteUseLibraryCoverImageForShopMutation,
   useGenerateShopCoverImageUploadUrlMutation,
   useEraseCustomerMutation,
   useExportShopDataQuery,

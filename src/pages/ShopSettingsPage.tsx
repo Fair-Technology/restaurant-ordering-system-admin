@@ -10,6 +10,7 @@ import {
   useGenerateShopCoverImageUploadUrlMutation,
   useSetShopCoverImageMutation,
   useRemoveShopCoverImageMutation,
+  useExecuteListCoverImageLibraryForShopQuery,
   useUpdateShopMutation,
   useRequestShopNameChangeMutation,
   useRejectShopNameChangeMutation,
@@ -17,6 +18,7 @@ import {
 import { checkCoverImageFile, uploadCoverImage } from '../features/shops/coverImage';
 import { COVER_IMAGE_RULE, isWrongSizeError } from '../features/images/imageRules';
 import { ImageCropDialog } from '../components/ui/ImageCropDialog';
+import { CoverImageLibraryDialog } from '../components/shop/CoverImageLibraryDialog';
 import { MySwitch } from '../components/ui/MySwitch';
 import { bannerShownOf, brandingWithBanner } from '../features/shops/bannerSwitch';
 import { MyCard } from '../components/ui/MyCard';
@@ -94,6 +96,12 @@ export function ShopSettingsPage() {
   const [generateShopCoverImageUploadUrl] = useGenerateShopCoverImageUploadUrlMutation();
   const [setShopCoverImage] = useSetShopCoverImageMutation();
   const [removeShopCoverImage] = useRemoveShopCoverImageMutation();
+  const { data: coverLibrary } = useExecuteListCoverImageLibraryForShopQuery(
+    { shopId: shopId! },
+    { skip: !shopId || !(shop?.callerPermissions ?? []).includes('manage_shop') },
+  );
+  const hasCoverLibrary = (coverLibrary?.images.length ?? 0) > 0;
+  const [libraryOpen, setLibraryOpen] = useState(false);
   const [updateShop] = useUpdateShopMutation();
   const [requestShopNameChange] = useRequestShopNameChangeMutation();
   const [cancelShopNameChange, { isLoading: isCancellingNameChange }] = useRejectShopNameChangeMutation();
@@ -802,6 +810,18 @@ export function ShopSettingsPage() {
                 disabled={isUploadingCover || isRemovingCover}
                 className={FILE_INPUT_CLASS}
               />
+              {hasCoverLibrary && (
+                <MyButton
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="flex-shrink-0 self-start sm:self-auto"
+                  onClick={() => setLibraryOpen(true)}
+                  disabled={isUploadingCover || isRemovingCover}
+                >
+                  {t('shops.coverLibraryChoose')}
+                </MyButton>
+              )}
               {currentCoverUrl && (
                 <MyButton
                   type="button"
@@ -816,6 +836,18 @@ export function ShopSettingsPage() {
                 </MyButton>
               )}
             </div>
+            {libraryOpen && (
+              <CoverImageLibraryDialog
+                shopId={shopId!}
+                onClose={() => setLibraryOpen(false)}
+                onSaved={() => {
+                  setLibraryOpen(false);
+                  setCoverError(null);
+                  toast.success(t('shops.coverImageSaved'));
+                  refetch();
+                }}
+              />
+            )}
             {coverFile && (
               <ImageCropDialog
                 file={coverFile}
