@@ -442,7 +442,7 @@ export function ShopsPage() {
           actions={<MyButton onClick={openModal}>{t('shops.newShop')}</MyButton>}
         />
 
-        <Section title={t('shops.title')} count={shops.length} hint={t('shops.listHint')}>
+        <Section title={t('shops.title')} count={shops.length} hint={shops.length > 0 ? t('shops.listHint') : undefined}>
           {shops.length === 0 ? (
             <EmptyNote>{t('shops.empty')}</EmptyNote>
           ) : (
