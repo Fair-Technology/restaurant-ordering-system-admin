@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { ShopSettingsPage } from './ShopSettingsPage';
 import en from '../../public/locales/en/common.json';
@@ -28,17 +28,18 @@ const shop = {
   callerPermissions: ['manage_shop'],
   openingHours: { mon: [{ open: '09:00', close: '17:00' }], tue: [{ open: '09:00', close: '17:00' }] },
 };
+const h = vi.hoisted(() => ({ shop: null as unknown, updateShop: null as unknown as ReturnType<typeof vi.fn> }));
 vi.mock('../services/api', () => {
   const mut = () => [vi.fn(), { isLoading: false }];
   return {
-    useGetShopByIdQuery: () => ({ data: shop, isLoading: false, isError: false, refetch: vi.fn() }),
+    useGetShopByIdQuery: () => ({ data: h.shop, isLoading: false, isError: false, refetch: vi.fn() }),
+    useUpdateShopMutation: () => [h.updateShop, { isLoading: false }],
     useGenerateShopLogoUploadUrlMutation: mut,
     useSetShopLogoMutation: mut,
     useRemoveShopLogoMutation: mut,
     useGenerateShopCoverImageUploadUrlMutation: mut,
     useSetShopCoverImageMutation: mut,
     useRemoveShopCoverImageMutation: mut,
-    useUpdateShopMutation: mut,
     useRequestShopNameChangeMutation: mut,
     useRejectShopNameChangeMutation: mut,
     useDeleteShopMutation: mut,
@@ -70,7 +71,14 @@ const renderAt = (url: string) =>
   );
 const nav = () => within(screen.getByRole('navigation', { name: en.shops.settingsPage.navLabel }));
 
-afterEach(cleanup);
+beforeEach(() => {
+  h.shop = shop;
+  h.updateShop = vi.fn(() => ({ unwrap: () => Promise.resolve({}) }));
+});
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 
 describe('ShopSettingsPage sections', () => {
   it('renders seven nav items with status lines and marks the active one', () => {
@@ -137,5 +145,66 @@ describe('ShopSettingsPage sections', () => {
     expect(confirm.disabled).toBe(true);
     fireEvent.change(input, { target: { value: 'Pasta Place' } });
     expect(confirm.disabled).toBe(false);
+  });
+});
+
+describe('address card', () => {
+  const fullAddress = { street: '1 Main St', city: 'London', state: '', postcode: 'N1 1AA', country: 'United Kingdom' };
+  const withAddress = (extra: Record<string, unknown>) => {
+    h.shop = { ...shop, countryCode: 'GB', address: fullAddress, ...extra };
+  };
+  const open = () => renderAt('/shops/s1/settings?section=details');
+  const save = () => fireEvent.click(screen.getByRole('button', { name: en.shops.addressSave }));
+  const input = (label: string) => screen.getByLabelText(label) as HTMLInputElement;
+
+  it('always shows the country read-only, even before the address is locked', () => {
+    open();
+    expect(input(en.shops.addressCountry).disabled).toBe(true);
+    expect(input(en.shops.addressStreet).disabled).toBe(false);
+    expect(screen.getByText(en.shops.addressOneTimeNotice)).toBeTruthy();
+  });
+
+  it('asks for confirmation before saving a complete address, and only saves when confirmed', async () => {
+    withAddress({ addressLocked: false });
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    open();
+    save();
+    expect(confirm).toHaveBeenCalledWith(en.shops.addressConfirmLock);
+    expect(h.updateShop).not.toHaveBeenCalled();
+    confirm.mockReturnValue(true);
+    save();
+    await waitFor(() => expect(h.updateShop).toHaveBeenCalledTimes(1));
+  });
+
+  it('saves an incomplete address without the confirm prompt', async () => {
+    withAddress({ addressLocked: false, address: { ...fullAddress, street: '' } });
+    const confirm = vi.spyOn(window, 'confirm');
+    open();
+    save();
+    await waitFor(() => expect(h.updateShop).toHaveBeenCalledTimes(1));
+    expect(confirm).not.toHaveBeenCalled();
+  });
+
+  it('renders a locked address read-only with no save button', () => {
+    withAddress({ addressLocked: true });
+    open();
+    expect(screen.queryByRole('button', { name: en.shops.addressSave })).toBeNull();
+    for (const label of [en.shops.addressStreet, en.shops.addressPostcode, en.shops.addressCity, en.shops.addressCountry]) {
+      expect(input(label).disabled, label).toBe(true);
+    }
+    expect(screen.getByText(en.shops.addressLockedNotice)).toBeTruthy();
+    expect(screen.queryByText(en.shops.addressOneTimeNotice)).toBeNull();
+  });
+
+  it('shows the locked message when the server refuses with SHOP_ADDRESS_LOCKED', async () => {
+    withAddress({ addressLocked: false });
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    h.updateShop = vi.fn(() => ({
+      unwrap: () => Promise.reject({ status: 403, data: { code: 'SHOP_ADDRESS_LOCKED', error: 'locked' } }),
+    }));
+    open();
+    save();
+    expect(await screen.findByText(en.shops.addressLockedError)).toBeTruthy();
+    expect(screen.queryByText(en.shops.addressFailedToSave)).toBeNull();
   });
 });
