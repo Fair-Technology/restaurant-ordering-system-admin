@@ -1,42 +1,30 @@
-import { Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { ComboDto } from '../../services/combosApi';
 import { comboPhotoUrl } from '../../features/combos/combos';
-import { badgeClass, pillClass } from '../layout/pageStyles';
+import { badgeClass } from '../layout/pageStyles';
 import { AvailabilitySwitch } from '../menu/AvailabilitySwitch';
 import { PhotoBlockedNote } from '../menu/PhotoBlockedNote';
-import { PendingButton } from '../ui/PendingButton';
 
-/** One combo in a category list: same row shell as a dish row, with a switch and a trash button. */
+/** One combo in a category list: same row shell as a dish row, with a switch. Deleting lives in the editor's footer, not here. */
 export function ComboRow({
   combo,
   selected,
   switching,
-  confirmingDelete,
-  deleting,
   money,
   dishCount,
   onOpen,
   onToggle,
   photoBlockedMessage,
-  onAskDelete,
-  onConfirmDelete,
-  onCancelDelete,
 }: {
   combo: ComboDto;
   selected: boolean;
   switching: boolean;
-  confirmingDelete: boolean;
-  deleting: boolean;
   money: (cents: number) => string;
   dishCount: (ids: string[]) => number;
   onOpen: () => void;
   onToggle: () => void;
   /** Shown under the name right after the switch was refused because the combo has no photo. */
   photoBlockedMessage?: string;
-  onAskDelete: () => void;
-  onConfirmDelete: () => void;
-  onCancelDelete: () => void;
 }) {
   const { t } = useTranslation();
   const c = combo;
@@ -71,6 +59,7 @@ export function ComboRow({
             <span className={c.isAvailable ? badgeClass.good : badgeClass.neutral}>
               {c.isAvailable ? t('combos.statusOn') : t('combos.statusOff')}
             </span>
+            {!photo && <span className={badgeClass.warn}>{t('combos.missingPhoto')}</span>}
             {c.bmfDrinkShare && (
               <span className={badgeClass.neutral} title={t('combos.bmfHelp')}>
                 {t('combos.bmfBadge')}
@@ -80,9 +69,6 @@ export function ComboRow({
           <span className="text-[13px] text-[#6b6058]">
             {c.groups.map((g) => t('combos.groupSummary', { name: g.name, count: dishCount(g.productIds) })).join(' · ')}
           </span>
-          {!photo && (
-            <span className="self-start rounded-full bg-[#fff6e0] px-2 py-0.5 text-xs font-semibold text-[#8a5a00]">{t('combos.missingPhoto')}</span>
-          )}
           {photoBlockedMessage && <PhotoBlockedNote message={photoBlockedMessage} onAddPhoto={onOpen} />}
         </div>
         <span className="min-w-14 flex-shrink-0 text-right text-[15px] font-bold sm:w-20">{money(c.priceCents)}</span>
@@ -92,35 +78,7 @@ export function ComboRow({
           ariaLabel={t('dishes.availableFor', { name: c.name })}
           onToggle={onToggle}
         />
-        <button
-          type="button"
-          aria-label={t('combos.delete')}
-          onClick={(e) => {
-            e.stopPropagation();
-            onAskDelete();
-          }}
-          onKeyDown={(e) => e.stopPropagation()}
-          className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full text-[#b42318] transition-colors hover:bg-[#fdeceb] focus:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2"
-        >
-          <Trash2 size={16} aria-hidden="true" />
-        </button>
       </div>
-      {confirmingDelete && (
-        <div className="flex flex-wrap items-center gap-3 border-b border-[#f5c2bd] bg-[#fdeceb] px-4 py-2.5">
-          <span className="min-w-0 flex-1 text-sm text-[#b42318]">{t('combos.deleteConfirm', { name: c.name })}</span>
-          <PendingButton
-            type="button"
-            isPending={deleting}
-            onClick={onConfirmDelete}
-            className="h-[34px] rounded-full bg-[#b42318] px-3.5 text-[13px] font-bold text-white hover:bg-[#912018] disabled:opacity-40"
-          >
-            {deleting ? '…' : t('combos.delete')}
-          </PendingButton>
-          <button type="button" className={pillClass(false)} onClick={onCancelDelete}>
-            {t('combos.cancel')}
-          </button>
-        </div>
-      )}
     </div>
   );
 }

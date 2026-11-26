@@ -3,6 +3,9 @@ import type { TranslationMap } from '../../services/api';
 import type { ComboBody, ComboDto } from '../../services/combosApi';
 
 export interface ComboGroupForm {
+  /** Client-side identity, set once when the choice is created (the server id when it has one). Used as React key and drag id; never sent. */
+  key: string;
+  /** The server's id for a saved choice; absent until the combo is first saved. */
   id?: string;
   name: string;
   nameTranslations: TranslationMap;
@@ -23,20 +26,25 @@ export interface ComboForm {
 
 export type ComboFormError = 'name' | 'price' | 'category' | 'groups' | 'translation';
 
-export const EMPTY_COMBO_FORM: ComboForm = {
-  name: '',
-  nameTranslations: {},
-  description: '',
-  descriptionTranslations: {},
-  price: '',
-  categoryId: '',
-  bmfDrinkShare: false,
-  isAvailable: true,
-  groups: [
-    { name: '', nameTranslations: {}, productIds: [] },
-    { name: '', nameTranslations: {}, productIds: [] },
-  ],
-};
+/** A blank choice with a fresh client key. */
+export function newComboGroup(): ComboGroupForm {
+  return { key: crypto.randomUUID(), name: '', nameTranslations: {}, productIds: [] };
+}
+
+/** A blank form for a new combo: one empty choice (1 to 5 are allowed). */
+export function emptyComboForm(): ComboForm {
+  return {
+    name: '',
+    nameTranslations: {},
+    description: '',
+    descriptionTranslations: {},
+    price: '',
+    categoryId: '',
+    bmfDrinkShare: false,
+    isAvailable: true,
+    groups: [newComboGroup()],
+    };
+}
 
 export const MAX_NAME_TRANSLATION = 120;
 export const MAX_DESCRIPTION_TRANSLATION = 2000;
@@ -123,6 +131,7 @@ export function formFromCombo(c: ComboDto, dishIds: ReadonlySet<string>): ComboF
     bmfDrinkShare: c.bmfDrinkShare,
     isAvailable: c.isAvailable,
     groups: c.groups.map((g) => ({
+      key: g.id ?? crypto.randomUUID(),
       id: g.id,
       name: g.name,
       nameTranslations: g.nameTranslations ?? {},
