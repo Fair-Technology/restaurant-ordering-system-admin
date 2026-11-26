@@ -3306,6 +3306,7 @@ export type GetShopResultDto = {
     connectOnboardingStatus: ("not_started" | "pending" | "complete") | null;
   } | null;
   orderSettings: OrderSettings;
+  scheduleHorizonDays: number;
   createdAt: string;
   updatedAt: string;
 };
