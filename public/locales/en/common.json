@@ -290,24 +290,80 @@
     "paymentsDisconnectConfirmYes": "Yes, disconnect",
     "paymentsDisconnectCancel": "Cancel",
     "paymentsError": "Failed to load payment setup.",
-    "goLiveTitle": "Go-live checklist",
-    "goLiveNotReady": "Your shop is not ready to go live. Please complete the items below.",
-    "goLiveFix": "Fix",
-    "goLiveClose": "Close",
-    "goLiveRemaining": "remaining",
-    "goLiveCriteria": {
-      "stripe_connected": "Connect Stripe — every order is paid online",
-      "has_products": "Publish at least one dish",
-      "has_categories": "Create at least one category",
-      "profile_name": "Set your shop name",
-      "profile_address": "Complete your shop address",
-      "opening_hours": "Set opening hours for at least one day",
-      "dpa_accepted": "Accept the current data processing agreement (DPA)",
-      "impressum": "Complete your Impressum",
-      "terms": "Publish your terms and conditions",
-      "withdrawal": "Publish your withdrawal policy",
-      "privacy_notice": "Generate your privacy notice",
-      "invoice_tax_id": "Add a tax number or VAT ID for invoices"
+    "goLive": {
+      "title": "Go-live checklist",
+      "lead": "Your shop isn't ready to go live yet. Finish the items below, then guests can order.",
+      "leadDone": "Everything is done. You can switch your shop online now.",
+      "close": "Close",
+      "switchOnline": "Switch shop online",
+      "switchingOnline": "Switching online…",
+      "progressLabel": "Progress",
+      "doneOf": "{{done}} of {{total}} done",
+      "groupCount": "{{done}} of {{total}}",
+      "done": "Done",
+      "setup": "Set up",
+      "setupAria": "{{title}} — set up",
+      "openCount_one": "{{count}} item still open",
+      "openCount_other": "{{count}} items still open",
+      "openCountZero": "No items open",
+      "error": "Could not switch the shop online. Please try again.",
+      "groups": {
+        "payments": "Payments",
+        "menu": "Menu",
+        "shop": "Shop",
+        "legal": "Legal and invoices",
+        "fallback": "Other"
+      },
+      "criteria": {
+        "stripe_connected": {
+          "title": "Connect Stripe",
+          "hint": "Every order is paid online — required before you can go live."
+        },
+        "has_products": {
+          "title": "Add a dish",
+          "hint": "At least one dish switched on, with allergens and additives declared."
+        },
+        "has_categories": {
+          "title": "Create a category",
+          "hint": "At least one category to organise your menu."
+        },
+        "profile_name": {
+          "title": "Set your shop name",
+          "hint": "Shown to guests throughout your shop."
+        },
+        "profile_address": {
+          "title": "Complete your address",
+          "hint": "Shown to guests in your shop."
+        },
+        "opening_hours": {
+          "title": "Set opening hours",
+          "hint": "At least one day needs opening hours."
+        },
+        "dpa_accepted": {
+          "title": "Accept the data processing agreement",
+          "hint": "Accept the current version of the DPA."
+        },
+        "impressum": {
+          "title": "Complete your Impressum",
+          "hint": "Linked in your shop for guests."
+        },
+        "terms": {
+          "title": "Publish your terms and conditions",
+          "hint": "Guests confirm them when they order."
+        },
+        "withdrawal": {
+          "title": "Publish your withdrawal policy",
+          "hint": "Linked in your shop for guests."
+        },
+        "privacy_notice": {
+          "title": "Generate your privacy notice",
+          "hint": "Needs your Impressum and the platform operator's details."
+        },
+        "invoice_tax_id": {
+          "title": "Add a tax number or VAT ID",
+          "hint": "Printed on your invoices."
+        }
+      }
     },
     "offlineTitle": "Take the shop offline?",
     "pauseMessageLabel": "Pause message",
