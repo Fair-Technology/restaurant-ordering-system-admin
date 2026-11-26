@@ -309,6 +309,14 @@ export function ShopSettingsPage() {
       setAddressError(t('shops.addressStateRequired'));
       return;
     }
+    // Same completeness rule as the backend: once complete, the address locks on save.
+    const willLock =
+      !!currentAddress.street.trim() &&
+      !!currentAddress.city.trim() &&
+      !!currentAddress.postcode.trim() &&
+      !!currentAddress.country.trim() &&
+      (stateField.kind !== 'select' || !!currentAddress.state.trim());
+    if (willLock && !window.confirm(t('shops.addressConfirmLock'))) return;
     setIsSavingAddress(true);
     try {
       await updateShop({
@@ -317,8 +325,11 @@ export function ShopSettingsPage() {
       }).unwrap();
       toast.success(t('shops.addressSaved'));
       refetch();
-    } catch {
-      setAddressError(t('shops.addressFailedToSave'));
+    } catch (err) {
+      const code = (err as { data?: { code?: string } })?.data?.code;
+      setAddressError(code === 'SHOP_ADDRESS_LOCKED' ? t('shops.addressLockedError') : t('shops.addressFailedToSave'));
+      // A stale editable view corrects itself once the server reports the address as locked.
+      refetch();
     } finally {
       setIsSavingAddress(false);
     }
@@ -606,21 +617,25 @@ export function ShopSettingsPage() {
             description={t('shops.settingsPage.addressDescription')}
             padded
           >
+            {!shop.addressLocked && <p className="mb-3 text-xs text-muted">{t('shops.addressOneTimeNotice')}</p>}
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="sm:col-span-2">
                 <MyInput
                   label={t('shops.addressStreet')}
+                  disabled={shop.addressLocked}
                   value={currentAddress.street}
                   onChange={(e) => setAddressState({ ...currentAddress, street: e.target.value })}
                 />
               </div>
               <MyInput
                 label={t('shops.addressPostcode')}
+                disabled={shop.addressLocked}
                 value={currentAddress.postcode}
                 onChange={(e) => setAddressState({ ...currentAddress, postcode: e.target.value })}
               />
               <MyInput
                 label={t('shops.addressCity')}
+                disabled={shop.addressLocked}
                 value={currentAddress.city}
                 onChange={(e) => setAddressState({ ...currentAddress, city: e.target.value })}
               />
@@ -629,6 +644,7 @@ export function ShopSettingsPage() {
                   <MySelect
                     label={t('shops.addressState')}
                     value={stateField.value}
+                    disabled={shop.addressLocked}
                     aria-describedby={stateField.isLegacy ? 'address-state-legacy-hint' : undefined}
                     onChange={(e) => setAddressState({ ...currentAddress, state: e.target.value })}
                   >
@@ -650,16 +666,20 @@ export function ShopSettingsPage() {
                 <MyInput
                   label={t('shops.addressCountry')}
                   value={currentAddress.country}
-                  onChange={(e) => setAddressState({ ...currentAddress, country: e.target.value })}
+                  disabled
                 />
               </div>
             </div>
             {addressError && <p className={`mt-3 ${ERROR_CLASS}`}>{addressError}</p>}
-            <div className={FOOTER_CLASS}>
-              <MyButton onClick={handleSaveAddress} isPending={isSavingAddress}>
-                {isSavingAddress ? t('shops.addressSaving') : t('shops.addressSave')}
-              </MyButton>
-            </div>
+            {shop.addressLocked ? (
+              <p className="mt-3 text-xs text-muted">{t('shops.addressLockedNotice')}</p>
+            ) : (
+              <div className={FOOTER_CLASS}>
+                <MyButton onClick={handleSaveAddress} isPending={isSavingAddress}>
+                  {isSavingAddress ? t('shops.addressSaving') : t('shops.addressSave')}
+                </MyButton>
+              </div>
+            )}
           </Section>
 
           <Section title="QR Code" description={t('shops.settingsPage.qrDescription')} padded>
