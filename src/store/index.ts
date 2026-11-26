@@ -1,5 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { baseApi } from '../services/baseApi';
+import '../services/shopCreationRefreshesMe';
 
 export const store = configureStore({
   reducer: {

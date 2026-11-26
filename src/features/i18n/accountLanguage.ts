@@ -12,13 +12,17 @@ export function supportedBrowserLanguage(nav: Pick<Navigator, 'language'> = navi
  * (undefined/null = nothing saved yet) and the restaurant's language to fall back to when the
  * browser's language isn't supported (spec §11). First sign-in: the browser's language if
  * supported, else the restaurant's; either way, report that it must be persisted so it sticks
- * for next time. */
+ * for next time. When there is no restaurant yet and the browser language is unsupported, show
+ * English for this session without persisting it, so the account stays unset until a real
+ * restaurant language is available. */
 export function resolveLoginLanguage(
   stored: AccountLanguage | null | undefined,
-  restaurantLanguage: AccountLanguage,
+  restaurantLanguage: AccountLanguage | null | undefined,
   nav?: Pick<Navigator, 'language'>,
 ): { language: AccountLanguage; persist: boolean } {
   if (stored) return { language: stored, persist: false };
   const browser = supportedBrowserLanguage(nav);
-  return { language: browser ?? restaurantLanguage, persist: true };
+  if (browser) return { language: browser, persist: true };
+  if (restaurantLanguage) return { language: restaurantLanguage, persist: true };
+  return { language: 'en', persist: false };
 }
