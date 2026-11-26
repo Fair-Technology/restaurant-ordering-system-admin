@@ -2561,6 +2561,14 @@
               "type": "string"
             },
             "description": "Preferred menu language; falls back to the original"
+          },
+          {
+            "name": "at",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -2969,6 +2977,87 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApplyCategoryTaxClassResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/shops/{shopId}/categories/{categoryId}/combo-order": {
+      "put": {
+        "summary": "Set the order of a category's combos",
+        "description": "Access: manage_menu. Body: { productIds } — exactly the combos currently in the category, in the intended order; unknown, foreign, deleted, duplicate or missing ids are rejected. Idempotent: only combos whose position changes are written. Not transactional across combos (last write wins per combo). Shares logic with dish-order.",
+        "operationId": "setCategoryComboOrder",
+        "tags": [
+          "Categories"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "shopId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "categoryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "productIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "productIds"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Combo order saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetCategoryComboOrderResultDto"
                 }
               }
             }
@@ -8749,6 +8838,65 @@
         ],
         "additionalProperties": false
       },
+      "CatalogOtherTimeDishDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number"
+          },
+          "schedule": {
+            "$ref": "#/components/schemas/CatalogProductScheduleDto"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "price",
+          "schedule"
+        ],
+        "additionalProperties": false
+      },
+      "CatalogProductScheduleDto": {
+        "type": "object",
+        "properties": {
+          "startDate": {
+            "type": "string"
+          },
+          "endDate": {
+            "type": "string",
+            "nullable": true
+          },
+          "daysOfWeek": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "nullable": true
+          },
+          "startTime": {
+            "type": "string",
+            "nullable": true
+          },
+          "endTime": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "startDate",
+          "endDate",
+          "daysOfWeek",
+          "startTime",
+          "endTime"
+        ],
+        "additionalProperties": false
+      },
       "CategoryDto": {
         "type": "object",
         "properties": {
@@ -14213,12 +14361,19 @@
             "items": {
               "$ref": "#/components/schemas/CatalogCategoryDto"
             }
+          },
+          "otherTimeDishes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CatalogOtherTimeDishDto"
+            }
           }
         },
         "required": [
           "language",
           "languages",
-          "categories"
+          "categories",
+          "otherTimeDishes"
         ],
         "additionalProperties": false
       },
@@ -14229,6 +14384,9 @@
             "type": "string"
           },
           "lang": {
+            "type": "string"
+          },
+          "at": {
             "type": "string"
           }
         },
@@ -14502,6 +14660,12 @@
               ]
             }
           },
+          "categoryOrder": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            }
+          },
           "createdAt": {
             "type": "string"
           },
@@ -14523,6 +14687,61 @@
           "groups",
           "createdAt",
           "updatedAt"
+        ],
+        "additionalProperties": false
+      },
+      "SetCategoryComboOrderResultDto": {
+        "type": "object",
+        "properties": {
+          "categoryId": {
+            "type": "string"
+          },
+          "products": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "name"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "categoryId",
+          "products"
+        ],
+        "additionalProperties": false
+      },
+      "SetCategoryComboOrderRequestDto": {
+        "type": "object",
+        "properties": {
+          "shopId": {
+            "type": "string"
+          },
+          "categoryId": {
+            "type": "string"
+          },
+          "productIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "shopId",
+          "categoryId",
+          "productIds"
         ],
         "additionalProperties": false
       },
@@ -15775,6 +15994,9 @@
           "orderRef": {
             "type": "string"
           },
+          "emailsEnabled": {
+            "type": "boolean"
+          },
           "shopSlug": {
             "type": "string"
           },
@@ -15963,6 +16185,7 @@
         "required": [
           "orderId",
           "orderRef",
+          "emailsEnabled",
           "shopSlug",
           "shopName",
           "sellerPhone",
@@ -16284,6 +16507,9 @@
           "fulfilmentMode": {
             "$ref": "#/components/schemas/FulfilmentMode"
           },
+          "scheduleHorizonDays": {
+            "type": "number"
+          },
           "lines": {
             "type": "array",
             "items": {
@@ -16411,6 +16637,7 @@
         "required": [
           "currency",
           "fulfilmentMode",
+          "scheduleHorizonDays",
           "lines",
           "subtotalCents",
           "deliveryFeeCents",
@@ -20263,10 +20490,22 @@
         "properties": {
           "maxShopsDefault": {
             "type": "number"
+          },
+          "emailEnabled": {
+            "type": "boolean"
+          },
+          "scheduleHorizonDays": {
+            "type": "number"
+          },
+          "emailTransportConfigured": {
+            "type": "boolean"
           }
         },
         "required": [
-          "maxShopsDefault"
+          "maxShopsDefault",
+          "emailEnabled",
+          "scheduleHorizonDays",
+          "emailTransportConfigured"
         ],
         "additionalProperties": false
       },
@@ -20297,10 +20536,18 @@
         "properties": {
           "maxShopsDefault": {
             "type": "number"
+          },
+          "emailEnabled": {
+            "type": "boolean"
+          },
+          "scheduleHorizonDays": {
+            "type": "number"
           }
         },
         "required": [
-          "maxShopsDefault"
+          "maxShopsDefault",
+          "emailEnabled",
+          "scheduleHorizonDays"
         ],
         "additionalProperties": false
       },
@@ -20309,11 +20556,14 @@
         "properties": {
           "maxShopsDefault": {
             "type": "number"
+          },
+          "emailEnabled": {
+            "type": "boolean"
+          },
+          "scheduleHorizonDays": {
+            "type": "number"
           }
         },
-        "required": [
-          "maxShopsDefault"
-        ],
         "additionalProperties": false
       },
       "OrderLimitWithPaymentDto": {
