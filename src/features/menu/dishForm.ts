@@ -1,4 +1,4 @@
-import type { MenuLanguage, ProductDto, ShopOptionGroupDto, TranslationMap } from '../../services/api';
+import type { MenuLanguage, ProductDto, ProductSchedule, ShopOptionGroupDto, TranslationMap } from '../../services/api';
 import type { AddonGroup, VariantGroup } from '../../pages/ProductWizardSteps';
 import { EMPTY_FOOD_INFO, effectiveTaxClassId, foodInfoFromProduct, isFoodInfoDeclared, type FoodInfo } from './foodInfo';
 import { optionGroupsFromProduct } from './optionFoodInfo';
@@ -212,20 +212,73 @@ export function copyFromSimilarDish(
   categoriesList: ReadonlyArray<{ id?: string; taxClassId?: string | null }>,
 ): SimilarDishCopy {
   const categoryIds = source.categories?.map((c) => c.id).filter(Boolean) ?? [];
-  const groups = optionGroupsFromProduct(source);
-  // Dish-only groups get fresh ids so the new dish does not share ids with the one it was copied from.
-  const fresh = <O extends { id: string }>(options: O[]): O[] => options.map((o) => ({ ...o, id: crypto.randomUUID() }));
   return {
     categoryIds,
     optionGroupRefs: [...(source.optionGroupRefs ?? [])],
-    variantGroups: groups.variantGroups.map((g) => ({ ...g, id: crypto.randomUUID(), options: fresh(g.options) })),
-    addonGroups: groups.addonGroups.map((g) => ({ ...g, id: crypto.randomUUID(), options: fresh(g.options) })),
+    ...freshOptionGroupIds(optionGroupsFromProduct(source)),
     foodInfo: { taxClassId: effectiveTaxClassId(categoryIds, categoriesList, source.taxClassId ?? null) },
   };
+}
+
+/** Dish-only variant/addon groups (and their options) with fresh ids, so a copy never shares ids with the dish it came from. */
+export function freshOptionGroupIds<G extends { id: string; options: { id: string }[] }, A extends { id: string; options: { id: string }[] }>(
+  groups: { variantGroups: G[]; addonGroups: A[] },
+): { variantGroups: G[]; addonGroups: A[] } {
+  const fresh = <T extends { id: string; options: { id: string }[] }>(g: T): T => ({
+    ...g,
+    id: crypto.randomUUID(),
+    options: g.options.map((o) => ({ ...o, id: crypto.randomUUID() })),
+  });
+  return { variantGroups: groups.variantGroups.map(fresh), addonGroups: groups.addonGroups.map(fresh) };
 }
 
 /** Lays a similar dish's copy over the form, leaving every other field (allergens, additives, name, price …) as it was. */
 export function applySimilarDishCopy(state: DishFormState, copy: SimilarDishCopy): DishFormState {
   const { foodInfo, ...rest } = copy;
   return { ...state, ...rest, foodInfo: { ...state.foodInfo, taxClassId: foodInfo.taxClassId } };
+}
+
+/**
+ * What "Duplicate" copies: everything a dish owner typed except allergens, additives, dietary tags and spice level
+ * (those stay unconfirmed, like a brand new dish). The copy always starts off the menu. The schedule is not part of the
+ * form, so it rides alongside and goes straight into the create request.
+ */
+export type DuplicateDishCopy = Omit<DishFormState, 'foodInfo' | 'isAvailable'> & {
+  foodInfo: FoodInfo;
+  isAvailable: false;
+  schedule: ProductSchedule | null;
+};
+
+export function copyFromDuplicateDish(
+  source: ProductDto,
+  categoriesList: ReadonlyArray<{ id?: string; taxClassId?: string | null }>,
+  duplicateName: string,
+): DuplicateDishCopy {
+  const similar = copyFromSimilarDish(source, categoriesList);
+  return {
+    categoryIds: similar.categoryIds,
+    optionGroupRefs: similar.optionGroupRefs,
+    variantGroups: similar.variantGroups,
+    addonGroups: similar.addonGroups,
+    form: { name: duplicateName, description: source.description ?? '', price: source.price ?? 0 },
+    nameTranslations: { ...(source.nameTranslations ?? {}) },
+    descriptionTranslations: { ...(source.descriptionTranslations ?? {}) },
+    foodInfo: {
+      ...EMPTY_FOOD_INFO,
+      dietaryTagIds: [],
+      taxClassId: similar.foodInfo.taxClassId,
+      prepMinutes: source.prepMinutes ?? null,
+      unavailableModes: [...(source.unavailableModes ?? [])],
+      ageRestricted: source.ageRestricted ?? false,
+    },
+    isAvailable: false,
+    schedule: source.schedule ? { ...source.schedule } : null,
+  };
+}
+
+/** Duplicate replaces the whole form (it is the starting point, not a merge). The schedule is returned by `copyFromDuplicateDish` itself. */
+export function applyDuplicateDishCopy(copy: DuplicateDishCopy): DishFormState {
+  const { schedule, ...copied } = copy;
+  void schedule;
+  return { ...emptyDishFormState(), ...copied };
 }

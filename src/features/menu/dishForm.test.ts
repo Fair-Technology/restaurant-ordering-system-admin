@@ -7,6 +7,8 @@ import {
   addRequiredLeftCount,
   applySimilarDishCopy,
   extraGroupCount,
+  applyDuplicateDishCopy,
+  copyFromDuplicateDish,
   copyFromSimilarDish,
   emptyDishFormState,
   firstIncompleteAddSection,
@@ -258,5 +260,75 @@ describe('copyFromSimilarDish', () => {
     const applied = applySimilarDishCopy(target, copyFromSimilarDish(source, categoriesList));
     expect(applied.foodInfo.allergenIds).toEqual(['eggs']);
     expect(applied.foodInfo.additiveIds).toEqual([]);
+  });
+});
+
+describe('copyFromDuplicateDish', () => {
+  const source = {
+    id: 'orig', name: 'Carbonara', description: 'Creamy', price: 1200,
+    nameTranslations: { en: 'Carbonara EN' }, descriptionTranslations: { en: 'Creamy EN' },
+    categories: [{ id: 'c1', name: 'Pasta', sortOrder: 0 }, { id: 'c2', name: 'Mains', sortOrder: 0 }],
+    taxClassId: null, prepMinutes: 15, unavailableModes: ['delivery'], ageRestricted: true,
+    allergenIds: ['milk'], additiveIds: ['a1'], dietaryTagIds: ['vegan'], spiceLevel: 'hot',
+    isAvailable: true,
+    schedule: { startDate: '2026-01-01', endDate: null, daysOfWeek: [1, 2], offerPrice: 900, offerLabel: 'Deal' },
+    optionGroupRefs: ['g1'],
+    variantGroups: [{ id: 'vg', name: 'Size', options: [{ id: 'vo', name: 'Large', priceDelta: 100, isAvailable: true }] }],
+    addonGroups: [{ id: 'ag', name: 'Extras', minSelectable: 0, maxSelectable: 2, options: [{ id: 'ao', name: 'Cheese', priceDelta: 50, isAvailable: true }] }],
+  } as unknown as ProductDto;
+  const categoriesList = [{ id: 'c1', taxClassId: 'food' }, { id: 'c2', taxClassId: null }];
+
+  it('copies every listed field and uses the given name', () => {
+    const c = copyFromDuplicateDish(source, categoriesList, 'Carbonara (copy)');
+    expect(c.form).toEqual({ name: 'Carbonara (copy)', description: 'Creamy', price: 1200 });
+    expect(c.nameTranslations).toEqual({ en: 'Carbonara EN' });
+    expect(c.descriptionTranslations).toEqual({ en: 'Creamy EN' });
+    expect(c.categoryIds).toEqual(['c1', 'c2']);
+    expect(c.optionGroupRefs).toEqual(['g1']);
+    expect(c.foodInfo).toMatchObject({ taxClassId: 'food', prepMinutes: 15, unavailableModes: ['delivery'], ageRestricted: true });
+    expect(c.variantGroups[0]).toMatchObject({ name: 'Size' });
+    expect(c.variantGroups[0].options[0]).toMatchObject({ name: 'Large', priceDelta: 100 });
+    expect(c.addonGroups[0]).toMatchObject({ name: 'Extras', minSelectable: 0, maxSelectable: 2 });
+    expect(c.schedule).toEqual(source.schedule);
+  });
+
+  it("the dish's own tax class wins over its category's", () => {
+    expect(copyFromDuplicateDish({ ...source, taxClassId: 'drink' } as ProductDto, categoriesList, 'x').foodInfo.taxClassId).toBe('drink');
+  });
+
+  it('never carries allergens, additives, dietary tags or spice level', () => {
+    const f = copyFromDuplicateDish(source, categoriesList, 'x').foodInfo;
+    expect(f.allergenIds).toBeNull();
+    expect(f.additiveIds).toBeNull();
+    expect(f.dietaryTagIds).toEqual([]);
+    expect(f.spiceLevel).toBeNull();
+  });
+
+  it('gives dish-only groups and options fresh, unique ids', () => {
+    const c = copyFromDuplicateDish(source, categoriesList, 'x');
+    const ids = [c.variantGroups[0].id, c.variantGroups[0].options[0].id, c.addonGroups[0].id, c.addonGroups[0].options[0].id];
+    expect(ids.some((i) => ['vg', 'vo', 'ag', 'ao'].includes(i))).toBe(false);
+    expect(new Set(ids).size).toBe(4);
+    const again = copyFromDuplicateDish(source, categoriesList, 'x');
+    expect(again.variantGroups[0].id).not.toBe(c.variantGroups[0].id);
+    expect(source.variantGroups![0].id).toBe('vg'); // the source is untouched
+  });
+
+  it('always starts off the menu, even when the source is on', () => {
+    expect(copyFromDuplicateDish(source, categoriesList, 'x').isAvailable).toBe(false);
+    expect(applyDuplicateDishCopy(copyFromDuplicateDish(source, categoriesList, 'x')).isAvailable).toBe(false);
+  });
+
+  it('has no schedule when the source has none, and never copies the id', () => {
+    const c = copyFromDuplicateDish({ ...source, schedule: null } as unknown as ProductDto, categoriesList, 'x');
+    expect(c.schedule).toBeNull();
+    expect(JSON.stringify(c)).not.toContain('orig');
+  });
+
+  it('applyDuplicateDishCopy replaces the whole form and leaves the schedule out of it', () => {
+    const form = applyDuplicateDishCopy(copyFromDuplicateDish(source, categoriesList, 'Carbonara (copy)'));
+    expect(form).not.toHaveProperty('schedule');
+    expect(form.form.name).toBe('Carbonara (copy)');
+    expect(form.foodInfo.allergenIds).toBeNull();
   });
 });

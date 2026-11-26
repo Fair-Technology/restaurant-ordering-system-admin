@@ -90,6 +90,8 @@ const categories = [{ id: 'c1', name: 'Pasta', taxClassId: 'food' }, { id: 'c2',
 
 const onClose = vi.fn();
 const onAdded = vi.fn();
+const renderDuplicate = (source: ProductDto) =>
+  render(<AddDishPanel shopId="s1" currencySymbol="€" categoriesList={categories} onClose={onClose} onAdded={onAdded} duplicateFrom={source} />);
 const renderPanel = () =>
   render(<AddDishPanel shopId="s1" currencySymbol="€" categoriesList={categories} onClose={onClose} onAdded={onAdded} />);
 
@@ -336,5 +338,82 @@ describe('AddDishPanel start from a similar dish', () => {
     fireEvent.click(nav('Food info'));
     expect(screen.getAllByText('Not confirmed')).toHaveLength(2);
     expect(screen.getByRole('checkbox', { name: /Contains none of the/ }).getAttribute('aria-checked')).toBe('false');
+  });
+});
+
+describe('AddDishPanel duplicate mode', () => {
+  const source = {
+    ...carbonara,
+    description: 'Creamy', price: 1200, prepMinutes: 15, ageRestricted: false, isAvailable: true,
+    schedule: { startDate: '2026-01-01', offerPrice: 900, offerLabel: 'Deal' },
+    images: [],
+  } as unknown as ProductDto;
+  const originalFetch = globalThis.fetch;
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  it('prefills from the source, focuses and selects the name, and leaves allergens unconfirmed', () => {
+    renderDuplicate(source);
+    const name = screen.getByLabelText(/^Name/) as HTMLInputElement;
+    expect(name.value).toBe('Carbonara (copy)');
+    expect(document.activeElement).toBe(name);
+    expect(name.selectionStart).toBe(0);
+    expect(name.selectionEnd).toBe('Carbonara (copy)'.length);
+    expect(screen.getByText(lookup('dishForm.duplicate.notCopied'))).toBeTruthy();
+    expect(nav('Food info').textContent).toContain('Confirm allergens and additives');
+    expect(primary('2 required left')).toBeTruthy(); // name, price, category are copied
+  });
+
+  it('a plain Add does not focus the name or show the note', () => {
+    renderPanel();
+    expect(document.activeElement).not.toBe(screen.getByLabelText(/^Name/));
+    expect(screen.queryByText(lookup('dishForm.duplicate.notCopied'))).toBeNull();
+  });
+
+  it('opening saves nothing; Save as draft creates an OFF dish carrying the schedule and copied fields', async () => {
+    renderDuplicate(source);
+    expect(createProduct).not.toHaveBeenCalled();
+    fireEvent.click(draftBtn());
+    await waitFor(() => expect(createProduct).toHaveBeenCalledTimes(1));
+    const body = createProduct.mock.calls[0][0].createProductRequestDto;
+    expect(body).toMatchObject({
+      name: 'Carbonara (copy)', description: 'Creamy', price: 1200, categoryIds: ['c1'], prepMinutes: 15,
+      optionGroupRefs: ['g1'], isAvailable: false, allergenIds: null, additiveIds: null,
+      schedule: { startDate: '2026-01-01', offerPrice: 900, offerLabel: 'Deal' },
+    });
+  });
+
+  it('a plain Add sends no schedule', async () => {
+    renderPanel();
+    typeName('Spaghetti');
+    fireEvent.click(draftBtn());
+    await waitFor(() => expect(createProduct).toHaveBeenCalled());
+    expect(createProduct.mock.calls[0][0].createProductRequestDto).not.toHaveProperty('schedule');
+  });
+
+  it('copies the photo as a new file that is uploaded through the normal path', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, blob: () => Promise.resolve(new Blob(['img'], { type: 'image/png' })) });
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+    renderDuplicate({ ...source, images: [{ id: 'i1', url: 'https://img/orig.png' }] } as unknown as ProductDto);
+    await waitFor(() => expect(screen.getByText('has photo')).toBeTruthy());
+    expect(fetchMock).toHaveBeenCalledWith('https://img/orig.png');
+    expect(toastError).not.toHaveBeenCalled();
+    fireEvent.click(draftBtn());
+    await waitFor(() => expect(uploadImage).toHaveBeenCalledTimes(1));
+    const file = uploadImage.mock.calls[0][2] as File;
+    expect(file).toBeInstanceOf(File);
+    expect(file.type).toBe('image/png');
+    expect(uploadImage.mock.calls[0][1]).toBe('new1'); // the new dish, not the source
+  });
+
+  it('when the photo cannot be fetched, starts without a photo, highlights the field and toasts', async () => {
+    globalThis.fetch = vi.fn().mockRejectedValue(new TypeError('Failed to fetch (CORS)')) as unknown as typeof fetch;
+    renderDuplicate({ ...source, images: [{ id: 'i1', url: 'https://img/orig.png' }] } as unknown as ProductDto);
+    await waitFor(() => expect(toastError).toHaveBeenCalledWith(lookup('dishForm.duplicate.photoCopyFailed')));
+    expect(screen.getByText('no photo')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe(lookup('dishForm.duplicate.photoCopyFailed'));
+    fireEvent.click(screen.getByRole('button', { name: 'pick photo' })); // choosing one clears the highlight
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 });

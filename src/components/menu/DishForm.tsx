@@ -57,6 +57,9 @@ import { formatCents } from '../../utils/money';
 import type { FulfilmentMode } from '../../services/api';
 
 const focusRing = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2563eb]';
+/** The Name input's id while editing the original language, so Duplicate can focus it. */
+const DISH_NAME_INPUT_ID = 'dish-name-input';
+
 const toneText: Record<NavTone, string> = { ok: 'text-ok', warn: 'text-warn', muted: 'text-muted' };
 
 export interface DishFormProps {
@@ -91,6 +94,10 @@ export interface DishFormProps {
   availabilityExtras?: ReactNode;
   /** Edit-mode only: the Delete dish control. Rendered at the left of the footer, so it shows on every section. */
   deleteDish?: ReactNode;
+  /** Add mode only: opened via Duplicate, so the Name field is focused with its text selected once, on open. */
+  autoFocusName?: boolean;
+  /** Add mode only: a message that highlights the photo field (the photo of a duplicated dish could not be copied). */
+  photoCopyError?: string;
 
   // ── Add mode only (ignored when `mode` is `edit`) ──────────────────────────────
   /** The "Before you add it" list under the nav; each row jumps to its section. */
@@ -140,6 +147,8 @@ export function DishForm({
   startFromSimilarDish,
   availabilityExtras,
   deleteDish,
+  autoFocusName = false,
+  photoCopyError,
   requiredChecklist,
   addStatus,
   addRequiredLeft = 0,
@@ -161,6 +170,14 @@ export function DishForm({
   const [section, setSection] = useState<DishSection>('basics');
   const [pickedLanguage, setPickedLanguage] = useState<MenuLanguage | undefined>();
   const [tried, setTried] = useState(false);
+  // Duplicate: put the cursor in Name with its text selected so the owner can overtype the "(copy)" suffix.
+  useEffect(() => {
+    if (!autoFocusName) return;
+    const el = document.getElementById(DISH_NAME_INPUT_ID) as HTMLInputElement | null;
+    el?.focus();
+    el?.select();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only when first opened
+  }, []);
   // The owner tried to turn the dish on (or add it to the menu) without a photo; clears itself once a photo is there.
   const [enableBlocked, setEnableBlocked] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
@@ -379,6 +396,7 @@ export function DishForm({
                   langName={langName}
                   tried={tried}
                   enableBlocked={enableBlocked && photoMissing}
+                  photoCopyError={photoMissing ? photoCopyError : undefined}
                   nameMissing={nameMissing}
                   descMissing={descMissing}
                   photoMissing={photoMissing}
@@ -545,6 +563,7 @@ interface BasicsProps {
   tried: boolean;
   /** The owner tried to turn the dish on without a photo. */
   enableBlocked: boolean;
+  photoCopyError?: string;
   nameMissing: boolean;
   descMissing: boolean;
   photoMissing: boolean;
@@ -553,7 +572,7 @@ interface BasicsProps {
 
 function BasicsSection({
   mode, value, patch, patchFood, shopId, imageFile, setImageFile, existingImageUrl, categoriesList, refs, currency, currencySymbol,
-  translating, originalLanguage, labelLanguage, langName, tried, enableBlocked, nameMissing, descMissing, photoMissing, categoryMissing,
+  translating, originalLanguage, labelLanguage, langName, tried, enableBlocked, photoCopyError, nameMissing, descMissing, photoMissing, categoryMissing,
 }: BasicsProps) {
   const { t, i18n } = useTranslation();
   const adding = mode === 'add';
@@ -597,9 +616,9 @@ function BasicsSection({
           imageFile={imageFile}
           setImageFile={setImageFile}
           existingImageUrl={existingImageUrl}
-          photoError={enableBlocked && photoMissing}
+          photoError={(enableBlocked && photoMissing) || !!photoCopyError}
           label={t('dishes.editor.dishPhoto')}
-          errorText={t('products.enableNeedsPhotoInline')}
+          errorText={photoCopyError ?? t('products.enableNeedsPhotoInline')}
           {...(adding ? { requiredNote: t('dishForm.optionalBadge') } : {})}
         />
         <div className="flex min-w-0 flex-1 flex-col gap-[18px]">
@@ -609,6 +628,7 @@ function BasicsSection({
                 labelLanguage ? t('dishForm.nameLabel', { language: langName(labelLanguage) }) : t('products.name'),
                 translating ? t('dishForm.optionalBadge') : t('dishForm.requiredBadge'),
               )}
+              id={translating ? undefined : DISH_NAME_INPUT_ID}
               value={nameValue}
               placeholder={translating ? value.form.name : t('products.namePlaceholder')}
               onChange={(e) => setName(e.target.value)}

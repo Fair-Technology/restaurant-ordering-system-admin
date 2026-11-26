@@ -32,7 +32,7 @@ vi.mock('../../services/api', async (orig) => ({
 const toast = { success: vi.fn(), error: vi.fn() };
 const onDeleted = vi.fn();
 
-function setup() {
+function setup(extra: { canManage?: boolean; onDuplicate?: () => void } = {}) {
   render(
     <ToastContext.Provider value={toast}>
       <DishEditor
@@ -43,6 +43,7 @@ function setup() {
         onClose={vi.fn()}
         onSaved={vi.fn()}
         onDeleted={onDeleted}
+        {...extra}
       />
     </ToastContext.Provider>,
   );
@@ -88,6 +89,23 @@ describe('DishEditor — Delete dish', () => {
     expect(toast.error.mock.calls[0][0]).toContain('Dish is in an open order');
     expect(onDeleted).not.toHaveBeenCalled();
     expect(toast.success).not.toHaveBeenCalled();
+  });
+});
+
+describe('DishEditor — Duplicate dish', () => {
+  it('sits in the footer next to Delete and calls onDuplicate without calling the API', () => {
+    const onDuplicate = vi.fn();
+    setup({ canManage: true, onDuplicate });
+    fireEvent.click(screen.getByRole('button', { name: /dishes\.editor\.duplicateDish/ }));
+    expect(onDuplicate).toHaveBeenCalledTimes(1);
+    expect(updateMutate).not.toHaveBeenCalled();
+    expect(deleteBtn().previousElementSibling).toBe(screen.getByRole('button', { name: /dishes\.editor\.duplicateDish/ }));
+  });
+
+  it('is hidden without manage_menu', () => {
+    setup({ canManage: false, onDuplicate: vi.fn() });
+    expect(screen.queryByRole('button', { name: /dishes\.editor\.duplicateDish/ })).toBeNull();
+    expect(deleteBtn()).toBeTruthy();
   });
 });
 
