@@ -1138,6 +1138,75 @@
       "platform": "Platform",
       "system": "System",
       "staffDeleted": "Deleted staff account"
+    },
+    "subtitle": "Every change made to your restaurant, by whom and when.",
+    "noMatch": "No activity matches these filters.",
+    "who": "Who",
+    "whoEveryone": "Everyone",
+    "area": {
+      "all": "All",
+      "menu": "Menu",
+      "orders": "Orders",
+      "shop": "Shop",
+      "discounts": "Discounts",
+      "staff": "Staff",
+      "subscription": "Subscription"
+    },
+    "role": {
+      "owner": "Owner",
+      "staff": "Staff",
+      "superadmin": "Platform",
+      "system": "Automatic"
+    },
+    "column": {
+      "time": "Time",
+      "who": "Who",
+      "what": "What",
+      "item": "Item",
+      "details": "Details"
+    },
+    "day": {
+      "today": "Today",
+      "yesterday": "Yesterday"
+    },
+    "changesCount_one": "{{count}} change",
+    "changesCount_other": "{{count}} changes",
+    "noDetails": "No details",
+    "changeField": "Field",
+    "changeBefore": "Before",
+    "changeAfter": "After",
+    "showingRange": "Showing {{from}}–{{to}} of {{total}}",
+    "field": {
+      "name": "Name",
+      "price": "Price",
+      "description": "Description",
+      "category": "Category",
+      "available": "Available",
+      "maxShops": "Maximum restaurants",
+      "isDeleted": "Deleted",
+      "refundedCents": "Refunded amount",
+      "planId": "Plan",
+      "planSource": "Plan source",
+      "offlineBySuperadmin": "Offline by platform",
+      "offlineBySuperadminReason": "Reason for going offline",
+      "missedOrdersPauseLimit": "Missed-order pause limit",
+      "dpaVersion": "Data processing agreement version",
+      "taxNumber": "Tax number",
+      "invoiceLegalExtras": "Extra legal text on invoices",
+      "maxShopsDefault": "Default maximum restaurants",
+      "slug": "Web address",
+      "previousSlugs": "Previous web addresses",
+      "pendingNameChange": "Pending name change",
+      "taxClassId": "Tax class",
+      "autoAcceptHours": "Auto-accept hours",
+      "prepMinutes": "Preparation time (minutes)",
+      "deliveryZones": "Delivery zones",
+      "deliveryHours": "Delivery hours",
+      "alertEmail": "Alert email",
+      "closures": "Closures",
+      "closures.added": "Closures added",
+      "closures.removed": "Closures removed",
+      "branding.showHero": "Show cover image"
     }
   },
   "staff": {
@@ -1550,7 +1619,9 @@
   "common": {
     "cancel": "Cancel",
     "genericError": "Something went wrong. Please try again.",
-    "close": "Close"
+    "close": "Close",
+    "yes": "Yes",
+    "no": "No"
   },
   "dishes": {
     "dragHandle": "Drag to reorder",

@@ -1138,6 +1138,75 @@
       "platform": "Plattform",
       "system": "System",
       "staffDeleted": "Gelöschtes Mitarbeiterkonto"
+    },
+    "subtitle": "Jede Änderung an Ihrem Restaurant – von wem und wann.",
+    "noMatch": "Keine Aktivität entspricht diesen Filtern.",
+    "who": "Wer",
+    "whoEveryone": "Alle",
+    "area": {
+      "all": "Alle",
+      "menu": "Speisekarte",
+      "orders": "Bestellungen",
+      "shop": "Shop",
+      "discounts": "Rabatte",
+      "staff": "Personal",
+      "subscription": "Abo"
+    },
+    "role": {
+      "owner": "Inhaber",
+      "staff": "Mitarbeiter",
+      "superadmin": "Plattform",
+      "system": "Automatisch"
+    },
+    "column": {
+      "time": "Zeit",
+      "who": "Wer",
+      "what": "Was",
+      "item": "Objekt",
+      "details": "Details"
+    },
+    "day": {
+      "today": "Heute",
+      "yesterday": "Gestern"
+    },
+    "changesCount_one": "{{count}} Änderung",
+    "changesCount_other": "{{count}} Änderungen",
+    "noDetails": "Keine Details",
+    "changeField": "Feld",
+    "changeBefore": "Vorher",
+    "changeAfter": "Nachher",
+    "showingRange": "{{from}}–{{to}} von {{total}} angezeigt",
+    "field": {
+      "name": "Name",
+      "price": "Preis",
+      "description": "Beschreibung",
+      "category": "Kategorie",
+      "available": "Verfügbar",
+      "maxShops": "Maximale Restaurantanzahl",
+      "isDeleted": "Gelöscht",
+      "refundedCents": "Erstatteter Betrag",
+      "planId": "Tarif",
+      "planSource": "Tarifquelle",
+      "offlineBySuperadmin": "Von der Plattform offline genommen",
+      "offlineBySuperadminReason": "Grund für Offline-Schaltung",
+      "missedOrdersPauseLimit": "Pausengrenze für verpasste Bestellungen",
+      "dpaVersion": "Version der Auftragsverarbeitungsvereinbarung",
+      "taxNumber": "Steuernummer",
+      "invoiceLegalExtras": "Zusätzlicher Rechtstext auf Rechnungen",
+      "maxShopsDefault": "Standard-Maximum an Restaurants",
+      "slug": "Webadresse",
+      "previousSlugs": "Frühere Webadressen",
+      "pendingNameChange": "Ausstehende Namensänderung",
+      "taxClassId": "Steuerklasse",
+      "autoAcceptHours": "Zeiten der automatischen Annahme",
+      "prepMinutes": "Zubereitungszeit (Minuten)",
+      "deliveryZones": "Liefergebiete",
+      "deliveryHours": "Lieferzeiten",
+      "alertEmail": "E-Mail für Benachrichtigungen",
+      "closures": "Schließzeiten",
+      "closures.added": "Schließzeiten hinzugefügt",
+      "closures.removed": "Schließzeiten entfernt",
+      "branding.showHero": "Titelbild anzeigen"
     }
   },
   "staff": {
@@ -1550,7 +1619,9 @@
   "common": {
     "cancel": "Abbrechen",
     "genericError": "Etwas ist schiefgelaufen. Bitte erneut versuchen.",
-    "close": "Schließen"
+    "close": "Schließen",
+    "yes": "Ja",
+    "no": "Nein"
   },
   "dishes": {
     "dragHandle": "Zum Neuanordnen ziehen",
