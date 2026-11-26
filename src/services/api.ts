@@ -395,6 +395,8 @@ const injectedRtkApi = api
           params: {
             page: queryArg.page,
             pageSize: queryArg.pageSize,
+            area: queryArg.area,
+            actor: queryArg.actor,
           },
         }),
         providesTags: ["Audit"],
@@ -1571,6 +1573,8 @@ export type GetAuditEntriesApiArg = {
   shopId: string;
   page?: number;
   pageSize?: number;
+  area?: string;
+  actor?: string;
 };
 export type SetBusyModeApiResponse = /** status 200 Success */ BusyState;
 export type SetBusyModeApiArg = {
@@ -3310,6 +3314,10 @@ export type GetAuditEntriesResultDto = {
   actorLabels: {
     [key: string]: string;
   };
+  actors: {
+    key: string;
+    label: string;
+  }[];
 };
 export type BusyState = {
   active: boolean;
