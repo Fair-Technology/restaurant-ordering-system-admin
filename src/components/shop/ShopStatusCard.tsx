@@ -152,7 +152,15 @@ export function ShopStatusCard({ shop, onRefetch }: Props) {
       </div>
 
       {modal === 'criteria' && goLiveStatus && (
-        <GoLiveCriteriaModal shopId={shopId} status={goLiveStatus} onClose={() => setModal(null)} />
+        <GoLiveCriteriaModal
+          shopId={shopId}
+          status={goLiveStatus}
+          onClose={() => setModal(null)}
+          onSuccess={() => {
+            setModal(null);
+            onRefetch();
+          }}
+        />
       )}
       {modal === 'offline' && (
         <TakeShopOfflineModal

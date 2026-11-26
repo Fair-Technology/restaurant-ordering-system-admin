@@ -302,24 +302,80 @@
     "paymentsDisconnectConfirmYes": "Ja, trennen",
     "paymentsDisconnectCancel": "Abbrechen",
     "paymentsError": "Zahlungseinrichtung konnte nicht geladen werden.",
-    "goLiveTitle": "Go-Live-Checkliste",
-    "goLiveNotReady": "Ihr Shop ist noch nicht bereit, live zu gehen. Bitte schließen Sie die folgenden Punkte ab.",
-    "goLiveFix": "Beheben",
-    "goLiveClose": "Schließen",
-    "goLiveRemaining": "verbleibend",
-    "goLiveCriteria": {
-      "stripe_connected": "Stripe verbinden – jede Bestellung wird online bezahlt",
-      "has_products": "Mindestens ein Gericht veröffentlichen",
-      "has_categories": "Mindestens eine Kategorie anlegen",
-      "profile_name": "Name Ihres Shops festlegen",
-      "profile_address": "Shop-Adresse vervollständigen",
-      "opening_hours": "Öffnungszeiten für mindestens einen Tag festlegen",
-      "dpa_accepted": "Aktuellen Auftragsverarbeitungsvertrag (AVV) akzeptieren",
-      "impressum": "Impressum vervollständigen",
-      "terms": "Allgemeine Geschäftsbedingungen veröffentlichen",
-      "withdrawal": "Widerrufsbelehrung veröffentlichen",
-      "privacy_notice": "Datenschutzerklärung erstellen",
-      "invoice_tax_id": "Steuernummer oder USt-IdNr. für Rechnungen hinterlegen"
+    "goLive": {
+      "title": "Go-Live-Checkliste",
+      "lead": "Ihr Shop ist noch nicht bereit für den Go-Live. Erledigen Sie die folgenden Punkte, dann können Gäste bestellen.",
+      "leadDone": "Alles erledigt. Sie können Ihren Shop jetzt online schalten.",
+      "close": "Schließen",
+      "switchOnline": "Shop online schalten",
+      "switchingOnline": "Wird online geschaltet…",
+      "progressLabel": "Fortschritt",
+      "doneOf": "{{done}} von {{total}} erledigt",
+      "groupCount": "{{done}} von {{total}}",
+      "done": "Erledigt",
+      "setup": "Einrichten",
+      "setupAria": "{{title}} – einrichten",
+      "openCount_one": "{{count}} Punkt noch offen",
+      "openCount_other": "{{count}} Punkte noch offen",
+      "openCountZero": "Keine Punkte offen",
+      "error": "Der Shop konnte nicht online geschaltet werden. Bitte versuchen Sie es erneut.",
+      "groups": {
+        "payments": "Zahlungen",
+        "menu": "Speisekarte",
+        "shop": "Shop",
+        "legal": "Recht und Rechnungen",
+        "fallback": "Sonstiges"
+      },
+      "criteria": {
+        "stripe_connected": {
+          "title": "Stripe verbinden",
+          "hint": "Jede Bestellung wird online bezahlt – Voraussetzung für den Go-Live."
+        },
+        "has_products": {
+          "title": "Gericht hinzufügen",
+          "hint": "Mindestens ein aktives Gericht mit angegebenen Allergenen und Zusatzstoffen."
+        },
+        "has_categories": {
+          "title": "Kategorie anlegen",
+          "hint": "Mindestens eine Kategorie zur Gliederung Ihrer Speisekarte."
+        },
+        "profile_name": {
+          "title": "Shop-Namen festlegen",
+          "hint": "Wird Gästen überall in Ihrem Shop angezeigt."
+        },
+        "profile_address": {
+          "title": "Adresse vervollständigen",
+          "hint": "Wird Gästen in Ihrem Shop angezeigt."
+        },
+        "opening_hours": {
+          "title": "Öffnungszeiten festlegen",
+          "hint": "Für mindestens einen Tag sind Öffnungszeiten nötig."
+        },
+        "dpa_accepted": {
+          "title": "Auftragsverarbeitungsvertrag akzeptieren",
+          "hint": "Aktuelle Version des AVV akzeptieren."
+        },
+        "impressum": {
+          "title": "Impressum vervollständigen",
+          "hint": "Wird Gästen in Ihrem Shop verlinkt."
+        },
+        "terms": {
+          "title": "AGB veröffentlichen",
+          "hint": "Gäste bestätigen sie bei der Bestellung."
+        },
+        "withdrawal": {
+          "title": "Widerrufsbelehrung veröffentlichen",
+          "hint": "Wird Gästen in Ihrem Shop verlinkt."
+        },
+        "privacy_notice": {
+          "title": "Datenschutzerklärung erstellen",
+          "hint": "Benötigt Ihr Impressum und die Angaben des Plattformbetreibers."
+        },
+        "invoice_tax_id": {
+          "title": "Steuernummer oder USt-IdNr. hinterlegen",
+          "hint": "Wird auf Ihren Rechnungen ausgewiesen."
+        }
+      }
     },
     "offlineTitle": "Shop offline nehmen?",
     "pauseMessageLabel": "Pausennachricht",
