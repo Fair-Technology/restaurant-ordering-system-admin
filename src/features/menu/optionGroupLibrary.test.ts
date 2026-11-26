@@ -148,23 +148,24 @@ describe('option group page helpers', () => {
   ];
 
   it('filters by kind', () => {
-    expect(filterGroupsByKind(groups, 'all')).toHaveLength(3);
     expect(filterGroupsByKind(groups, 'variant').map((g) => g.id)).toEqual(['a']);
     expect(filterGroupsByKind(groups, 'addon').map((g) => g.id)).toEqual(['b', 'c']);
     expect(filterGroupsByKind([], 'variant')).toEqual([]);
   });
 
-  it('parses the kind tab from the URL, defaulting to all', () => {
+  it('parses the kind tab from the URL, defaulting to variant', () => {
     expect(parseKindFilter('variant')).toBe('variant');
     expect(parseKindFilter('addon')).toBe('addon');
-    expect(parseKindFilter(null)).toBe('all');
-    expect(parseKindFilter('nonsense')).toBe('all');
+    expect(parseKindFilter(null)).toBe('variant');
+    expect(parseKindFilter('nonsense')).toBe('variant');
+    expect(parseKindFilter('all')).toBe('variant');
   });
 
-  it('collapses lists longer than five options by default', () => {
-    expect(defaultGroupOpen(0)).toBe(true);
-    expect(defaultGroupOpen(5)).toBe(true);
+  it('always collapses groups by default', () => {
+    expect(defaultGroupOpen(0)).toBe(false);
+    expect(defaultGroupOpen(5)).toBe(false);
     expect(defaultGroupOpen(6)).toBe(false);
+    expect(defaultGroupOpen(100)).toBe(false);
   });
 
   it('counts unavailable options', () => {

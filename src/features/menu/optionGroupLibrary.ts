@@ -132,22 +132,21 @@ export function libraryGroupsForPicker(
     .sort((a, b) => rank(a.kind) - rank(b.kind) || a.name.localeCompare(b.name));
 }
 
-export type OptionGroupKindFilter = 'all' | OptionGroupKind;
+export type OptionGroupKindFilter = OptionGroupKind;
 
-/** Reads the `?kind=` tab; anything but `variant`/`addon` means All. */
+/** Reads the `?kind=` tab; anything but `addon` means the default `variant` tab. */
 export function parseKindFilter(value: string | null): OptionGroupKindFilter {
-  return value === 'variant' || value === 'addon' ? value : 'all';
+  return value === 'addon' ? 'addon' : 'variant';
 }
 
 export function filterGroupsByKind<T extends { kind: OptionGroupKind }>(groups: readonly T[], kind: OptionGroupKindFilter): T[] {
-  return groups.filter((g) => kind === 'all' || g.kind === kind);
+  return groups.filter((g) => g.kind === kind);
 }
 
-/** Lists with more options than this start collapsed. */
-export const COLLAPSE_OPTION_THRESHOLD = 5;
-
-export function defaultGroupOpen(optionCount: number): boolean {
-  return optionCount <= COLLAPSE_OPTION_THRESHOLD;
+/** Groups always start collapsed; the argument is kept so callers needn't change. */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function defaultGroupOpen(_optionCount: number): boolean {
+  return false;
 }
 
 export function unavailableOptionCount(options: ReadonlyArray<{ isAvailable: boolean }>): number {
