@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { cleanTranslations, comboFormToBody, comboPhotoMissing, comboPhotoUrl, formFromCombo, isComboImageRequiredToEnableError, type ComboForm } from './combos';
+import { cleanTranslations, emptyComboForm, comboFormToBody, comboPhotoMissing, comboPhotoUrl, formFromCombo, isComboImageRequiredToEnableError, type ComboForm } from './combos';
 
 const form: ComboForm = {
   name: ' Pasta-Menü ',
@@ -12,8 +12,8 @@ const form: ComboForm = {
   bmfDrinkShare: false,
   isAvailable: true,
   groups: [
-    { name: 'Hauptgericht', nameTranslations: {}, productIds: ['p1', 'p3'] },
-    { id: 'g-drink', name: 'Getränk ', nameTranslations: { en: ' Drink ' }, productIds: ['p2'] },
+    { key: 'k1', name: 'Hauptgericht', nameTranslations: {}, productIds: ['p1', 'p3'] },
+    { key: 'g-drink', id: 'g-drink', name: 'Getränk ', nameTranslations: { en: ' Drink ' }, productIds: ['p2'] },
   ],
 };
 
@@ -36,7 +36,7 @@ describe('combo form', () => {
   });
 
   it('refuses a bad form', () => {
-    const one = { name: 'A', nameTranslations: {}, productIds: ['p1'] };
+    const one = { key: 'k', name: 'A', nameTranslations: {}, productIds: ['p1'] };
     const cases: Array<[Partial<ComboForm>, string]> = [
       [{ name: '  ' }, 'name'],
       [{ price: '0' }, 'price'],
@@ -44,8 +44,8 @@ describe('combo form', () => {
       [{ price: '1000,01' }, 'price'],
       [{ categoryId: '' }, 'category'],
       [{ groups: [] }, 'groups'],
-      [{ groups: [{ name: '', nameTranslations: {}, productIds: ['p1'] }] }, 'groups'],
-      [{ groups: [{ name: 'A', nameTranslations: {}, productIds: [] }] }, 'groups'],
+      [{ groups: [{ key: 'k', name: '', nameTranslations: {}, productIds: ['p1'] }] }, 'groups'],
+      [{ groups: [{ key: 'k', name: 'A', nameTranslations: {}, productIds: [] }] }, 'groups'],
       [{ groups: [one, one, one, one, one, one] }, 'groups'],
       [{ nameTranslations: { en: 'x'.repeat(121) } }, 'translation'],
       [{ descriptionTranslations: { en: 'x'.repeat(2001) } }, 'translation'],
@@ -85,7 +85,7 @@ describe('combo form', () => {
       categoryId: 'c1',
       bmfDrinkShare: true,
       isAvailable: false,
-      groups: [{ id: 'g1', name: 'A', nameTranslations: { en: 'Pick' }, productIds: ['p1'] }],
+      groups: [{ key: 'g1', id: 'g1', name: 'A', nameTranslations: { en: 'Pick' }, productIds: ['p1'] }],
     });
   });
 
@@ -112,6 +112,23 @@ describe('combo form', () => {
     expect(
       comboPhotoUrl({ images: [{ id: 'a', url: 'u1' }, { id: 'b', url: 'u2' }] }),
     ).toBe('u2');
+  });
+});
+
+describe('client-side choice keys', () => {
+  it('give every new choice its own key, and a saved one its server id', () => {
+    const a = emptyComboForm();
+    const b = emptyComboForm();
+    expect(a.groups).toHaveLength(1);
+    expect(a.groups[0].key).not.toBe(b.groups[0].key);
+    expect(a.groups[0].id).toBeUndefined();
+  });
+
+  it('does not send the key, but keeps sending the server id', () => {
+    const body = comboFormToBody(form) as { groups: Array<Record<string, unknown>> };
+    expect(body.groups.every((g) => !('key' in g))).toBe(true);
+    expect(body.groups[1].id).toBe('g-drink');
+    expect('id' in body.groups[0]).toBe(false);
   });
 });
 

@@ -72,14 +72,14 @@ describe('pending wrapper contract', () => {
 // One entry per file with an awaiting control; `min` = pending-wrapped controls it must contain.
 const ASYNC_CONTROLS: Array<{ file: string; control: string; min: number }> = [
   { file: 'src/components/categories/CategoryEditor.tsx', control: 'apply tax class, save, delete category', min: 3 },
-  { file: 'src/components/combos/ComboEditor.tsx', control: 'save combo (create and edit forms)', min: 2 },
-  { file: 'src/components/combos/ComboRow.tsx', control: 'delete combo (confirm bar)', min: 1 },
+  { file: 'src/components/combos/ComboEditor.tsx', control: 'delete combo (footer confirm; save is the shared EditorShell button)', min: 1 },
+  { file: 'src/components/editor/EditorShell.tsx', control: 'save button of the shared dish/combo editor footer', min: 1 },
   { file: 'src/components/layout/AccountSettingsModal.tsx', control: 'language chips, sign out', min: 2 },
   { file: 'src/components/layout/AutoPausedBanner.tsx', control: 'resume orders', min: 1 },
   { file: 'src/components/layout/Sidebar.tsx', control: 'taking-orders switch', min: 1 },
   { file: 'src/components/menu/AvailabilitySwitch.tsx', control: 'availability switch (dish and combo rows)', min: 1 },
   { file: 'src/components/menu/DishEditor.tsx', control: 'delete dish', min: 1 },
-  { file: 'src/components/menu/DishForm.tsx', control: 'save dish, create category inline, save as draft, add to menu', min: 4 },
+  { file: 'src/components/menu/DishForm.tsx', control: 'create category inline, save as draft, add to menu (save dish is the shared EditorShell button)', min: 3 },
   { file: 'src/components/menu/OptionGroupDialog.tsx', control: 'save group', min: 1 },
   { file: 'src/components/menu/ScheduleOfferModal.tsx', control: 'save schedule', min: 1 },
   { file: 'src/components/orders/OrderDetail.tsx', control: 'accept, reject, next step, document download', min: 5 },

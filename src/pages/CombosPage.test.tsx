@@ -11,7 +11,6 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 vi.mock('../features/layout/usePageTitle', () => ({ usePageTitle: () => {} }));
-vi.mock('../features/menu/useIsWide', () => ({ useIsWide: () => false }));
 vi.mock('../contexts/ToastContext', () => ({ useToast: () => ({ success: vi.fn(), error: vi.fn() }) }));
 vi.mock('../components/combos/ComboEditor', () => ({
   ComboEditor: ({ combo }: { combo: { name: string } | null }) => <div data-testid="editor">{combo ? combo.name : 'new'}</div>,
@@ -89,13 +88,13 @@ describe('CombosPage', () => {
 
   it('shows live filter counts and filters the list', () => {
     renderPage();
-    expect(screen.getByRole('button', { name: /dishes\.filter\.all/ }).textContent).toContain('3');
-    expect(screen.getByRole('button', { name: /dishes\.filter\.onMenu/ }).textContent).toContain('2');
-    expect(screen.getByRole('button', { name: /dishes\.filter\.off/ }).textContent).toContain('1');
-    fireEvent.click(screen.getByRole('button', { name: /dishes\.filter\.off/ }));
+    expect(screen.getByRole('button', { name: /combos\.filter\.all/ }).textContent).toContain('3');
+    expect(screen.getByRole('button', { name: /combos\.filter\.onMenu/ }).textContent).toContain('2');
+    expect(screen.getByRole('button', { name: /combos\.filter\.off/ }).textContent).toContain('1');
+    fireEvent.click(screen.getByRole('button', { name: /combos\.filter\.off/ }));
     expect(screen.getByText('Steak Night')).toBeTruthy();
     expect(screen.queryByText('Pasta Deal')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: /dishes\.filter\.onMenu/ }));
+    fireEvent.click(screen.getByRole('button', { name: /combos\.filter\.onMenu/ }));
     expect(screen.queryByText('Steak Night')).toBeNull();
     expect(screen.getByText('Pasta Deal')).toBeTruthy();
   });
@@ -138,21 +137,54 @@ describe('CombosPage', () => {
     expect(screen.queryByTestId('editor')).toBeNull();
   });
 
-  it('delete asks for confirmation, then calls deleteProduct', async () => {
+  it('rows have no delete button: deleting lives in the editor', () => {
     renderPage();
-    const trash = screen.getAllByRole('button', { name: 'combos.delete' })[0];
-    fireEvent.click(trash);
-    expect(screen.getByText('combos.deleteConfirm:Pasta Deal')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'combos.delete' })).toBeNull();
     expect(m.deleteProduct).not.toHaveBeenCalled();
-    const confirm = screen.getAllByRole('button', { name: 'combos.delete' }).find((b) => b.textContent === 'combos.delete')!;
-    fireEvent.click(confirm);
-    await waitFor(() => expect(m.deleteProduct).toHaveBeenCalledWith({ productId: 'k1', shopId: 's1' }));
+  });
+
+  it('filters to combos without a photo, and counts them', () => {
+    m.combos.current = {
+      data: [
+        { ...combo('k1', 'Pasta Deal', 'c1'), images: [{ id: 'i', url: 'https://img/1.jpg' }] },
+        combo('k2', 'Steak Night', 'c2', false),
+      ],
+      isLoading: false,
+      isError: false,
+    };
+    renderPage();
+    expect(screen.getByRole('button', { name: /combos\.filter\.photoMissing/ }).textContent).toContain('1');
+    fireEvent.click(screen.getByRole('button', { name: /combos\.filter\.photoMissing/ }));
+    expect(screen.getByText('Steak Night')).toBeTruthy();
+    expect(screen.queryByText('Pasta Deal')).toBeNull();
+  });
+
+  it('shows the photo-missing badge inline with the other badges', () => {
+    renderPage();
+    const row = screen.getByText('Pasta Deal').parentElement!;
+    expect(within(row).getByText('combos.missingPhoto')).toBeTruthy();
+  });
+
+  it('each category header shows the count and the Price / On menu column labels', () => {
+    renderPage();
+    const lunch = screen.getByRole('heading', { name: 'Lunch' }).closest('section')!;
+    expect(within(lunch).getByText('2')).toBeTruthy();
+    expect(within(lunch).getByText('combos.columnPrice')).toBeTruthy();
+    expect(within(lunch).getByText('combos.columnOnMenu')).toBeTruthy();
+  });
+
+  it('the editor opens in a slide-over dialog; the New combo button opens it empty', () => {
+    renderPage();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /combos\.new/ }));
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByTestId('editor').textContent).toBe('new');
   });
 
   it('clicking a row opens its editor; ?combo= opens it on load', () => {
     const first = renderPage();
     fireEvent.click(screen.getByText('Steak Night'));
-    expect(screen.getByTestId('editor').textContent).toBe('Steak Night');
+    expect(within(screen.getByRole('dialog')).getByTestId('editor').textContent).toBe('Steak Night');
     first.unmount();
     renderPage('/shops/s1/combos?combo=k3');
     expect(screen.getByTestId('editor').textContent).toBe('Pizza Pair');

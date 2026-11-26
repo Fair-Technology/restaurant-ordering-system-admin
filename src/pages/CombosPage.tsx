@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Plus, Search, X } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import {
-  useDeleteProductMutation,
   useGetCategoriesByShopQuery,
   useGetProductsByShopQuery,
   useGetShopByIdQuery,
@@ -12,24 +11,21 @@ import { useGetCombosQuery, useUpdateComboMutation, type ComboBody, type ComboDt
 import { useToast } from '../contexts/ToastContext';
 import { formatCents } from '../utils/money';
 import { comboFormToBody, comboPhotoUrl, formFromCombo, isComboImageRequiredToEnableError } from '../features/combos/combos';
-import { useIsWide } from '../features/menu/useIsWide';
+import { COMBO_FILTERS, comboMatchesFilter, type ComboFilter } from '../features/combos/comboForm';
 import { ComboEditor } from '../components/combos/ComboEditor';
-import { Chip, EmptyNote, PageHeader, Section, SideCard, SideColumn, SplitPage, Toolbar } from '../components/layout/Page';
+import { Chip, EmptyNote, PageHeader, Section, SplitPage, Toolbar } from '../components/layout/Page';
+import { Drawer } from '../components/ui/Drawer';
 import { searchBoxClass } from '../components/layout/pageStyles';
 import { MyButton } from '../components/ui/MyButton';
 import { MySpinner } from '../components/ui/MySpinner';
 import { ComboRow } from '../components/combos/ComboRow';
 import { usePageTitle } from '../features/layout/usePageTitle';
 
-type ComboFilter = 'all' | 'onMenu' | 'off';
-const COMBO_FILTERS: ComboFilter[] = ['all', 'onMenu', 'off'];
-
 export function CombosPage() {
   usePageTitle('nav.combos');
   const { shopId } = useParams<{ shopId: string }>();
   const { t, i18n } = useTranslation();
   const toast = useToast();
-  const wide = useIsWide();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: shop, isLoading, isError } = useGetShopByIdQuery({ shopId: shopId! });
   const canManage = (shop?.callerPermissions ?? []).includes('manage_menu');
@@ -37,8 +33,6 @@ export function CombosPage() {
   const products = useGetProductsByShopQuery({ shopId: shopId!, includeUncategorized: true }, { skip: !canManage });
   const categories = useGetCategoriesByShopQuery({ shopId: shopId! }, { skip: !canManage });
   const [updateCombo, { isLoading: switching, originalArgs: switchingArgs }] = useUpdateComboMutation();
-  const [deleteProduct, { isLoading: deleting }] = useDeleteProductMutation();
-  const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   // The combo whose switch was just refused for having no photo; its row shows a hint for a few seconds.
   const [photoBlockedId, setPhotoBlockedId] = useState<string | null>(null);
@@ -133,16 +127,6 @@ export function CombosPage() {
     }
   };
 
-  const remove = async (c: ComboDto) => {
-    try {
-      await deleteProduct({ productId: c.id, shopId: shopId! }).unwrap();
-      setConfirmingId(null);
-      if (editing !== 'new' && editing?.id === c.id) setEditing(null);
-    } catch (err) {
-      toast.error(serverMessage(err));
-    }
-  };
-
   const editor = editing && (
     <ComboEditor
       key={editing === 'new' ? 'new' : editing.id}
@@ -152,24 +136,15 @@ export function CombosPage() {
       products={dishes}
       categories={liveCategories}
       onDone={() => setEditing(null)}
+      onClose={() => setEditing(null)}
+      onDeleted={() => setEditing(null)}
     />
   );
-  const editorTitle = editing === 'new' ? t('combos.new') : editing ? editing.name : t('nav.combos');
-  const closeButton = (
-    <button
-      type="button"
-      onClick={() => setEditing(null)}
-      aria-label={t('combos.cancel')}
-      className="rounded-full p-1.5 text-[#8a7f77] transition-colors hover:bg-sand hover:text-ink"
-    >
-      <X size={16} aria-hidden="true" />
-    </button>
-  );
+  const editorLabel = editing === 'new' ? t('combos.new') : editing ? t('combos.editor.dialogLabel', { name: editing.name }) : '';
 
   const q = query.trim().toLowerCase();
-  const matchesFilter = (c: ComboDto, f: ComboFilter) => f === 'all' || (f === 'onMenu' ? c.isAvailable : !c.isAvailable);
-  const countOf = (f: ComboFilter) => combos.data.filter((c) => matchesFilter(c, f)).length;
-  const visible = combos.data.filter((c) => matchesFilter(c, filter) && (!q || c.name.toLowerCase().includes(q)));
+  const countOf = (f: ComboFilter) => combos.data.filter((c) => comboMatchesFilter(c, f)).length;
+  const visible = combos.data.filter((c) => comboMatchesFilter(c, filter) && (!q || c.name.toLowerCase().includes(q)));
 
   // Combos grouped under the category they are shown in, in menu order; any without one at the end
   const groups = liveCategories
@@ -186,35 +161,17 @@ export function CombosPage() {
       combo={c}
       selected={editing !== 'new' && editing?.id === c.id}
       switching={switching && switchingArgs?.comboId === c.id}
-      confirmingDelete={confirmingId === c.id}
-      deleting={deleting}
       money={money}
       dishCount={dishCount}
       onOpen={() => setEditing(c)}
       onToggle={() => toggle(c)}
       photoBlockedMessage={photoBlockedId === c.id ? t('combos.enableNeedsPhotoInline') : undefined}
-      onAskDelete={() => setConfirmingId(c.id)}
-      onConfirmDelete={() => remove(c)}
-      onCancelDelete={() => setConfirmingId(null)}
     />
   );
 
-  const side = wide ? (
-    <SideColumn label={editorTitle} title={editorTitle} actions={editing && closeButton}>
-      <SideCard>{editor || <EmptyNote>{t('combos.selectHint')}</EmptyNote>}</SideCard>
-    </SideColumn>
-  ) : undefined;
-
   return (
-    <SplitPage side={side}>
+    <SplitPage>
       {header(combos.data.length)}
-
-      {/* Smaller screens: the editor opens above the list */}
-      {!wide && editing && (
-        <Section title={editorTitle} actions={closeButton}>
-          {editor}
-        </Section>
-      )}
 
       {combos.data.length > 0 && (
         <Toolbar>
@@ -231,7 +188,7 @@ export function CombosPage() {
           </label>
           {COMBO_FILTERS.map((f) => (
             <Chip key={f} active={filter === f} count={countOf(f)} onClick={() => setFilter(f)}>
-              {t(`dishes.filter.${f}`)}
+              {t(`combos.filter.${f}`)}
             </Chip>
           ))}
         </Toolbar>
@@ -247,10 +204,26 @@ export function CombosPage() {
         </Section>
       ) : (
         groups.map((g) => (
-          <Section key={g.id} title={g.name} count={g.items.length}>
+          <Section
+            key={g.id}
+            title={g.name}
+            count={g.items.length}
+            actions={
+              <div aria-hidden="true" className="hidden items-center text-xs font-semibold text-[#6b6058] sm:flex">
+                <span className="w-20 text-right">{t('combos.columnPrice')}</span>
+                <span className="-mr-1.5 w-14 text-center whitespace-nowrap">{t('combos.columnOnMenu')}</span>
+              </div>
+            }
+          >
             {g.items.map(comboRow)}
           </Section>
         ))
+      )}
+
+      {editing && (
+        <Drawer label={editorLabel} onClose={() => setEditing(null)} widthClassName="sm:w-[1240px] sm:max-w-full">
+          {editor}
+        </Drawer>
       )}
     </SplitPage>
   );

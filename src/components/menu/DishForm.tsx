@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from 'react';
+import { useEffect, useState, type Dispatch, type ReactNode, type SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -11,6 +11,7 @@ import { MySelect } from '../ui/MySelect';
 import { CurrencyInput } from '../ui/CurrencyInput';
 import { PendingButton } from '../ui/PendingButton';
 import { PillSwitch } from '../ui/PillSwitch';
+import { DiscardSaveButtons, EditorShell, LanguageToggle, SaveStatus, editorFocusRing, type EditorSection } from '../editor/EditorShell';
 import { useToast } from '../../contexts/ToastContext';
 import { DishPhotoField } from './DishPhotoField';
 import { OptionGroupDialog } from './OptionGroupDialog';
@@ -51,16 +52,13 @@ import {
   type DishFormState,
   type DishSection,
   type ListStatus,
-  type NavTone,
 } from '../../features/menu/dishForm';
 import { formatCents } from '../../utils/money';
 import type { FulfilmentMode } from '../../services/api';
 
-const focusRing = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2563eb]';
+const focusRing = editorFocusRing;
 /** The Name input's id while editing the original language, so Duplicate can focus it. */
 const DISH_NAME_INPUT_ID = 'dish-name-input';
-
-const toneText: Record<NavTone, string> = { ok: 'text-ok', warn: 'text-warn', muted: 'text-muted' };
 
 export interface DishFormProps {
   /** `edit` changes a saved dish; `add` is a new one. Nothing inside needs a dish id, so both share every part below. */
@@ -180,16 +178,11 @@ export function DishForm({
   }, []);
   // The owner tried to turn the dish on (or add it to the menu) without a photo; clears itself once a photo is there.
   const [enableBlocked, setEnableBlocked] = useState(false);
-  const mainRef = useRef<HTMLElement>(null);
 
   const originalLanguage = languages[0];
   const extraLanguage = languages[1];
   const activeLanguage = resolveActiveLanguage(languages, pickedLanguage);
   const translating = extraLanguage !== undefined && activeLanguage === extraLanguage ? extraLanguage : undefined;
-
-  useEffect(() => {
-    if (mainRef.current) mainRef.current.scrollTop = 0;
-  }, [section]);
 
   const patch = (p: Partial<DishFormState>) => setValue((v) => ({ ...v, ...p }));
   const patchFood = (p: Partial<DishFormState['foodInfo']>) => setValue((v) => ({ ...v, foodInfo: { ...v.foodInfo, ...p } }));
@@ -246,214 +239,105 @@ export function DishForm({
   const variantCount = variantSlotFilled(value, library);
   const extraCount = extraGroupCount(value, library);
 
-  return (
-    <div className="flex min-h-0 flex-1 flex-col text-ink">
-      {/* Header */}
-      <header className="flex h-[72px] flex-none items-center gap-4 border-b border-[#e6d9c6] pl-5 pr-7">
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label={t('dishes.editor.closeEditor')}
-          className={`inline-flex h-11 w-11 flex-none items-center justify-center rounded-full bg-sand hover:bg-[#ebe4dc] ${focusRing}`}
-        >
-          <X size={18} strokeWidth={2.5} aria-hidden="true" />
-        </button>
-        <div className="flex min-w-0 flex-col">
-          <h1 className="truncate text-[22px] font-bold leading-7">{value.form.name || t(mode === 'add' ? 'dishForm.newDish' : 'dishes.editor.untitledDish')}</h1>
-          <span className="truncate text-[13px] leading-[18px] text-muted">
-            {mode === 'edit'
-              ? t('dishForm.subtitleEdit', { categories: categoriesText })
-              : t(isAdded ? 'dishForm.subtitleAdded' : 'dishForm.subtitleAdd')}
-          </span>
-        </div>
-        <div className="ml-auto flex flex-none items-center gap-6">
-          {mode === 'edit' && (
-            <PillSwitch
-              checked={value.isAvailable}
-              onChange={(on) => {
-                if (on && photoMissing) {
-                  blockEnableWithoutPhoto();
-                  return;
-                }
-                setEnableBlocked(false);
-                patch({ isAvailable: on });
-              }}
-            >
-              {value.isAvailable ? t('dishForm.menuOn') : t('dishForm.menuOff')}
-            </PillSwitch>
-          )}
-          {extraLanguage && activeLanguage && (
-            <div role="group" aria-label={t('dishForm.language')} className="flex gap-0.5 rounded-full bg-sand p-[3px]">
-              {languages.map((l) => {
-                const on = l === activeLanguage;
-                return (
-                  <button
-                    key={l}
-                    type="button"
-                    aria-pressed={on}
-                    onClick={() => setPickedLanguage(l)}
-                    className={`inline-flex h-[38px] items-center gap-2 rounded-full px-[18px] text-sm font-semibold ${focusRing} ${on ? 'bg-ink text-white' : 'text-ink'}`}
-                  >
-                    {langName(l)}
-                    {mode === 'add' && l === extraLanguage && <span className="font-medium opacity-85">{t('dishForm.optionalBadge')}</span>}
-                    {mode === 'edit' && l === extraLanguage && extraMissing && (
-                      <span role="img" aria-label={t('dishForm.translationMissingDot')} className="h-2 w-2 rounded-full bg-warn-accent" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </header>
+  const sections: EditorSection<DishSection>[] = DISH_SECTIONS.map((s) => {
+    const st =
+      mode === 'add'
+        ? addNavStatus(s, value, requiredChecklist ?? [], variantCount, extraCount, tried)
+        : navStatus(s, value, extraLanguage, variantCount, extraCount);
+    const text =
+      st.key === 'translationMissing'
+        ? t(`dishForm.descriptionMissing.${st.language}`)
+        : st.key === 'variantExtras'
+          ? t('dishForm.nav.variantExtras', { variant: st.variantCount, extra: st.extraCount })
+          : st.key === 'requiredLeft'
+            ? t('dishForm.nav.requiredLeft', { count: st.count })
+            : t(`dishForm.nav.${st.key}`);
+    return { key: s, label: t(`dishForm.sectionNames.${s}`), status: { text, tone: st.tone } };
+  });
 
-      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
-        {/* Section nav */}
-        <nav
-          aria-label={t('dishForm.sections')}
-          className="flex flex-none gap-1.5 overflow-x-auto border-b border-[#e6d9c6] p-3 md:w-[236px] md:flex-col md:overflow-visible md:border-b-0 md:border-r md:px-4 md:py-5"
-        >
-          {DISH_SECTIONS.map((s) => {
-            const st =
-              mode === 'add'
-                ? addNavStatus(s, value, requiredChecklist ?? [], variantCount, extraCount, tried)
-                : navStatus(s, value, extraLanguage, variantCount, extraCount);
-            const active = s === section;
-            const status =
-              st.key === 'translationMissing'
-                ? t(`dishForm.descriptionMissing.${st.language}`)
-                : st.key === 'variantExtras'
-                  ? t('dishForm.nav.variantExtras', { variant: st.variantCount, extra: st.extraCount })
-                  : st.key === 'requiredLeft'
-                    ? t('dishForm.nav.requiredLeft', { count: st.count })
-                    : t(`dishForm.nav.${st.key}`);
-            return (
-              <button
-                key={s}
-                type="button"
-                aria-current={active ? 'page' : undefined}
-                onClick={() => setSection(s)}
-                className={`flex min-h-[60px] flex-none flex-col items-start justify-center gap-0.5 rounded-[14px] px-3.5 py-2 text-left ${focusRing} ${active ? 'bg-cream' : 'hover:bg-cream/60'}`}
-              >
-                <span className="text-[15px] font-semibold leading-5">{t(`dishForm.sectionNames.${s}`)}</span>
-                <span className={`text-[13px] font-medium leading-[18px] ${toneText[st.tone]}`}>{status}</span>
-              </button>
-            );
-          })}
-          {mode === 'add' && requiredChecklist && (
-            <div className="flex flex-none flex-col gap-1 md:mt-3.5 md:border-t md:border-line-soft md:pt-4">
-              <span className="px-3.5 text-xs font-semibold uppercase leading-4 tracking-[.06em] text-muted">{t('dishForm.checklist.title')}</span>
-              {requiredChecklist.map((c) => (
-                <button
-                  key={c.id}
-                  type="button"
-                  onClick={() => {
-                    setSection(c.section);
-                    if (c.section === 'basics') setPickedLanguage(originalLanguage);
-                  }}
-                  aria-label={t(c.done ? 'dishForm.checklist.done' : 'dishForm.checklist.notDone', {
-                    label: c.label,
-                    section: t(`dishForm.sectionNames.${c.section}`),
-                  })}
-                  className={`flex min-h-11 items-center gap-2.5 rounded-xl px-3.5 text-left text-sm font-medium hover:bg-cream/60 ${focusRing}`}
-                >
-                  <span
-                    aria-hidden="true"
-                    className={`flex h-5 w-5 flex-none items-center justify-center rounded-full border-2 ${c.done ? 'border-ok bg-ok' : 'border-control bg-white'}`}
-                  >
-                    {c.done && <Check size={12} strokeWidth={3.5} className="text-white" />}
-                  </span>
-                  <span className="whitespace-nowrap">{c.label}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </nav>
-
-        {/* Active section */}
-        <section ref={mainRef} aria-label={t(`dishForm.sectionNames.${section}`)} className="min-w-0 flex-1 overflow-y-auto px-6 pb-10 pt-7 md:px-9">
-          <div className="flex max-w-[720px] flex-col gap-7">
-            {mode === 'add' && isAdded && successBanner}
-            {section === 'basics' && (
-              <>
-                {mode === 'add' && startFromSimilarDish}
-                <BasicsSection
-                  mode={mode}
-                  value={value}
-                  patch={patch}
-                  patchFood={patchFood}
-                  shopId={shopId}
-                  imageFile={imageFile}
-                  setImageFile={setImageFile}
-                  existingImageUrl={existingImageUrl}
-                  categoriesList={categoriesList}
-                  refs={refs}
-                  currency={currency}
-                  currencySymbol={currencySymbol}
-                  translating={translating}
-                  originalLanguage={originalLanguage}
-                  labelLanguage={extraLanguage ? activeLanguage : undefined}
-                  langName={langName}
-                  tried={tried}
-                  enableBlocked={enableBlocked && photoMissing}
-                  photoCopyError={photoMissing ? photoCopyError : undefined}
-                  nameMissing={nameMissing}
-                  descMissing={descMissing}
-                  photoMissing={photoMissing}
-                  categoryMissing={categoryMissing}
-                />
-              </>
-            )}
-            {section === 'food' && <FoodSection value={value} patchFood={patchFood} refs={refs} />}
-            {section === 'options' && (
-              <OptionsSection
-                shopId={shopId}
-                value={value}
-                setValue={setValue}
-                library={library}
-                currency={currency}
-                refs={refs}
-                translating={translating}
-              />
-            )}
-            {section === 'availability' && (
-              <AvailabilitySection mode={mode} value={value} patchFood={patchFood}>
-                {mode === 'edit' && availabilityExtras}
-              </AvailabilitySection>
-            )}
-          </div>
-        </section>
-      </div>
-
-      {/* Footer */}
+  const headerExtra = (
+    <>
       {mode === 'edit' && (
-        <footer className="flex min-h-[72px] flex-none flex-wrap items-center gap-3 border-t border-[#e6d9c6] px-7 py-2">
-          {deleteDish}
-          <span role="status" className={`flex items-center gap-2 text-sm font-semibold leading-5 ${dirty ? 'text-warn' : 'text-ok'}`}>
-            <span aria-hidden="true" className={`h-2 w-2 rounded-full ${dirty ? 'bg-warn' : 'bg-ok'}`} />
-            {dirty ? t('dishes.editor.unsaved') : t('dishes.editor.allSaved')}
-          </span>
-          <button
-            type="button"
-            disabled={!dirty || isSaving}
-            onClick={discard}
-            className={`ml-auto h-12 rounded-full border-[1.5px] border-control bg-white px-6 text-[15px] font-semibold hover:bg-cream disabled:opacity-40 disabled:hover:bg-white ${focusRing}`}
-          >
-            {t('dishes.editor.discard')}
-          </button>
-          <PendingButton
-            type="button"
-            isPending={isSaving}
-            disabled={!dirty}
-            onClick={save}
-            className={`h-12 rounded-full bg-ink px-7 text-[15px] font-bold text-white hover:bg-black disabled:opacity-40 ${focusRing}`}
-          >
-            {saveLabel}
-          </PendingButton>
-        </footer>
+        <PillSwitch
+          checked={value.isAvailable}
+          onChange={(on) => {
+            if (on && photoMissing) {
+              blockEnableWithoutPhoto();
+              return;
+            }
+            setEnableBlocked(false);
+            patch({ isAvailable: on });
+          }}
+        >
+          {value.isAvailable ? t('dishForm.menuOn') : t('dishForm.menuOff')}
+        </PillSwitch>
       )}
-      {mode === 'add' && (
-        <footer className="flex min-h-[72px] flex-none flex-wrap items-center gap-3 border-t border-[#e6d9c6] px-7 py-2">
+      {extraLanguage && activeLanguage && (
+        <LanguageToggle
+          languages={languages}
+          active={activeLanguage}
+          onChange={setPickedLanguage}
+          groupLabel={t('dishForm.language')}
+          langName={langName}
+          renderBadge={(l) => (
+            <>
+              {mode === 'add' && l === extraLanguage && <span className="font-medium opacity-85">{t('dishForm.optionalBadge')}</span>}
+              {mode === 'edit' && l === extraLanguage && extraMissing && (
+                <span role="img" aria-label={t('dishForm.translationMissingDot')} className="h-2 w-2 rounded-full bg-warn-accent" />
+              )}
+            </>
+          )}
+        />
+      )}
+    </>
+  );
+
+  const navExtra =
+    mode === 'add' && requiredChecklist ? (
+      <div className="flex flex-none flex-col gap-1 md:mt-3.5 md:border-t md:border-line-soft md:pt-4">
+        <span className="px-3.5 text-xs font-semibold uppercase leading-4 tracking-[.06em] text-muted">{t('dishForm.checklist.title')}</span>
+        {requiredChecklist.map((c) => (
+          <button
+            key={c.id}
+            type="button"
+            onClick={() => {
+              setSection(c.section);
+              if (c.section === 'basics') setPickedLanguage(originalLanguage);
+            }}
+            aria-label={t(c.done ? 'dishForm.checklist.done' : 'dishForm.checklist.notDone', {
+              label: c.label,
+              section: t(`dishForm.sectionNames.${c.section}`),
+            })}
+            className={`flex min-h-11 items-center gap-2.5 rounded-xl px-3.5 text-left text-sm font-medium hover:bg-cream/60 ${focusRing}`}
+          >
+            <span
+              aria-hidden="true"
+              className={`flex h-5 w-5 flex-none items-center justify-center rounded-full border-2 ${c.done ? 'border-ok bg-ok' : 'border-control bg-white'}`}
+            >
+              {c.done && <Check size={12} strokeWidth={3.5} className="text-white" />}
+            </span>
+            <span className="whitespace-nowrap">{c.label}</span>
+          </button>
+        ))}
+      </div>
+    ) : undefined;
+
+  const footer =
+    mode === 'edit' ? (
+      <>
+        {deleteDish}
+        <SaveStatus dirty={dirty} unsavedText={t('dishes.editor.unsaved')} savedText={t('dishes.editor.allSaved')} />
+        <DiscardSaveButtons
+          dirty={dirty}
+          isSaving={isSaving}
+          onDiscard={discard}
+          onSave={save}
+          discardLabel={t('dishes.editor.discard')}
+          saveLabel={saveLabel}
+        />
+      </>
+    ) : (
+      <>
           <span role="status" className={`flex items-center gap-2 text-sm font-semibold leading-5 ${isAdded || addStatus?.tone === 'ok' ? 'text-ok' : 'text-muted'}`}>
             <span aria-hidden="true" className={`h-2 w-2 rounded-full ${isAdded || addStatus?.tone === 'ok' ? 'bg-ok' : 'bg-muted'}`} />
             {addStatus?.text}
@@ -511,9 +395,76 @@ export function DishForm({
               </PendingButton>
             </>
           )}
-        </footer>
+      </>
+    );
+
+  return (
+    <EditorShell
+      onClose={onClose}
+      closeLabel={t('dishes.editor.closeEditor')}
+      title={value.form.name || t(mode === 'add' ? 'dishForm.newDish' : 'dishes.editor.untitledDish')}
+      subtitle={
+        mode === 'edit'
+          ? t('dishForm.subtitleEdit', { categories: categoriesText })
+          : t(isAdded ? 'dishForm.subtitleAdded' : 'dishForm.subtitleAdd')
+      }
+      headerExtra={headerExtra}
+      navLabel={t('dishForm.sections')}
+      sections={sections}
+      activeSection={section}
+      onSectionChange={setSection}
+      navExtra={navExtra}
+      footer={footer}
+    >
+      {mode === 'add' && isAdded && successBanner}
+      {section === 'basics' && (
+        <>
+          {mode === 'add' && startFromSimilarDish}
+          <BasicsSection
+            mode={mode}
+            value={value}
+            patch={patch}
+            patchFood={patchFood}
+            shopId={shopId}
+            imageFile={imageFile}
+            setImageFile={setImageFile}
+            existingImageUrl={existingImageUrl}
+            categoriesList={categoriesList}
+            refs={refs}
+            currency={currency}
+            currencySymbol={currencySymbol}
+            translating={translating}
+            originalLanguage={originalLanguage}
+            labelLanguage={extraLanguage ? activeLanguage : undefined}
+            langName={langName}
+            tried={tried}
+            enableBlocked={enableBlocked && photoMissing}
+            photoCopyError={photoMissing ? photoCopyError : undefined}
+            nameMissing={nameMissing}
+            descMissing={descMissing}
+            photoMissing={photoMissing}
+            categoryMissing={categoryMissing}
+          />
+        </>
       )}
-    </div>
+      {section === 'food' && <FoodSection value={value} patchFood={patchFood} refs={refs} />}
+      {section === 'options' && (
+        <OptionsSection
+          shopId={shopId}
+          value={value}
+          setValue={setValue}
+          library={library}
+          currency={currency}
+          refs={refs}
+          translating={translating}
+        />
+      )}
+      {section === 'availability' && (
+        <AvailabilitySection mode={mode} value={value} patchFood={patchFood}>
+          {mode === 'edit' && availabilityExtras}
+        </AvailabilitySection>
+      )}
+    </EditorShell>
   );
 }
 
