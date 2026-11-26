@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { CombosPage } from './CombosPage';
 
@@ -10,8 +10,30 @@ vi.mock('react-i18next', () => ({
     i18n: { language: 'en' },
   }),
 }));
+const { toastSuccess, setComboOrderMock, dragEvent } = vi.hoisted(() => ({
+  toastSuccess: vi.fn(),
+  setComboOrderMock: vi.fn(),
+  dragEvent: { current: null as unknown },
+}));
+vi.mock('../services/comboOrderApi', () => ({
+  useSetCategoryComboOrderMutation: () => [(...args: unknown[]) => ({ unwrap: () => setComboOrderMock(...args) }), {}],
+}));
+// Real pointer drag physics are impractical in jsdom: DndContext becomes a pass-through with a hidden
+// trigger that feeds the queued drag event to that group's onDragEnd. useSortable/SortableContext stay real.
+vi.mock('@dnd-kit/core', async () => {
+  const actual = await vi.importActual<typeof import('@dnd-kit/core')>('@dnd-kit/core');
+  return {
+    ...actual,
+    DndContext: ({ children, onDragEnd }: { children: React.ReactNode; onDragEnd: (e: unknown) => void }) => (
+      <div>
+        {children}
+        <button type="button" data-testid="dnd-trigger" hidden onClick={() => onDragEnd(dragEvent.current)} />
+      </div>
+    ),
+  };
+});
 vi.mock('../features/layout/usePageTitle', () => ({ usePageTitle: () => {} }));
-vi.mock('../contexts/ToastContext', () => ({ useToast: () => ({ success: vi.fn(), error: vi.fn() }) }));
+vi.mock('../contexts/ToastContext', () => ({ useToast: () => ({ success: toastSuccess, error: vi.fn() }) }));
 vi.mock('../components/combos/ComboEditor', () => ({
   ComboEditor: ({ combo }: { combo: { name: string } | null }) => <div data-testid="editor">{combo ? combo.name : 'new'}</div>,
 }));
@@ -65,6 +87,8 @@ const renderPage = (url = '/shops/s1/combos') =>
   );
 
 beforeEach(() => {
+  toastSuccess.mockReset();
+  setComboOrderMock.mockReset();
   m.updateCombo.mockReset().mockResolvedValue({});
   m.deleteProduct.mockReset().mockResolvedValue({});
   m.shop.current = { data: { id: 's1', currency: 'EUR', callerPermissions: ['manage_menu'] }, isLoading: false, isError: false };
@@ -188,5 +212,90 @@ describe('CombosPage', () => {
     first.unmount();
     renderPage('/shops/s1/combos?combo=k3');
     expect(screen.getByTestId('editor').textContent).toBe('Pizza Pair');
+  });
+});
+
+describe('CombosPage combo reordering', () => {
+  const row = (name: string) => screen.getByText(name).closest('[role="button"]') as HTMLElement;
+  const handle = (name: string) => within(row(name)).getByLabelText('combos.dragHandle');
+  const order = (section: HTMLElement) =>
+    within(section)
+      .getAllByRole('button', { name: /Deal|Pair|Extra/ })
+      .filter((el) => el.getAttribute('role') === 'button' && el.tagName === 'DIV')
+      .map((el) => el.textContent!.match(/Pasta Deal|Pizza Pair|Extra Combo/)![0]);
+  const lunch = () => screen.getByRole('heading', { name: 'Lunch' }).closest('section') as HTMLElement;
+  const drag = async (activeId: string, overId: string, section = lunch()) => {
+    dragEvent.current = { active: { id: activeId }, over: { id: overId } };
+    await act(async () => { fireEvent.click(within(section).getByTestId('dnd-trigger')); });
+  };
+  const withExtra = () => {
+    m.combos.current = {
+      data: [
+        { ...combo('k1', 'Pasta Deal', 'c1') },
+        { ...combo('k3', 'Pizza Pair', 'c1'), categoryOrder: { c1: 0 } },
+        { ...combo('k4', 'Extra Combo', 'c1'), categoryOrder: { c1: 1 } },
+        combo('k2', 'Steak Night', 'c2', false),
+        combo('k5', 'Orphan Menu', 'gone'),
+      ],
+      isLoading: false,
+      isError: false,
+    };
+  };
+
+  it('lists saved positions first, then the rest by name', () => {
+    withExtra();
+    renderPage();
+    expect(order(lunch())).toEqual(['Pizza Pair', 'Extra Combo', 'Pasta Deal']);
+  });
+
+  it('reorders optimistically, saves the full category id list and toasts', async () => {
+    withExtra();
+    setComboOrderMock.mockResolvedValueOnce({});
+    renderPage();
+    await drag('k3', 'k1');
+    await waitFor(() => expect(order(lunch())).toEqual(['Extra Combo', 'Pasta Deal', 'Pizza Pair']));
+    expect(setComboOrderMock).toHaveBeenCalledWith({
+      shopId: 's1',
+      categoryId: 'c1',
+      body: { productIds: ['k4', 'k1', 'k3'] },
+    });
+    expect(toastSuccess).toHaveBeenCalledWith('combos.reordered');
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('reverts and shows an alert when the save fails', async () => {
+    withExtra();
+    setComboOrderMock.mockRejectedValueOnce(new Error('boom'));
+    renderPage();
+    await drag('k3', 'k1');
+    await waitFor(() => expect(screen.getByRole('alert').textContent).toBe('combos.failedToReorder'));
+    expect(order(lunch())).toEqual(['Pizza Pair', 'Extra Combo', 'Pasta Deal']);
+    expect(toastSuccess).not.toHaveBeenCalled();
+  });
+
+  it('keeps handles inert under a search or filter, and none on uncategorized combos', () => {
+    withExtra();
+    renderPage();
+    expect(handle('Pasta Deal').getAttribute('aria-disabled')).toBeNull();
+    expect(within(row('Orphan Menu')).queryByLabelText('combos.dragHandle')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: /combos\.filter\.onMenu/ }));
+    expect(handle('Pasta Deal').getAttribute('aria-disabled')).toBe('true');
+    expect(handle('Pasta Deal').getAttribute('title')).toBe('combos.reorderDisabledHint');
+    expect(within(row('Orphan Menu')).queryByLabelText('combos.dragHandle')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: /combos\.filter\.all/ }));
+    fireEvent.change(screen.getByRole('searchbox', { name: 'combos.search' }), { target: { value: 'pasta' } });
+    expect(handle('Pasta Deal').getAttribute('aria-disabled')).toBe('true');
+    expect(handle('Pasta Deal').getAttribute('title')).toBe('combos.reorderDisabledHint');
+  });
+
+  it('clicking a handle does not open the editor, a row click does', () => {
+    withExtra();
+    renderPage();
+    fireEvent.click(handle('Pasta Deal'));
+    expect(screen.queryByTestId('editor')).toBeNull();
+    fireEvent.click(row('Pasta Deal'));
+    expect(screen.getByTestId('editor').textContent).toBe('Pasta Deal');
   });
 });

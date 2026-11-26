@@ -28,6 +28,8 @@ export interface ComboDto {
   isAvailable: boolean;
   bmfDrinkShare: boolean;
   groups: ComboGroupDto[];
+  /** Position within each category the combo is listed in, keyed by category id. */
+  categoryOrder?: { [categoryId: string]: number };
   createdAt: string;
   updatedAt: string;
 }

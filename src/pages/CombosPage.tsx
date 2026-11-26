@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Plus, Search } from 'lucide-react';
+import { DndContext, closestCenter } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import {
   useGetCategoriesByShopQuery,
   useGetProductsByShopQuery,
@@ -19,7 +21,39 @@ import { searchBoxClass } from '../components/layout/pageStyles';
 import { MyButton } from '../components/ui/MyButton';
 import { MySpinner } from '../components/ui/MySpinner';
 import { ComboRow } from '../components/combos/ComboRow';
+import { DragHandleButton } from '../components/menu/DragHandle';
+import { useDragHandleProps } from '../components/menu/useDragHandleProps';
+import { applyOrder, sortByCategoryOrder } from '../features/menu/categoryOrder';
+import { useCategoryDragReorder } from '../features/menu/useCategoryDragReorder';
+import { useReorderSensors } from '../features/menu/useReorderSensors';
+import { useSetCategoryComboOrderMutation } from '../services/comboOrderApi';
 import { usePageTitle } from '../features/layout/usePageTitle';
+
+type ComboRowProps = Parameters<typeof ComboRow>[0];
+
+/** A combo row with a drag handle. When `dragEnabled` is false the handle stays visible but inert. */
+function SortableComboRow({
+  dragEnabled,
+  reordering,
+  ...rowProps
+}: Omit<ComboRowProps, 'dragHandle' | 'rowRef' | 'rowStyle'> & { dragEnabled: boolean; reordering: boolean }) {
+  const { t } = useTranslation();
+  const { attributes, listeners, setNodeRef, style } = useDragHandleProps(rowProps.combo.id, {
+    dragEnabled,
+    pending: reordering,
+  });
+  const handle = (
+    <DragHandleButton
+      attributes={attributes}
+      listeners={listeners}
+      pending={reordering}
+      dragEnabled={dragEnabled}
+      label={t('combos.dragHandle')}
+      disabledHint={t('combos.reorderDisabledHint')}
+    />
+  );
+  return <ComboRow {...rowProps} dragHandle={handle} rowRef={setNodeRef} rowStyle={style} />;
+}
 
 export function CombosPage() {
   usePageTitle('nav.combos');
@@ -42,6 +76,16 @@ export function CombosPage() {
     return () => clearTimeout(timer);
   }, [photoBlockedId]);
   const [filter, setFilter] = useState<ComboFilter>('all');
+  const [setCategoryComboOrder] = useSetCategoryComboOrderMutation();
+  const { orderOverrides, reorderError, savingOrderIds, handleDragEnd, clearStaleOverrides } = useCategoryDragReorder(
+    (categoryId, productIds) => setCategoryComboOrder({ shopId: shopId!, categoryId, body: { productIds } }).unwrap(),
+  );
+  const sensors = useReorderSensors();
+  // Once fresh data arrives, the server's order replaces local overrides (except for a save still in flight).
+  const comboData = combos.data;
+  useEffect(() => {
+    clearStaleOverrides();
+  }, [comboData, clearStaleOverrides]);
 
   // The open editor lives in the address (?combo=<id> or ?combo=new), so it survives a reload
   const comboParam = searchParams.get('combo');
@@ -150,24 +194,45 @@ export function CombosPage() {
   const groups = liveCategories
     .slice()
     .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
-    .map((cat) => ({ id: cat.id!, name: cat.name ?? '', items: visible.filter((c) => c.categoryId === cat.id) }))
+    .map((cat) => {
+      const inCat = sortByCategoryOrder(
+        visible.filter((c) => c.categoryId === cat.id),
+        cat.id!,
+        (c) => c.categoryOrder?.[cat.id!],
+        (c) => c.name,
+      );
+      return {
+        id: cat.id!,
+        name: cat.name ?? '',
+        items: orderOverrides[cat.id!] ? applyOrder(inCat, orderOverrides[cat.id!], (c) => c.id) : inCat,
+      };
+    })
     .filter((g) => g.items.length > 0);
   const homeless = visible.filter((c) => !liveCategories.some((cat) => cat.id === c.categoryId));
   if (homeless.length) groups.push({ id: '_none', name: t('products.uncategorized'), items: homeless });
 
-  const comboRow = (c: ComboDto) => (
-    <ComboRow
-      key={c.id}
-      combo={c}
-      selected={editing !== 'new' && editing?.id === c.id}
-      switching={switching && switchingArgs?.comboId === c.id}
-      money={money}
-      dishCount={dishCount}
-      onOpen={() => setEditing(c)}
-      onToggle={() => toggle(c)}
-      photoBlockedMessage={photoBlockedId === c.id ? t('combos.enableNeedsPhotoInline') : undefined}
-    />
-  );
+  const canReorder = canManage;
+  // Reordering only makes sense on the natural, unfiltered list. That is also what makes `g.items`
+  // the category's COMPLETE combo list, which is what the order endpoint expects.
+  const dragActive = filter === 'all' && q === '';
+
+  const comboRow = (c: ComboDto, dragEnabled?: boolean, groupId?: string) => {
+    const rowProps = {
+      combo: c,
+      selected: editing !== 'new' && editing?.id === c.id,
+      switching: switching && switchingArgs?.comboId === c.id,
+      money,
+      dishCount,
+      onOpen: () => setEditing(c),
+      onToggle: () => toggle(c),
+      photoBlockedMessage: photoBlockedId === c.id ? t('combos.enableNeedsPhotoInline') : undefined,
+    };
+    return dragEnabled === undefined ? (
+      <ComboRow key={c.id} {...rowProps} />
+    ) : (
+      <SortableComboRow key={c.id} dragEnabled={dragEnabled} reordering={!!groupId && savingOrderIds.has(groupId)} {...rowProps} />
+    );
+  };
 
   return (
     <SplitPage>
@@ -203,7 +268,13 @@ export function CombosPage() {
           <EmptyNote>{t('combos.noMatch')}</EmptyNote>
         </Section>
       ) : (
-        groups.map((g) => (
+        <>
+          {reorderError && (
+            <p role="alert" className="mb-[18px] rounded-2xl border border-[#f5c2bd] bg-[#fdeceb] px-4 py-3 text-sm text-[#b42318]">
+              {t('combos.failedToReorder')}
+            </p>
+          )}
+          {groups.map((g) => (
           <Section
             key={g.id}
             title={g.name}
@@ -215,9 +286,20 @@ export function CombosPage() {
               </div>
             }
           >
-            {g.items.map(comboRow)}
+            {g.id === '_none' ? g.items.map((c) => comboRow(c)) : (
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd(g.id, g.items.map((c) => c.id), () => toast.success(t('combos.reordered')))}
+              >
+                <SortableContext items={g.items.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+                  {g.items.map((c) => comboRow(c, canReorder && dragActive, g.id))}
+                </SortableContext>
+              </DndContext>
+            )}
           </Section>
-        ))
+          ))}
+        </>
       )}
 
       {editing && (
