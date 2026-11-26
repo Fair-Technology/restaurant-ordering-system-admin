@@ -40,6 +40,7 @@ vi.mock('../menu/DishPhotoField', () => ({
 const createCombo = vi.hoisted(() => vi.fn());
 const updateCombo = vi.hoisted(() => vi.fn());
 const uploadImage = vi.hoisted(() => vi.fn());
+const updateAvailability = vi.hoisted(() => vi.fn());
 const deleteProduct = vi.hoisted(() => vi.fn());
 vi.mock('../../services/combosApi', async (orig) => ({
   ...(await orig<typeof import('../../services/combosApi')>()),
@@ -49,6 +50,7 @@ vi.mock('../../services/combosApi', async (orig) => ({
 vi.mock('../../services/api', async (orig) => ({
   ...(await orig<typeof import('../../services/api')>()),
   useUpdateProductMutation: () => [vi.fn(), { isLoading: false }],
+  useUpdateProductAvailabilityMutation: () => [updateAvailability, { isLoading: false }],
   useDeleteProductMutation: () => [deleteProduct, { isLoading: false }],
 }));
 vi.mock('../../features/menu/useUploadProductImage', () => ({ useUploadProductImage: () => uploadImage }));
@@ -101,6 +103,7 @@ beforeEach(() => {
   createCombo.mockReset().mockReturnValue({ unwrap: () => Promise.resolve({ id: 'new1' }) });
   updateCombo.mockReset().mockReturnValue({ unwrap: () => Promise.resolve({}) });
   deleteProduct.mockReset().mockReturnValue({ unwrap: () => Promise.resolve({}) });
+  updateAvailability.mockReset().mockReturnValue({ unwrap: () => Promise.resolve({}) });
   uploadImage.mockReset().mockResolvedValue({ id: 'img1', url: 'https://img/1.jpg' });
   toast.success.mockReset();
   toast.error.mockReset();
@@ -124,6 +127,7 @@ describe('ComboEditor — photo is optional, turning on needs one', () => {
     expect(createCombo.mock.calls[0][0].body.isAvailable).toBe(false);
     expect(createCombo.mock.calls[0][0].body.groups[0]).toMatchObject({ name: 'Group 1', productIds: ['d1'] });
     expect(uploadImage).not.toHaveBeenCalled();
+    expect(updateAvailability).not.toHaveBeenCalled();
     expect(toast.success).toHaveBeenCalledWith('combos.saved');
   });
 
@@ -145,8 +149,26 @@ describe('ComboEditor — photo is optional, turning on needs one', () => {
     fireEvent.click(screen.getByRole('button', { name: 'pick photo' }));
     save();
     await waitFor(() => expect(onDone).toHaveBeenCalledTimes(1));
-    expect(createCombo.mock.calls[0][0].body.isAvailable).toBe(true);
+    expect(createCombo.mock.calls[0][0].body.isAvailable).toBe(false);
     expect(uploadImage).toHaveBeenCalledWith('s1', 'new1', expect.any(File));
+    expect(updateAvailability).toHaveBeenCalledWith({ productId: 'new1', body: { shopId: 's1', isAvailable: true } });
+    expect(uploadImage.mock.invocationCallOrder[0]).toBeLessThan(updateAvailability.mock.invocationCallOrder[0]);
+  });
+
+  it('turning the availability-on step fails: the combo stays created and off, the editor does not close', async () => {
+    updateAvailability.mockReturnValueOnce({ unwrap: () => Promise.reject({ status: 409, data: { error: 'x', code: 'COMBO_IMAGE_REQUIRED_TO_ENABLE' } }) });
+    setup(null);
+    fillNewCombo();
+    goTo('basics');
+    fireEvent.click(screen.getByRole('button', { name: 'pick photo' }));
+    save();
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('combos.enableNeedsPhoto:Lunch'));
+    expect(onDone).not.toHaveBeenCalled();
+    expect(createCombo).toHaveBeenCalledTimes(1);
+    save();
+    await waitFor(() => expect(onDone).toHaveBeenCalledTimes(1));
+    expect(createCombo).toHaveBeenCalledTimes(1);
+    expect(updateAvailability).toHaveBeenCalledTimes(2);
   });
 
   it('switching on without a photo does not switch on and shows the inline message; a photo clears it', () => {
