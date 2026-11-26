@@ -12,6 +12,10 @@ interface Props {
   onRefetch: () => void;
 }
 
+// TODO: GET /platform/config is superadmin-only, so shop admins can't read scheduleHorizonDays.
+// Use it here once the backend exposes the horizon to shop admins.
+const SCHEDULE_HORIZON_DAYS = 4;
+
 export function ScheduledOrdersCard({ shop, onRefetch }: Props) {
   const { t } = useTranslation();
   const [scheduledState, setScheduledState] = useState<boolean | null>(null);
@@ -45,7 +49,7 @@ export function ScheduledOrdersCard({ shop, onRefetch }: Props) {
   };
 
   return (
-    <Section title={t('shops.scheduledTitle')} description={t('shops.scheduledHelp')} padded>
+    <Section title={t('shops.scheduledTitle')} description={t('shops.scheduledHelp', { days: SCHEDULE_HORIZON_DAYS })} padded>
       <div className="space-y-4">
       <label className="flex items-start gap-3 text-sm text-ink">
         <input

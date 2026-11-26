@@ -165,7 +165,7 @@
     "dineInFailed": "Die Einstellung „Vor Ort\" konnte nicht gespeichert werden.",
     "dineInTablesLink": "Tisch-QR-Codes drucken",
     "scheduledTitle": "Vorbestellungen",
-    "scheduledHelp": "Gäste können jetzt für eine Uhrzeit bis zu 4 Tage im Voraus bestellen, in 15-Minuten-Schritten innerhalb Ihrer Öffnungszeiten – auch während Sie geschlossen haben. Die Karte wird erst belastet, wenn die Bestellung kurz vorher angenommen wird.",
+    "scheduledHelp": "Gäste können jetzt für eine Uhrzeit bis zu {{days}} Tage im Voraus bestellen, in 15-Minuten-Schritten innerhalb Ihrer Öffnungszeiten – auch während Sie geschlossen haben. Die Karte wird erst belastet, wenn die Bestellung kurz vorher angenommen wird.",
     "scheduledLabel": "Vorbestellungen annehmen",
     "scheduledLabelHelp": "Vorbestellungen warten auf der Bestellübersicht unter „Vorbestellungen\" und erscheinen eine Zubereitungszeit vorher unter „Neu\".",
     "scheduledSave": "Speichern",

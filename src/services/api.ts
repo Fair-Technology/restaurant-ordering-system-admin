@@ -414,6 +414,7 @@ const injectedRtkApi = api
           url: `/shops/${queryArg.shopId}/catalog`,
           params: {
             lang: queryArg.lang,
+            at: queryArg.at,
           },
         }),
         providesTags: ["Catalog"],
@@ -473,6 +474,17 @@ const injectedRtkApi = api
         query: (queryArg) => ({
           url: `/shops/${queryArg.shopId}/categories/${queryArg.categoryId}/apply-tax-class`,
           method: "POST",
+        }),
+        invalidatesTags: ["Categories"],
+      }),
+      setCategoryComboOrder: build.mutation<
+        SetCategoryComboOrderApiResponse,
+        SetCategoryComboOrderApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/shops/${queryArg.shopId}/categories/${queryArg.categoryId}/combo-order`,
+          method: "PUT",
+          body: queryArg.body,
         }),
         invalidatesTags: ["Categories"],
       }),
@@ -1589,6 +1601,7 @@ export type GetCatalogApiArg = {
   shopId: string;
   /** Preferred menu language; falls back to the original */
   lang?: string;
+  at?: string;
 };
 export type CreateCategoryApiResponse =
   /** status 200 Category created successfully */ CreateCategoryResultDto;
@@ -1639,6 +1652,15 @@ export type ApplyCategoryTaxClassApiResponse =
 export type ApplyCategoryTaxClassApiArg = {
   shopId: string;
   categoryId: string;
+};
+export type SetCategoryComboOrderApiResponse =
+  /** status 200 Combo order saved */ SetCategoryComboOrderResultDto;
+export type SetCategoryComboOrderApiArg = {
+  shopId: string;
+  categoryId: string;
+  body: {
+    productIds: string[];
+  };
 };
 export type SetCategoryDishOrderApiResponse =
   /** status 200 Dish order saved */ SetCategoryDishOrderResultDto;
@@ -2270,6 +2292,7 @@ export type RejectReason =
 export type CustomerOrderDto = {
   orderId: string;
   orderRef: string;
+  emailsEnabled: boolean;
   shopSlug: string;
   shopName: string;
   sellerPhone: string | null;
@@ -2491,6 +2514,7 @@ export type DiscountProblem =
 export type BasketQuoteDto = {
   currency: string;
   fulfilmentMode: FulfilmentMode;
+  scheduleHorizonDays: number;
   lines: QuoteLineDto[];
   subtotalCents: number;
   deliveryFeeCents: number | null;
@@ -2637,12 +2661,19 @@ export type SetPlanPricingRequestDto = {
 };
 export type GetSystemConfigResultDto = {
   maxShopsDefault: number;
+  emailEnabled: boolean;
+  scheduleHorizonDays: number;
+  emailTransportConfigured: boolean;
 };
 export type UpdateSystemConfigResultDto = {
   maxShopsDefault: number;
+  emailEnabled: boolean;
+  scheduleHorizonDays: number;
 };
 export type UpdateSystemConfigRequestDto = {
-  maxShopsDefault: number;
+  maxShopsDefault?: number;
+  emailEnabled?: boolean;
+  scheduleHorizonDays?: number;
 };
 export type ContentReportCategory =
   | "illegal_goods"
@@ -3401,10 +3432,24 @@ export type CatalogCategoryDto = {
   schedule: CatalogCategoryScheduleDto | null;
   products: CatalogProductDto[];
 };
+export type CatalogProductScheduleDto = {
+  startDate: string;
+  endDate: string | null;
+  daysOfWeek: number[] | null;
+  startTime: string | null;
+  endTime: string | null;
+};
+export type CatalogOtherTimeDishDto = {
+  id: string;
+  name: string;
+  price: number;
+  schedule: CatalogProductScheduleDto;
+};
 export type GetCatalogResultDto = {
   language: MenuLanguage;
   languages: MenuLanguage[];
   categories: CatalogCategoryDto[];
+  otherTimeDishes: CatalogOtherTimeDishDto[];
 };
 export type CategorySchedule = {
   daysOfWeek: number[];
@@ -3481,6 +3526,13 @@ export type ApplyCategoryTaxClassResultDto = {
   taxClassId: string;
   updatedCount: number;
 };
+export type SetCategoryComboOrderResultDto = {
+  categoryId: string;
+  products: {
+    id: string;
+    name: string;
+  }[];
+};
 export type SetCategoryDishOrderResultDto = {
   categoryId: string;
   products: {
@@ -3505,6 +3557,9 @@ export type ComboDto = {
     name: string;
     productIds: string[];
   }[];
+  categoryOrder?: {
+    [key: string]: number;
+  };
   createdAt: string;
   updatedAt: string;
 };
@@ -4785,6 +4840,7 @@ export const {
   useLazyGetCategoryByIdQuery,
   useUpdateCategoryMutation,
   useApplyCategoryTaxClassMutation,
+  useSetCategoryComboOrderMutation,
   useSetCategoryDishOrderMutation,
   useCreateComboMutation,
   useGetCombosQuery,
