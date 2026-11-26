@@ -577,6 +577,7 @@
     "available": "Auf der Karte",
     "save": "Änderungen speichern",
     "saved": "Gespeichert.",
+    "savedOffNoPhoto": "„{{name}}“ wurde gespeichert, ist aber noch nicht auf der Karte. Füge ein Foto hinzu, um es einzuschalten.",
     "saveFailed": "Konnte nicht gespeichert werden.",
     "formError": {
       "name": "Bitte einen Namen mit bis zu 120 Zeichen eingeben.",
@@ -1867,6 +1868,9 @@
     "useGerman": "{{language}}en Text übernehmen",
     "cancel": "Abbrechen",
     "saveDraft": "Als Entwurf speichern",
+    "saveDish": "Gericht speichern",
+    "subtitleSavedOff": "Gericht hinzufügen · nicht auf der Karte",
+    "savedOffNoPhoto": "„{{name}}“ wurde gespeichert, ist aber noch nicht auf der Karte. Füge ein Foto hinzu, um es einzuschalten.",
     "addToMenu": "Zur Karte hinzufügen",
     "requiredLeft": "{{count}} Pflichtangabe offen",
     "viewInMenu": "In der Karte ansehen",
@@ -1883,6 +1887,7 @@
     "draftFailed": "Der Entwurf konnte nicht gespeichert werden.",
     "createdWithoutPhoto": "Das Gericht wurde gespeichert, das Foto konnte aber nicht hochgeladen werden. Klicken Sie erneut auf die Schaltfläche, um den Upload zu wiederholen.",
     "addStatus": {
+      "savedOff": "Gespeichert · noch nicht auf der Karte",
       "draft": "Entwurf · noch nicht auf der Karte",
       "draftSaved": "Entwurf gespeichert",
       "onMenu": "Auf der Karte"

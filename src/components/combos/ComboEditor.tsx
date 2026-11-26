@@ -167,11 +167,9 @@ export function ComboEditor({ shop, shopId, combo, products, categories, onDone,
       return;
     }
     setFormError(null);
-    // A combo can be saved without a photo, but then it stays off: turning it on needs one.
-    if (form.isAvailable && photoMissing) {
-      blockEnableWithoutPhoto();
-      return;
-    }
+    // A combo can always be saved, but without a photo it stays off: turning it on needs one.
+    const savedOffNoPhoto = form.isAvailable && photoMissing;
+    const savedOffToast = () => t('combos.savedOffNoPhoto', { name: form.name.trim() || t('combos.name') });
     if (!combo) {
       try {
         const result = await createDishWithPhoto({
@@ -193,12 +191,12 @@ export function ComboEditor({ shop, shopId, combo, products, categories, onDone,
           return;
         }
         // The backend refuses a combo created ON (it has no photo yet): switch it on now that the photo is in place.
-        if (form.isAvailable) {
+        if (form.isAvailable && !photoMissing) {
           // Keep the id first so a retry only retries the switch-on instead of creating a second combo
           setCreatedComboId(result.productId);
           await updateProductAvailability({ productId: result.productId, body: { shopId, isAvailable: true } }).unwrap();
         }
-        toast.success(t('combos.saved'));
+        toast.success(savedOffNoPhoto ? savedOffToast() : t('combos.saved'));
         finish();
       } catch (err) {
         toast.error(isComboImageRequiredToEnableError(err) ? enableNeedsPhotoToast() : serverMessage(err));
@@ -227,9 +225,9 @@ export function ComboEditor({ shop, shopId, combo, products, categories, onDone,
         uploadStage = false;
         photoReplaceIncomplete = replaced.status === 'old-kept';
       }
-      await updateCombo({ shopId, comboId: combo.id, body }).unwrap();
+      await updateCombo({ shopId, comboId: combo.id, body: savedOffNoPhoto ? { ...body, isAvailable: false } : body }).unwrap();
       if (photoReplaceIncomplete) toast.error(t('combos.photoReplaceIncomplete'));
-      else toast.success(t('combos.saved'));
+      else toast.success(savedOffNoPhoto ? savedOffToast() : t('combos.saved'));
       finish();
     } catch (err) {
       setUploading(false);
@@ -259,7 +257,7 @@ export function ComboEditor({ shop, shopId, combo, products, categories, onDone,
 
   const headerExtra = (
     <>
-      <PillSwitch checked={form.isAvailable} onChange={setAvailable}>
+      <PillSwitch checked={form.isAvailable && !photoMissing} onChange={setAvailable}>
         {form.isAvailable ? t('combos.menuOn') : t('combos.menuOff')}
       </PillSwitch>
       {extraLanguage && activeLanguage && (
@@ -471,7 +469,7 @@ export function ComboEditor({ shop, shopId, combo, products, categories, onDone,
             </span>
           )}
         </div>
-        <PillSwitch checked={form.isAvailable} onChange={setAvailable} label={t('combos.available')} />
+        <PillSwitch checked={form.isAvailable && !photoMissing} onChange={setAvailable} label={t('combos.available')} />
       </div>
     </>
   );

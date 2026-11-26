@@ -240,19 +240,21 @@ describe('AddDishPanel save as draft', () => {
 });
 
 describe('AddDishPanel add to menu', () => {
-  it('without a photo it does not add: nothing is created, the owner is told why, and the panel stays open', () => {
+  it('without a photo it still saves: the dish is created off, never switched on, and says so', async () => {
     renderPanel();
     fillBasics(false);
     confirmFoodInfo();
-    expect(primary('Add to menu')).toBeTruthy();
-    fireEvent.click(primary('Add to menu'));
-    expect(createProduct).not.toHaveBeenCalled();
-    expect(updateProduct).not.toHaveBeenCalled();
-    expect(toastError).toHaveBeenCalledWith("Spaghetti can't be turned on without a photo.");
-    expect(screen.getByRole('heading', { level: 2, name: 'Basics' })).toBeTruthy();
-    expect(screen.getAllByRole('alert').map((a) => a.textContent)).toEqual(["Can't be turned on without a photo. Add a photo first, then turn it on."]);
+    expect(primary('Save dish')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Add to menu' })).toBeNull();
+    fireEvent.click(primary('Save dish'));
+    await waitFor(() => expect(createProduct).toHaveBeenCalledTimes(1));
+    expect(createProduct.mock.calls[0][0].createProductRequestDto.isAvailable).toBe(false);
+    expect(uploadImage).not.toHaveBeenCalled();
+    await waitFor(() => expect(screen.getByText(/was saved, but is not on the menu yet/)).toBeTruthy());
+    expect(updateAvailability).not.toHaveBeenCalled();
+    expect(screen.getByText('Saved · not on the menu yet')).toBeTruthy();
     expect(screen.queryByText(/was added to the menu/)).toBeNull();
-    expect(onClose).not.toHaveBeenCalled();
+    expect(toastError).not.toHaveBeenCalled();
   });
 
   it('the server refusing to turn it on (no photo) is explained with the dish name', async () => {

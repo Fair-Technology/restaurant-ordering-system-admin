@@ -577,6 +577,7 @@
     "available": "On the menu",
     "save": "Save changes",
     "saved": "Saved.",
+    "savedOffNoPhoto": "{{name}} was saved, but is not on the menu yet. Add a photo to turn it on.",
     "saveFailed": "Could not save.",
     "formError": {
       "name": "Enter a name of up to 120 characters.",
@@ -1867,6 +1868,9 @@
     "useGerman": "Use the {{language}} text",
     "cancel": "Cancel",
     "saveDraft": "Save as draft",
+    "saveDish": "Save dish",
+    "subtitleSavedOff": "Add dish · not on the menu",
+    "savedOffNoPhoto": "{{name}} was saved, but is not on the menu yet. Add a photo to turn it on.",
     "addToMenu": "Add to menu",
     "requiredLeft": "{{count}} required left",
     "viewInMenu": "View in menu",
@@ -1883,6 +1887,7 @@
     "draftFailed": "The draft could not be saved.",
     "createdWithoutPhoto": "The dish was saved, but its photo could not be uploaded. Press the button again to retry the upload.",
     "addStatus": {
+      "savedOff": "Saved · not on the menu yet",
       "draft": "Draft · not on the menu yet",
       "draftSaved": "Draft saved",
       "onMenu": "On the menu"

@@ -116,11 +116,10 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('ComboEditor — photo is optional, turning on needs one', () => {
-  it('creates a combo with no photo when it stays off: no upload, saved off', async () => {
+  it('creates a combo left on its default (on) without a photo: saved off, never switched on, told so', async () => {
     setup(null);
     fillNewCombo();
-    fireEvent.click(headerSwitch()); // starts on; turning OFF is never gated
-    expect(headerSwitch().getAttribute('aria-checked')).toBe('false');
+    expect(headerSwitch().getAttribute('aria-checked')).toBe('false'); // no photo: can never show on
     save();
     await waitFor(() => expect(onDone).toHaveBeenCalledTimes(1));
     expect(createCombo).toHaveBeenCalledTimes(1);
@@ -128,18 +127,8 @@ describe('ComboEditor — photo is optional, turning on needs one', () => {
     expect(createCombo.mock.calls[0][0].body.groups[0]).toMatchObject({ name: 'Group 1', productIds: ['d1'] });
     expect(uploadImage).not.toHaveBeenCalled();
     expect(updateAvailability).not.toHaveBeenCalled();
-    expect(toast.success).toHaveBeenCalledWith('combos.saved');
-  });
-
-  it('refuses to create an ON combo without a photo: nothing is sent, the owner is told why', () => {
-    setup(null);
-    fillNewCombo();
-    save();
-    expect(createCombo).not.toHaveBeenCalled();
-    expect(toast.error).toHaveBeenCalledWith('combos.enableNeedsPhoto:Lunch');
-    expect(onDone).not.toHaveBeenCalled();
-    // jumped back to Basics, where the photo field shows the inline message
-    expect(screen.getByRole('alert').textContent).toBe('combos.enableNeedsPhotoInline');
+    expect(toast.success).toHaveBeenCalledWith('combos.savedOffNoPhoto:Lunch');
+    expect(toast.success).not.toHaveBeenCalledWith('combos.saved');
   });
 
   it('creates an ON combo with a photo and uploads it', async () => {

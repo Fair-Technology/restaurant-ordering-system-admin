@@ -114,6 +114,8 @@ export interface DishFormProps {
   successBanner?: ReactNode;
   /** The dish was added: the footer offers "View in menu" and "Add another dish" instead. */
   isAdded?: boolean;
+  /** With `isAdded`: false when the dish was saved but left off the menu (no photo). Defaults to true. */
+  isAddedOnMenu?: boolean;
   onViewInMenu?: () => void;
   onAddAnother?: () => void;
 }
@@ -157,6 +159,7 @@ export function DishForm({
   onCancel,
   successBanner,
   isAdded = false,
+  isAddedOnMenu = true,
   onViewInMenu,
   onAddAnother,
 }: DishFormProps) {
@@ -220,10 +223,6 @@ export function DishForm({
     if (addRequiredLeft > 0) {
       setPickedLanguage(originalLanguage);
       setSection(firstIncompleteAddSection(requiredChecklist ?? []) ?? 'basics');
-      return;
-    }
-    if (photoMissing) {
-      blockEnableWithoutPhoto();
       return;
     }
     onAddToMenu?.();
@@ -391,7 +390,7 @@ export function DishForm({
                   addRequiredLeft > 0 ? 'bg-white text-ink hover:bg-cream' : 'bg-ink text-white hover:bg-black'
                 }`}
               >
-                {addRequiredLeft > 0 ? t('dishForm.requiredLeft', { count: addRequiredLeft }) : t('dishForm.addToMenu')}
+                {addRequiredLeft > 0 ? t('dishForm.requiredLeft', { count: addRequiredLeft }) : t(photoMissing ? 'dishForm.saveDish' : 'dishForm.addToMenu')}
               </PendingButton>
             </>
           )}
@@ -406,7 +405,7 @@ export function DishForm({
       subtitle={
         mode === 'edit'
           ? t('dishForm.subtitleEdit', { categories: categoriesText })
-          : t(isAdded ? 'dishForm.subtitleAdded' : 'dishForm.subtitleAdd')
+          : t(isAdded ? (isAddedOnMenu ? 'dishForm.subtitleAdded' : 'dishForm.subtitleSavedOff') : 'dishForm.subtitleAdd')
       }
       headerExtra={headerExtra}
       navLabel={t('dishForm.sections')}

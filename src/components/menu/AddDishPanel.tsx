@@ -77,7 +77,7 @@ export function AddDishPanel({ shopId, currencySymbol, categoriesList, onClose, 
   const [productId, setProductId] = useState<string | null>(null);
   const uploadedPhoto = useRef<File | null>(null);
   const [draftSaved, setDraftSaved] = useState(false);
-  const [added, setAdded] = useState<{ id: string; name: string } | null>(null);
+  const [added, setAdded] = useState<{ id: string; name: string; onMenu: boolean } | null>(null);
   const [similar, setSimilar] = useState<{ id: string; name: string } | null>(null);
 
   // Any change after a draft was saved means the saved draft is no longer what is on screen.
@@ -123,11 +123,6 @@ export function AddDishPanel({ shopId, currencySymbol, categoriesList, onClose, 
   const labelled = checklist.map((c) => ({ ...c, label: t(`dishForm.checklist.${c.id}`) }));
 
   const persist = async (kind: 'draft' | 'add') => {
-    // Safety net behind DishForm's own gate: a dish without a photo can only be saved as a draft, never put on the menu.
-    if (kind === 'add' && photoMissing) {
-      toast.error(t('products.enableNeedsPhoto', { name: value.form.name.trim() || t('dishForm.newDish') }));
-      return;
-    }
     setSaving(kind);
     const draft = kind === 'draft';
     const fields = {
@@ -200,14 +195,15 @@ export function AddDishPanel({ shopId, currencySymbol, categoriesList, onClose, 
         return;
       }
       setProductId(result.productId);
-      if (!draft) {
+      if (!draft && !photoMissing) {
         // The photo is in place: now switch the dish on. A failure lands in the catch below; the id is already kept.
         await updateProductAvailability({ productId: result.productId, body: { shopId, isAvailable: true } }).unwrap();
       }
       if (draft) {
         setDraftSaved(true);
       } else {
-        setAdded({ id: result.productId, name: value.form.name.trim() });
+        // Without a photo the dish exists but stays off the menu.
+        setAdded({ id: result.productId, name: value.form.name.trim(), onMenu: !photoMissing });
         onAdded?.(result.productId);
       }
     } catch (err) {
@@ -234,7 +230,9 @@ export function AddDishPanel({ shopId, currencySymbol, categoriesList, onClose, 
   };
 
   const status = added
-    ? { text: t('dishForm.addStatus.onMenu'), tone: 'ok' as const }
+    ? added.onMenu
+      ? { text: t('dishForm.addStatus.onMenu'), tone: 'ok' as const }
+      : { text: t('dishForm.addStatus.savedOff'), tone: 'muted' as const }
     : draftSaved
       ? { text: t('dishForm.addStatus.draftSaved'), tone: 'ok' as const }
       : { text: t('dishForm.addStatus.draft'), tone: 'muted' as const };
@@ -289,11 +287,12 @@ export function AddDishPanel({ shopId, currencySymbol, categoriesList, onClose, 
       isAddingToMenu={saving === 'add'}
       onCancel={onClose}
       isAdded={added !== null}
+      isAddedOnMenu={added?.onMenu ?? true}
       successBanner={
         added && (
           <div role="status" className="flex items-center gap-3 rounded-2xl bg-ok-bg px-[18px] py-4 text-[15px] font-semibold leading-[22px] text-ok">
             <Check size={22} strokeWidth={3} aria-hidden="true" className="flex-none" />
-            <span>{t('dishForm.added', { name: added.name })}</span>
+            <span>{t(added.onMenu ? 'dishForm.added' : 'dishForm.savedOffNoPhoto', { name: added.name })}</span>
           </div>
         )
       }
