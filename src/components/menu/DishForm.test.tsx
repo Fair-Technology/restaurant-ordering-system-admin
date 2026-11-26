@@ -340,13 +340,13 @@ describe('DishForm add mode', () => {
     expect(onAddToMenu).toHaveBeenCalledTimes(1);
   });
 
-  it('Add to menu without a photo does not add, toasts, and shows the hint', () => {
+  it('without a photo the primary button reads "Save dish" and still saves (no toast, no block)', () => {
     const onAddToMenu = vi.fn();
     render(<Harness start={initial()} props={addProps({ onAddToMenu, addRequiredLeft: 0, existingImageUrl: null })} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Add to menu' }));
-    expect(onAddToMenu).not.toHaveBeenCalled();
-    expect(toastError).toHaveBeenCalledWith("Peperoncino can't be turned on without a photo.");
-    expect(screen.getByRole('alert').textContent).toContain("Can't be turned on without a photo.");
+    expect(screen.queryByRole('button', { name: 'Add to menu' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Save dish' }));
+    expect(onAddToMenu).toHaveBeenCalledTimes(1);
+    expect(toastError).not.toHaveBeenCalled();
   });
 
   it('Save as draft is disabled only by an empty name', () => {
