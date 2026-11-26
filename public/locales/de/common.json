@@ -1857,7 +1857,7 @@
       "done": "{{label}} — erledigt, zu {{section}}",
       "notDone": "{{label}} — noch offen, zu {{section}}",
       "photo": "Foto",
-      "name": "Deutscher Name",
+      "name": "Name",
       "price": "Preis",
       "category": "Kategorie",
       "allergens": "Allergene bestätigt",
@@ -1865,7 +1865,7 @@
     },
     "errors": {
       "photo": "Ein Foto ist erforderlich.",
-      "name": "Geben Sie einen deutschen Namen ein.",
+      "name": "Geben Sie einen Namen ein.",
       "price": "Geben Sie einen Preis über {{amount}} ein.",
       "category": "Wählen Sie mindestens eine Kategorie."
     },
