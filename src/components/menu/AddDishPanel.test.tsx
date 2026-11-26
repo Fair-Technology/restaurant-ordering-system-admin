@@ -22,11 +22,12 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-const { toastError, toastSuccess, createProduct, updateProduct, uploadImage } = vi.hoisted(() => ({
+const { toastError, toastSuccess, createProduct, updateProduct, updateAvailability, uploadImage } = vi.hoisted(() => ({
   toastError: vi.fn(),
   toastSuccess: vi.fn(),
   createProduct: vi.fn(),
   updateProduct: vi.fn(),
+  updateAvailability: vi.fn(),
   uploadImage: vi.fn(),
 }));
 vi.mock('../../contexts/ToastContext', () => ({ useToast: () => ({ success: toastSuccess, error: toastError }) }));
@@ -73,6 +74,7 @@ vi.mock('../../services/api', async (orig) => ({
   useUpdateOptionGroupMutation: () => [vi.fn(), { isLoading: false }],
   useCreateProductMutation: () => [createProduct, { isLoading: false }],
   useUpdateProductMutation: () => [updateProduct, { isLoading: false }],
+  useUpdateProductAvailabilityMutation: () => [updateAvailability, { isLoading: false }],
 }));
 vi.mock('../../features/menu/useShopReferenceLists', () => ({ useShopReferenceLists: () => ({ refs }) }));
 // The real picker opens a crop dialog; a stand-in that "picks" a photo keeps these tests about the form
@@ -122,6 +124,7 @@ const fillBasics = (withPhoto = true) => {
 beforeEach(() => {
   createProduct.mockReset().mockReturnValue({ unwrap: () => Promise.resolve({ id: 'new1' }) });
   updateProduct.mockReset().mockReturnValue({ unwrap: () => Promise.resolve({}) });
+  updateAvailability.mockReset().mockReturnValue({ unwrap: () => Promise.resolve({}) });
   uploadImage.mockReset().mockResolvedValue({ id: 'img1', url: 'https://img/1.jpg' });
   toastError.mockReset();
 });
@@ -206,6 +209,7 @@ describe('AddDishPanel save as draft', () => {
     const body = createProduct.mock.calls[0][0].createProductRequestDto;
     expect(body).toMatchObject({ shopId: 's1', name: 'Spaghetti', description: '', price: 0, categoryIds: [], isAvailable: false, allergenIds: null, additiveIds: null });
     expect(uploadImage).not.toHaveBeenCalled();
+    expect(updateAvailability).not.toHaveBeenCalled();
     expect(onAdded).not.toHaveBeenCalled();
     expect(screen.queryByText(/was added to the menu/)).toBeNull();
     // the draft's own errors for the other fields show up now (it was a "try")
@@ -274,9 +278,11 @@ describe('AddDishPanel add to menu', () => {
     const body = createProduct.mock.calls[0][0].createProductRequestDto;
     expect(body).toMatchObject({
       shopId: 's1', name: 'Spaghetti', price: 950, categoryIds: ['c1'], allergenIds: [], additiveIds: [],
-      taxClassId: 'food', isAvailable: true,
+      taxClassId: 'food', isAvailable: false,
     });
     expect(uploadImage).toHaveBeenCalledWith('s1', 'new1', expect.any(File));
+    expect(updateAvailability).toHaveBeenCalledWith({ productId: 'new1', body: { shopId: 's1', isAvailable: true } });
+    expect(uploadImage.mock.invocationCallOrder[0]).toBeLessThan(updateAvailability.mock.invocationCallOrder[0]);
     expect(onAdded).toHaveBeenCalledWith('new1');
     expect(screen.getByText('Spaghetti was added to the menu.').closest('[role="status"]')).toBeTruthy();
     expect(screen.getByText('On the menu')).toBeTruthy();
@@ -312,11 +318,29 @@ describe('AddDishPanel add to menu', () => {
     confirmFoodInfo();
     fireEvent.click(primary('Add to menu'));
     await waitFor(() => expect(toastError).toHaveBeenCalled());
+    expect(updateAvailability).not.toHaveBeenCalled();
     expect(screen.queryByText(/was added to the menu/)).toBeNull();
     fireEvent.click(primary('Add to menu'));
     await waitFor(() => expect(screen.getByText('Spaghetti was added to the menu.')).toBeTruthy());
     expect(createProduct).toHaveBeenCalledTimes(1);
     expect(uploadImage).toHaveBeenCalledTimes(2);
+  });
+
+  it('the dish stays created and off, and the panel stays open, when switching it on fails after the photo uploads', async () => {
+    updateAvailability.mockReturnValueOnce({ unwrap: () => Promise.reject({ status: 409, data: { code: 'PRODUCT_IMAGE_REQUIRED_TO_ENABLE' } }) });
+    renderPanel();
+    fillBasics();
+    confirmFoodInfo();
+    fireEvent.click(primary('Add to menu'));
+    await waitFor(() => expect(toastError).toHaveBeenCalledWith("Spaghetti can't be turned on without a photo."));
+    expect(createProduct).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText(/was added to the menu/)).toBeNull();
+    expect(onAdded).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+    fireEvent.click(primary('Add to menu'));
+    await waitFor(() => expect(screen.getByText('Spaghetti was added to the menu.')).toBeTruthy());
+    expect(createProduct).toHaveBeenCalledTimes(1);
+    expect(updateAvailability).toHaveBeenCalledTimes(2);
   });
 });
 

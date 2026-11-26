@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useBlocker } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Trash2 } from 'lucide-react';
-import { useDeleteProductMutation, useUpdateProductMutation } from '../../services/api';
+import { useDeleteProductMutation, useUpdateProductAvailabilityMutation, useUpdateProductMutation } from '../../services/api';
 import type { CategoryDto, MenuLanguage, ProductDto, ProductImage, GetShopResultDto } from '../../services/api';
 import { useCreateComboMutation, useUpdateComboMutation, type ComboDto } from '../../services/combosApi';
 import { useToast } from '../../contexts/ToastContext';
@@ -70,6 +70,7 @@ export function ComboEditor({ shop, shopId, combo, products, categories, onDone,
   const [formError, setFormError] = useState<ComboFormError | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [updateProduct] = useUpdateProductMutation();
+  const [updateProductAvailability, { isLoading: togglingAvailability }] = useUpdateProductAvailabilityMutation();
   const uploadProductImage = useUploadProductImage();
   const [imageFile, setImageFile] = useState<File | null>(null);
   // The owner tried to turn the combo on without a photo; shown only while the combo still has none.
@@ -175,7 +176,7 @@ export function ComboEditor({ shop, shopId, combo, products, categories, onDone,
       try {
         const result = await createDishWithPhoto({
           existingProductId: createdComboId,
-          createDish: async () => (await createCombo({ shopId, body }).unwrap()).id,
+          createDish: async () => (await createCombo({ shopId, body: { ...body, isAvailable: false } }).unwrap()).id,
           uploadPhoto: async (comboId) => {
             if (!imageFile) return;
             setUploading(true);
@@ -190,6 +191,12 @@ export function ComboEditor({ shop, shopId, combo, products, categories, onDone,
           setCreatedComboId(result.productId);
           toast.error(t(isWrongSizeError(result.error) ? 'products.productImageWrongSize' : 'combos.photoUploadFailed'));
           return;
+        }
+        // The backend refuses a combo created ON (it has no photo yet): switch it on now that the photo is in place.
+        if (form.isAvailable) {
+          // Keep the id first so a retry only retries the switch-on instead of creating a second combo
+          setCreatedComboId(result.productId);
+          await updateProductAvailability({ productId: result.productId, body: { shopId, isAvailable: true } }).unwrap();
         }
         toast.success(t('combos.saved'));
         finish();
@@ -232,7 +239,7 @@ export function ComboEditor({ shop, shopId, combo, products, categories, onDone,
     }
   };
 
-  const busy = creating || updating || uploading;
+  const busy = creating || updating || uploading || togglingAvailability;
   const saveLabel = uploading
     ? t('products.uploadingImage')
     : createdComboId

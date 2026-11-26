@@ -6,6 +6,7 @@ import {
   useCreateProductMutation,
   useGetProductsByShopQuery,
   useGetShopByIdQuery,
+  useUpdateProductAvailabilityMutation,
   useUpdateProductMutation,
 } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
@@ -54,6 +55,7 @@ export function AddDishPanel({ shopId, currencySymbol, categoriesList, onClose, 
   const { data: shopDishes } = useGetProductsByShopQuery({ shopId, includeUncategorized: true });
   const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
   const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
+  const [updateProductAvailability, { isLoading: isTogglingAvailability }] = useUpdateProductAvailabilityMutation();
   const uploadProductImage = useUploadProductImage();
 
   const languages = shop ? menuLanguagesOf(shop) : [];
@@ -143,8 +145,9 @@ export function AddDishPanel({ shopId, currencySymbol, categoriesList, onClose, 
       unavailableModes: value.foodInfo.unavailableModes,
       ageRestricted: value.foodInfo.ageRestricted,
       optionGroupRefs: value.optionGroupRefs,
-      // A draft never goes live, even when everything else is filled in
-      isAvailable: !draft,
+      // Never created (or updated before its photo exists) as available: the dish is turned on
+      // only after its photo exists, via the separate availability call below.
+      isAvailable: false,
     };
     let uploadStage = false;
     try {
@@ -187,6 +190,7 @@ export function AddDishPanel({ shopId, currencySymbol, categoriesList, onClose, 
             await uploadProductImage(shopId, id, imageFile);
           }
           uploadedPhoto.current = imageFile;
+          uploadStage = false;
         },
       });
       if (result.status === 'photo-failed') {
@@ -196,6 +200,10 @@ export function AddDishPanel({ shopId, currencySymbol, categoriesList, onClose, 
         return;
       }
       setProductId(result.productId);
+      if (!draft) {
+        // The photo is in place: now switch the dish on. A failure lands in the catch below; the id is already kept.
+        await updateProductAvailability({ productId: result.productId, body: { shopId, isAvailable: true } }).unwrap();
+      }
       if (draft) {
         setDraftSaved(true);
       } else {
@@ -247,7 +255,7 @@ export function AddDishPanel({ shopId, currencySymbol, categoriesList, onClose, 
       currencySymbol={currencySymbol}
       // Edit-only props: Add has its own footer
       dirty={false}
-      isSaving={saving !== null || isCreating || isUpdating}
+      isSaving={saving !== null || isCreating || isUpdating || isTogglingAvailability}
       saveLabel=""
       onSave={() => {}}
       onDiscard={() => {}}
