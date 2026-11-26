@@ -1761,12 +1761,6 @@
     },
     "duplicateDish": "{{name}} duplizieren"
   },
-  "fab": {
-    "quickActions": "Schnellaktionen",
-    "newShop": "Neuer Shop",
-    "newProduct": "Neues Gericht",
-    "newCategory": "Neue Kategorie"
-  },
   "dishForm": {
     "sections": "Bereiche",
     "sectionNames": {

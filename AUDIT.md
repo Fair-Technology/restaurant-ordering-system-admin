@@ -10,7 +10,7 @@ Enforced from now on by the scan in `src/components/ui/pendingControls.test.ts`.
 | src/components/layout/AccountSettingsModal.tsx | sign out | msal `logoutRedirect` (network redirect) | no | `PendingButton` with local `signingOut`, cleared + toast on failure |
 | src/components/layout/AutoPausedBanner.tsx | resume orders | useUpdateShopMutation | yes | none |
 | src/components/layout/Sidebar.tsx | taking-orders switch | useUpdateShopMutation | yes | none |
-| src/components/layout/Sidebar.tsx, Layout.tsx, FloatingActionButton.tsx, ShopLayout.tsx | nav, drawers, FAB, redirects | none (local state / navigate) | n/a, local | none, stays spinner-free |
+| src/components/layout/Sidebar.tsx, Layout.tsx, ShopLayout.tsx | nav, drawers, redirects | none (local state / navigate) | n/a, local | none, stays spinner-free |
 | src/features/auth/AccountLanguageSync.tsx | auto-save language after sign-in | useUpdateMyLanguageMutation | n/a, not a click | exempt (reason in test) |
 | src/features/menu/useSetAvailable.ts | dish availability (hook) | useUpdateProductAvailabilityMutation | yes (per-dish `isPending(id)`, rendered by ProductsPage switch) | none, hook exempt |
 | src/features/menu/useUploadProductImage.ts | dish photo upload (hook) | useGenerateUploadUrlMutation, useAddProductImageMutation, fetch(PUT) | yes (DishEditor `isUploading` on save button) | none, hook exempt |

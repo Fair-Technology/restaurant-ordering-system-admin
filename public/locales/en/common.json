@@ -1761,12 +1761,6 @@
     },
     "duplicateDish": "Duplicate {{name}}"
   },
-  "fab": {
-    "quickActions": "Quick actions",
-    "newShop": "New shop",
-    "newProduct": "New product",
-    "newCategory": "New category"
-  },
   "dishForm": {
     "sections": "Sections",
     "sectionNames": {
