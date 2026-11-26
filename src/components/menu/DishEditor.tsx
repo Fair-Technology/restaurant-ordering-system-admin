@@ -15,7 +15,7 @@ import { PendingButton } from '../ui/PendingButton';
 import { DishForm } from './DishForm';
 import { ScheduleOfferModal } from './ScheduleOfferModal';
 import { useUploadProductImage } from '../../features/menu/useUploadProductImage';
-import { isPhotoRequiredError, replaceDishPhoto } from '../../features/menu/productImage';
+import { isPhotoRequiredError, isPhotoRequiredToEnableError, replaceDishPhoto } from '../../features/menu/productImage';
 import { failureMessage } from '../../features/api/errorMessage';
 import { isWrongSizeError } from '../../features/images/imageRules';
 import { useShopReferenceLists } from '../../features/menu/useShopReferenceLists';
@@ -174,6 +174,7 @@ export function DishEditor({ productId, shopId, currencySymbol, categoriesList, 
     } catch (err) {
       setIsUploading(false);
       if (uploadStage) toast.error(t(isWrongSizeError(err) ? 'products.productImageWrongSize' : 'products.failedToUploadImage'));
+      else if (isPhotoRequiredToEnableError(err)) toast.error(t('products.enableNeedsPhoto', { name: edit.form.name.trim() || t('dishes.editor.untitledDish') }));
       else if (isPhotoRequiredError(err)) toast.error(t('products.photoRequired'));
       else toast.error(failureMessage(t('products.failedToUpdate'), err));
     }

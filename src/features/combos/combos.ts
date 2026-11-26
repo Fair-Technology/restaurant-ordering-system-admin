@@ -54,9 +54,21 @@ export function cleanTranslations(map: TranslationMap, max: number): Translation
   return out;
 }
 
-/** A combo, like a dish, can only be saved with a photo: one it already has, or a freshly cropped one. */
+/** True when the combo has no photo (neither one it already has nor a freshly cropped one). This no longer blocks saving, only turning the combo on. */
 export function comboPhotoMissing(pickedFile: Blob | null, existingImageUrl: string | null | undefined): boolean {
   return !pickedFile && !existingImageUrl;
+}
+
+export const COMBO_IMAGE_REQUIRED_TO_ENABLE_CODE = 'COMBO_IMAGE_REQUIRED_TO_ENABLE';
+
+/** True when a failed API call was the server refusing to leave/turn a combo ON with no photo
+ *  (one code covers both the "turning on" and "left on" cases for combos; only the server's
+ *  message text tells them apart). */
+export function isComboImageRequiredToEnableError(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) return false;
+  const { data } = error as { data?: unknown };
+  if (typeof data !== 'object' || data === null) return false;
+  return (data as { code?: unknown }).code === COMBO_IMAGE_REQUIRED_TO_ENABLE_CODE;
 }
 
 export function comboFormToBody(f: ComboForm): ComboBody | { error: ComboFormError } {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { cleanTranslations, comboFormToBody, comboPhotoMissing, comboPhotoUrl, formFromCombo, type ComboForm } from './combos';
+import { cleanTranslations, comboFormToBody, comboPhotoMissing, comboPhotoUrl, formFromCombo, isComboImageRequiredToEnableError, type ComboForm } from './combos';
 
 const form: ComboForm = {
   name: ' Pasta-Menü ',
@@ -112,5 +112,15 @@ describe('combo form', () => {
     expect(
       comboPhotoUrl({ images: [{ id: 'a', url: 'u1' }, { id: 'b', url: 'u2' }] }),
     ).toBe('u2');
+  });
+});
+
+describe('isComboImageRequiredToEnableError', () => {
+  it('recognises the combo refusal code, and nothing else', () => {
+    expect(isComboImageRequiredToEnableError({ status: 409, data: { error: 'x', code: 'COMBO_IMAGE_REQUIRED_TO_ENABLE' } })).toBe(true);
+    expect(isComboImageRequiredToEnableError({ status: 409, data: { error: 'x', code: 'PRODUCT_IMAGE_REQUIRED' } })).toBe(false);
+    expect(isComboImageRequiredToEnableError({ status: 409, data: { error: 'x', code: 'PRODUCT_IMAGE_REQUIRED_TO_ENABLE' } })).toBe(false);
+    expect(isComboImageRequiredToEnableError({ status: 500 })).toBe(false);
+    expect(isComboImageRequiredToEnableError(undefined)).toBe(false);
   });
 });

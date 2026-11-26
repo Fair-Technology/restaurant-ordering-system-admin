@@ -11,7 +11,7 @@ import {
 import { useToast } from '../../contexts/ToastContext';
 import { DishForm } from './DishForm';
 import { useUploadProductImage } from '../../features/menu/useUploadProductImage';
-import { createDishWithPhoto, dishPhotoMissing, isPhotoRequiredError, replaceDishPhoto } from '../../features/menu/productImage';
+import { createDishWithPhoto, dishPhotoMissing, isPhotoRequiredError, isPhotoRequiredToEnableError, replaceDishPhoto } from '../../features/menu/productImage';
 import { failureMessage } from '../../features/api/errorMessage';
 import { isWrongSizeError } from '../../features/images/imageRules';
 import { useShopReferenceLists } from '../../features/menu/useShopReferenceLists';
@@ -76,11 +76,16 @@ export function AddDishPanel({ shopId, currencySymbol, categoriesList, onClose, 
   };
 
   const photoMissing = dishPhotoMissing(imageFile, null);
-  const checklist = addRequiredChecklist(value, photoMissing);
+  const checklist = addRequiredChecklist(value);
   const requiredLeft = addRequiredLeftCount(checklist);
   const labelled = checklist.map((c) => ({ ...c, label: t(`dishForm.checklist.${c.id}`) }));
 
   const persist = async (kind: 'draft' | 'add') => {
+    // Safety net behind DishForm's own gate: a dish without a photo can only be saved as a draft, never put on the menu.
+    if (kind === 'add' && photoMissing) {
+      toast.error(t('products.enableNeedsPhoto', { name: value.form.name.trim() || t('dishForm.newDish') }));
+      return;
+    }
     setSaving(kind);
     const draft = kind === 'draft';
     const fields = {
@@ -156,7 +161,8 @@ export function AddDishPanel({ shopId, currencySymbol, categoriesList, onClose, 
         onAdded?.(result.productId);
       }
     } catch (err) {
-      if (isPhotoRequiredError(err)) toast.error(t('products.photoRequired'));
+      if (isPhotoRequiredToEnableError(err)) toast.error(t('products.enableNeedsPhoto', { name: value.form.name.trim() || t('dishForm.newDish') }));
+      else if (isPhotoRequiredError(err)) toast.error(t('products.photoRequired'));
       else if (uploadStage) toast.error(t(isWrongSizeError(err) ? 'products.productImageWrongSize' : 'products.failedToUploadImage'));
       else toast.error(failureMessage(t(draft ? 'dishForm.draftFailed' : 'dishForm.addFailed'), err));
     } finally {

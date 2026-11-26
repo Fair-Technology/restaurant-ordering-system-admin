@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Plus, Search, X } from 'lucide-react';
@@ -11,7 +11,7 @@ import {
 import { useGetCombosQuery, useUpdateComboMutation, type ComboBody, type ComboDto } from '../services/combosApi';
 import { useToast } from '../contexts/ToastContext';
 import { formatCents } from '../utils/money';
-import { comboFormToBody, formFromCombo } from '../features/combos/combos';
+import { comboFormToBody, comboPhotoUrl, formFromCombo, isComboImageRequiredToEnableError } from '../features/combos/combos';
 import { useIsWide } from '../features/menu/useIsWide';
 import { ComboEditor } from '../components/combos/ComboEditor';
 import { Chip, EmptyNote, PageHeader, Section, SideCard, SideColumn, SplitPage, Toolbar } from '../components/layout/Page';
@@ -40,6 +40,13 @@ export function CombosPage() {
   const [deleteProduct, { isLoading: deleting }] = useDeleteProductMutation();
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [query, setQuery] = useState('');
+  // The combo whose switch was just refused for having no photo; its row shows a hint for a few seconds.
+  const [photoBlockedId, setPhotoBlockedId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!photoBlockedId) return;
+    const timer = setTimeout(() => setPhotoBlockedId(null), 4000);
+    return () => clearTimeout(timer);
+  }, [photoBlockedId]);
   const [filter, setFilter] = useState<ComboFilter>('all');
 
   // The open editor lives in the address (?combo=<id> or ?combo=new), so it survives a reload
@@ -100,6 +107,12 @@ export function CombosPage() {
     comboParam === 'new' ? 'new' : (combos.data.find((c) => c.id === comboParam) ?? null);
 
   const toggle = async (c: ComboDto) => {
+    setPhotoBlockedId(null);
+    if (!c.isAvailable && comboPhotoUrl(c) === null) {
+      toast.error(t('combos.enableNeedsPhoto', { name: c.name }));
+      setPhotoBlockedId(c.id);
+      return;
+    }
     const body = comboFormToBody(formFromCombo(c, dishIds));
     if ('error' in body) {
       setEditing(c);
@@ -112,6 +125,10 @@ export function CombosPage() {
         body: { ...(body as ComboBody), isAvailable: !c.isAvailable },
       }).unwrap();
     } catch (err) {
+      if (isComboImageRequiredToEnableError(err)) {
+        toast.error(t('combos.enableNeedsPhoto', { name: c.name }));
+        return;
+      }
       toast.error(serverMessage(err));
     }
   };
@@ -175,6 +192,7 @@ export function CombosPage() {
       dishCount={dishCount}
       onOpen={() => setEditing(c)}
       onToggle={() => toggle(c)}
+      photoBlockedMessage={photoBlockedId === c.id ? t('combos.enableNeedsPhotoInline') : undefined}
       onAskDelete={() => setConfirmingId(c.id)}
       onConfirmDelete={() => remove(c)}
       onCancelDelete={() => setConfirmingId(null)}

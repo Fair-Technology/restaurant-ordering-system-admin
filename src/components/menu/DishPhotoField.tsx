@@ -155,7 +155,7 @@ export function DishPhotoField({ imageFile, setImageFile, existingImageUrl, phot
           className="block w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer"
         />
         {imageError && <p role="alert" className="text-sm text-red-600">{imageError}</p>}
-        {photoError && !imageError && <p role="alert" className="text-sm text-red-600">{t('products.photoRequired')}</p>}
+        {photoError && !imageError && <p role="alert" className="text-sm text-red-600">{errorText ?? t('products.photoRequired')}</p>}
         {cropDialog}
       </div>
   );

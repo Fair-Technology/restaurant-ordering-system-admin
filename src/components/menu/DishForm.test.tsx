@@ -26,6 +26,9 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
+const toastError = vi.hoisted(() => vi.fn());
+vi.mock('../../contexts/ToastContext', () => ({ useToast: () => ({ success: vi.fn(), error: toastError }) }));
+
 const library = [
   {
     id: 'g1', kind: 'variant', name: 'Your pasta', minSelectable: 1, maxSelectable: 1, nameTranslations: {},
@@ -134,6 +137,7 @@ const discardBtn = () => screen.getByRole('button', { name: lookup('dishes.edito
 
 afterEach(() => {
   cleanup();
+  toastError.mockClear();
   language = 'en';
 });
 
@@ -185,6 +189,28 @@ describe('DishForm header and nav', () => {
     fireEvent.click(sw);
     expect(screen.getByRole('switch', { name: 'Hidden' }).getAttribute('aria-checked')).toBe('false');
     expect(nav('Availability').textContent).toContain('Hidden from the menu');
+  });
+
+  it('refuses to turn the dish on without a photo: stays off, toasts, and shows the hint in Basics; turning on with a photo works', () => {
+    const { unmount } = render(<Harness start={initial({ isAvailable: false })} props={{ existingImageUrl: null }} />);
+    fireEvent.click(screen.getByRole('switch', { name: 'Hidden' }));
+    expect(screen.getByRole('switch', { name: 'Hidden' }).getAttribute('aria-checked')).toBe('false');
+    expect(toastError).toHaveBeenCalledWith("Peperoncino can't be turned on without a photo.");
+    expect(screen.getByRole('alert').textContent).toBe("Can't be turned on without a photo. Add a photo first, then turn it on.");
+    unmount();
+    toastError.mockClear();
+    render(<Harness start={initial({ isAvailable: false })} />);
+    fireEvent.click(screen.getByRole('switch', { name: 'Hidden' }));
+    expect(screen.getByRole('switch', { name: 'On the menu' }).getAttribute('aria-checked')).toBe('true');
+    expect(toastError).not.toHaveBeenCalled();
+  });
+
+  it('saves a photo-less dish that stays off', () => {
+    const onSave = vi.fn();
+    render(<Harness start={initial({ isAvailable: false })} props={{ existingImageUrl: null }} onSave={onSave} />);
+    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'Other' } });
+    fireEvent.click(saveBtn());
+    expect(onSave).toHaveBeenCalledTimes(1);
   });
 
   it('says "No category" with none selected', () => {
@@ -284,7 +310,7 @@ describe('DishForm add mode', () => {
     onSaveDraft: vi.fn(),
     onAddToMenu: vi.fn(),
     onCancel: vi.fn(),
-    requiredChecklist: [{ id: 'photo', label: 'Photo', done: false, section: 'basics' }],
+    requiredChecklist: [{ id: 'name', label: 'Name', done: false, section: 'basics' }],
     ...over,
   });
   const blank = () => initial({ form: { name: '', description: '', price: 0 }, categoryIds: [] });
@@ -312,6 +338,15 @@ describe('DishForm add mode', () => {
     render(<Harness start={initial()} props={addProps({ onAddToMenu, addRequiredLeft: 0 })} />);
     fireEvent.click(screen.getByRole('button', { name: 'Add to menu' }));
     expect(onAddToMenu).toHaveBeenCalledTimes(1);
+  });
+
+  it('Add to menu without a photo does not add, toasts, and shows the hint', () => {
+    const onAddToMenu = vi.fn();
+    render(<Harness start={initial()} props={addProps({ onAddToMenu, addRequiredLeft: 0, existingImageUrl: null })} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add to menu' }));
+    expect(onAddToMenu).not.toHaveBeenCalled();
+    expect(toastError).toHaveBeenCalledWith("Peperoncino can't be turned on without a photo.");
+    expect(screen.getByRole('alert').textContent).toContain("Can't be turned on without a photo.");
   });
 
   it('Save as draft is disabled only by an empty name', () => {

@@ -34,6 +34,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { Chip } from '../components/layout/Page';
 import { searchBoxClass } from '../components/layout/pageStyles';
 import { AvailabilitySwitch } from '../components/menu/AvailabilitySwitch';
+import { PhotoBlockedNote } from '../components/menu/PhotoBlockedNote';
 import { Download, GripVertical, Plus, Search, X } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 import { buildExampleMenuImportFile, parseMenuImport } from '../features/menu/menuImport';
@@ -363,6 +364,7 @@ function DishRow({
   currencyMoney,
   onOpen,
   onToggle,
+  photoBlockedMessage,
   dragHandle,
   rowRef,
   rowStyle,
@@ -375,6 +377,8 @@ function DishRow({
   currencyMoney: (cents: number) => string;
   onOpen: () => void;
   onToggle: () => void;
+  /** Shown under the name right after the switch was refused because the dish has no photo. */
+  photoBlockedMessage?: string;
   /** Drag handle, rendered first in the row; absent for rows that cannot be reordered. */
   dragHandle?: React.ReactNode;
   rowRef?: (node: HTMLElement | null) => void;
@@ -426,6 +430,7 @@ function DishRow({
         ) : !effectiveImageUrl ? (
           <span className="self-start rounded-full bg-[#fff6e0] px-2 py-0.5 text-xs font-semibold text-[#8a5a00]">{t('dishes.missingPhoto')}</span>
         ) : null}
+        {photoBlockedMessage && <PhotoBlockedNote message={photoBlockedMessage} onAddPhoto={onOpen} />}
       </div>
       <span className="hidden w-[110px] text-[13px] text-[#6b6058] md:block">
         {groups > 0 ? t('dishes.optionGroups', { count: groups }) : '–'}
@@ -535,6 +540,13 @@ export function ProductsPage() {
   const [filter, setFilter] = useState<DishFilter>('all');
   const [query, setQuery] = useState('');
   const [toggling, setToggling] = useState<Set<string>>(new Set());
+  // The dish whose switch was just refused for having no photo; its row shows a hint for a few seconds.
+  const [photoBlockedId, setPhotoBlockedId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!photoBlockedId) return;
+    const timer = setTimeout(() => setPhotoBlockedId(null), 4000);
+    return () => clearTimeout(timer);
+  }, [photoBlockedId]);
   const [optimistic, setOptimistic] = useState<Record<string, boolean>>({});
 
   const [brokenImageIds, setBrokenImageIds] = useState<Set<string>>(new Set());
@@ -591,6 +603,12 @@ export function ProductsPage() {
       toast.error(t('products.availabilityRequiresCategory'));
       return;
     }
+    setPhotoBlockedId(null);
+    if (next && !product.images?.length) {
+      toast.error(t('products.enableNeedsPhoto', { name: product.name }));
+      setPhotoBlockedId(id);
+      return;
+    }
     setOptimistic((o) => ({ ...o, [id]: next }));
     setToggling((s) => new Set(s).add(id));
     void setAvailable(id, next, (ok) => {
@@ -602,7 +620,7 @@ export function ProductsPage() {
       if (!ok) {
         setOptimistic((o) => ({ ...o, [id]: current }));
       }
-    });
+    }, product.name);
   };
 
   const all = products ?? [];
@@ -671,6 +689,7 @@ export function ProductsPage() {
       currencyMoney: money,
       onOpen: () => setParam('dish', p.id!),
       onToggle: () => toggle(p),
+      photoBlockedMessage: photoBlockedId === p.id ? t('products.enableNeedsPhotoInline') : undefined,
     };
     return dragEnabled === undefined ? (
       <DishRow key={p.id} {...rowProps} />

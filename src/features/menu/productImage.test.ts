@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { checkProductImageFile, createDishWithPhoto, dishPhotoMissing, isPhotoRequiredError, replaceDishPhoto, uploadProductImage } from './productImage';
+import { checkProductImageFile, createDishWithPhoto, dishPhotoMissing, isPhotoRequiredError, isPhotoRequiredToEnableError, replaceDishPhoto, uploadProductImage } from './productImage';
 
 const jpeg = (size = 5) => new Blob([new Uint8Array(size)], { type: 'image/jpeg' });
 
@@ -74,6 +74,19 @@ describe('isPhotoRequiredError', () => {
     expect(isPhotoRequiredError({ status: 409, data: { error: 'x', code: 'PRODUCT_IMAGE_REQUIRED' } })).toBe(true);
     expect(isPhotoRequiredError({ status: 409, data: { error: 'x', code: 'OPEN_ORDERS' } })).toBe(false);
     expect(isPhotoRequiredError(null)).toBe(false);
+  });
+});
+
+describe('isPhotoRequiredToEnableError', () => {
+  it('recognises the backend refusal to turn a photo-less dish on, and nothing else', () => {
+    expect(isPhotoRequiredToEnableError({ status: 409, data: { error: 'x', code: 'PRODUCT_IMAGE_REQUIRED_TO_ENABLE' } })).toBe(true);
+    expect(isPhotoRequiredToEnableError({ status: 409, data: { error: 'x', code: 'PRODUCT_IMAGE_REQUIRED' } })).toBe(false);
+    expect(isPhotoRequiredToEnableError({ status: 409, data: { error: 'x', code: 'OPEN_ORDERS' } })).toBe(false);
+    expect(isPhotoRequiredToEnableError({ status: 500 })).toBe(false);
+    expect(isPhotoRequiredToEnableError(null)).toBe(false);
+  });
+  it('is not mistaken for the leave-on refusal the other way round', () => {
+    expect(isPhotoRequiredError({ data: { code: 'PRODUCT_IMAGE_REQUIRED_TO_ENABLE' } })).toBe(false);
   });
 });
 

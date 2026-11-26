@@ -14,13 +14,14 @@ vi.mock('../../features/menu/useUploadProductImage', () => ({ useUploadProductIm
 vi.mock('../../features/menu/useShopReferenceLists', () => ({ useShopReferenceLists: () => ({ refs: undefined, isError: false }) }));
 
 const deleteMutate = vi.fn();
+const updateMutate = vi.hoisted(() => vi.fn());
 const product = { id: 'p1', name: 'Margherita', description: 'Tomato', price: 900, categories: [{ id: 'c1' }], images: [] } as unknown as ProductDto;
 
 vi.mock('../../services/api', async (orig) => ({
   ...(await orig<typeof import('../../services/api')>()),
   useGetProductByIdQuery: () => ({ data: product, isLoading: false, isError: false }),
   useGetShopByIdQuery: () => ({ data: { id: 's1', currency: 'EUR', countryCode: 'DE' } }),
-  useUpdateProductMutation: () => [vi.fn(), { isLoading: false }],
+  useUpdateProductMutation: () => [updateMutate, { isLoading: false }],
   useDeleteProductMutation: () => [deleteMutate, { isLoading: false }],
   useGetOptionGroupsQuery: () => ({ data: [] }),
   useCreateCategoryMutation: () => [vi.fn(), { isLoading: false }],
@@ -87,5 +88,24 @@ describe('DishEditor — Delete dish', () => {
     expect(toast.error.mock.calls[0][0]).toContain('Dish is in an open order');
     expect(onDeleted).not.toHaveBeenCalled();
     expect(toast.success).not.toHaveBeenCalled();
+  });
+});
+
+describe('DishEditor — save refused by the server for a missing photo', () => {
+  it('explains that the dish cannot be turned on without a photo, with the dish name', async () => {
+    updateMutate.mockReturnValue({ unwrap: () => Promise.reject({ status: 409, data: { error: 'x', code: 'PRODUCT_IMAGE_REQUIRED_TO_ENABLE' } }) });
+    setup();
+    fireEvent.change(screen.getByLabelText(/^products\.name/), { target: { value: 'Margherita XL' } });
+    fireEvent.click(screen.getByRole('button', { name: 'dishForm.save' }));
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('products.enableNeedsPhoto'));
+    expect(toast.success).not.toHaveBeenCalled();
+  });
+
+  it('keeps the leave-on refusal wording for the other code', async () => {
+    updateMutate.mockReturnValue({ unwrap: () => Promise.reject({ status: 409, data: { error: 'x', code: 'PRODUCT_IMAGE_REQUIRED' } }) });
+    setup();
+    fireEvent.change(screen.getByLabelText(/^products\.name/), { target: { value: 'Margherita XL' } });
+    fireEvent.click(screen.getByRole('button', { name: 'dishForm.save' }));
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('products.photoRequired'));
   });
 });
