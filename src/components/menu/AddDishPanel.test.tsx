@@ -22,7 +22,8 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-const { toastError, toastSuccess, createProduct, updateProduct, updateAvailability, uploadImage } = vi.hoisted(() => ({
+const { toastError, toastSuccess, createProduct, updateProduct, updateAvailability, uploadImage, shopLanguages } = vi.hoisted(() => ({
+  shopLanguages: { current: ['de', 'en'] as string[] },
   toastError: vi.fn(),
   toastSuccess: vi.fn(),
   createProduct: vi.fn(),
@@ -66,7 +67,7 @@ const carbonara = {
 
 vi.mock('../../services/api', async (orig) => ({
   ...(await orig<typeof import('../../services/api')>()),
-  useGetShopByIdQuery: () => ({ data: { id: 's1', currency: 'EUR', countryCode: 'DE', menuLanguages: ['de', 'en'] } }),
+  useGetShopByIdQuery: () => ({ data: { id: 's1', currency: 'EUR', countryCode: 'DE', menuLanguages: shopLanguages.current } }),
   useGetProductsByShopQuery: () => ({ data: [carbonara] }),
   useGetOptionGroupsQuery: () => ({ data: library }),
   useCreateCategoryMutation: () => [vi.fn(), { isLoading: false }],
@@ -100,7 +101,7 @@ const renderPanel = () =>
 const nav = (name: string) => within(screen.getByRole('navigation')).getByRole('button', { name: new RegExp(`^${name}`) });
 const primary = (label: RegExp | string) => screen.getByRole('button', { name: label }) as HTMLButtonElement;
 const draftBtn = () => screen.getByRole('button', { name: 'Save as draft' }) as HTMLButtonElement;
-const typeName = (v: string) => fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: v } });
+const typeName = (v: string) => fireEvent.change(screen.getByRole('textbox', { name: /^Name/ }), { target: { value: v } });
 const typePrice = (digits: string) => {
   const price = screen.getByRole('textbox', { name: /^Price/ });
   for (const d of digits) fireEvent.keyDown(price, { key: d });
@@ -122,6 +123,7 @@ const fillBasics = (withPhoto = true) => {
 };
 
 beforeEach(() => {
+  shopLanguages.current = ['de', 'en'];
   createProduct.mockReset().mockReturnValue({ unwrap: () => Promise.resolve({ id: 'new1' }) });
   updateProduct.mockReset().mockReturnValue({ unwrap: () => Promise.resolve({}) });
   updateAvailability.mockReset().mockReturnValue({ unwrap: () => Promise.resolve({}) });
@@ -148,7 +150,7 @@ describe('AddDishPanel required list', () => {
     fireEvent.click(primary('5 required left'));
     expect(screen.getByRole('heading', { level: 2, name: 'Basics' })).toBeTruthy();
     const alerts = screen.getAllByRole('alert').map((a) => a.textContent);
-    expect(alerts).toEqual(['Enter a German name.', 'Enter a price above €0.00.', 'Choose at least one category.']);
+    expect(alerts).toEqual(['Enter a name.', 'Enter a price above €0.00.', 'Choose at least one category.']);
     expect(screen.queryByText(lookup('dishes.editor.descriptionRequired'))).toBeNull(); // description is optional when adding
     expect(createProduct).not.toHaveBeenCalled();
   });
@@ -156,7 +158,7 @@ describe('AddDishPanel required list', () => {
   it('lists five checklist rows that name their state and jump to their section', () => {
     renderPanel();
     expect(screen.getByText('Before you add it')).toBeTruthy();
-    const rows = ['German name', 'Price', 'Category', 'Allergens confirmed', 'Additives confirmed'];
+    const rows = ['Name', 'Price', 'Category', 'Allergens confirmed', 'Additives confirmed'];
     for (const r of rows) expect(within(screen.getByRole('navigation')).getByRole('button', { name: new RegExp(`^${r} — not done yet`) })).toBeTruthy();
     fireEvent.click(within(screen.getByRole('navigation')).getByRole('button', { name: /^Allergens confirmed — not done yet, go to Food info/ }));
     expect(screen.getByRole('heading', { level: 2, name: 'Food info' })).toBeTruthy();
@@ -190,8 +192,41 @@ describe('AddDishPanel required list', () => {
   });
 });
 
+describe('AddDishPanel language-agnostic name strings', () => {
+  const triggerErrors = () => {
+    fireEvent.click(nav('Availability'));
+    fireEvent.click(primary('5 required left'));
+  };
+
+  it('a one-language shop never names a language for the name field, checklist row or error', () => {
+    shopLanguages.current = ['de'];
+    renderPanel();
+    expect(screen.queryByRole('group', { name: lookup('dishForm.language') })).toBeNull();
+    expect(screen.getByRole('textbox', { name: 'Name · Required' })).toBeTruthy();
+    expect(screen.queryByRole('textbox', { name: /Name \(/ })).toBeNull();
+    const navEl = within(screen.getByRole('navigation'));
+    expect(navEl.getByRole('button', { name: /^Name — not done yet/ })).toBeTruthy();
+    expect(navEl.queryByRole('button', { name: /German|English/ })).toBeNull();
+    triggerErrors();
+    expect(screen.getAllByRole('alert').map((a) => a.textContent)[0]).toBe('Enter a name.');
+  });
+
+  it('an English-original two-language shop keeps the checklist/error generic but labels the German field', () => {
+    shopLanguages.current = ['en', 'de'];
+    renderPanel();
+    const navEl = within(screen.getByRole('navigation'));
+    expect(navEl.getByRole('button', { name: /^Name — not done yet/ })).toBeTruthy();
+    expect(navEl.queryByRole('button', { name: /English name|German name/ })).toBeNull();
+    triggerErrors();
+    expect(screen.getAllByRole('alert').map((a) => a.textContent)[0]).toBe('Enter a name.');
+
+    fireEvent.click(screen.getByRole('button', { name: /^German/ }));
+    expect(screen.getByRole('textbox', { name: /^Name \(German\)/ })).toBeTruthy();
+  });
+});
+
 describe('AddDishPanel save as draft', () => {
-  it('is disabled until a German name is typed, and never for anything else', () => {
+  it('is disabled until a name is typed, and never for anything else', () => {
     renderPanel();
     expect(draftBtn().disabled).toBe(true);
     typeName('   ');
@@ -305,7 +340,7 @@ describe('AddDishPanel add to menu', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add another dish' }));
     expect(screen.queryByText(/was added to the menu/)).toBeNull();
     expect(screen.getByRole('heading', { level: 2, name: 'Basics' })).toBeTruthy();
-    expect((screen.getByLabelText(/^Name/) as HTMLInputElement).value).toBe('');
+    expect((screen.getByRole('textbox', { name: /^Name/ }) as HTMLInputElement).value).toBe('');
     expect(screen.getByText('no photo')).toBeTruthy();
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('New dish');
     expect(primary('5 required left')).toBeTruthy();
@@ -381,7 +416,7 @@ describe('AddDishPanel duplicate mode', () => {
 
   it('prefills from the source, focuses and selects the name, and leaves allergens unconfirmed', () => {
     renderDuplicate(source);
-    const name = screen.getByLabelText(/^Name/) as HTMLInputElement;
+    const name = screen.getByRole('textbox', { name: /^Name/ }) as HTMLInputElement;
     expect(name.value).toBe('Carbonara (copy)');
     expect(document.activeElement).toBe(name);
     expect(name.selectionStart).toBe(0);
@@ -393,7 +428,7 @@ describe('AddDishPanel duplicate mode', () => {
 
   it('a plain Add does not focus the name or show the note', () => {
     renderPanel();
-    expect(document.activeElement).not.toBe(screen.getByLabelText(/^Name/));
+    expect(document.activeElement).not.toBe(screen.getByRole('textbox', { name: /^Name/ }));
     expect(screen.queryByText(lookup('dishForm.duplicate.notCopied'))).toBeNull();
   });
 

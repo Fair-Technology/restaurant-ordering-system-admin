@@ -321,7 +321,7 @@ describe('DishForm add mode', () => {
     expect(screen.getByLabelText('Description (German) · optional')).toBeTruthy();
     expect(screen.getByRole('textbox', { name: /^Price/ })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: '1 required left' }));
-    expect(screen.getByText('Enter a German name.').getAttribute('role')).toBe('alert');
+    expect(screen.getByText('Enter a name.').getAttribute('role')).toBe('alert');
     expect(screen.getByText('Choose at least one category.').getAttribute('role')).toBe('alert');
     fireEvent.click(screen.getByRole('button', { name: /^English/ }));
     expect(screen.getByLabelText('Name (English) · optional')).toBeTruthy();

@@ -1857,7 +1857,7 @@
       "done": "{{label}} — done, go to {{section}}",
       "notDone": "{{label}} — not done yet, go to {{section}}",
       "photo": "Photo",
-      "name": "German name",
+      "name": "Name",
       "price": "Price",
       "category": "Category",
       "allergens": "Allergens confirmed",
@@ -1865,7 +1865,7 @@
     },
     "errors": {
       "photo": "A photo is required.",
-      "name": "Enter a German name.",
+      "name": "Enter a name.",
       "price": "Enter a price above {{amount}}.",
       "category": "Choose at least one category."
     },
