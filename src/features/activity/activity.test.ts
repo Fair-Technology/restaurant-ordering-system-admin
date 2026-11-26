@@ -99,13 +99,36 @@ describe('groupEntriesByDay', () => {
 
 describe('helpers', () => {
   it('maps actions to areas', () => {
+    // one representative per area
     expect(areaOfAction('product.update')).toBe('menu');
     expect(areaOfAction('order.refund')).toBe('orders');
     expect(areaOfAction('promotion.code_create')).toBe('discounts');
     expect(areaOfAction('staff.create')).toBe('staff');
     expect(areaOfAction('subscription.upgrade')).toBe('subscription');
-    expect(areaOfAction('shop.update')).toBe('shop');
+    expect(areaOfAction('shop.logo')).toBe('shop');
+    // not a prefix scheme
+    expect(areaOfAction('shop.busy_mode')).toBe('orders');
+    expect(areaOfAction('shop.orders_auto_paused')).toBe('orders');
+    expect(areaOfAction('shop.missed_orders_pause_limit')).toBe('orders');
+    expect(areaOfAction('promotion.code_update')).toBe('discounts');
+    expect(areaOfAction('promotion.loyalty_update')).toBe('discounts');
+    for (const a of [
+      'customer.erase',
+      'content_report.decided',
+      'platform_legal_identity.update',
+      'role_permissions.update',
+      'config.maxShopsDefault.update',
+      'reference_lists.update',
+      'user.limits.update',
+    ]) {
+      expect(areaOfAction(a)).toBe('shop');
+    }
+    for (const a of ['combo.create', 'category.delete', 'optionGroup.option.enable']) {
+      expect(areaOfAction(a)).toBe('menu');
+    }
+    // unknown / future actions, including inherited object keys, fall back to shop
     expect(areaOfAction('something.new')).toBe('shop');
+    expect(areaOfAction('constructor')).toBe('shop');
   });
   it('parses URL params defensively', () => {
     expect(parseArea('menu')).toBe('menu');

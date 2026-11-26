@@ -19,22 +19,83 @@ export function parsePage(value: string | null): number {
   return Number.isInteger(n) && n >= 1 ? n : 1;
 }
 
-const AREA_BY_PREFIX: Record<string, ActivityArea> = {
-  product: 'menu',
-  category: 'menu',
-  optionGroup: 'menu',
-  combo: 'menu',
-  order: 'orders',
-  customer: 'orders',
-  promotion: 'discounts',
-  staff: 'staff',
-  role_permissions: 'staff',
-  subscription: 'subscription',
+/**
+ * Literal copy of `AUDIT_ACTION_AREAS` from the backend repo, file
+ * `rs-backend/src/domain/audit/auditAreas.ts`. The action→area mapping is NOT a prefix scheme
+ * (e.g. `shop.busy_mode` is `orders`, `customer.erase` is `shop`), and it cannot be imported
+ * cross-repo, so it must be kept in sync with that file MANUALLY when the backend adds an action.
+ */
+export const AREA_OF_ACTION: Record<string, ActivityArea> = {
+  'combo.create': 'menu',
+  'combo.update': 'menu',
+  'product.create': 'menu',
+  'product.update': 'menu',
+  'product.delete': 'menu',
+  'product.availability': 'menu',
+  'category.create': 'menu',
+  'category.update': 'menu',
+  'category.delete': 'menu',
+  'category.dishOrder.update': 'menu',
+  'optionGroup.create': 'menu',
+  'optionGroup.update': 'menu',
+  'optionGroup.delete': 'menu',
+  'optionGroup.option.enable': 'menu',
+  'optionGroup.option.disable': 'menu',
+
+  'order.refund': 'orders',
+  'shop.busy_mode': 'orders',
+  'shop.orders_auto_paused': 'orders',
+  'shop.missed_orders_pause_limit': 'orders',
+
+  'promotion.code_create': 'discounts',
+  'promotion.code_update': 'discounts',
+  'promotion.loyalty_update': 'discounts',
+
+  'staff.create': 'staff',
+  'staff.update': 'staff',
+  'staff.delete': 'staff',
+  'staff.password_reset': 'staff',
+
+  'subscription.upgrade': 'subscription',
+  'subscription.change_scheduled': 'subscription',
+  'subscription.cancelScheduled': 'subscription',
+  'subscription.limit_override': 'subscription',
+  'subscription.limit_override_clear': 'subscription',
+  'subscription.payment_retried': 'subscription',
+  'subscription.override': 'subscription',
+  'subscription.change_cancelled': 'subscription',
+  'subscription.override_expired': 'subscription',
+  'subscription.cancelResumed': 'subscription',
+
+  // Shop settings, profile, compliance and platform housekeeping.
+  'shop.data_export': 'shop',
+  'shop.legal_update': 'shop',
+  'shop.dpa_accept': 'shop',
+  'shop.nameChange.approved': 'shop',
+  'shop.nameChange.requested': 'shop',
+  'shop.nameChange.rejected': 'shop',
+  'shop.cover_image': 'shop',
+  'shop.cover_image_remove': 'shop',
+  'shop.logo': 'shop',
+  'shop.logo_remove': 'shop',
+  'shop.offline_by_superadmin': 'shop',
+  'shop.restore': 'shop',
+  'shop.delete': 'shop',
+  'shop.windDown': 'shop',
+  'shop.order_settings_update': 'shop',
+  'shop.invoice_archive': 'shop',
+  'customer.erase': 'shop',
+  'content_report.decided': 'shop',
+  'platform_legal_identity.update': 'shop',
+  'role_permissions.update': 'shop',
+  'config.maxShopsDefault.update': 'shop',
+  'reference_lists.update': 'shop',
+  'user.limits.update': 'shop',
 };
 
-/** The area tag for an entry, derived from its action key ("product.update" → menu). */
+/** The area tag for an entry; actions missing from the table (newer than this copy) fall back to `shop`. */
 export function areaOfAction(action: string): ActivityArea {
-  return AREA_BY_PREFIX[action.split('.')[0]] ?? 'shop';
+  return Object.prototype.hasOwnProperty.call(AREA_OF_ACTION, action) ? AREA_OF_ACTION[action] : 'shop';
 }
 
 export interface ChangeValueContext {
