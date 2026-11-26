@@ -1201,7 +1201,6 @@
     "rangeInvalid": "The maximum must be at least the minimum.",
     "priceInvalid": "Prices cannot be negative.",
     "tabsLabel": "Filter by type",
-    "tabAll": "All",
     "tabVariants": "Variants",
     "tabExtras": "Extras",
     "emptyVariants": "No variants yet. Create one to reuse it across dishes.",

@@ -1201,7 +1201,6 @@
     "rangeInvalid": "Das Maximum muss mindestens so groß sein wie das Minimum.",
     "priceInvalid": "Preise dürfen nicht negativ sein.",
     "tabsLabel": "Nach Typ filtern",
-    "tabAll": "Alle",
     "tabVariants": "Varianten",
     "tabExtras": "Extras",
     "emptyVariants": "Noch keine Varianten. Erstelle eine, um sie bei mehreren Gerichten zu verwenden.",

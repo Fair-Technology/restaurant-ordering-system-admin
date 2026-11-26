@@ -197,14 +197,13 @@ export function OptionGroupsPage() {
     setSearchParams(
       (prev) => {
         const next = new URLSearchParams(prev);
-        if (kind === 'all') next.delete('kind');
+        if (kind === 'variant') next.delete('kind');
         else next.set('kind', kind);
         return next;
       },
       { replace: true },
     );
   const tabs: Array<{ kind: OptionGroupKindFilter; label: string }> = [
-    { kind: 'all', label: t('optionGroups.tabAll') },
     {
       kind: 'variant',
       label: `${t('optionGroups.tabVariants')} (${variantCount})`,
@@ -295,7 +294,7 @@ export function OptionGroupsPage() {
           shopId={shopId!}
           group={editing}
           currency={currency}
-          defaultKind={dialog === 'new' && activeTab !== 'all' ? activeTab : undefined}
+          defaultKind={dialog === 'new' ? activeTab : undefined}
           onClose={close}
         />
       )}
