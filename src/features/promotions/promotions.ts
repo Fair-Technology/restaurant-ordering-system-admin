@@ -131,3 +131,26 @@ export function loyaltyStatus(
     ? { enabled: true, every: loyalty.everyOrders, rewardCents: loyalty.rewardCents }
     : { enabled: false };
 }
+
+export type CodeFilter = 'all' | 'active' | 'scheduled' | 'ended' | 'off';
+export const CODE_FILTERS: CodeFilter[] = ['all', 'active', 'scheduled', 'ended', 'off'];
+
+export function matchesCodeFilter(status: CodeStatus, filter: CodeFilter): boolean {
+  if (filter === 'all') return true;
+  if (filter === 'ended') return status === 'expired' || status === 'used_up';
+  return status === filter;
+}
+
+/** What the "Valid" column says: always/from/until/range, plus whether it's the dimmed "Always" case. */
+export type ValidLabel =
+  | { kind: 'always' }
+  | { kind: 'from'; date: string }
+  | { kind: 'until'; date: string }
+  | { kind: 'range'; from: string; until: string };
+
+export function validLabel(c: Pick<DiscountCodeDto, 'validFrom' | 'validUntil'>): ValidLabel {
+  if (c.validFrom && c.validUntil) return { kind: 'range', from: c.validFrom, until: c.validUntil };
+  if (c.validFrom) return { kind: 'from', date: c.validFrom };
+  if (c.validUntil) return { kind: 'until', date: c.validUntil };
+  return { kind: 'always' };
+}

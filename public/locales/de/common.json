@@ -600,7 +600,7 @@
     "pageSubtitle": "Rabattcodes, die Gäste an der Kasse eingeben, und Treuegutscheine für wiederkehrende Bestellungen.",
     "activeCodesCount_one": "{{count}} aktiver Code",
     "activeCodesCount_other": "{{count}} aktive Codes",
-    "codesLimitReached": "Sie haben die Grenze von 50 Codes erreicht. Schalten Sie einen alten Code aus, um Platz zu schaffen.",
+    "codesLimitReached": "Sie haben die Grenze von 50 Codes erreicht.",
     "switchOffNamed": "{{code}} ausschalten",
     "switchOnNamed": "{{code}} einschalten",
     "minimumChargeHint": "Gästen werden immer mindestens 0,50 € berechnet, auch bei einem höheren Rabatt.",
@@ -668,7 +668,34 @@
     "loyaltySince": "Bestellungen werden seit {{date}} gezählt.",
     "loyaltySave": "Speichern",
     "loyaltySaved": "Gespeichert.",
-    "loyaltyInvalid": "Bitte Zahlen prüfen: alle 2–20 Bestellungen, 1–50 €, 7–365 Tage."
+    "loyaltyInvalid": "Bitte Zahlen prüfen: alle 2–20 Bestellungen, 1–50 €, 7–365 Tage.",
+    "codesFooter": "Bis zu 50 Codes.",
+    "codesCount": "{{count}} von {{limit}} Codes",
+    "search": "Codes durchsuchen",
+    "noMatch": "Keine Codes entsprechen diesem Filter.",
+    "filter": {
+      "all": "Alle",
+      "active": "Aktiv",
+      "scheduled": "Noch nicht gültig",
+      "ended": "Abgelaufen oder aufgebraucht",
+      "off": "Aus"
+    },
+    "column": {
+      "code": "Code",
+      "discount": "Rabatt",
+      "minOrder": "Mindestbestellwert",
+      "valid": "Gültig",
+      "uses": "Einlösungen",
+      "perCustomer": "Pro Gast",
+      "status": "Status",
+      "on": "Ein"
+    },
+    "validAlways": "Immer",
+    "validFromDate": "Ab {{date}}",
+    "validUntilDate": "Bis {{date}}",
+    "minOrderNone": "Keine",
+    "usesOfShort": "{{uses}} von {{limit}}",
+    "perCustomerUnlimited": "Unbegrenzt"
   },
   "imageCrop": {
     "save": "Speichern",
@@ -1522,7 +1549,8 @@
   },
   "common": {
     "cancel": "Abbrechen",
-    "genericError": "Etwas ist schiefgelaufen. Bitte erneut versuchen."
+    "genericError": "Etwas ist schiefgelaufen. Bitte erneut versuchen.",
+    "close": "Schließen"
   },
   "dishes": {
     "dragHandle": "Zum Neuanordnen ziehen",

@@ -600,7 +600,7 @@
     "pageSubtitle": "Discount codes customers type at checkout, and loyalty vouchers for repeat orders.",
     "activeCodesCount_one": "{{count}} active code",
     "activeCodesCount_other": "{{count}} active codes",
-    "codesLimitReached": "You've reached the limit of 50 codes. Switch an old one off to make room.",
+    "codesLimitReached": "You've reached the limit of 50 codes.",
     "switchOffNamed": "Switch off {{code}}",
     "switchOnNamed": "Switch on {{code}}",
     "minimumChargeHint": "The customer is always charged at least €0.50, even with a bigger discount.",
@@ -668,7 +668,34 @@
     "loyaltySince": "Counting orders since {{date}}.",
     "loyaltySave": "Save",
     "loyaltySaved": "Saved.",
-    "loyaltyInvalid": "Check the numbers: every 2–20 orders, €1–€50, 7–365 days."
+    "loyaltyInvalid": "Check the numbers: every 2–20 orders, €1–€50, 7–365 days.",
+    "codesFooter": "Up to 50 codes.",
+    "codesCount": "{{count}} of {{limit}} codes",
+    "search": "Search codes",
+    "noMatch": "No codes match this filter.",
+    "filter": {
+      "all": "All",
+      "active": "Active",
+      "scheduled": "Not started",
+      "ended": "Expired or used up",
+      "off": "Off"
+    },
+    "column": {
+      "code": "Code",
+      "discount": "Discount",
+      "minOrder": "Min. order",
+      "valid": "Valid",
+      "uses": "Uses",
+      "perCustomer": "Per customer",
+      "status": "Status",
+      "on": "On"
+    },
+    "validAlways": "Always",
+    "validFromDate": "From {{date}}",
+    "validUntilDate": "Until {{date}}",
+    "minOrderNone": "None",
+    "usesOfShort": "{{uses}} of {{limit}}",
+    "perCustomerUnlimited": "Unlimited"
   },
   "imageCrop": {
     "save": "Save",
@@ -1522,7 +1549,8 @@
   },
   "common": {
     "cancel": "Cancel",
-    "genericError": "Something went wrong. Please try again."
+    "genericError": "Something went wrong. Please try again.",
+    "close": "Close"
   },
   "dishes": {
     "dragHandle": "Drag to reorder",
