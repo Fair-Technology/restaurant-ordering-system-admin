@@ -333,7 +333,9 @@ export function DishForm({
                 type="button"
                 aria-current={active ? 'page' : undefined}
                 onClick={() => setSection(s)}
-                className={`flex min-h-[60px] flex-none flex-col items-start justify-center gap-0.5 rounded-[14px] px-3.5 py-2 text-left ${focusRing} ${active ? 'bg-cream' : 'hover:bg-cream/60'}`}
+                className={`flex min-h-[60px] flex-none flex-col items-start justify-center gap-0.5 rounded-[14px] border px-3.5 py-2 text-left ${focusRing} ${
+                  active ? 'border-line bg-cream shadow-[inset_3px_0_0_#1f1a17]' : 'border-transparent hover:bg-cream/60'
+                }`}
               >
                 <span className="text-[15px] font-semibold leading-5">{t(`dishForm.sectionNames.${s}`)}</span>
                 <span className={`text-[13px] font-medium leading-[18px] ${toneText[st.tone]}`}>{status}</span>

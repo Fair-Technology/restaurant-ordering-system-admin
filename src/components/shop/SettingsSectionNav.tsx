@@ -27,10 +27,10 @@ export function SettingsSectionNav<K extends string>({ label, sections, activeKe
                 type="button"
                 aria-current={active ? 'page' : undefined}
                 onClick={() => onSelect(s.key)}
-                className={`flex min-h-11 w-full flex-col justify-center rounded-full border px-4 text-left whitespace-nowrap transition-colors md:min-h-[52px] md:rounded-xl md:border-transparent md:px-3 md:py-2 md:whitespace-normal ${FOCUS} ${
+                className={`flex min-h-11 w-full flex-col justify-center rounded-full border px-4 text-left whitespace-nowrap transition-colors md:min-h-[52px] md:rounded-xl md:px-3 md:py-2 md:whitespace-normal ${FOCUS} ${
                   active
-                    ? 'border-ink bg-ink text-white md:bg-cream md:text-ink'
-                    : 'border-[#e3d9ce] bg-white text-ink hover:bg-sand md:bg-transparent md:hover:bg-cream'
+                    ? 'border-ink bg-ink text-white md:border-line md:bg-white md:text-ink md:shadow-[inset_3px_0_0_#1f1a17]'
+                    : 'border-[#e3d9ce] bg-white text-ink hover:bg-sand md:border-transparent md:bg-transparent md:hover:bg-cream'
                 }`}
               >
                 <span className={`text-sm ${active ? 'font-bold' : 'font-medium'} ${s.danger ? (active ? 'text-white md:text-[#b42318]' : 'text-[#b42318]') : ''}`}>
