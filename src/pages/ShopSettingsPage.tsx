@@ -484,7 +484,6 @@ export function ShopSettingsPage() {
   };
 
   const infoRows = [
-    { label: t('shops.labelId'), value: shop.id, mono: true },
     { label: t('shops.labelSlug'), value: `/${previewSlug}`, mono: true },
   ];
 

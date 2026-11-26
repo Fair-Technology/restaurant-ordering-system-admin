@@ -205,7 +205,6 @@
     "failedToLoadShopDescription": "Beim Laden dieses Shops ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.",
     "failedToCreate": "Shop konnte nicht erstellt werden.",
     "labelName": "Name",
-    "labelId": "ID",
     "labelSlug": "Slug",
     "logo": "Shop-Logo",
     "logoPlaceholder": "Kein Logo gesetzt",

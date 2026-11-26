@@ -205,7 +205,6 @@
     "failedToLoadShopDescription": "Something went wrong while loading this shop. Please try again.",
     "failedToCreate": "Failed to create shop.",
     "labelName": "Name",
-    "labelId": "ID",
     "labelSlug": "Slug",
     "logo": "Shop Logo",
     "logoPlaceholder": "No logo set",
