@@ -26,7 +26,7 @@ export function StaffLoginPage() {
 
   const existingSession = readStaffSession();
   if (existingSession && existingSession.shopSlug === slug) {
-    return <Navigate to={`/shops/${existingSession.shopId}/reports`} replace />;
+    return <Navigate to={`/shops/${existingSession.shopId}/dashboard`} replace />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -40,7 +40,7 @@ export function StaffLoginPage() {
       const { language, persist } = resolveLoginLanguage(result.language ?? null, result.shopLanguage);
       await i18n.changeLanguage(language);
       if (persist) void updateMyStaffLanguage({ updateMyStaffLanguageRequestDto: { language } });
-      navigate(`/shops/${result.shopId}/reports`, { replace: true });
+      navigate(`/shops/${result.shopId}/dashboard`, { replace: true });
     } catch (err) {
       const code = (err as { data?: { error?: string } })?.data?.error;
       setError(

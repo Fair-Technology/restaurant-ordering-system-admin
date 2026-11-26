@@ -110,7 +110,7 @@ export function DashboardPage() {
                   <Link to={`/shops/${s.shopId}/orders`} className={`inline-flex items-center ${pillClass(true)}`}>
                     {t('overview.openOrders')}
                   </Link>
-                  <Link to={`/shops/${s.shopId}/reports`} className={`inline-flex items-center ${pillClass(false)}`}>
+                  <Link to={`/shops/${s.shopId}/dashboard`} className={`inline-flex items-center ${pillClass(false)}`}>
                     {t('overview.openReports')}
                   </Link>
                   <Link to={`/shops/${s.shopId}/phone`} className={`inline-flex items-center ${pillClass(false)}`}>

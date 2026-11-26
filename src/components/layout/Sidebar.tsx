@@ -3,12 +3,33 @@ import { useDispatch } from 'react-redux';
 import { Link, NavLink, useNavigate, useParams } from 'react-router-dom';
 import { useMsal } from '@azure/msal-react';
 import { useTranslation } from 'react-i18next';
-import { ChevronsUpDown, LogOut, Menu, PanelLeftClose, Store, X } from 'lucide-react';
+import {
+  BadgePercent,
+  ChevronsUpDown,
+  CreditCard,
+  History,
+  Layers,
+  LayoutDashboard,
+  ListChecks,
+  LogOut,
+  Menu,
+  PanelLeftClose,
+  QrCode,
+  ReceiptText,
+  Scale,
+  Settings,
+  Store,
+  Tags,
+  Users,
+  UtensilsCrossed,
+  X,
+  type LucideIcon,
+} from 'lucide-react';
 import { useGetMyShopsQuery, useGetShopByIdQuery, useUpdateShopMutation, type GetShopResultDto } from '../../services/api';
 import { useGetOrderQueueQuery } from '../../services/ordersApi';
 import { baseApi } from '../../services/baseApi';
 import { useNow } from '../../features/orders/useNow';
-import { navGroups, navPath, sidebarTopItems, type ShopNavKey } from '../../features/shops/shopNav';
+import { navGroups, navPath, sidebarBottomItems, sidebarTopItems, type ShopNavKey } from '../../features/shops/shopNav';
 import { formatPauseEnd, isOfflineBySuperadminError, isOrdersPausedAt, shopLiveState, shopPauseOutOfDate } from '../../features/shops/shopStatus';
 import { clearStaffSession, readStaffSession } from '../../features/staff/staffSession';
 import { useToast } from '../../contexts/ToastContext';
@@ -221,8 +242,24 @@ function NavDrawer({ label, closeLabel, onClose, children }: { label: string; cl
   );
 }
 
+const NAV_ICONS: Record<ShopNavKey, LucideIcon> = {
+  dashboard: LayoutDashboard,
+  orders: ReceiptText,
+  products: UtensilsCrossed,
+  combos: Layers,
+  categories: Tags,
+  optionGroups: ListChecks,
+  promotions: BadgePercent,
+  tables: QrCode,
+  legal: Scale,
+  subscription: CreditCard,
+  staff: Users,
+  activity: History,
+  settings: Settings,
+};
+
 const linkClass = (isActive: boolean) =>
-  `flex h-9 items-center justify-between rounded-[9px] px-2.5 text-sm transition-colors ${
+  `flex h-11 items-center justify-between rounded-[9px] px-2.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-1 lg:h-9 ${
     isActive ? 'bg-sand font-bold text-ink' : 'font-medium text-[#4a413b] hover:bg-cream hover:text-ink'
   }`;
 
@@ -249,6 +286,7 @@ export function Sidebar({ sidebarHidden, onToggleSidebar }: { sidebarHidden: boo
   const perms = currentShop?.callerPermissions ?? [];
   const topItems = sidebarTopItems(perms);
   const groups = navGroups(perms);
+  const bottomItems = sidebarBottomItems(perms);
   const canSeeOrders = groups.some((g) => g.items.includes('orders'));
 
   // New orders waiting, for the badge (the orders page itself polls faster)
@@ -275,9 +313,14 @@ export function Sidebar({ sidebarHidden, onToggleSidebar }: { sidebarHidden: boo
   const labelOf = (key: ShopNavKey) => (key === 'products' ? t('nav.dishes') : t(`nav.${key}`));
   const pathOf = (key: ShopNavKey) => navPath(shopId!, key);
 
-  const renderItem = (key: ShopNavKey) => (
+  const renderItem = (key: ShopNavKey) => {
+    const Icon = NAV_ICONS[key];
+    return (
     <NavLink key={key} to={pathOf(key)} end={key === 'products'} className={({ isActive }) => linkClass(isActive)}>
-      <span>{labelOf(key)}</span>
+      <span className="flex items-center gap-2.5">
+        <Icon size={17} strokeWidth={2} className="flex-shrink-0" aria-hidden="true" />
+        <span>{labelOf(key)}</span>
+      </span>
       {key === 'orders' && waiting > 0 && (
         <span
           className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#b23a0c] px-1.5 text-[11px] font-bold text-white"
@@ -287,7 +330,8 @@ export function Sidebar({ sidebarHidden, onToggleSidebar }: { sidebarHidden: boo
         </span>
       )}
     </NavLink>
-  );
+    );
+  };
 
   const navContent = shopId ? (
     <div className="flex flex-col gap-3.5">
@@ -300,6 +344,7 @@ export function Sidebar({ sidebarHidden, onToggleSidebar }: { sidebarHidden: boo
           {group.items.map(renderItem)}
         </div>
       ))}
+      {bottomItems.length > 0 && <div className="flex flex-col gap-px">{bottomItems.map(renderItem)}</div>}
     </div>
   ) : (
     <div className="flex flex-col gap-px">
