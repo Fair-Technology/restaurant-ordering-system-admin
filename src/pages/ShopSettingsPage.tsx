@@ -836,34 +836,38 @@ export function ShopSettingsPage() {
           </Section>
 
           <Section title={t('shops.accentTitle')} description={t('shops.accentHelp')} padded>
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-end gap-3">
               <input
                 type="color"
                 value={currentAccent}
                 aria-label={t('shops.accentTitle')}
                 onChange={(e) => setAccentState(e.target.value)}
-                className="h-10 w-10 cursor-pointer rounded-[10px] border border-[#e3d9ce] bg-white p-1"
+                className="h-10 w-10 shrink-0 cursor-pointer rounded-[10px] border border-[#e3d9ce] bg-white p-1"
               />
-              <input
-                type="text"
-                value={currentAccent}
-                maxLength={7}
-                aria-label={t('shops.accentTitle')}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  if (/^#[0-9a-fA-F]{0,6}$/.test(val)) {
-                    setAccentState(val);
-                  }
-                }}
-                className={`${inputClass} w-28 font-mono`}
-              />
-              <span
-                aria-hidden="true"
-                className="inline-flex h-10 items-center rounded-full px-4 text-sm font-semibold"
-                style={{ backgroundColor: currentAccent, color: accentOnColor }}
-              >
-                {t('shops.colorsSave')}
-              </span>
+              <div className="w-28 shrink-0">
+                <input
+                  type="text"
+                  value={currentAccent}
+                  maxLength={7}
+                  aria-label={t('shops.accentTitle')}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (/^#[0-9a-fA-F]{0,6}$/.test(val)) {
+                      setAccentState(val);
+                    }
+                  }}
+                  className={`${inputClass} font-mono`}
+                />
+              </div>
+              <div className="flex flex-col gap-1" aria-hidden="true">
+                <span className="text-xs font-medium text-muted">{t('shops.accentPreviewLabel')}</span>
+                <span
+                  className="inline-flex h-10 items-center rounded-[8px] px-4 text-sm font-medium"
+                  style={{ backgroundColor: currentAccent, color: accentOnColor }}
+                >
+                  {t('shops.accentPreviewSample')}
+                </span>
+              </div>
             </div>
             {accentCheck && !accentCheck.ok && (
               <p className={`mt-3 ${ERROR_CLASS}`}>
