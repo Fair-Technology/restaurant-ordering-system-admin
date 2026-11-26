@@ -31,13 +31,13 @@ import { MyButton } from '../components/ui/MyButton';
 import { MyInput } from '../components/ui/MyInput';
 import { MySelect } from '../components/ui/MySelect';
 import { stateFieldFor } from '../features/shops/addressState';
-import { CurrencyInput } from '../components/ui/CurrencyInput';
 import { useToast } from '../contexts/ToastContext';
 import { PaymentsCard } from '../components/shop/PaymentsCard';
 import { OrderAlertsCard } from '../components/shop/OrderAlertsCard';
 import { AutoAcceptCard } from '../components/shop/AutoAcceptCard';
 import { KitchenTimingCard } from '../components/shop/KitchenTimingCard';
 import { DeliveryCard } from '../components/shop/DeliveryCard';
+import { MinOrderCard } from '../components/shop/MinOrderCard';
 import { ClosuresCard } from '../components/shop/ClosuresCard';
 import { ScheduledOrdersCard } from '../components/shop/ScheduledOrdersCard';
 import { DeleteShopCard } from '../components/shop/DeleteShopCard';
@@ -121,12 +121,6 @@ export function ShopSettingsPage() {
   const [isSavingColors, setIsSavingColors] = useState(false);
   const [colorsError, setColorsError] = useState<string | null>(null);
 
-  const [detailsState, setDetailsState] = useState<{
-    minOrderAmountCents: number;
-  } | null>(null);
-  const [isSavingDetails, setIsSavingDetails] = useState(false);
-  const [detailsError, setDetailsError] = useState<string | null>(null);
-
   const [nameChangeState, setNameChangeState] = useState<{ requestedName: string } | null>(null);
   const [isRequestingNameChange, setIsRequestingNameChange] = useState(false);
   const [nameChangeError, setNameChangeError] = useState<string | null>(null);
@@ -167,10 +161,6 @@ export function ShopSettingsPage() {
   const accentOnColor = accentCheck && contrastRatio(currentAccent, '#000000') > contrastRatio(currentAccent, '#FFFFFF')
     ? '#000000'
     : '#FFFFFF';
-
-  const currentDetails = detailsState ?? {
-    minOrderAmountCents: shop.minOrderAmountCents ?? 0,
-  };
 
   const currentAddress = addressState ?? {
     street: shop.address?.street ?? '',
@@ -276,26 +266,6 @@ export function ShopSettingsPage() {
       setColorsError(t('shops.colorsFailedToSave'));
     } finally {
       setIsSavingColors(false);
-    }
-  };
-
-  const handleSaveDetails = async () => {
-    setIsSavingDetails(true);
-    setDetailsError(null);
-    try {
-      const cents = currentDetails.minOrderAmountCents > 0 ? currentDetails.minOrderAmountCents : undefined;
-      await updateShop({
-        shopId: shopId!,
-        body: {
-          ...(cents != null && { minOrderAmountCents: cents }),
-        },
-      }).unwrap();
-      toast.success(t('shops.detailsSaved'));
-      refetch();
-    } catch {
-      setDetailsError(t('shops.detailsFailedToSave'));
-    } finally {
-      setIsSavingDetails(false);
     }
   };
 
@@ -629,30 +599,6 @@ export function ShopSettingsPage() {
                 </div>
               </div>
             )}
-
-            <div className="mt-4">
-              <CurrencyInput
-                label={t('shops.detailsMinOrder')}
-                valueCents={currentDetails.minOrderAmountCents}
-                onChange={(cents) => setDetailsState({ ...currentDetails, minOrderAmountCents: cents })}
-                countryCode={shop.countryCode}
-              />
-            </div>
-            {detailsError && <p className={`mt-3 ${ERROR_CLASS}`}>{detailsError}</p>}
-            <div className={FOOTER_CLASS}>
-              <MyButton onClick={handleSaveDetails} isPending={isSavingDetails}>
-                {isSavingDetails ? t('shops.detailsSaving') : t('shops.detailsSave')}
-              </MyButton>
-              {detailsState && (
-                <MyButton
-                  variant="ghost"
-                  onClick={() => { setDetailsState(null); setDetailsError(null); }}
-                  disabled={isSavingDetails}
-                >
-                  {t('shops.detailsCancel')}
-                </MyButton>
-              )}
-            </div>
           </Section>
 
           <Section
@@ -1034,6 +980,7 @@ export function ShopSettingsPage() {
           <AutoAcceptCard shop={shop} onRefetch={refetch} />
           <KitchenTimingCard shop={shop} onRefetch={refetch} />
           <ScheduledOrdersCard shop={shop} onRefetch={refetch} />
+          <MinOrderCard shop={shop} onRefetch={refetch} />
           <DeliveryCard shop={shop} refs={refs} onRefetch={refetch} />
           <DineInCard shop={shop} onRefetch={refetch} />
             </>
