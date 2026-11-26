@@ -1,7 +1,7 @@
 /** Format the backend accepts for a shop slug (client-side hint only; the backend is the authority). */
 export const SLUG_PATTERN = /^[a-z0-9][a-z0-9-]{0,63}$/;
 
-/** Suggests a web address from a shop name. Returns '' when the name has no Latin letters or digits. */
+/** Suggests a shop link from a shop name. Returns '' when the name has no Latin letters or digits. */
 export function slugFromName(name: string): string {
   return (
     name

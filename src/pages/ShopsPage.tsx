@@ -175,6 +175,7 @@ export function CreateShopModal({ onClose }: { onClose: () => void }) {
                   onChange={(e) => handleSlugChange(e.target.value)}
                   aria-describedby="shop-slug-status"
                 />
+                <p className="text-xs text-muted">{t('shops.shopSlugHelp')}</p>
                 <p id="shop-slug-status" role="status" data-testid="slug-status" className="text-xs">
                   {!slugValid ? (
                     <span className={slug ? 'text-[#b42318]' : 'text-muted'}>{t('shops.shopSlugHint')}</span>
@@ -193,7 +194,7 @@ export function CreateShopModal({ onClose }: { onClose: () => void }) {
                     <span className="text-[#b42318]">{t('shops.slugCheckFailed')}</span>
                   )}
                 </p>
-                <p className="text-xs break-all text-muted" data-testid="slug-url">{shopUrl}</p>
+                <p className="text-sm font-medium text-ink break-all" data-testid="slug-url">{shopUrl}</p>
               </div>
 
               <div className="flex flex-col gap-1.5">
