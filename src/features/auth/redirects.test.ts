@@ -5,13 +5,13 @@ import { afterLoginPath, shopLandingPath, staffRedirectFor } from './redirects';
 describe('redirects', () => {
   it('staff stay in their restaurant, and /phone opens their phone view', () => {
     expect(staffRedirectFor('/phone', 's1')).toBe('/shops/s1/phone');
-    expect(staffRedirectFor('/shops/s1/reports', 's1')).toBeNull();
-    expect(staffRedirectFor('/', 's1')).toBe('/shops/s1/reports');
-    expect(staffRedirectFor('/shops/s2/orders', 's1')).toBe('/shops/s1/reports');
+    expect(staffRedirectFor('/shops/s1/dashboard', 's1')).toBeNull();
+    expect(staffRedirectFor('/', 's1')).toBe('/shops/s1/dashboard');
+    expect(staffRedirectFor('/shops/s2/orders', 's1')).toBe('/shops/s1/dashboard');
   });
 
   it('shopLandingPath opens the first page the user may open', () => {
-    expect(shopLandingPath('s1', ['view_orders', 'view_reports'])).toBe('/shops/s1/reports');
+    expect(shopLandingPath('s1', ['view_orders', 'view_reports'])).toBe('/shops/s1/dashboard');
     expect(shopLandingPath('s1', ['view_orders'])).toBe('/shops/s1/orders');
     expect(shopLandingPath('s1', [])).toBe('/shops/s1/phone');
   });

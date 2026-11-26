@@ -5,7 +5,7 @@ export const RETURN_TO_KEY = 'ros.returnTo';
 /** Where a staff login must go instead of `pathname`, or null to stay. Staff stay in their own restaurant. */
 export function staffRedirectFor(pathname: string, shopId: string): string | null {
   if (pathname === '/phone') return `/shops/${shopId}/phone`;
-  return pathname.startsWith(`/shops/${shopId}`) ? null : `/shops/${shopId}/reports`;
+  return pathname.startsWith(`/shops/${shopId}`) ? null : `/shops/${shopId}/dashboard`;
 }
 
 /** The shop page a user lands on: the first they may open, else the phone view (open to anyone on the staff). */

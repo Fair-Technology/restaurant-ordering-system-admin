@@ -41,9 +41,9 @@ afterEach(() => {
 
 function renderPage() {
   render(
-    <MemoryRouter initialEntries={['/shops/s1/reports']}>
+    <MemoryRouter initialEntries={['/shops/s1/dashboard']}>
       <Routes>
-        <Route path="/shops/:shopId/reports" element={<ReportsPage />} />
+        <Route path="/shops/:shopId/dashboard" element={<ReportsPage />} />
       </Routes>
     </MemoryRouter>,
   );

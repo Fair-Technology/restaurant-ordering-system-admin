@@ -56,7 +56,7 @@ function StatTile({ label, value, help }: { label: string; value: string; help?:
 }
 
 export function ReportsPage() {
-  usePageTitle('nav.reports');
+  usePageTitle('nav.dashboard');
   const { shopId } = useParams<{ shopId: string }>();
   const { t, i18n } = useTranslation();
   const { data: shop } = useGetShopByIdQuery({ shopId: shopId! });

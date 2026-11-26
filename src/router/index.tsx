@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components -- router config, not a fast-refresh boundary */
 import { lazy, Suspense, type ComponentType } from 'react';
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { createBrowserRouter, Navigate, useParams } from 'react-router-dom';
 import { Layout } from '../components/layout/Layout';
 import { ShopLayout } from '../components/layout/ShopLayout';
 import { ShopIndexRedirect } from '../components/layout/ShopIndexRedirect';
@@ -39,6 +39,12 @@ function Lazy({ page: Page }: { page: ComponentType }) {
   );
 }
 
+/** Old /reports bookmarks land on the renamed Dashboard. */
+function ReportsRedirect() {
+  const { shopId } = useParams<{ shopId: string }>();
+  return <Navigate to={`/shops/${shopId}/dashboard`} replace />;
+}
+
 export const router = createBrowserRouter([
   { path: '/login', element: <Lazy page={LoginPage} />, errorElement: <RouteErrorPage /> },
   { path: '/:slug/staff', element: <Lazy page={StaffLoginPage} /> },
@@ -62,7 +68,8 @@ export const router = createBrowserRouter([
               { path: 'combos', element: <Lazy page={CombosPage} /> },
               { path: 'option-groups', element: <Lazy page={OptionGroupsPage} /> },
               { path: 'orders', element: <Lazy page={OrdersPage} /> },
-              { path: 'reports', element: <Lazy page={ReportsPage} /> },
+              { path: 'dashboard', element: <Lazy page={ReportsPage} /> },
+              { path: 'reports', element: <ReportsRedirect /> },
               { path: 'categories', element: <Lazy page={CategoriesPage} /> },
               { path: 'tables', element: <Lazy page={TablesPage} /> },
               { path: 'promotions', element: <Lazy page={PromotionsPage} /> },
