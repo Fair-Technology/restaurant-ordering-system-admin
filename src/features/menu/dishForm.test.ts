@@ -155,45 +155,44 @@ describe('add required checklist', () => {
   const full = (): DishFormState =>
     state({ form: { name: 'Pasta', description: '', price: 100 }, categoryIds: ['c1'], foodInfo: { ...EMPTY_FOOD_INFO, allergenIds: [], additiveIds: [] } });
 
-  it('an empty form has all six items open, Basics before Food', () => {
-    const items = addRequiredChecklist(emptyDishFormState(), true);
-    expect(items.map((i) => i.id)).toEqual(['photo', 'name', 'price', 'category', 'allergens', 'additives']);
-    expect(items.map((i) => i.section)).toEqual(['basics', 'basics', 'basics', 'basics', 'food', 'food']);
-    expect(addRequiredLeftCount(items)).toBe(6);
+  it('an empty form has all five items open, Basics before Food', () => {
+    const items = addRequiredChecklist(emptyDishFormState());
+    expect(items.map((i) => i.id)).toEqual(['name', 'price', 'category', 'allergens', 'additives']);
+    expect(items.map((i) => i.section)).toEqual(['basics', 'basics', 'basics', 'food', 'food']);
+    expect(addRequiredLeftCount(items)).toBe(5);
     expect(firstIncompleteAddSection(items)).toBe('basics');
   });
 
   it('counts every item on its own', () => {
     const base = full();
-    expect(addRequiredLeftCount(addRequiredChecklist(base, false))).toBe(0);
-    expect(addRequiredLeftCount(addRequiredChecklist(base, true))).toBe(1);
-    expect(addRequiredLeftCount(addRequiredChecklist({ ...base, form: { ...base.form, name: '   ' } }, false))).toBe(1);
-    expect(addRequiredLeftCount(addRequiredChecklist({ ...base, form: { ...base.form, price: 0 } }, false))).toBe(1);
-    expect(addRequiredLeftCount(addRequiredChecklist({ ...base, categoryIds: [] }, false))).toBe(1);
-    expect(addRequiredLeftCount(addRequiredChecklist({ ...base, foodInfo: { ...base.foodInfo, allergenIds: null } }, false))).toBe(1);
-    expect(addRequiredLeftCount(addRequiredChecklist({ ...base, foodInfo: { ...base.foodInfo, additiveIds: null } }, false))).toBe(1);
+    expect(addRequiredLeftCount(addRequiredChecklist(base))).toBe(0);
+    expect(addRequiredLeftCount(addRequiredChecklist({ ...base, form: { ...base.form, name: '   ' } }))).toBe(1);
+    expect(addRequiredLeftCount(addRequiredChecklist({ ...base, form: { ...base.form, price: 0 } }))).toBe(1);
+    expect(addRequiredLeftCount(addRequiredChecklist({ ...base, categoryIds: [] }))).toBe(1);
+    expect(addRequiredLeftCount(addRequiredChecklist({ ...base, foodInfo: { ...base.foodInfo, allergenIds: null } }))).toBe(1);
+    expect(addRequiredLeftCount(addRequiredChecklist({ ...base, foodInfo: { ...base.foodInfo, additiveIds: null } }))).toBe(1);
   });
 
-  it('name + photo + price + category still leaves allergens and additives; "none" ([]) counts as confirmed', () => {
+  it('name + price + category still leaves allergens and additives; "none" ([]) counts as confirmed', () => {
     const basicsOnly = { ...full(), foodInfo: { ...EMPTY_FOOD_INFO } };
-    const items = addRequiredChecklist(basicsOnly, false);
+    const items = addRequiredChecklist(basicsOnly);
     expect(addRequiredLeftCount(items)).toBe(2);
     expect(firstIncompleteAddSection(items)).toBe('food');
     const picked = { ...basicsOnly, foodInfo: { ...EMPTY_FOOD_INFO, allergenIds: ['milk'], additiveIds: [] } };
-    expect(addRequiredLeftCount(addRequiredChecklist(picked, false))).toBe(0);
-    expect(firstIncompleteAddSection(addRequiredChecklist(picked, false))).toBeNull();
+    expect(addRequiredLeftCount(addRequiredChecklist(picked))).toBe(0);
+    expect(firstIncompleteAddSection(addRequiredChecklist(picked))).toBeNull();
   });
 
   it('jumps to Basics whenever any Basics item is open, even if Food is open too', () => {
-    const items = addRequiredChecklist({ ...emptyDishFormState(), categoryIds: ['c1'] }, false);
+    const items = addRequiredChecklist({ ...emptyDishFormState(), categoryIds: ['c1'] });
     expect(firstIncompleteAddSection(items)).toBe('basics');
   });
 
   it('the nav lines: required left / complete, confirm food, optional or groups, everywhere or customised', () => {
     const empty = emptyDishFormState();
-    const items = addRequiredChecklist(empty, true);
-    expect(addNavStatus('basics', empty, items, 0, 0, false)).toEqual({ key: 'requiredLeft', tone: 'muted', count: 4 });
-    expect(addNavStatus('basics', empty, items, 0, 0, true)).toEqual({ key: 'requiredLeft', tone: 'warn', count: 4 });
+    const items = addRequiredChecklist(empty);
+    expect(addNavStatus('basics', empty, items, 0, 0, false)).toEqual({ key: 'requiredLeft', tone: 'muted', count: 3 });
+    expect(addNavStatus('basics', empty, items, 0, 0, true)).toEqual({ key: 'requiredLeft', tone: 'warn', count: 3 });
     expect(addNavStatus('food', empty, items, 0, 0, true)).toEqual({ key: 'confirmFood', tone: 'warn' });
     expect(addNavStatus('options', empty, items, 0, 0, false)).toEqual({ key: 'variantExtras', tone: 'muted', variantCount: 0, extraCount: 0 });
     expect(addNavStatus('options', empty, items, 1, 2, false)).toEqual({ key: 'variantExtras', tone: 'muted', variantCount: 1, extraCount: 2 });
@@ -202,8 +201,8 @@ describe('add required checklist', () => {
     expect(addNavStatus('availability', custom, items, 0, 0, false).key).toBe('customised');
     expect(addNavStatus('availability', { ...empty, foodInfo: { ...empty.foodInfo, ageRestricted: true } }, items, 0, 0, false).key).toBe('customised');
     const done = full2();
-    expect(addNavStatus('basics', done, addRequiredChecklist(done, false), 0, 0, false)).toEqual({ key: 'complete', tone: 'ok' });
-    expect(addNavStatus('food', done, addRequiredChecklist(done, false), 0, 0, false)).toEqual({ key: 'complete', tone: 'ok' });
+    expect(addNavStatus('basics', done, addRequiredChecklist(done), 0, 0, false)).toEqual({ key: 'complete', tone: 'ok' });
+    expect(addNavStatus('food', done, addRequiredChecklist(done), 0, 0, false)).toEqual({ key: 'complete', tone: 'ok' });
   });
 });
 

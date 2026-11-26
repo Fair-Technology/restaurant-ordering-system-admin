@@ -11,6 +11,7 @@ import { MySelect } from '../ui/MySelect';
 import { CurrencyInput } from '../ui/CurrencyInput';
 import { PendingButton } from '../ui/PendingButton';
 import { PillSwitch } from '../ui/PillSwitch';
+import { useToast } from '../../contexts/ToastContext';
 import { DishPhotoField } from './DishPhotoField';
 import { OptionGroupDialog } from './OptionGroupDialog';
 import {
@@ -153,12 +154,15 @@ export function DishForm({
   onAddAnother,
 }: DishFormProps) {
   const { t } = useTranslation();
+  const toast = useToast();
   const { data: libraryGroups } = useGetOptionGroupsQuery({ shopId });
   const library = libraryGroups ?? [];
 
   const [section, setSection] = useState<DishSection>('basics');
   const [pickedLanguage, setPickedLanguage] = useState<MenuLanguage | undefined>();
   const [tried, setTried] = useState(false);
+  // The owner tried to turn the dish on (or add it to the menu) without a photo; clears itself once a photo is there.
+  const [enableBlocked, setEnableBlocked] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
 
   const originalLanguage = languages[0];
@@ -181,15 +185,22 @@ export function DishForm({
 
   const save = () => {
     setTried(true);
-    if (nameMissing || descMissing || photoMissing || categoryMissing) {
+    if (nameMissing || descMissing || categoryMissing) {
       setPickedLanguage(originalLanguage);
       setSection('basics');
       return;
     }
     onSave();
   };
+  const blockEnableWithoutPhoto = () => {
+    setPickedLanguage(originalLanguage);
+    setSection('basics');
+    setEnableBlocked(true);
+    toast.error(t('products.enableNeedsPhoto', { name: value.form.name.trim() || t(mode === 'add' ? 'dishForm.newDish' : 'dishes.editor.untitledDish') }));
+  };
   const discard = () => {
     setTried(false);
+    setEnableBlocked(false);
     onDiscard();
   };
 
@@ -199,6 +210,10 @@ export function DishForm({
     if (addRequiredLeft > 0) {
       setPickedLanguage(originalLanguage);
       setSection(firstIncompleteAddSection(requiredChecklist ?? []) ?? 'basics');
+      return;
+    }
+    if (photoMissing) {
+      blockEnableWithoutPhoto();
       return;
     }
     onAddToMenu?.();
@@ -236,7 +251,17 @@ export function DishForm({
         </div>
         <div className="ml-auto flex flex-none items-center gap-6">
           {mode === 'edit' && (
-            <PillSwitch checked={value.isAvailable} onChange={(on) => patch({ isAvailable: on })}>
+            <PillSwitch
+              checked={value.isAvailable}
+              onChange={(on) => {
+                if (on && photoMissing) {
+                  blockEnableWithoutPhoto();
+                  return;
+                }
+                setEnableBlocked(false);
+                patch({ isAvailable: on });
+              }}
+            >
               {value.isAvailable ? t('dishForm.menuOn') : t('dishForm.menuOff')}
             </PillSwitch>
           )}
@@ -353,6 +378,7 @@ export function DishForm({
                   labelLanguage={extraLanguage ? activeLanguage : undefined}
                   langName={langName}
                   tried={tried}
+                  enableBlocked={enableBlocked && photoMissing}
                   nameMissing={nameMissing}
                   descMissing={descMissing}
                   photoMissing={photoMissing}
@@ -517,6 +543,8 @@ interface BasicsProps {
   labelLanguage: MenuLanguage | undefined;
   langName: (l: MenuLanguage) => string;
   tried: boolean;
+  /** The owner tried to turn the dish on without a photo. */
+  enableBlocked: boolean;
   nameMissing: boolean;
   descMissing: boolean;
   photoMissing: boolean;
@@ -525,7 +553,7 @@ interface BasicsProps {
 
 function BasicsSection({
   mode, value, patch, patchFood, shopId, imageFile, setImageFile, existingImageUrl, categoriesList, refs, currency, currencySymbol,
-  translating, originalLanguage, labelLanguage, langName, tried, nameMissing, descMissing, photoMissing, categoryMissing,
+  translating, originalLanguage, labelLanguage, langName, tried, enableBlocked, nameMissing, descMissing, photoMissing, categoryMissing,
 }: BasicsProps) {
   const { t, i18n } = useTranslation();
   const adding = mode === 'add';
@@ -569,9 +597,10 @@ function BasicsSection({
           imageFile={imageFile}
           setImageFile={setImageFile}
           existingImageUrl={existingImageUrl}
-          photoError={tried && photoMissing}
+          photoError={enableBlocked && photoMissing}
           label={t('dishes.editor.dishPhoto')}
-          {...(adding ? { requiredNote: t('dishForm.requiredBadge'), errorText: t('dishForm.errors.photo') } : {})}
+          errorText={t('products.enableNeedsPhotoInline')}
+          {...(adding ? { requiredNote: t('dishForm.optionalBadge') } : {})}
         />
         <div className="flex min-w-0 flex-1 flex-col gap-[18px]">
           <div>

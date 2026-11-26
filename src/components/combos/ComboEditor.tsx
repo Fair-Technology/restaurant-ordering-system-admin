@@ -7,13 +7,14 @@ import { useToast } from '../../contexts/ToastContext';
 import { formatCents } from '../../utils/money';
 import { isWrongSizeError } from '../../features/images/imageRules';
 import { useUploadProductImage } from '../../features/menu/useUploadProductImage';
-import { createDishWithPhoto, isPhotoRequiredError, replaceDishPhoto } from '../../features/menu/productImage';
+import { createDishWithPhoto, replaceDishPhoto } from '../../features/menu/productImage';
 import { menuLanguagesOf, resolveActiveLanguage, withTranslation } from '../../features/menu/translations';
 import {
   comboFormToBody,
   comboPhotoMissing,
   comboPhotoUrl,
   EMPTY_COMBO_FORM,
+  isComboImageRequiredToEnableError,
   formFromCombo,
   type ComboForm,
   type ComboFormError,
@@ -50,7 +51,8 @@ export function ComboEditor({ shop, shopId, combo, products, categories, onDone 
   const [updateProduct] = useUpdateProductMutation();
   const uploadProductImage = useUploadProductImage();
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [photoTried, setPhotoTried] = useState(false);
+  // The owner tried to turn the combo on without a photo; shown only while the combo still has none.
+  const [photoEnableBlocked, setPhotoEnableBlocked] = useState(false);
   const [uploading, setUploading] = useState(false);
   // Set when the combo was created but its photo upload failed: the next save only retries the photo.
   const [createdComboId, setCreatedComboId] = useState<string | null>(null);
@@ -84,7 +86,14 @@ export function ComboEditor({ shop, shopId, combo, products, categories, onDone 
   const serverMessage = (err: unknown): string =>
     (err as { data?: { error?: string } })?.data?.error ?? t('combos.saveFailed');
 
-  const photoError = photoTried && comboPhotoMissing(imageFile, existingImageUrl);
+  const photoMissing = comboPhotoMissing(imageFile, existingImageUrl);
+  const photoError = photoEnableBlocked && photoMissing;
+  const enableNeedsPhotoToast = () => t('combos.enableNeedsPhoto', { name: form.name.trim() || t('combos.name') });
+  const blockEnableWithoutPhoto = () => {
+    setPhotoEnableBlocked(true);
+    setPickedLanguage(undefined);
+    toast.error(enableNeedsPhotoToast());
+  };
 
   const submit = async () => {
     const body = comboFormToBody(form);
@@ -93,19 +102,18 @@ export function ComboEditor({ shop, shopId, combo, products, categories, onDone 
       return;
     }
     setFormError(null);
-    // A combo always has a photo: new ones need one, older photo-less ones must get one before any change is saved.
-    if (comboPhotoMissing(imageFile, existingImageUrl) && !createdComboId) {
-      setPhotoTried(true);
-      setPickedLanguage(undefined);
+    // A combo can be saved without a photo, but then it stays off: turning it on needs one.
+    if (form.isAvailable && photoMissing) {
+      blockEnableWithoutPhoto();
       return;
     }
     if (!combo) {
-      if (!imageFile) return;
       try {
         const result = await createDishWithPhoto({
           existingProductId: createdComboId,
           createDish: async () => (await createCombo({ shopId, body }).unwrap()).id,
           uploadPhoto: async (comboId) => {
+            if (!imageFile) return;
             setUploading(true);
             try {
               await uploadProductImage(shopId, comboId, imageFile);
@@ -122,7 +130,7 @@ export function ComboEditor({ shop, shopId, combo, products, categories, onDone 
         toast.success(t('combos.saved'));
         onDone();
       } catch (err) {
-        toast.error(serverMessage(err));
+        toast.error(isComboImageRequiredToEnableError(err) ? enableNeedsPhotoToast() : serverMessage(err));
       }
       return;
     }
@@ -155,7 +163,7 @@ export function ComboEditor({ shop, shopId, combo, products, categories, onDone 
     } catch (err) {
       setUploading(false);
       if (uploadStage) toast.error(t(isWrongSizeError(err) ? 'products.productImageWrongSize' : 'combos.photoUploadFailed'));
-      else if (isPhotoRequiredError(err)) toast.error(t('combos.photoRequired'));
+      else if (isComboImageRequiredToEnableError(err)) toast.error(enableNeedsPhotoToast());
       else toast.error(serverMessage(err));
     }
   };
@@ -248,7 +256,10 @@ export function ComboEditor({ shop, shopId, combo, products, categories, onDone 
         </select>
       </div>
 
-      <DishPhotoField imageFile={imageFile} setImageFile={setImageFile} existingImageUrl={existingImageUrl} photoError={photoError} />
+      <DishPhotoField imageFile={imageFile} setImageFile={setImageFile} existingImageUrl={existingImageUrl}
+        photoError={photoError}
+        errorText={t('combos.enableNeedsPhotoInline')}
+      />
 
       {shop.countryCode === 'DE' && (
         <div className="space-y-1">
@@ -266,7 +277,19 @@ export function ComboEditor({ shop, shopId, combo, products, categories, onDone 
       )}
 
       <label className="flex items-center gap-2 text-sm font-semibold">
-        <input type="checkbox" className="accent-[#1f1a17]" checked={form.isAvailable} onChange={(e) => set({ isAvailable: e.target.checked })} />
+        <input
+          type="checkbox"
+          className="accent-[#1f1a17]"
+          checked={form.isAvailable}
+          onChange={(e) => {
+            if (e.target.checked && photoMissing) {
+              blockEnableWithoutPhoto();
+              return;
+            }
+            setPhotoEnableBlocked(false);
+            set({ isAvailable: e.target.checked });
+          }}
+        />
         {t('combos.available')}
       </label>
 

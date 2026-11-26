@@ -110,9 +110,9 @@ const confirmFoodInfo = () => {
   fireEvent.click(screen.getByRole('checkbox', { name: /Contains none of the/ }));
   fireEvent.click(screen.getByRole('checkbox', { name: /Contains no declarable additives/ }));
 };
-const fillBasics = () => {
+const fillBasics = (withPhoto = true) => {
   typeName('Spaghetti');
-  fireEvent.click(screen.getByRole('button', { name: 'pick photo' }));
+  if (withPhoto) fireEvent.click(screen.getByRole('button', { name: 'pick photo' }));
   typePrice('950');
   pickCategory('Pasta');
 };
@@ -129,35 +129,35 @@ afterEach(() => {
 });
 
 describe('AddDishPanel required list', () => {
-  it('an empty form says "6 required left"; clicking it jumps to Basics and shows the four inline errors', () => {
+  it('an empty form says "5 required left"; clicking it jumps to Basics and shows the three inline errors', () => {
     renderPanel();
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('New dish');
     expect(screen.getByText('Add dish · not on the menu yet')).toBeTruthy();
     expect(screen.queryByRole('switch', { name: 'On the menu' })).toBeNull();
-    expect(nav('Basics').textContent).toContain('4 required left');
+    expect(nav('Basics').textContent).toContain('3 required left');
     expect(nav('Food info').textContent).toContain('Confirm allergens and additives');
-    expect(primary('6 required left').disabled).toBe(false);
+    expect(primary('5 required left').disabled).toBe(false);
     expect(screen.queryByRole('alert')).toBeNull();
 
     fireEvent.click(nav('Availability')); // somewhere else, so the jump is visible
-    fireEvent.click(primary('6 required left'));
+    fireEvent.click(primary('5 required left'));
     expect(screen.getByRole('heading', { level: 2, name: 'Basics' })).toBeTruthy();
     const alerts = screen.getAllByRole('alert').map((a) => a.textContent);
-    expect(alerts).toEqual(['A photo is required.', 'Enter a German name.', 'Enter a price above €0.00.', 'Choose at least one category.']);
+    expect(alerts).toEqual(['Enter a German name.', 'Enter a price above €0.00.', 'Choose at least one category.']);
     expect(screen.queryByText(lookup('dishes.editor.descriptionRequired'))).toBeNull(); // description is optional when adding
     expect(createProduct).not.toHaveBeenCalled();
   });
 
-  it('lists six checklist rows that name their state and jump to their section', () => {
+  it('lists five checklist rows that name their state and jump to their section', () => {
     renderPanel();
     expect(screen.getByText('Before you add it')).toBeTruthy();
-    const rows = ['Photo', 'German name', 'Price', 'Category', 'Allergens confirmed', 'Additives confirmed'];
+    const rows = ['German name', 'Price', 'Category', 'Allergens confirmed', 'Additives confirmed'];
     for (const r of rows) expect(within(screen.getByRole('navigation')).getByRole('button', { name: new RegExp(`^${r} — not done yet`) })).toBeTruthy();
     fireEvent.click(within(screen.getByRole('navigation')).getByRole('button', { name: /^Allergens confirmed — not done yet, go to Food info/ }));
     expect(screen.getByRole('heading', { level: 2, name: 'Food info' })).toBeTruthy();
   });
 
-  it('name + photo + price + category still leaves "2 required left" until allergens and additives are confirmed', () => {
+  it('name + price + category still leaves "2 required left" until allergens and additives are confirmed', () => {
     renderPanel();
     fillBasics();
     expect(nav('Basics').textContent).toContain('Complete');
@@ -234,6 +234,30 @@ describe('AddDishPanel save as draft', () => {
 });
 
 describe('AddDishPanel add to menu', () => {
+  it('without a photo it does not add: nothing is created, the owner is told why, and the panel stays open', () => {
+    renderPanel();
+    fillBasics(false);
+    confirmFoodInfo();
+    expect(primary('Add to menu')).toBeTruthy();
+    fireEvent.click(primary('Add to menu'));
+    expect(createProduct).not.toHaveBeenCalled();
+    expect(updateProduct).not.toHaveBeenCalled();
+    expect(toastError).toHaveBeenCalledWith("Spaghetti can't be turned on without a photo.");
+    expect(screen.getByRole('heading', { level: 2, name: 'Basics' })).toBeTruthy();
+    expect(screen.getAllByRole('alert').map((a) => a.textContent)).toEqual(["Can't be turned on without a photo. Add a photo first, then turn it on."]);
+    expect(screen.queryByText(/was added to the menu/)).toBeNull();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('the server refusing to turn it on (no photo) is explained with the dish name', async () => {
+    createProduct.mockReturnValue({ unwrap: () => Promise.reject({ status: 409, data: { code: 'PRODUCT_IMAGE_REQUIRED_TO_ENABLE' } }) });
+    renderPanel();
+    fillBasics();
+    confirmFoodInfo();
+    fireEvent.click(primary('Add to menu'));
+    await waitFor(() => expect(toastError).toHaveBeenCalledWith("Spaghetti can't be turned on without a photo."));
+  });
+
   const addComplete = async () => {
     renderPanel();
     fillBasics();
@@ -274,7 +298,7 @@ describe('AddDishPanel add to menu', () => {
     expect((screen.getByLabelText(/^Name/) as HTMLInputElement).value).toBe('');
     expect(screen.getByText('no photo')).toBeTruthy();
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('New dish');
-    expect(primary('6 required left')).toBeTruthy();
+    expect(primary('5 required left')).toBeTruthy();
     expect(screen.queryByRole('alert')).toBeNull();
     expect(screen.getByText('Draft · not on the menu yet')).toBeTruthy();
   });
@@ -303,7 +327,7 @@ describe('AddDishPanel start from a similar dish', () => {
     expect((screen.getByLabelText('Tax class') as HTMLSelectElement).value).toBe('food');
     expect(nav('Options and extras').textContent).toContain('1 variant · 0 extras');
     expect(nav('Food info').textContent).toContain('Confirm allergens and additives');
-    expect(primary('5 required left')).toBeTruthy(); // category is copied; photo, name, price, allergens, additives are not
+    expect(primary('4 required left')).toBeTruthy(); // category is copied; name, price, allergens, additives are not
   });
 
   it('keeps allergens as "Not confirmed" on the Food info section', () => {

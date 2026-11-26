@@ -42,19 +42,29 @@ export function putBlobToStorage(uploadUrl: string, file: Blob, contentType: Ima
   });
 }
 
-/** A dish needs a photo: either one it already has, or a freshly cropped one waiting to be uploaded. */
+/** True when the dish has no photo (neither one it already has nor a freshly cropped one waiting to be uploaded). This no longer blocks saving, only turning the dish on, and it marks the dish incomplete. */
 export function dishPhotoMissing(pickedFile: Blob | null, existingImageUrl: string | null | undefined): boolean {
   return !pickedFile && !existingImageUrl;
 }
 
 export const PRODUCT_IMAGE_REQUIRED_CODE = 'PRODUCT_IMAGE_REQUIRED';
 
-/** True when a failed API call (RTK Query error) was the server refusing to leave a dish without a photo. */
+/** True when a failed API call (RTK Query error) was the server refusing a write that would LEAVE an available dish with no photo (removing the last photo while on, or editing a legacy on-dish that has none). Turning on is `isPhotoRequiredToEnableError`. */
 export function isPhotoRequiredError(error: unknown): boolean {
   if (typeof error !== 'object' || error === null) return false;
   const { data } = error as { data?: unknown };
   if (typeof data !== 'object' || data === null) return false;
   return (data as { code?: unknown }).code === PRODUCT_IMAGE_REQUIRED_CODE;
+}
+
+export const PRODUCT_IMAGE_REQUIRED_TO_ENABLE_CODE = 'PRODUCT_IMAGE_REQUIRED_TO_ENABLE';
+
+/** True when a failed API call was the server refusing to turn a dish ON because it has no photo. */
+export function isPhotoRequiredToEnableError(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) return false;
+  const { data } = error as { data?: unknown };
+  if (typeof data !== 'object' || data === null) return false;
+  return (data as { code?: unknown }).code === PRODUCT_IMAGE_REQUIRED_TO_ENABLE_CODE;
 }
 
 export interface CreateDishWithPhotoArgs {

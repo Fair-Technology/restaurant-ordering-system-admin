@@ -4,6 +4,7 @@ import type { ComboDto } from '../../services/combosApi';
 import { comboPhotoUrl } from '../../features/combos/combos';
 import { badgeClass, pillClass } from '../layout/pageStyles';
 import { AvailabilitySwitch } from '../menu/AvailabilitySwitch';
+import { PhotoBlockedNote } from '../menu/PhotoBlockedNote';
 import { PendingButton } from '../ui/PendingButton';
 
 /** One combo in a category list: same row shell as a dish row, with a switch and a trash button. */
@@ -17,6 +18,7 @@ export function ComboRow({
   dishCount,
   onOpen,
   onToggle,
+  photoBlockedMessage,
   onAskDelete,
   onConfirmDelete,
   onCancelDelete,
@@ -30,6 +32,8 @@ export function ComboRow({
   dishCount: (ids: string[]) => number;
   onOpen: () => void;
   onToggle: () => void;
+  /** Shown under the name right after the switch was refused because the combo has no photo. */
+  photoBlockedMessage?: string;
   onAskDelete: () => void;
   onConfirmDelete: () => void;
   onCancelDelete: () => void;
@@ -76,6 +80,10 @@ export function ComboRow({
           <span className="text-[13px] text-[#6b6058]">
             {c.groups.map((g) => t('combos.groupSummary', { name: g.name, count: dishCount(g.productIds) })).join(' · ')}
           </span>
+          {!photo && (
+            <span className="self-start rounded-full bg-[#fff6e0] px-2 py-0.5 text-xs font-semibold text-[#8a5a00]">{t('combos.missingPhoto')}</span>
+          )}
+          {photoBlockedMessage && <PhotoBlockedNote message={photoBlockedMessage} onAddPhoto={onOpen} />}
         </div>
         <span className="min-w-14 flex-shrink-0 text-right text-[15px] font-bold sm:w-20">{money(c.priceCents)}</span>
         <AvailabilitySwitch

@@ -585,6 +585,9 @@
       "translation": "Translations are too long (name 120, description 2000, choice name 60 characters)."
     },
     "photoRequired": "Please add a photo",
+    "enableNeedsPhoto": "{{name}} can't be turned on without a photo.",
+    "enableNeedsPhotoInline": "Can't be turned on without a photo. Add a photo first, then turn it on.",
+    "missingPhoto": "Photo missing",
     "createdWithoutPhoto": "The combo was created, but its photo could not be uploaded, so it has no photo yet. Press the button again to retry the upload. If you close this window the combo stays without a photo: open it with Edit and add one (a photo is required).",
     "retryPhotoUpload": "Retry photo upload",
     "photoReplaceIncomplete": "Your changes were saved and the new photo was added, but the old photo could not be removed, so it may still show. Open the combo again and save the photo once more.",
@@ -699,6 +702,8 @@
     "imageRequiredNote": "(required)",
     "photoReplaceIncomplete": "Your changes were saved and the new photo was added, but the old photo could not be removed, so it may still show. Open the dish again and save the photo once more.",
     "photoRequired": "Please add a photo",
+    "enableNeedsPhoto": "{{name}} can't be turned on without a photo.",
+    "enableNeedsPhotoInline": "Can't be turned on without a photo. Add a photo first, then turn it on.",
     "currentImage": "Current",
     "newImage": "New",
     "create": "Create Product",

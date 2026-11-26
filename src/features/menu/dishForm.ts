@@ -145,7 +145,7 @@ export function emptyDishFormState(): DishFormState {
   };
 }
 
-export type AddRequiredId = 'photo' | 'name' | 'price' | 'category' | 'allergens' | 'additives';
+export type AddRequiredId = 'name' | 'price' | 'category' | 'allergens' | 'additives';
 
 export interface AddRequiredItem {
   id: AddRequiredId;
@@ -157,10 +157,8 @@ export interface AddRequiredItem {
 /** What a new dish needs before it can go on the menu, Basics first, then Food info (the order errors are shown in). */
 export function addRequiredChecklist(
   value: Pick<DishFormState, 'form' | 'categoryIds' | 'foodInfo'>,
-  photoMissing: boolean,
 ): AddRequiredItem[] {
   return [
-    { id: 'photo', done: !photoMissing, section: 'basics' },
     { id: 'name', done: value.form.name.trim() !== '', section: 'basics' },
     { id: 'price', done: value.form.price > 0, section: 'basics' },
     { id: 'category', done: value.categoryIds.length > 0, section: 'basics' },
