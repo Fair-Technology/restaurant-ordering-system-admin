@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
 import type { StripeConnectInstance } from '@stripe/connect-js';
@@ -8,6 +8,7 @@ import {
   ConnectAccountManagement,
   ConnectComponentsProvider,
 } from '@stripe/react-connect-js';
+import { stripeLocaleForUiLanguage } from './stripeLocale';
 import { useCreateStripeAccountSessionMutation } from '../../services/api';
 
 interface Props {
@@ -17,12 +18,13 @@ interface Props {
 }
 
 export function StripeOnboardingModal({ shopId, purpose = 'onboarding', onClose }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [createSession] = useCreateStripeAccountSessionMutation();
 
   const stripeConnectInstance = useMemo<StripeConnectInstance>(() => {
     return loadConnectAndInitialize({
       publishableKey: import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string,
+      locale: stripeLocaleForUiLanguage(i18n.language),
       fetchClientSecret: async () => {
         const result = await createSession({ shopId, body: { purpose } }).unwrap();
         return result.clientSecret;
@@ -30,6 +32,15 @@ export function StripeOnboardingModal({ shopId, purpose = 'onboarding', onClose 
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shopId, purpose]);
+
+  // Follow live language switches on the existing instance (re-initialising would restart the embedded flow).
+  const appliedLocale = useRef(stripeLocaleForUiLanguage(i18n.language));
+  useEffect(() => {
+    const locale = stripeLocaleForUiLanguage(i18n.language);
+    if (locale === appliedLocale.current) return;
+    appliedLocale.current = locale;
+    stripeConnectInstance.update({ locale });
+  }, [i18n.language, stripeConnectInstance]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
