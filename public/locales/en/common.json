@@ -1445,6 +1445,8 @@
     "collapseAll": "Collapse all"
   },
   "categories": {
+    "chooseIcon": "Choose icon",
+    "removeIcon": "Remove icon",
     "addCategory": "+ New Category",
     "newCategory": "New Category",
     "createSubtitle": "Add a name for your new category.",
