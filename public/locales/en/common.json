@@ -1479,6 +1479,8 @@
     "hasStar": "Show star icon",
     "taxClass": "Tax class for new dishes",
     "taxClassHelp": "New dishes in this category start with this tax class. Changing it doesn't change existing dishes.",
+    "taxClassChoose": "Choose a tax class",
+    "taxClassRequired": "Please choose a tax class.",
     "deleteTypeToConfirm": "Type \"{{name}}\" to confirm",
     "created": "Category created.",
     "saved": "Category saved.",

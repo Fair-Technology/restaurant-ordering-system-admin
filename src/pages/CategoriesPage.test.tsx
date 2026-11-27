@@ -10,7 +10,9 @@ vi.mock('react-i18next', () => ({
     i18n: { language: 'en' },
   }),
 }));
-const { toastSuccess, toastError, updateCategoryMock, dragEvent } = vi.hoisted(() => ({
+const { toastSuccess, toastError, updateCategoryMock, createCategoryMock, refsMock, dragEvent } = vi.hoisted(() => ({
+  createCategoryMock: vi.fn(),
+  refsMock: { current: { taxClasses: [] } as Record<string, unknown> },
   toastSuccess: vi.fn(),
   toastError: vi.fn(),
   updateCategoryMock: vi.fn(),
@@ -31,7 +33,7 @@ vi.mock('@dnd-kit/core', async () => {
     ),
   };
 });
-vi.mock('../features/menu/useShopReferenceLists', () => ({ useShopReferenceLists: () => ({ refs: { taxClasses: [] } }) }));
+vi.mock('../features/menu/useShopReferenceLists', () => ({ useShopReferenceLists: () => ({ refs: refsMock.current }) }));
 vi.mock('../components/ui/IconPicker', () => ({ IconPickerInline: () => <span /> }));
 
 const categories = [
@@ -45,7 +47,10 @@ vi.mock('../services/api', () => ({
     (...args: unknown[]) => ({ unwrap: () => updateCategoryMock(...args) }),
     { isLoading: false },
   ],
-  useCreateCategoryMutation: () => [vi.fn(), {}],
+  useCreateCategoryMutation: () => [
+    (...args: unknown[]) => ({ unwrap: () => createCategoryMock(...args) }),
+    { isLoading: false },
+  ],
 }));
 
 vi.mock('../components/categories/CategoryEditor', () => ({
@@ -78,6 +83,8 @@ beforeEach(() => {
   toastSuccess.mockReset();
   toastError.mockReset();
   updateCategoryMock.mockReset();
+  createCategoryMock.mockReset();
+  refsMock.current = { taxClasses: [] };
 });
 afterEach(() => {
   cleanup();
@@ -195,5 +202,48 @@ describe('CategoriesPage reordering', () => {
     renderAt('/shops/s1/categories');
     fireEvent.click(within(row('Pizza')).getByLabelText('categories.dragHandle'));
     expect(search()).toBe('');
+  });
+});
+
+describe('CategoriesPage create dialog tax class', () => {
+  const taxClass = (id: string, en: string) => ({ id, isActive: true, labels: { en, de: en }, rates: [] });
+  beforeEach(() => {
+    refsMock.current = {
+      defaultTaxClassId: 'speisen',
+      taxClasses: [taxClass('speisen', 'Speisen'), taxClass('getraenke', 'Getränke')],
+    };
+    createCategoryMock.mockResolvedValue({});
+  });
+  const openDialog = () => {
+    renderAt('/shops/s1/categories?addCategory=1');
+    return screen.getByLabelText('categories.taxClass') as HTMLSelectElement;
+  };
+
+  it('preselects no tax class, even though the platform default exists', () => {
+    const select = openDialog();
+    expect(select.value).toBe('');
+    expect(select.selectedOptions[0].textContent).toBe('categories.taxClassChoose');
+    expect(select.selectedOptions[0].disabled).toBe(true);
+  });
+
+  it('blocks submit without a tax class and shows the validation error', () => {
+    const select = openDialog();
+    fireEvent.change(screen.getByLabelText('categories.name'), { target: { value: 'Getränke' } });
+    fireEvent.submit(select.closest('form')!);
+    expect(screen.getByRole('alert').textContent).toBe('categories.taxClassRequired');
+    expect(select.getAttribute('aria-invalid')).toBe('true');
+    expect(select.getAttribute('aria-describedby')).toBe(screen.getByRole('alert').id);
+    expect(createCategoryMock).not.toHaveBeenCalled();
+    fireEvent.change(select, { target: { value: 'getraenke' } });
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('sends the explicitly chosen tax class, not the platform default', async () => {
+    const select = openDialog();
+    fireEvent.change(screen.getByLabelText('categories.name'), { target: { value: 'Getränke' } });
+    fireEvent.change(select, { target: { value: 'getraenke' } });
+    fireEvent.submit(select.closest('form')!);
+    await waitFor(() => expect(createCategoryMock).toHaveBeenCalledTimes(1));
+    expect(createCategoryMock.mock.calls[0][0].body.taxClassId).toBe('getraenke');
   });
 });
