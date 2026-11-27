@@ -37,6 +37,7 @@ import { formatShopDate } from '../utils/locale';
 import { countryDisplayName } from '../features/shops/openedCountries';
 import { SettingsSectionNav } from '../components/shop/SettingsSectionNav';
 import { LegalGoLiveSummary } from '../components/legal/LegalGoLiveSummary';
+import { translateLegalError } from '../features/legal/legalErrorMessage';
 import { isEraseEmailMatch } from '../features/legal/eraseConfirm';
 import { requiredImpressumKeys } from '../features/legal/impressumRequired';
 import {
@@ -237,7 +238,7 @@ function ImpressumCard({ shopId, legal, shopAddress, countryCode }: {
       await updateLegal({ shopId, body: { impressum: value, taxNumber: taxNumber.trim() } }).unwrap();
       toast.success(t('legal.saved'));
     } catch (err) {
-      const message = errorMessage(err, t('legal.saveFailed'));
+      const message = translateLegalError(err, t, t('legal.saveFailed'));
       setServerError(message);
       toast.error(message);
     }
@@ -330,7 +331,7 @@ function InvoiceLegalExtrasCard({ shopId, legal }: { shopId: string; legal: Shop
       await updateLegal({ shopId, body: { invoiceLegalExtras: value } }).unwrap();
       toast.success(t('legal.saved'));
     } catch (err) {
-      const message = errorMessage(err, t('legal.saveFailed'));
+      const message = translateLegalError(err, t, t('legal.saveFailed'));
       setServerError(message);
       toast.error(message);
     }
@@ -452,7 +453,7 @@ function useSaveLegal(shopId: string) {
       await updateLegal({ shopId, body }).unwrap();
       toast.success(t('legal.saved'));
     } catch (err) {
-      toast.error(errorMessage(err, t('legal.saveFailed')));
+      toast.error(translateLegalError(err, t, t('legal.saveFailed')));
     }
   };
 }
