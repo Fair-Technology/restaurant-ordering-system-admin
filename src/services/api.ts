@@ -4172,6 +4172,7 @@ export type GoLiveCriterion = {
 export type GetGoLiveStatusResultDto = {
   allMet: boolean;
   criteria: GoLiveCriterion[];
+  hasAnyProducts: boolean;
 };
 export type InvoiceArchiveFileDto = {
   fileName: string;

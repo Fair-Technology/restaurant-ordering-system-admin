@@ -36,6 +36,7 @@ const setup = (met: boolean, permissions = ['manage_shop']) => {
   state.shop = { id: 's1', callerPermissions: permissions };
   state.status = {
     allMet: met,
+    hasAnyProducts: true,
     criteria: [
       { key: 'stripe_connected', met, description: 'x' },
       { key: 'has_products', met: true, description: 'x' },
