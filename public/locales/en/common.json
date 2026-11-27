@@ -1665,6 +1665,10 @@
     "paymentDropped": "Payment still missing: your shop is on the free plan. Pay to restore everything at once."
   },
   "reports": {
+    "setupChecklist": {
+      "title": "Finish setting up your shop",
+      "subtitle": "Complete every step below, then switch your shop online."
+    },
     "title": "Dashboard",
     "accessDenied": "You can't see reports for this restaurant.",
     "presetToday": "Today",

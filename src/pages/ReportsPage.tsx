@@ -10,6 +10,8 @@ import { buildReportCsv, rateText, reportFileName } from '../features/reports/re
 import { isValidRange, rangeFor, REPORT_PRESETS, todayIn, type ReportPreset } from '../features/reports/reportRange';
 import { MyButton } from '../components/ui/MyButton';
 import { Chip, EmptyNote, PageHeader, Row, Section, Toolbar } from '../components/layout/Page';
+import { SetupChecklistCard } from '../components/shop/SetupChecklistCard';
+import { canGoOnline, shopLiveState } from '../features/shops/shopStatus';
 import { MySpinner } from '../components/ui/MySpinner';
 import { formatCents } from '../utils/money';
 import { usePageTitle } from '../features/layout/usePageTitle';
@@ -106,6 +108,9 @@ export function ReportsPage() {
   // Not allowed here: land on the first page this user can open (never `reports`, so no loop)
   if (!allowed) return <Navigate to={shopLandingPath(shopId!, shop.callerPermissions ?? [])} replace />;
 
+  const canManageShop = (shop.callerPermissions ?? []).includes('manage_shop');
+  const showSetupChecklist = shopLiveState(shop) === 'offline' && canGoOnline(shop) && canManageShop;
+
   const choosePreset = (p: ReportPreset) => {
     setPreset(p);
     setCustom(rangeFor(p, todayIn(shop.timezone ?? 'Europe/Berlin', new Date())));
@@ -168,6 +173,8 @@ export function ReportsPage() {
           )
         }
       />
+
+      {showSetupChecklist && <SetupChecklistCard shop={shop} onRefetch={() => undefined} />}
 
       <Toolbar>
         {REPORT_PRESETS.map((p) => (
