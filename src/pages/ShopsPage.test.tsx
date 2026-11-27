@@ -191,3 +191,15 @@ describe('ShopsPage empty state', () => {
     expect(screen.queryByText('shops.empty')).toBeNull();
   });
 });
+
+describe('new shop dialog a11y', () => {
+  it('is an accessible modal dialog that closes on Escape', () => {
+    cleanup();
+    const onClose = vi.fn();
+    render(<MemoryRouter><CreateShopModal onClose={onClose} /></MemoryRouter>);
+    const dialog = screen.getByRole('dialog', { name: 'shops.newShop' });
+    expect(dialog.getAttribute('aria-modal')).toBe('true');
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+});

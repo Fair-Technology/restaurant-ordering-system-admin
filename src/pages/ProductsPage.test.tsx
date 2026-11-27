@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { RouterProvider, createMemoryRouter, useBlocker, useLocation } from 'react-router-dom';
 import { useState } from 'react';
-import { ProductsPage } from './ProductsPage';
+import { BulkImportModal, ProductsPage } from './ProductsPage';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -300,5 +300,18 @@ describe('ProductsPage dish reordering', () => {
     fireEvent.click(screen.getByRole('button', { name: /dishes\.filter\.all/ }));
     fireEvent.change(screen.getByLabelText('dishes.search'), { target: { value: 'marg' } });
     expect(handle().getAttribute('aria-disabled')).toBe('true');
+  });
+});
+
+describe('BulkImportModal a11y', () => {
+  afterEach(cleanup);
+
+  it('is an accessible modal dialog that closes on Escape', () => {
+    const onClose = vi.fn();
+    render(<BulkImportModal shopId="s1" onClose={onClose} />);
+    const dialog = screen.getByRole('dialog', { name: 'Import Products' });
+    expect(dialog.getAttribute('aria-modal')).toBe('true');
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

@@ -92,7 +92,7 @@ describe('BulkImportModal close behaviour', () => {
 
   it('closes on Escape on the upload step', () => {
     render(<BulkImportModal shopId="s1" onClose={onClose} />);
-    fireEvent.keyDown(document, { key: 'Escape' });
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
@@ -104,7 +104,7 @@ describe('BulkImportModal close behaviour', () => {
     await waitFor(() => expect(createProductMock).toHaveBeenCalled());
     await screen.findByText(/Creating product/);
     clickOverlay();
-    fireEvent.keyDown(document, { key: 'Escape' });
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
     expect(onClose).not.toHaveBeenCalled();
   });
 

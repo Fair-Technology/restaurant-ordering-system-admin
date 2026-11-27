@@ -37,4 +37,13 @@ describe('PauseOrdersDialog', () => {
       body: { isPaused: false, ordersPaused: true, ordersPausedFor: 'rest_of_day' },
     });
   });
+
+  it('is an accessible modal dialog that closes on Escape', () => {
+    const onClose = vi.fn();
+    render(<PauseOrdersDialog shopId="s1" onClose={onClose} onPaused={vi.fn()} />);
+    const dialog = screen.getByRole('dialog', { name: 'shops.pauseOrdersTitle' });
+    expect(dialog.getAttribute('aria-modal')).toBe('true');
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
 });

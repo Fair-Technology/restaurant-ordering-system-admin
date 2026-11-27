@@ -1,4 +1,5 @@
-import { useId, useState } from 'react';
+import { useId, useRef, useState } from 'react';
+import { useModalA11y } from '../../hooks/useModalA11y';
 import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
 import type { MenuLanguage, ProductDto, TranslationMap } from '../../services/api';
@@ -29,6 +30,8 @@ export function ScheduleOfferModal({
   const { t } = useTranslation();
   const toast = useToast();
   const offerLabelId = useId();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const onKeyDown = useModalA11y({ onClose, containerRef });
   const [updateProduct, { isLoading: isSaving }] = useUpdateProductMutation();
 
   const [scheduleEnabled, setScheduleEnabled] = useState(!!product.schedule);
@@ -111,11 +114,19 @@ export function ScheduleOfferModal({
     <>
       <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40" onClick={onClose} />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="schedule-offer-title"
+          tabIndex={-1}
+          onKeyDown={onKeyDown}
+          ref={containerRef}
+          className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col"
+          onClick={(e) => e.stopPropagation()}>
           {/* Header */}
           <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-gray-200">
             <div>
-              <h2 className="text-base font-semibold text-gray-900">{t('products.scheduleModalTitle')}</h2>
+              <h2 id="schedule-offer-title" className="text-base font-semibold text-gray-900">{t('products.scheduleModalTitle')}</h2>
               <p className="text-xs text-gray-400 mt-0.5">{product.name}</p>
             </div>
             <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">

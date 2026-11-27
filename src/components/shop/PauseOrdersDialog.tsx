@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { useModalA11y } from '../../hooks/useModalA11y';
 import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
 import { useUpdateShopMutation } from '../../services/api';
@@ -19,6 +20,8 @@ export function PauseOrdersDialog({ shopId, onClose, onPaused, alsoGoOnline = fa
   const { t } = useTranslation();
   const toast = useToast();
   const [updateShop, { isLoading }] = useUpdateShopMutation();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const onKeyDown = useModalA11y({ onClose, containerRef });
   const [choice, setChoice] = useState<OrdersPauseDuration>('minutes_30');
 
   const handleConfirm = async () => {
@@ -33,9 +36,17 @@ export function PauseOrdersDialog({ shopId, onClose, onPaused, alsoGoOnline = fa
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-sm">
+      <div
+        role="dialog"
+          aria-modal="true"
+          aria-labelledby="pause-orders-title"
+          tabIndex={-1}
+          onKeyDown={onKeyDown}
+          ref={containerRef}
+          className="relative bg-white rounded-2xl shadow-xl w-full max-w-sm"
+      >
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="text-base font-semibold text-gray-900">{t('shops.pauseOrdersTitle')}</h2>
+          <h2 id="pause-orders-title" className="text-base font-semibold text-gray-900">{t('shops.pauseOrdersTitle')}</h2>
           <button
             type="button"
             onClick={onClose}

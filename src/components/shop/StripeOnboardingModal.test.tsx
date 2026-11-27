@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import i18n from 'i18next';
 import { I18nextProvider, initReactI18next } from 'react-i18next';
 import { StripeOnboardingModal } from './StripeOnboardingModal';
@@ -67,5 +67,20 @@ describe('StripeOnboardingModal locale', () => {
     expect(mocks.update).toHaveBeenCalledTimes(1);
     expect(mocks.update).toHaveBeenCalledWith({ locale: 'en-GB' });
     expect(mocks.load).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('StripeOnboardingModal a11y', () => {
+  it('is an accessible modal dialog that closes on Escape', () => {
+    const onClose = vi.fn();
+    render(
+      <I18nextProvider i18n={i18n}>
+        <StripeOnboardingModal shopId="s1" onClose={onClose} />
+      </I18nextProvider>,
+    );
+    const dialog = screen.getByRole('dialog', { name: /.+/ });
+    expect(dialog.getAttribute('aria-modal')).toBe('true');
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });
