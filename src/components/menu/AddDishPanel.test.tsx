@@ -22,7 +22,8 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-const { toastError, toastSuccess, createProduct, updateProduct, updateAvailability, uploadImage, shopLanguages } = vi.hoisted(() => ({
+const { toastError, toastSuccess, createProduct, updateProduct, updateAvailability, uploadImage, shopLanguages, dishesQuery } = vi.hoisted(() => ({
+  dishesQuery: { current: null as null | { data?: unknown[]; isLoading: boolean } },
   shopLanguages: { current: ['de', 'en'] as string[] },
   toastError: vi.fn(),
   toastSuccess: vi.fn(),
@@ -68,7 +69,7 @@ const carbonara = {
 vi.mock('../../services/api', async (orig) => ({
   ...(await orig<typeof import('../../services/api')>()),
   useGetShopByIdQuery: () => ({ data: { id: 's1', currency: 'EUR', countryCode: 'DE', menuLanguages: shopLanguages.current } }),
-  useGetProductsByShopQuery: () => ({ data: [carbonara] }),
+  useGetProductsByShopQuery: () => dishesQuery.current ?? { data: [carbonara], isLoading: false },
   useGetOptionGroupsQuery: () => ({ data: library }),
   useCreateCategoryMutation: () => [vi.fn(), { isLoading: false }],
   useCreateOptionGroupMutation: () => [vi.fn(), { isLoading: false }],
@@ -124,6 +125,7 @@ const fillBasics = (withPhoto = true) => {
 
 beforeEach(() => {
   shopLanguages.current = ['de', 'en'];
+  dishesQuery.current = null;
   createProduct.mockReset().mockReturnValue({ unwrap: () => Promise.resolve({ id: 'new1' }) });
   updateProduct.mockReset().mockReturnValue({ unwrap: () => Promise.resolve({}) });
   updateAvailability.mockReset().mockReturnValue({ unwrap: () => Promise.resolve({}) });
@@ -399,6 +401,37 @@ describe('AddDishPanel start from a similar dish', () => {
     fireEvent.click(nav('Food info'));
     expect(screen.getAllByText('Not confirmed')).toHaveLength(2);
     expect(screen.getByRole('checkbox', { name: /Contains none of the/ }).getAttribute('aria-checked')).toBe('false');
+  });
+});
+
+describe('AddDishPanel similar dish box visibility', () => {
+  const box = () => screen.queryByLabelText('Start from a similar dish');
+  const panel = () => <AddDishPanel shopId="s1" currencySymbol="€" categoriesList={categories} onClose={onClose} onAdded={onAdded} />;
+
+  it('is hidden when the shop has no dishes', () => {
+    dishesQuery.current = { data: [], isLoading: false };
+    render(panel());
+    expect(box()).toBeNull();
+  });
+
+  it('is hidden when every dish is deleted', () => {
+    dishesQuery.current = { data: [{ ...carbonara, isDeleted: true }], isLoading: false };
+    render(panel());
+    expect(box()).toBeNull();
+  });
+
+  it('is shown when at least one dish exists', () => {
+    render(panel());
+    expect(box()).not.toBeNull();
+  });
+
+  it('does not appear while loading, then appears once dishes arrive', async () => {
+    dishesQuery.current = { data: undefined, isLoading: true };
+    const { rerender } = render(panel());
+    expect(box()).toBeNull();
+    dishesQuery.current = { data: [carbonara], isLoading: false };
+    rerender(panel());
+    await waitFor(() => expect(box()).not.toBeNull());
   });
 });
 

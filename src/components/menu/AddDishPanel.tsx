@@ -52,7 +52,8 @@ export function AddDishPanel({ shopId, currencySymbol, categoriesList, onClose, 
   const toast = useToast();
   const { data: shop } = useGetShopByIdQuery({ shopId });
   const { refs } = useShopReferenceLists(shopId);
-  const { data: shopDishes } = useGetProductsByShopQuery({ shopId, includeUncategorized: true });
+  const { data: shopDishes, isLoading: isLoadingShopDishes } = useGetProductsByShopQuery({ shopId, includeUncategorized: true });
+  const availableSimilarDishes = (shopDishes ?? []).filter((p) => !p.isDeleted);
   const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
   const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
   const [updateProductAvailability, { isLoading: isTogglingAvailability }] = useUpdateProductAvailabilityMutation();
@@ -263,9 +264,9 @@ export function AddDishPanel({ shopId, currencySymbol, categoriesList, onClose, 
       startFromSimilarDish={
         duplicating ? (
           <p className="rounded-2xl bg-cream px-[18px] py-4 text-[13px] leading-[19px] text-muted">{t('dishForm.duplicate.notCopied')}</p>
-        ) : (
+        ) : isLoadingShopDishes || availableSimilarDishes.length === 0 ? undefined : (
         <SimilarDishBox
-          dishes={(shopDishes ?? []).filter((p) => !p.isDeleted)}
+          dishes={availableSimilarDishes}
           selected={similar}
           onPick={(dish) => {
             if (!dish) {
