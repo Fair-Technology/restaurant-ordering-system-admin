@@ -1,6 +1,5 @@
-import { useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
 import { useNow } from '../../features/orders/useNow';
 import type { GetShopResultDto } from '../../services/api';
 import { useLazyGetGoLiveStatusQuery, useUpdateShopMutation } from '../../services/api';
@@ -18,6 +17,7 @@ import { useToast } from '../../contexts/ToastContext';
 import { Section } from '../layout/Page';
 import { MyButton } from '../ui/MyButton';
 import { MyInput } from '../ui/MyInput';
+import { ClickTooltip } from '../ui/ClickTooltip';
 import { MySwitch } from '../ui/MySwitch';
 import { TakeShopOfflineModal } from './GoLiveModal';
 import { PauseOrdersDialog } from './PauseOrdersDialog';
@@ -35,18 +35,22 @@ interface Props {
 export function ShopStatusCard({ shop, onRefetch }: Props) {
   const { t, i18n } = useTranslation();
   const toast = useToast();
-  const navigate = useNavigate();
   const shopId = shop.id!;
   const [updateShop, { isLoading: saving }] = useUpdateShopMutation();
   const [fetchGoLiveStatus, { isFetching: goLiveChecking }] = useLazyGetGoLiveStatusQuery();
   const [modal, setModal] = useState<'offline' | 'pauseOrders' | null>(null);
   const [messageState, setMessageState] = useState<string | null>(null);
 
+  const [blockedTooltipOpen, setBlockedTooltipOpen] = useState(false);
+  const onlineRowRef = useRef<HTMLDivElement>(null);
+  const dismissTooltip = useCallback(() => setBlockedTooltipOpen(false), []);
+
   const nowMs = useNow(30_000);
   const liveState = shopLiveState(shop, nowMs);
   const online = liveState !== 'offline';
   const takenOfflineByPlatform = shop.offlineBySuperadmin === true;
   const message = messageState ?? shop.ordersPausedMessage ?? '';
+  const showBlockedTooltip = blockedTooltipOpen && !online && canGoOnline(shop);
   const busy = saving || goLiveChecking;
 
   const save = async (updateShopRequest: Parameters<typeof updateShop>[0]['body'], saved?: string) => {
@@ -70,7 +74,7 @@ export function ShopStatusCard({ shop, onRefetch }: Props) {
     try {
       const result = await fetchGoLiveStatus({ shopId }).unwrap();
       if (result.allMet) await save({ isPaused: false });
-      else navigate(`/shops/${shopId}/go-live`);
+      else setBlockedTooltipOpen(true);
     } catch {
       toast.error(t('shops.statusFailedToSave'));
     }
@@ -82,7 +86,7 @@ export function ShopStatusCard({ shop, onRefetch }: Props) {
       description={t('shops.settingsPage.statusDescription')}
       padded
     >
-      <div className="flex items-start justify-between gap-4">
+      <div ref={onlineRowRef} className="relative flex items-start justify-between gap-4">
         <div>
           <p id="shop-online-label" className="text-sm font-semibold text-ink">
             {t('shops.statusOnline')}
@@ -98,8 +102,16 @@ export function ShopStatusCard({ shop, onRefetch }: Props) {
           disabled={!canGoOnline(shop)}
           isPending={busy}
           labelledBy="shop-online-label"
-          describedBy="shop-online-help"
+          describedBy={showBlockedTooltip ? 'shop-online-help shop-online-blocked-tooltip' : 'shop-online-help'}
         />
+        {showBlockedTooltip && (
+          <ClickTooltip
+            id="shop-online-blocked-tooltip"
+            message={t('shops.cannotGoOnlineTooltip')}
+            onDismiss={dismissTooltip}
+            containerRef={onlineRowRef}
+          />
+        )}
       </div>
 
       <div className="mt-4 space-y-3 border-t border-line-soft pt-4">
