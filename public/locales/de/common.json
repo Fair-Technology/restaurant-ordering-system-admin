@@ -1445,6 +1445,8 @@
     "collapseAll": "Alle einklappen"
   },
   "categories": {
+    "chooseIcon": "Symbol auswählen",
+    "removeIcon": "Symbol entfernen",
     "addCategory": "+ Neue Kategorie",
     "newCategory": "Neue Kategorie",
     "createSubtitle": "Geben Sie einen Namen für Ihre neue Kategorie ein.",

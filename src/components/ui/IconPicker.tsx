@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Flame, Leaf, Fish, Wheat, Droplets, Heart, Star, Snowflake,
   Zap, Shield, AlertTriangle, Coffee, Utensils, Wine, Beer,
@@ -58,6 +59,7 @@ export function IconPickerInline({
   value: string | null;
   onChange: (icon: string | null) => void;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0 });
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -75,7 +77,8 @@ export function IconPickerInline({
       <button
         ref={btnRef}
         type="button"
-        title="Choose icon"
+        title={t('categories.chooseIcon')}
+        aria-label={t('categories.chooseIcon')}
         onClick={handleOpen}
         className="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-colors text-gray-500"
       >
@@ -102,7 +105,7 @@ export function IconPickerInline({
                 onClick={() => { onChange(null); setOpen(false); }}
                 className="mt-1.5 w-full text-xs text-gray-400 hover:text-gray-700 text-center"
               >
-                Remove icon
+                {t('categories.removeIcon')}
               </button>
             )}
           </div>
