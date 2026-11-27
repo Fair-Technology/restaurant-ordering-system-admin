@@ -23,8 +23,8 @@ describe('settings section status lines', () => {
     expect(list[6].status).toBeUndefined();
   });
   it('shows the live state', () => {
-    expect(status({}).status).toBe('Online, taking orders');
-    expect(status({ ordersPaused: true } as never).status).toBe('Orders paused');
+    expect(status({}).status).toBe('Online');
+    expect(status({ ordersPaused: true } as never).status).toBe('Paused');
     expect(status({ isPaused: true }).status).toBe('Offline');
   });
   it('shows details, banner and days open', () => {

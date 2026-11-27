@@ -10,10 +10,12 @@ interface Props {
   shopId: string;
   onClose: () => void;
   onPaused: () => void;
+  /** Also switch the shop online in the same update (pausing straight from offline). */
+  alsoGoOnline?: boolean;
 }
 
 /** Asks how long to pause new orders for; the server works out the end time from the choice. */
-export function PauseOrdersDialog({ shopId, onClose, onPaused }: Props) {
+export function PauseOrdersDialog({ shopId, onClose, onPaused, alsoGoOnline = false }: Props) {
   const { t } = useTranslation();
   const toast = useToast();
   const [updateShop, { isLoading }] = useUpdateShopMutation();
@@ -21,7 +23,7 @@ export function PauseOrdersDialog({ shopId, onClose, onPaused }: Props) {
 
   const handleConfirm = async () => {
     try {
-      await updateShop({ shopId, body: { ordersPaused: true, ordersPausedFor: choice } }).unwrap();
+      await updateShop({ shopId, body: { ...(alsoGoOnline ? { isPaused: false } : {}), ordersPaused: true, ordersPausedFor: choice } }).unwrap();
       onPaused();
     } catch (err) {
       toast.error(isOfflineBySuperadminError(err) ? t('nav.offlineBySuperadminToast') : t('shops.statusFailedToSave'));

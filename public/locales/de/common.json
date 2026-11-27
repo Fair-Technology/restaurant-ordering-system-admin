@@ -552,6 +552,15 @@
     "kitchenFailed": "Zubereitungszeiten konnten nicht gespeichert werden.",
     "offlineConfirmText": "Gäste sehen keine Speisekarte, nur den Hinweis, dass das Restaurant offline ist. Sie können es jederzeit wieder einschalten.",
     "shopStatusTitle": "Shop-Status",
+    "statusMenu": {
+      "online": "Online",
+      "onlineDesc": "Gäste können bestellen",
+      "paused": "Pausiert",
+      "pausedDesc": "Speisekarte sichtbar, keine neuen Bestellungen",
+      "offline": "Offline",
+      "offlineDesc": "Gäste sehen den Shop nicht",
+      "changeStatus": "Shop-Status ändern"
+    },
     "cannotGoOnlineTooltip": "Der Shop kann noch nicht online geschaltet werden: Die Checkliste ist noch nicht vollständig.",
     "statusOnline": "Shop online",
     "statusOnlineHelp": "Ausgeschaltet zeigt die Shop-Seite keine Speisekarte, nur den Hinweis, dass das Restaurant offline ist.",
@@ -585,8 +594,8 @@
         "danger": "Gefahrenzone"
       },
       "statusOffline": "Offline",
-      "statusPaused": "Bestellungen pausiert",
-      "statusOnline": "Online, nimmt Bestellungen an",
+      "statusPaused": "Pausiert",
+      "statusOnline": "Online",
       "bannerOn": "Banner an",
       "bannerOff": "Banner aus",
       "daysOpen": "{{count}} von 7 Tagen geöffnet",

@@ -58,10 +58,18 @@ const setup = (open: number, perms = ['manage_shop'], isPaused = true) => {
       </MemoryRouter>
     </I18nextProvider>,
   );
-  return screen.getByRole('switch', { name: 'Shop status' });
+  const label = isPaused ? 'Offline' : 'Online';
+  const trigger = screen.queryByRole('button', { name: `Shop status: ${label}` });
+  return trigger ?? screen.getByRole('status', { name: `Shop status: ${label}` });
 };
 
-describe('Sidebar shop status switch with open checklist items', () => {
+/** Opens the menu and picks the option by its state word. */
+const choose = (trigger: HTMLElement, word: string) => {
+  fireEvent.click(trigger);
+  fireEvent.click(screen.getByRole('option', { name: new RegExp(`^${word}`) }));
+};
+
+describe('Sidebar shop status menu with open checklist items', () => {
   beforeEach(() => {
     mocks.navigate.mockReset();
     mocks.updateShop.mockReset();
@@ -72,27 +80,24 @@ describe('Sidebar shop status switch with open checklist items', () => {
   it('shows a status tooltip, without navigating or updating', () => {
     const sw = setup(1);
     expect(screen.queryByRole('status')).toBeNull();
-    fireEvent.click(sw);
+    choose(sw, 'Online');
     const tip = screen.getByRole('status');
     expect(tip.textContent).toBe(`${MESSAGE}Checklist`);
     expect(within(tip).getByRole('link', { name: 'Checklist' }).getAttribute('href')).toBe('/shops/s1/go-live');
-    expect(sw.getAttribute('aria-describedby')).toBe(tip.id);
-    expect(sw.getAttribute('aria-checked')).toBe('false');
     expect(mocks.navigate).not.toHaveBeenCalled();
     expect(mocks.updateShop).not.toHaveBeenCalled();
   });
 
   it('closes on Escape', () => {
     const sw = setup(1);
-    fireEvent.click(sw);
+    choose(sw, 'Online');
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByRole('status')).toBeNull();
-    expect(sw.hasAttribute('aria-describedby')).toBe(false);
   });
 
-  it('closes on an outside pointerdown but not on the switch itself', () => {
+  it('closes on an outside pointerdown but not on the trigger itself', () => {
     const sw = setup(1);
-    fireEvent.click(sw);
+    choose(sw, 'Online');
     fireEvent.pointerDown(sw);
     expect(screen.getByRole('status')).toBeTruthy();
     fireEvent.pointerDown(document.body);
@@ -105,15 +110,16 @@ describe('Sidebar shop status switch with open checklist items', () => {
     expect(hrefs).toContain('/shops/s1/go-live');
   });
 
-  it('shows no tooltip when the switch is disabled', () => {
-    const sw = setup(1, ['view_orders']) as HTMLButtonElement;
-    expect(sw.disabled).toBe(true);
+  it('shows no tooltip and no menu without permission', () => {
+    const sw = setup(1, ['view_orders']);
+    expect(sw.tagName).toBe('DIV');
     fireEvent.click(sw);
-    expect(screen.queryByRole('status')).toBeNull();
+    expect(screen.queryByRole('listbox')).toBeNull();
+    expect(screen.getAllByRole('status')).toEqual([sw]);
   });
 });
 
-describe('Sidebar shop status switch with the checklist complete', () => {
+describe('Sidebar shop status menu with the checklist complete', () => {
   beforeEach(() => {
     mocks.navigate.mockReset();
     mocks.updateShop.mockReset();
@@ -122,7 +128,7 @@ describe('Sidebar shop status switch with the checklist complete', () => {
   afterEach(cleanup);
 
   it('switches the shop on, with no tooltip and no navigation', () => {
-    fireEvent.click(setup(0));
+    choose(setup(0), 'Online');
     expect(mocks.updateShop).toHaveBeenCalledWith({ shopId: 's1', body: { isPaused: false } });
     expect(screen.queryByRole('status')).toBeNull();
     expect(mocks.navigate).not.toHaveBeenCalled();
