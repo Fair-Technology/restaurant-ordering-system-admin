@@ -154,6 +154,37 @@ describe('submit gating', () => {
   });
 });
 
+describe('submit button state', () => {
+  const btn = () => screen.getByRole('button', { name: 'shops.create' }) as HTMLButtonElement;
+  it('is disabled while checking, taken, invalid or failed; enabled once available', async () => {
+    typeName('Cafe Luna');
+    fillRest();
+    expect(btn().disabled).toBe(true); // debounce window
+    api.check.mockReturnValue(ok(false));
+    await settle();
+    expect(btn().disabled).toBe(true); // taken
+    typeSlug('-bad');
+    expect(btn().disabled).toBe(true); // invalid
+    api.check.mockReturnValue(fail(400, 'nope'));
+    typeSlug('cafe-x');
+    await settle();
+    expect(btn().disabled).toBe(true); // failed
+    api.check.mockReturnValue(ok(true));
+    typeSlug('cafe-luna-2');
+    await settle();
+    expect(btn().disabled).toBe(false);
+  });
+  it('still shows the country error when only the country is missing', async () => {
+    typeName('Cafe Luna');
+    api.check.mockReturnValue(ok(true));
+    await settle();
+    fireEvent.click(screen.getByRole('checkbox'));
+    await submit();
+    expect(api.create).not.toHaveBeenCalled();
+    expect(screen.getByText('shops.countryRequired')).toBeTruthy();
+  });
+});
+
 describe('create 400', () => {
   it('surfaces the backend slug-taken message in the error block', () => {
     cleanup();

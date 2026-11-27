@@ -284,7 +284,7 @@ export function CreateShopModal({ onClose }: { onClose: () => void }) {
               <p className="px-6 pb-2 text-xs text-muted">{t('shops.countryRequired')}</p>
             )}
             <div className="flex items-center gap-2 border-t border-line-soft px-6 py-4">
-              <MyButton type="submit" isPending={isLoading} disabled={!dpaTicked || !dpa} className="flex-1">
+              <MyButton type="submit" isPending={isLoading} disabled={!dpaTicked || !dpa || !slugIsAvailable} className="flex-1">
                 {isLoading ? t('shops.creating') : t('shops.create')}
               </MyButton>
               <MyButton type="button" variant="secondary" onClick={onClose}>
