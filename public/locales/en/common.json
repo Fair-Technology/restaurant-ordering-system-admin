@@ -335,7 +335,7 @@
         },
         "has_products": {
           "title": "Add a dish",
-          "hint": "At least one dish switched on, with allergens and additives declared."
+          "hint": "At least one dish on the menu, with a photo and allergens and additives confirmed."
         },
         "has_categories": {
           "title": "Create a category",

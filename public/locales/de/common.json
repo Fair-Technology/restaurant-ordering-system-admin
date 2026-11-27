@@ -335,7 +335,7 @@
         },
         "has_products": {
           "title": "Gericht hinzufügen",
-          "hint": "Mindestens ein aktives Gericht mit angegebenen Allergenen und Zusatzstoffen."
+          "hint": "Mindestens ein Gericht auf der Karte, mit Foto sowie bestätigten Allergenen und Zusatzstoffen."
         },
         "has_categories": {
           "title": "Kategorie anlegen",
