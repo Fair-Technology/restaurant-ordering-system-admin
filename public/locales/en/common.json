@@ -317,6 +317,9 @@
       "done": "Done",
       "setup": "Set up",
       "setupAria": "{{title}} — set up",
+      "stripeContinue": "Continue",
+      "stripePendingReview": "Verification pending",
+      "stripeViewStatus": "View status",
       "openCount_one": "{{count}} item still open",
       "openCount_other": "{{count}} items still open",
       "openCountZero": "No items open",
@@ -331,7 +334,9 @@
       "criteria": {
         "stripe_connected": {
           "title": "Connect Stripe",
-          "hint": "Every order is paid online — required before you can go live."
+          "hint": "Every order is paid online — required before you can go live.",
+          "hintDetailsMissing": "Stripe still needs some information from you.",
+          "hintVerifying": "Stripe is verifying your information. There's nothing you need to do right now."
         },
         "has_products": {
           "title": "Add a dish",

@@ -317,6 +317,9 @@
       "done": "Erledigt",
       "setup": "Einrichten",
       "setupAria": "{{title}} – einrichten",
+      "stripeContinue": "Fortsetzen",
+      "stripePendingReview": "Prüfung ausstehend",
+      "stripeViewStatus": "Status ansehen",
       "openCount_one": "{{count}} Punkt noch offen",
       "openCount_other": "{{count}} Punkte noch offen",
       "openCountZero": "Keine Punkte offen",
@@ -331,7 +334,9 @@
       "criteria": {
         "stripe_connected": {
           "title": "Stripe verbinden",
-          "hint": "Jede Bestellung wird online bezahlt – Voraussetzung für den Go-Live."
+          "hint": "Jede Bestellung wird online bezahlt – Voraussetzung für den Go-Live.",
+          "hintDetailsMissing": "Stripe benötigt noch Angaben.",
+          "hintVerifying": "Stripe prüft Ihre Angaben. Sie müssen im Moment nichts tun."
         },
         "has_products": {
           "title": "Gericht hinzufügen",

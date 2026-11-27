@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Check } from 'lucide-react';
-import type { GetGoLiveStatusApiResponse } from '../../services/api';
+import type { GetGoLiveStatusApiResponse, GetShopResultDto } from '../../services/api';
 import { goLiveFixLink } from '../../features/shops/goLiveFixLink';
 import { GO_LIVE_FALLBACK_GROUP, groupGoLiveCriteria } from '../../features/shops/goLiveGroups';
 
@@ -10,10 +10,12 @@ interface Props {
   status: GetGoLiveStatusApiResponse;
   /** Called when a "Set up" link is followed (the dialog closes itself). */
   onNavigate?: () => void;
+  /** Shop's Stripe Connect state; refines the stripe_connected row. */
+  stripe?: GetShopResultDto['stripe'];
 }
 
 /** Progress bar + grouped go-live criteria, shared by the dialog and the Dashboard card. */
-export function GoLiveChecklist({ shopId, status, onNavigate }: Props) {
+export function GoLiveChecklist({ shopId, status, onNavigate, stripe }: Props) {
   const { t, i18n } = useTranslation();
   const criteria = status.criteria;
   const total = criteria.length;
@@ -56,7 +58,23 @@ export function GoLiveChecklist({ shopId, status, onNavigate }: Props) {
             {group.criteria.map((criterion) => {
               const known = !isFallback && i18n.exists(`shops.goLive.criteria.${criterion.key}.title`);
               const title = known ? t(`shops.goLive.criteria.${criterion.key}.title`) : criterion.description;
-              const hint = known ? t(`shops.goLive.criteria.${criterion.key}.hint`) : criterion.description;
+              const stripeState =
+                criterion.key === 'stripe_connected' && !criterion.met
+                  ? stripe?.connectOnboardingStatus === 'pending'
+                    ? 'verifying'
+                    : stripe?.connectAccountId
+                      ? 'detailsMissing'
+                      : 'notStarted'
+                  : null;
+              const hint =
+                stripeState === 'verifying'
+                  ? t('shops.goLive.criteria.stripe_connected.hintVerifying')
+                  : stripeState === 'detailsMissing'
+                    ? t('shops.goLive.criteria.stripe_connected.hintDetailsMissing')
+                    : known
+                      ? t(`shops.goLive.criteria.${criterion.key}.hint`)
+                      : criterion.description;
+              const fixLink = goLiveFixLink(shopId, criterion.key, status.hasAnyProducts);
               return (
                 <li key={criterion.key} className="flex items-center gap-3 px-3 py-3">
                   {criterion.met ? (
@@ -72,14 +90,26 @@ export function GoLiveChecklist({ shopId, status, onNavigate }: Props) {
                   </div>
                   {criterion.met ? (
                     <span className="shrink-0 text-xs font-medium text-green-600">{t('shops.goLive.done')}</span>
+                  ) : stripeState === 'verifying' ? (
+                    <div className="flex shrink-0 flex-col items-end gap-0.5">
+                      <span className="text-xs font-medium text-gray-500">{t('shops.goLive.stripePendingReview')}</span>
+                      <Link
+                        to={fixLink}
+                        onClick={onNavigate}
+                        aria-label={t('shops.goLive.setupAria', { title })}
+                        className="text-xs text-gray-500 underline hover:text-gray-700"
+                      >
+                        {t('shops.goLive.stripeViewStatus')}
+                      </Link>
+                    </div>
                   ) : (
                     <Link
-                      to={goLiveFixLink(shopId, criterion.key, status.hasAnyProducts)}
+                      to={fixLink}
                       onClick={onNavigate}
                       aria-label={t('shops.goLive.setupAria', { title })}
                       className="shrink-0 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
                     >
-                      {t('shops.goLive.setup')}
+                      {stripeState === 'detailsMissing' ? t('shops.goLive.stripeContinue') : t('shops.goLive.setup')}
                     </Link>
                   )}
                 </li>

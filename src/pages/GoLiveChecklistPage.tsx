@@ -58,7 +58,7 @@ export function GoLiveChecklistPage() {
         description={status.allMet ? t('shops.goLive.leadDone') : t('shops.goLive.lead')}
       />
       <Section padded>
-        <GoLiveChecklist shopId={shopId!} status={status} />
+        <GoLiveChecklist shopId={shopId!} status={status} stripe={shop.stripe} />
         {failed && (
           <p role="alert" className="mt-3 text-xs text-red-500">
             {t('shops.goLive.error')}
