@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import i18n from 'i18next';
 import { I18nextProvider, initReactI18next } from 'react-i18next';
@@ -62,7 +62,8 @@ describe('ShopStatusCard online switch', () => {
     const sw = setup(false);
     fireEvent.click(sw);
     const tip = await screen.findByRole('status');
-    expect(tip.textContent).toBe(MESSAGE);
+    expect(tip.textContent).toBe(`${MESSAGE}Checklist`);
+    expect(within(tip).getByRole('link', { name: 'Checklist' }).getAttribute('href')).toBe('/shops/s1/go-live');
     expect(sw.getAttribute('aria-describedby')).toBe(`shop-online-help ${tip.id}`);
     expect(mocks.navigate).not.toHaveBeenCalled();
     expect(mocks.updateShop).not.toHaveBeenCalled();

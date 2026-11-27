@@ -26,6 +26,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useGetGoLiveStatusQuery, useGetMyShopsQuery, useGetShopByIdQuery, useUpdateShopMutation, type GetShopResultDto } from '../../services/api';
+import { apiErrorMessage } from '../../features/api/errorMessage';
 import { ClickTooltip } from '../ui/ClickTooltip';
 import { useGetOrderQueueQuery } from '../../services/ordersApi';
 import { baseApi } from '../../services/baseApi';
@@ -88,7 +89,7 @@ function ShopStatusSwitch({ shop, canManage }: { shop: GetShopResultDto; canMana
     try {
       await updateShop({ shopId: shop.id!, body: { isPaused: false } }).unwrap();
     } catch (err) {
-      toast.error(isOfflineBySuperadminError(err) ? t('nav.offlineBySuperadminToast') : t('shops.statusFailedToSave'));
+      toast.error(isOfflineBySuperadminError(err) ? t('nav.offlineBySuperadminToast') : apiErrorMessage(err, t('shops.statusFailedToSave')));
     }
   };
 
@@ -131,6 +132,8 @@ function ShopStatusSwitch({ shop, canManage }: { shop: GetShopResultDto; canMana
             message={t('shops.cannotGoOnlineTooltip')}
             onDismiss={dismissTooltip}
             containerRef={statusRowRef}
+            linkTo={`/shops/${shop.id}/go-live`}
+            linkLabel={t('nav.checklist')}
           />
         )}
       </div>

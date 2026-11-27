@@ -26,6 +26,7 @@ vi.mock('../services/api', () => ({
   useGetShopByIdQuery: () => ({}),
   useGetShopSubscriptionQuery: () => ({}),
   useUpdateShopMutation: () => [vi.fn(), {}],
+  useLazyGetGoLiveStatusQuery: () => [vi.fn(), { isFetching: false }],
   useCreateShopMutation: () => [api.create, api.createState],
   useLazyCheckSlugAvailabilityQuery: () => [api.check],
 }));

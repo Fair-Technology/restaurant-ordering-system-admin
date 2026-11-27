@@ -13,6 +13,7 @@ import {
   isOrdersPausedAt,
   shopLiveState,
 } from '../../features/shops/shopStatus';
+import { apiErrorMessage } from '../../features/api/errorMessage';
 import { useToast } from '../../contexts/ToastContext';
 import { Section } from '../layout/Page';
 import { MyButton } from '../ui/MyButton';
@@ -60,7 +61,7 @@ export function ShopStatusCard({ shop, onRefetch }: Props) {
       if (saved) toast.success(saved);
       return true;
     } catch (err) {
-      toast.error(isOfflineBySuperadminError(err) ? t('nav.offlineBySuperadminToast') : t('shops.statusFailedToSave'));
+      toast.error(isOfflineBySuperadminError(err) ? t('nav.offlineBySuperadminToast') : apiErrorMessage(err, t('shops.statusFailedToSave')));
       return false;
     }
   };
@@ -110,6 +111,8 @@ export function ShopStatusCard({ shop, onRefetch }: Props) {
             message={t('shops.cannotGoOnlineTooltip')}
             onDismiss={dismissTooltip}
             containerRef={onlineRowRef}
+            linkTo={`/shops/${shopId}/go-live`}
+            linkLabel={t('nav.checklist')}
           />
         )}
       </div>
