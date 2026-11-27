@@ -247,7 +247,10 @@ export function DishForm({
       st.key === 'translationMissing'
         ? t(`dishForm.descriptionMissing.${st.language}`)
         : st.key === 'variantExtras'
-          ? t('dishForm.nav.variantExtras', { variant: st.variantCount, extra: st.extraCount })
+          ? [
+              t('dishForm.nav.variantCount', { count: st.variantCount }),
+              t('dishForm.nav.extraCount', { count: st.extraCount }),
+            ].join(' · ')
           : st.key === 'requiredLeft'
             ? t('dishForm.nav.requiredLeft', { count: st.count })
             : t(`dishForm.nav.${st.key}`);
