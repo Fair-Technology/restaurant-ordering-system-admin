@@ -530,7 +530,7 @@ describe('DishForm options and extras', () => {
     const card = screen.getByRole('heading', { name: 'Your pasta' }).closest('li')!;
     fireEvent.click(within(card).getByRole('button', { name: /^Remove from dish/ }));
     expect(screen.queryByRole('heading', { name: 'Your pasta' })).toBeNull();
-    expect(nav('Options and extras').textContent).toContain('0 variant · 1 extras');
+    expect(nav('Options and extras').textContent).toContain('0 variants · 1 extra');
     expect(saveBtn().disabled).toBe(false);
 
     fireEvent.click(screen.getByRole('button', { name: 'Choose variant group' }));
@@ -556,7 +556,7 @@ describe('DishForm options and extras', () => {
       fireEvent.click(within(picker).getByRole('button', { name: /Size/ }));
       expect(screen.queryByRole('heading', { name: 'Your pasta' })).toBeNull();
       expect(screen.getByRole('heading', { name: 'Size' })).toBeTruthy();
-      expect(nav('Options and extras').textContent).toContain('1 variant · 1 extras');
+      expect(nav('Options and extras').textContent).toContain('1 variant · 1 extra');
 
       fireEvent.click(screen.getByRole('button', { name: /Attach existing group/ }));
       const extras = screen.getByRole('group', { name: /Attach existing group/ });
@@ -574,7 +574,7 @@ describe('DishForm options and extras', () => {
       expect(screen.getAllByText('Not shown to customers')).toHaveLength(1);
       const legacy = screen.getByText('Not shown to customers').closest('li')!;
       expect(within(legacy).getByText('Not shown to customers')).toBeTruthy();
-      expect(nav('Options and extras').textContent).toContain('1 variant · 1 extras');
+      expect(nav('Options and extras').textContent).toContain('1 variant · 1 extra');
       fireEvent.click(within(legacy).getByRole('button', { name: /^Remove from dish/ }));
       expect(screen.queryByText('Not shown to customers')).toBeNull();
       expect(screen.getByRole('heading', { name: 'Your pasta' })).toBeTruthy();
