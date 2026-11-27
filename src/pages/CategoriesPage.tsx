@@ -61,8 +61,11 @@ function CreateCategoryModal({
   const [nameError, setNameError] = useState(false);
   const nameErrorId = useId();
   const [icon, setIcon] = useState<string | null>(null);
-  const [taxClassOverride, setTaxClassOverride] = useState<string | null>(null);
-  const taxClassId = taxClassOverride ?? refs?.defaultTaxClassId ?? '';
+  // Deliberately no preselection (not even the platform default): the owner must choose explicitly.
+  const [taxClassId, setTaxClassId] = useState('');
+  const [taxClassError, setTaxClassError] = useState(false);
+  const taxClassErrorId = useId();
+  const hasTaxClasses = (refs?.taxClasses.length ?? 0) > 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,6 +75,11 @@ function CreateCategoryModal({
       return;
     }
     setNameError(false);
+    if (hasTaxClasses && !taxClassId) {
+      setTaxClassError(true);
+      return;
+    }
+    setTaxClassError(false);
     try {
       await createCategory({
         shopId,
@@ -148,7 +156,7 @@ function CreateCategoryModal({
                   )}
                 </div>
               </div>
-              {(refs?.taxClasses.length ?? 0) > 0 && (
+              {hasTaxClasses && (
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor="create-category-tax" className="text-[13px] font-semibold text-[#4a413b]">
                     {t('categories.taxClass')}
@@ -156,15 +164,28 @@ function CreateCategoryModal({
                   <select
                     id="create-category-tax"
                     value={taxClassId}
-                    onChange={(e) => setTaxClassOverride(e.target.value)}
+                    aria-invalid={taxClassError}
+                    aria-describedby={taxClassError ? taxClassErrorId : undefined}
+                    onChange={(e) => {
+                      setTaxClassId(e.target.value);
+                      setTaxClassError(false);
+                    }}
                     className={selectClass}
                   >
+                    <option value="" disabled>
+                      {t('categories.taxClassChoose')}
+                    </option>
                     {dishTaxClasses(refs!.taxClasses).map((c) => (
                       <option key={c.id} value={c.id}>
                         {taxClassOptionLabel(labelFor(c.labels, i18n.language), c.id, refs, i18n.language)}
                       </option>
                     ))}
                   </select>
+                  {taxClassError && (
+                    <p id={taxClassErrorId} role="alert" className="text-sm text-[#b42318]">
+                      {t('categories.taxClassRequired')}
+                    </p>
+                  )}
                   <p className="text-xs text-muted">{t('categories.taxClassHelp')}</p>
                 </div>
               )}

@@ -1479,6 +1479,8 @@
     "hasStar": "Stern-Symbol anzeigen",
     "taxClass": "Steuerklasse für neue Gerichte",
     "taxClassHelp": "Neue Gerichte in dieser Kategorie starten mit dieser Steuerklasse. Eine Änderung hier ändert bestehende Gerichte nicht.",
+    "taxClassChoose": "Steuerklasse wählen",
+    "taxClassRequired": "Bitte wählen Sie eine Steuerklasse.",
     "deleteTypeToConfirm": "Geben Sie \"{{name}}\" zur Bestätigung ein",
     "created": "Kategorie erstellt.",
     "saved": "Kategorie gespeichert.",
