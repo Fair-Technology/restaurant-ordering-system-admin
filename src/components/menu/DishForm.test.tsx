@@ -453,6 +453,38 @@ describe('DishForm food info', () => {
   });
 });
 
+describe('DishForm plural forms', () => {
+  const navText = () => nav(lookup('dishForm.sectionNames.options')).textContent ?? '';
+  const addProps = (n: number): Partial<DishFormProps> => ({
+    mode: 'add', addRequiredLeft: n, addStatus: { text: 'Draft', tone: 'muted' },
+    onSaveDraft: vi.fn(), onAddToMenu: vi.fn(), onCancel: vi.fn(),
+    requiredChecklist: [{ id: 'name', label: 'Name', done: false, section: 'basics' }],
+  });
+  const blank = () => initial({ form: { name: '', description: '', price: 0 }, categoryIds: [] });
+
+  it.each([
+    ['de', [], '0 Varianten · 0 Extras'],
+    ['de', ['g1', 'g2'], '1 Variante · 1 Extra'],
+    ['en', [], '0 variants · 0 extras'],
+    ['en', ['g1', 'g2'], '1 variant · 1 extra'],
+  ] as const)('%s nav status for refs %j reads "%s"', (lang, refs, text) => {
+    language = lang;
+    render(<Harness start={initial({ optionGroupRefs: [...refs] })} />);
+    expect(navText()).toContain(text);
+  });
+
+  it.each([
+    ['de', 2, '2 Pflichtangaben offen'],
+    ['de', 1, '1 Pflichtangabe offen'],
+    ['en', 2, '2 required left'],
+    ['en', 1, '1 required left'],
+  ] as const)('%s footer with %i missing reads "%s"', (lang, n, text) => {
+    language = lang;
+    render(<Harness start={blank()} props={addProps(n)} />);
+    expect(screen.getByRole('button', { name: text })).toBeTruthy();
+  });
+});
+
 describe('DishForm options and extras', () => {
   const extraOf = (id: string, name: string) =>
     ({ id, kind: 'addon', name, minSelectable: 0, maxSelectable: 2, nameTranslations: {}, options: [] }) as unknown as ShopOptionGroupDto;
