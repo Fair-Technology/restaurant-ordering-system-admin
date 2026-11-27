@@ -13,6 +13,7 @@ vi.mock('react-redux', () => ({ useDispatch: () => vi.fn() }));
 vi.mock('@azure/msal-react', () => ({ useMsal: () => ({ accounts: [], instance: {} }) }));
 vi.mock('../../contexts/ToastContext', () => ({ useToast: () => ({ showToast: vi.fn() }) }));
 vi.mock('../../services/api', () => ({
+  useGetGoLiveStatusQuery: () => ({ data: undefined }),
   useGetMyShopsQuery: () => ({ data: undefined }),
   useGetShopByIdQuery: () => ({ data: shopMock.data }),
   useUpdateShopMutation: () => [vi.fn(), { isLoading: false }],
@@ -84,5 +85,34 @@ describe('Sidebar inside a shop with every permission', () => {
       'nav.activity',
       'nav.settings',
     ]);
+  });
+});
+
+describe('Sidebar shop status switch', () => {
+  afterEach(() => {
+    cleanup();
+    shopMock.data = undefined;
+  });
+
+  const renderOffline = (callerPermissions: string[]) => {
+    shopMock.data = { id: 's1', name: 'Shop', isPaused: true, callerPermissions };
+    render(
+      <MemoryRouter initialEntries={['/shops/s1']}>
+        <Routes>
+          <Route path="/shops/:shopId" element={<Sidebar sidebarHidden={false} onToggleSidebar={() => {}} />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    return screen.getByRole('switch', { name: 'shops.shopStatusTitle' }) as HTMLButtonElement;
+  };
+
+  it('shows an off, operable switch for an offline shop with manage_shop', () => {
+    const sw = renderOffline(['manage_shop']);
+    expect(sw.getAttribute('aria-checked')).toBe('false');
+    expect(sw.disabled).toBe(false);
+  });
+
+  it('disables the switch without manage_shop', () => {
+    expect(renderOffline(['view_orders']).disabled).toBe(true);
   });
 });

@@ -11,6 +11,7 @@ import { MySpinner } from '../components/ui/MySpinner';
 // Route-level code splitting: each page is its own chunk.
 const LoginPage = lazy(() => import('../pages/LoginPage').then((m) => ({ default: m.LoginPage })));
 const ShopsPage = lazy(() => import('../pages/ShopsPage').then((m) => ({ default: m.ShopsPage })));
+const GoLiveChecklistPage = lazy(() => import('../pages/GoLiveChecklistPage').then((m) => ({ default: m.GoLiveChecklistPage })));
 const ShopSettingsPage = lazy(() => import('../pages/ShopSettingsPage').then((m) => ({ default: m.ShopSettingsPage })));
 const CategoriesPage = lazy(() => import('../pages/CategoriesPage').then((m) => ({ default: m.CategoriesPage })));
 const EditCategoryPage = lazy(() => import('../pages/EditCategoryPage').then((m) => ({ default: m.EditCategoryPage })));
@@ -74,6 +75,7 @@ export const router = createBrowserRouter([
               { path: 'tables', element: <Lazy page={TablesPage} /> },
               { path: 'promotions', element: <Lazy page={PromotionsPage} /> },
               { path: 'subscription', element: <Lazy page={SubscriptionPage} /> },
+              { path: 'go-live', element: <Lazy page={GoLiveChecklistPage} /> },
               { path: 'settings', element: <Lazy page={ShopSettingsPage} /> },
               { path: 'legal', element: <Lazy page={LegalPage} /> },
               { path: 'staff', element: <Lazy page={StaffPage} /> },

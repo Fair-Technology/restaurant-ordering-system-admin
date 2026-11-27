@@ -25,7 +25,7 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react';
-import { useGetMyShopsQuery, useGetShopByIdQuery, useUpdateShopMutation, type GetShopResultDto } from '../../services/api';
+import { useGetGoLiveStatusQuery, useGetMyShopsQuery, useGetShopByIdQuery, useUpdateShopMutation, type GetShopResultDto } from '../../services/api';
 import { useGetOrderQueueQuery } from '../../services/ordersApi';
 import { baseApi } from '../../services/baseApi';
 import { useNow } from '../../features/orders/useNow';
@@ -36,6 +36,8 @@ import { useToast } from '../../contexts/ToastContext';
 import { useModalA11y } from '../../hooks/useModalA11y';
 import { AccountSettingsModal } from './AccountSettingsModal';
 import { PauseOrdersDialog } from '../shop/PauseOrdersDialog';
+import { TakeShopOfflineModal } from '../shop/GoLiveModal';
+import { MySwitch } from '../ui/MySwitch';
 import { PendingButton } from '../ui/PendingButton';
 
 /** Round shop logo, or its first letter when no logo is uploaded. */
@@ -56,28 +58,36 @@ function ShopBadge({ shop, size = 36 }: { shop: Pick<GetShopResultDto, 'name' | 
 }
 
 /**
- * The shop's state as one line under the switcher: taking orders (switch), orders paused (switch),
- * or offline (link to the settings, where going online runs the go-live checklist).
+ * Shop status block under the switcher: the live/offline switch, the accepting-orders / paused
+ * indicator while live, and a Checklist link with an open-step badge while go-live steps remain.
  */
 function ShopStatusSwitch({ shop, canManage }: { shop: GetShopResultDto; canManage: boolean }) {
   const { t, i18n } = useTranslation();
   const toast = useToast();
+  const navigate = useNavigate();
   const [updateShop, { isLoading }] = useUpdateShopMutation();
+  const { data: goLive } = useGetGoLiveStatusQuery({ shopId: shop.id! }, { skip: !canManage, pollingInterval: 30000 });
   const nowMs = useNow(30_000);
   const live = shopLiveState(shop, nowMs);
   const [pausing, setPausing] = useState(false);
+  const [offlineModalOpen, setOfflineModalOpen] = useState(false);
+  const openCount = goLive ? goLive.criteria.filter((c) => !c.met).length : 0;
 
-  if (live === 'offline') {
-    return (
-      <Link
-        to={`/shops/${shop.id}/settings?section=status`}
-        className="mt-2.5 flex items-center gap-2 rounded-[10px] bg-[#f1ede8] px-2.5 py-2 text-[13px] font-bold text-[#4a413b] hover:bg-[#ebe5df]"
-      >
-        <span className="h-2 w-2 rounded-full bg-[#9a8f86]" aria-hidden="true" />
-        {t('nav.offlineShort')}
-      </Link>
-    );
-  }
+  const changeLive = async (next: boolean) => {
+    if (!next) {
+      setOfflineModalOpen(true);
+      return;
+    }
+    if (openCount > 0) {
+      navigate(`/shops/${shop.id}/go-live`);
+      return;
+    }
+    try {
+      await updateShop({ shopId: shop.id!, body: { isPaused: false } }).unwrap();
+    } catch (err) {
+      toast.error(isOfflineBySuperadminError(err) ? t('nav.offlineBySuperadminToast') : t('shops.statusFailedToSave'));
+    }
+  };
 
   const taking = live === 'online';
   const toggle = async () => {
@@ -94,54 +104,94 @@ function ShopStatusSwitch({ shop, canManage }: { shop: GetShopResultDto; canMana
   };
 
   return (
-    <div
-      className={`mt-2.5 flex items-center justify-between gap-2 rounded-[10px] px-2.5 py-2 ${
-        taking ? 'bg-[#e6f3ea]' : 'bg-[#fff6e0]'
-      }`}
-    >
-      <span
-        id="sidebar-status-label"
-        className={`flex items-center gap-2 text-[13px] font-bold ${taking ? 'text-[#1d5a32]' : 'text-[#5c3c00]'}`}
-      >
-        <span className={`h-2 w-2 rounded-full ${taking ? 'bg-[#2f8a4c]' : 'bg-[#d97706]'}`} aria-hidden="true" />
-        {taking
-          ? t('nav.acceptingOrders')
-          : shop.ordersPausedUntil && isOrdersPausedAt(shop, nowMs)
-            ? t('nav.ordersPausedUntil', {
-                time: formatPauseEnd(shop.ordersPausedUntil, shop.timezone ?? 'Europe/Berlin', i18n.language),
-              })
-            : t('nav.ordersPausedBadge')}
-      </span>
-      {canManage && (
-        <PendingButton
-          type="button"
-          role="switch"
-          aria-checked={taking}
-          aria-labelledby="sidebar-status-label"
+    <>
+      <div className="mt-2.5 flex items-center justify-between gap-2 rounded-[10px] bg-[#f1ede8] px-2.5 py-2">
+        <span id="sidebar-shop-status-label" className="text-[13px] font-bold text-[#4a413b]">
+          {t('shops.shopStatusTitle')}
+        </span>
+        <MySwitch
+          checked={live !== 'offline'}
+          onChange={(next) => void changeLive(next)}
+          disabled={!canManage}
           isPending={isLoading}
-          // The knob is absolutely positioned; the spinner is drawn below, on the side the knob is not on
-          spinner={false}
-          onClick={() => void toggle()}
-          className={`relative h-5 w-[34px] flex-shrink-0 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 disabled:opacity-50 ${
-            taking ? 'bg-[#2f8a4c]' : 'bg-[#d6cdc4]'
+          labelledBy="sidebar-shop-status-label"
+        />
+      </div>
+
+      {live !== 'offline' && (
+        <div
+          className={`mt-1.5 flex items-center justify-between gap-2 rounded-[10px] px-2.5 py-2 ${
+            taking ? 'bg-[#e6f3ea]' : 'bg-[#fff6e0]'
           }`}
         >
           <span
-            className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${taking ? 'right-0.5' : 'left-0.5'}`}
-          />
-          {isLoading && (
-            <span
-              data-pending-spinner=""
-              aria-hidden="true"
-              className={`absolute top-1/2 -mt-[7px] h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent text-ink ${taking ? 'left-0.5' : 'right-0.5'}`}
-            />
+            id="sidebar-status-label"
+            className={`flex items-center gap-2 text-[13px] font-bold ${taking ? 'text-[#1d5a32]' : 'text-[#5c3c00]'}`}
+          >
+            <span className={`h-2 w-2 rounded-full ${taking ? 'bg-[#2f8a4c]' : 'bg-[#d97706]'}`} aria-hidden="true" />
+            {taking
+              ? t('nav.acceptingOrders')
+              : shop.ordersPausedUntil && isOrdersPausedAt(shop, nowMs)
+                ? t('nav.ordersPausedUntil', {
+                    time: formatPauseEnd(shop.ordersPausedUntil, shop.timezone ?? 'Europe/Berlin', i18n.language),
+                  })
+                : t('nav.ordersPausedBadge')}
+          </span>
+          {canManage && (
+            <PendingButton
+              type="button"
+              role="switch"
+              aria-checked={taking}
+              aria-labelledby="sidebar-status-label"
+              isPending={isLoading}
+              // The knob is absolutely positioned; the spinner is drawn below, on the side the knob is not on
+              spinner={false}
+              onClick={() => void toggle()}
+              className={`relative h-5 w-[34px] flex-shrink-0 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 disabled:opacity-50 ${
+                taking ? 'bg-[#2f8a4c]' : 'bg-[#d6cdc4]'
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${taking ? 'right-0.5' : 'left-0.5'}`}
+              />
+              {isLoading && (
+                <span
+                  data-pending-spinner=""
+                  aria-hidden="true"
+                  className={`absolute top-1/2 -mt-[7px] h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent text-ink ${taking ? 'left-0.5' : 'right-0.5'}`}
+                />
+              )}
+            </PendingButton>
           )}
-        </PendingButton>
+        </div>
       )}
+
+      {canManage && openCount > 0 && (
+        <Link
+          to={`/shops/${shop.id}/go-live`}
+          className="mt-1.5 flex items-center justify-between gap-2 rounded-[10px] bg-[#f1ede8] px-2.5 py-2 text-[13px] font-bold text-[#4a413b] hover:bg-[#ebe5df]"
+        >
+          <span>{t('nav.checklist')}</span>
+          <span
+            className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#b23a0c] px-1.5 text-[11px] font-bold text-white"
+            aria-label={t('nav.checklistOpen', { count: openCount })}
+          >
+            {openCount}
+          </span>
+        </Link>
+      )}
+
       {pausing && (
         <PauseOrdersDialog shopId={shop.id!} onClose={() => setPausing(false)} onPaused={() => setPausing(false)} />
       )}
-    </div>
+      {offlineModalOpen && (
+        <TakeShopOfflineModal
+          shopId={shop.id!}
+          onClose={() => setOfflineModalOpen(false)}
+          onSuccess={() => setOfflineModalOpen(false)}
+        />
+      )}
+    </>
   );
 }
 
