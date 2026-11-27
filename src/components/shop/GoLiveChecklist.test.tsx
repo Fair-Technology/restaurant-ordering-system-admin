@@ -6,7 +6,7 @@ import i18n from 'i18next';
 import { I18nextProvider, initReactI18next } from 'react-i18next';
 import { GoLiveChecklist } from './GoLiveChecklist';
 import { goLiveFixLink } from '../../features/shops/goLiveFixLink';
-import type { GetGoLiveStatusApiResponse } from '../../services/api';
+import type { GetGoLiveStatusApiResponse, GetShopResultDto } from '../../services/api';
 import en from '../../../public/locales/en/common.json';
 
 beforeAll(async () => {
@@ -28,11 +28,11 @@ const status = {
   ],
 } as unknown as GetGoLiveStatusApiResponse;
 
-const renderIt = (st: GetGoLiveStatusApiResponse = status) =>
+const renderIt = (st: GetGoLiveStatusApiResponse = status, stripe?: GetShopResultDto['stripe']) =>
   render(
     <I18nextProvider i18n={i18n}>
       <MemoryRouter>
-        <GoLiveChecklist shopId="s1" status={st} />
+        <GoLiveChecklist shopId="s1" status={st} stripe={stripe} />
       </MemoryRouter>
     </I18nextProvider>,
   );
@@ -73,5 +73,41 @@ describe('GoLiveChecklist', () => {
       criteria: [{ key: 'has_products', met: false, description: 'RAW' }],
     } as unknown as GetGoLiveStatusApiResponse);
     expect(screen.getByRole('link').getAttribute('href')).toBe('/shops/s1/products');
+  });
+
+  describe('stripe_connected row states', () => {
+    const only = {
+      allMet: false,
+      hasAnyProducts: true,
+      criteria: [{ key: 'stripe_connected', met: false, description: 'RAW' }],
+    } as unknown as GetGoLiveStatusApiResponse;
+    const g = en.shops.goLive;
+    const link = () => screen.getByRole('link').getAttribute('href');
+
+    it('not started: shows Set up and the default hint', () => {
+      renderIt(only, null);
+      expect(screen.getByText(g.setup)).toBeTruthy();
+      expect(screen.getByText(g.criteria.stripe_connected.hint)).toBeTruthy();
+      expect(screen.queryByText(g.stripeContinue)).toBeNull();
+    });
+
+    it('account created but details missing: shows Continue', () => {
+      renderIt(only, { connectAccountId: 'acct_1', connectOnboardingStatus: 'not_started' });
+      expect(screen.getByText(g.stripeContinue)).toBeTruthy();
+      expect(screen.getByText(g.criteria.stripe_connected.hintDetailsMissing)).toBeTruthy();
+      expect(screen.queryByText(g.setup)).toBeNull();
+      expect(link()).toBe(goLiveFixLink('s1', 'stripe_connected'));
+    });
+
+    it('pending: shows quiet status, no Set up, row still open', () => {
+      renderIt(only, { connectAccountId: 'acct_1', connectOnboardingStatus: 'pending' });
+      expect(screen.getByText(g.stripePendingReview)).toBeTruthy();
+      expect(screen.getByText(g.criteria.stripe_connected.hintVerifying)).toBeTruthy();
+      expect(screen.getByText(g.stripeViewStatus)).toBeTruthy();
+      expect(screen.queryByText(g.setup)).toBeNull();
+      expect(link()).toBe(goLiveFixLink('s1', 'stripe_connected'));
+      expect(screen.getByRole('progressbar').getAttribute('aria-valuenow')).toBe('0');
+      expect(screen.queryByText(g.done)).toBeNull();
+    });
   });
 });
