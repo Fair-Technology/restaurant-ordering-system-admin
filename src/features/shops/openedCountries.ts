@@ -24,3 +24,15 @@ export function openedCountry(code: string | null | undefined): OpenedCountry | 
   if (!normalized) return undefined;
   return OPENED_COUNTRIES.find((c) => c.code === normalized);
 }
+
+/** Localized display names, keyed by country code then i18n language. Display only; never stored. */
+const COUNTRY_DISPLAY_NAMES: Record<string, Record<string, string>> = {
+  DE: { en: 'Germany', de: 'Deutschland' },
+};
+
+/** Localized name of an opened country for the UI; falls back to the English label, '' if unopened. */
+export function countryDisplayName(code: string | null | undefined, language: string): string {
+  const country = openedCountry(code);
+  if (!country) return '';
+  return COUNTRY_DISPLAY_NAMES[country.code]?.[language] ?? country.label;
+}

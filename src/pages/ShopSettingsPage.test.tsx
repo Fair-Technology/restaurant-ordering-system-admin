@@ -11,7 +11,7 @@ vi.mock('react-i18next', () => ({
       const v = key.split('.').reduce<unknown>((o, k) => (o as Record<string, unknown>)?.[k], en);
       return typeof v === 'string' ? v.replace(/\{\{(\w+)\}\}/g, (_, k) => String(opts?.[k])) : key;
     },
-    i18n: { language: 'en' },
+    i18n: { language: h.lang },
   }),
 }));
 vi.mock('../contexts/ToastContext', () => ({ useToast: () => ({ success: vi.fn(), error: vi.fn() }) }));
@@ -28,7 +28,7 @@ const shop = {
   callerPermissions: ['manage_shop'],
   openingHours: { mon: [{ open: '09:00', close: '17:00' }], tue: [{ open: '09:00', close: '17:00' }] },
 };
-const h = vi.hoisted(() => ({ library: [] as unknown[], shop: null as unknown, updateShop: null as unknown as ReturnType<typeof vi.fn> }));
+const h = vi.hoisted(() => ({ lang: 'en', library: [] as unknown[], shop: null as unknown, updateShop: null as unknown as ReturnType<typeof vi.fn> }));
 vi.mock('../services/api', () => {
   const mut = () => [vi.fn(), { isLoading: false }];
   return {
@@ -75,6 +75,7 @@ const nav = () => within(screen.getByRole('navigation', { name: en.shops.setting
 
 beforeEach(() => {
   h.shop = shop;
+  h.lang = 'en';
   h.library = [];
   h.updateShop = vi.fn(() => ({ unwrap: () => Promise.resolve({}) }));
 });
@@ -177,6 +178,28 @@ describe('address card', () => {
     expect(input(en.shops.addressCountry).disabled).toBe(true);
     expect(input(en.shops.addressStreet).disabled).toBe(false);
     expect(screen.getByText(en.shops.addressOneTimeNotice)).toBeTruthy();
+  });
+
+  it('shows the country localized for display but saves the stored English string', async () => {
+    withAddress({ addressLocked: false, countryCode: 'DE', address: { ...fullAddress, state: 'Berlin', country: 'Germany' } });
+    h.lang = 'de';
+    open();
+    expect(input(en.shops.addressCountry).value).toBe('Deutschland');
+    cleanup();
+    h.lang = 'en';
+    open();
+    expect(input(en.shops.addressCountry).value).toBe('Germany');
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    save();
+    await waitFor(() => expect(h.updateShop).toHaveBeenCalledTimes(1));
+    expect(JSON.stringify(h.updateShop.mock.calls[0])).toContain('"country":"Germany"');
+  });
+
+  it('falls back to the stored country for an unknown country code', () => {
+    withAddress({ countryCode: 'GB' });
+    h.lang = 'de';
+    open();
+    expect(input(en.shops.addressCountry).value).toBe('United Kingdom');
   });
 
   it('asks for confirmation before saving a complete address, and only saves when confirmed', async () => {
