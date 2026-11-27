@@ -6,6 +6,8 @@ import { useTranslation } from 'react-i18next';
 import {
   BadgePercent,
   ChevronsUpDown,
+  CircleCheck,
+  CircleOff,
   CreditCard,
   History,
   Layers,
@@ -14,6 +16,7 @@ import {
   LogOut,
   Menu,
   PanelLeftClose,
+  PauseCircle,
   QrCode,
   ReceiptText,
   Scale,
@@ -32,14 +35,13 @@ import { useGetOrderQueueQuery } from '../../services/ordersApi';
 import { baseApi } from '../../services/baseApi';
 import { useNow } from '../../features/orders/useNow';
 import { navGroups, navPath, sidebarBottomItems, sidebarTopItems, type ShopNavKey } from '../../features/shops/shopNav';
-import { formatPauseEnd, isOfflineBySuperadminError, isOrdersPausedAt, shopLiveState, shopPauseOutOfDate } from '../../features/shops/shopStatus';
+import { formatPauseEnd, isOfflineBySuperadminError, isOrdersPausedAt, shopLiveState, shopPauseOutOfDate, type ShopLiveState } from '../../features/shops/shopStatus';
 import { clearStaffSession, readStaffSession } from '../../features/staff/staffSession';
 import { useToast } from '../../contexts/ToastContext';
 import { useModalA11y } from '../../hooks/useModalA11y';
 import { AccountSettingsModal } from './AccountSettingsModal';
 import { PauseOrdersDialog } from '../shop/PauseOrdersDialog';
 import { TakeShopOfflineModal } from '../shop/GoLiveModal';
-import { MySwitch } from '../ui/MySwitch';
 import { PendingButton } from '../ui/PendingButton';
 
 /** Round shop logo, or its first letter when no logo is uploaded. */
@@ -59,132 +61,196 @@ function ShopBadge({ shop, size = 36 }: { shop: Pick<GetShopResultDto, 'name' | 
   );
 }
 
+const STATE_STYLE: Record<ShopLiveState, { dot: string; Icon: LucideIcon; word: string; desc: string }> = {
+  online: { dot: 'bg-[#2f8a4c]', Icon: CircleCheck, word: 'shops.statusMenu.online', desc: 'shops.statusMenu.onlineDesc' },
+  ordersPaused: { dot: 'bg-[#d97706]', Icon: PauseCircle, word: 'shops.statusMenu.paused', desc: 'shops.statusMenu.pausedDesc' },
+  offline: { dot: 'bg-[#9a8f86]', Icon: CircleOff, word: 'shops.statusMenu.offline', desc: 'shops.statusMenu.offlineDesc' },
+};
+
 /**
- * Shop status block under the switcher: the live/offline switch, the accepting-orders / paused
- * indicator while live, and a Checklist link with an open-step badge while go-live steps remain.
+ * Shop status block under the switcher: one three-state control (Online / Paused / Offline) that opens
+ * a menu, and a Checklist link with an open-step badge while go-live steps remain.
  */
-function ShopStatusSwitch({ shop, canManage }: { shop: GetShopResultDto; canManage: boolean }) {
+function ShopStatusMenu({ shop, canManage }: { shop: GetShopResultDto; canManage: boolean }) {
   const { t, i18n } = useTranslation();
   const toast = useToast();
   const [updateShop, { isLoading }] = useUpdateShopMutation();
   const { data: goLive } = useGetGoLiveStatusQuery({ shopId: shop.id! }, { skip: !canManage, pollingInterval: 30000 });
   const nowMs = useNow(30_000);
   const live = shopLiveState(shop, nowMs);
+  const [open, setOpen] = useState(false);
   const [pausing, setPausing] = useState(false);
   const [offlineModalOpen, setOfflineModalOpen] = useState(false);
   const [blockedTooltipOpen, setBlockedTooltipOpen] = useState(false);
-  const statusRowRef = useRef<HTMLDivElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const dismissTooltip = useCallback(() => setBlockedTooltipOpen(false), []);
   const openCount = goLive ? goLive.criteria.filter((c) => !c.met).length : 0;
 
-  const changeLive = async (next: boolean) => {
-    if (!next) {
-      setOfflineModalOpen(true);
-      return;
-    }
-    if (openCount > 0) {
+  // There is no narrower permission than manage_shop yet; split so one can slot in later.
+  const canChangeOnlineOffline = canManage;
+  const canPauseOrders = canManage;
+
+  const bySuperadmin = shop.offlineBySuperadmin === true;
+  const interactive = canManage && !bySuperadmin;
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => {
+      if (!wrapRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
+    };
+    document.addEventListener('pointerdown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('pointerdown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  const fail = (err: unknown) =>
+    toast.error(isOfflineBySuperadminError(err) ? t('nav.offlineBySuperadminToast') : apiErrorMessage(err, t('shops.statusFailedToSave')));
+
+  const blockedByChecklist = live === 'offline' && openCount > 0;
+  const showBlockedTooltip = blockedTooltipOpen && interactive && blockedByChecklist;
+  const allowedFrom = (from: ShopLiveState) => (from === 'offline' ? canChangeOnlineOffline : canPauseOrders);
+
+  const chooseOnline = async () => {
+    setOpen(false);
+    if (live === 'online' || !allowedFrom(live)) return;
+    if (blockedByChecklist) {
       setBlockedTooltipOpen(true);
       return;
     }
     try {
-      await updateShop({ shopId: shop.id!, body: { isPaused: false } }).unwrap();
+      await updateShop({
+        shopId: shop.id!,
+        body: live === 'offline' ? { isPaused: false } : { ordersPaused: false },
+      }).unwrap();
     } catch (err) {
-      toast.error(isOfflineBySuperadminError(err) ? t('nav.offlineBySuperadminToast') : apiErrorMessage(err, t('shops.statusFailedToSave')));
+      fail(err);
     }
   };
 
-  const showBlockedTooltip = blockedTooltipOpen && canManage && live === 'offline' && openCount > 0;
-
-  const taking = live === 'online';
-  const toggle = async () => {
-    // Pausing asks how long first; switching back on needs no question
-    if (taking) {
-      setPausing(true);
+  const choosePaused = () => {
+    setOpen(false);
+    if (!allowedFrom(live)) return;
+    if (blockedByChecklist) {
+      setBlockedTooltipOpen(true);
       return;
     }
-    try {
-      await updateShop({ shopId: shop.id!, body: { ordersPaused: false } }).unwrap();
-    } catch (err) {
-      toast.error(isOfflineBySuperadminError(err) ? t('nav.offlineBySuperadminToast') : t('shops.statusFailedToSave'));
-    }
+    setPausing(true);
   };
+
+  const chooseOffline = () => {
+    setOpen(false);
+    if (live === 'offline' || !canChangeOnlineOffline) return;
+    setOfflineModalOpen(true);
+  };
+
+  const style = STATE_STYLE[live];
+  const word = t(style.word);
+  const subLine = bySuperadmin
+    ? null
+    : live === 'ordersPaused'
+      ? shop.ordersPausedUntil && isOrdersPausedAt(shop, nowMs)
+        ? t('nav.ordersPausedUntil', { time: formatPauseEnd(shop.ordersPausedUntil, shop.timezone ?? 'Europe/Berlin', i18n.language) })
+        : t('nav.ordersPausedBadge')
+      : null;
+
+  const face = (
+    <>
+      <span id="sidebar-shop-status-label" className="text-[13px] font-bold text-[#4a413b]">
+        {t('shops.shopStatusTitle')}
+      </span>
+      <span className="flex min-w-0 flex-col items-end text-right">
+        <span className="flex items-center gap-1.5 text-[13px] font-bold text-[#4a413b]">
+          <span className={`h-2 w-2 rounded-full ${style.dot}`} aria-hidden="true" />
+          <style.Icon size={14} aria-hidden="true" />
+          {word}
+        </span>
+        {subLine && <span className="text-[11px] text-[#6b6058]">{subLine}</span>}
+        {bySuperadmin && <span className="text-[11px] font-semibold text-[#b42318]">{t('nav.offlineBySuperadmin')}</span>}
+      </span>
+    </>
+  );
+  const rowClass = 'flex w-full items-center justify-between gap-2 rounded-[10px] bg-[#f1ede8] px-2.5 py-2 text-left';
+  const ariaLabel = `${t('shops.shopStatusTitle')}: ${word}`;
+
+  const options: { state: ShopLiveState; blocked: boolean; onSelect: () => void }[] = [
+    { state: 'online', blocked: blockedByChecklist, onSelect: () => void chooseOnline() },
+    { state: 'ordersPaused', blocked: blockedByChecklist, onSelect: choosePaused },
+    ...(canChangeOnlineOffline ? [{ state: 'offline' as const, blocked: false, onSelect: chooseOffline }] : []),
+  ];
 
   return (
     <>
-      <div
-        ref={statusRowRef}
-        className="relative mt-2.5 flex items-center justify-between gap-2 rounded-[10px] bg-[#f1ede8] px-2.5 py-2"
-      >
-        <span id="sidebar-shop-status-label" className="text-[13px] font-bold text-[#4a413b]">
-          {t('shops.shopStatusTitle')}
-        </span>
-        <MySwitch
-          checked={live !== 'offline'}
-          onChange={(next) => void changeLive(next)}
-          disabled={!canManage}
-          isPending={isLoading}
-          labelledBy="sidebar-shop-status-label"
-          describedBy={showBlockedTooltip ? 'sidebar-blocked-tooltip' : undefined}
-        />
+      <div ref={wrapRef} className="relative mt-2.5">
+        {interactive ? (
+          <button
+            ref={triggerRef}
+            type="button"
+            aria-haspopup="listbox"
+            aria-expanded={open}
+            aria-label={ariaLabel}
+            onClick={() => setOpen((v) => !v)}
+            className={`${rowClass} hover:bg-[#ebe5df] focus:outline-none focus-visible:ring-2 focus-visible:ring-ink`}
+          >
+            {face}
+            <ChevronsUpDown size={14} className="flex-shrink-0 text-[#8a7f77]" aria-hidden="true" />
+          </button>
+        ) : (
+          <div role="status" aria-label={ariaLabel} className={rowClass}>
+            {face}
+          </div>
+        )}
+        {open && interactive && (
+          <div
+            role="listbox"
+            aria-label={t('shops.statusMenu.changeStatus')}
+            className="absolute left-0 right-0 top-full z-50 mt-1.5 w-full overflow-hidden rounded-xl border border-line bg-white shadow-[0_12px_32px_rgba(31,26,23,0.14)]"
+          >
+            {options.map(({ state, blocked, onSelect }) => {
+              const s = STATE_STYLE[state];
+              return (
+                <PendingButton
+                  key={state}
+                  type="button"
+                  role="option"
+                  aria-selected={live === state}
+                  aria-disabled={blocked || undefined}
+                  isPending={isLoading && state === 'online'}
+                  onClick={onSelect}
+                  className={`flex w-full items-start gap-2.5 px-3 py-2 text-left hover:bg-cream focus:outline-none focus-visible:bg-cream ${
+                    blocked ? 'opacity-50' : ''
+                  } ${live === state ? 'bg-[#f7f3ee]' : ''}`}
+                >
+                  <span className={`mt-1.5 h-2 w-2 flex-shrink-0 rounded-full ${s.dot}`} aria-hidden="true" />
+                  <span className="flex min-w-0 flex-col">
+                    <span className="text-[13px] font-bold text-ink">{t(s.word)}</span>
+                    <span className="text-xs text-[#6b6058]">{t(s.desc)}</span>
+                  </span>
+                </PendingButton>
+              );
+            })}
+          </div>
+        )}
         {showBlockedTooltip && (
           <ClickTooltip
             id="sidebar-blocked-tooltip"
             message={t('shops.cannotGoOnlineTooltip')}
             onDismiss={dismissTooltip}
-            containerRef={statusRowRef}
+            containerRef={wrapRef}
             linkTo={`/shops/${shop.id}/go-live`}
             linkLabel={t('nav.checklist')}
           />
         )}
       </div>
-
-      {live !== 'offline' && (
-        <div
-          className={`mt-1.5 flex items-center justify-between gap-2 rounded-[10px] px-2.5 py-2 ${
-            taking ? 'bg-[#e6f3ea]' : 'bg-[#fff6e0]'
-          }`}
-        >
-          <span
-            id="sidebar-status-label"
-            className={`flex items-center gap-2 text-[13px] font-bold ${taking ? 'text-[#1d5a32]' : 'text-[#5c3c00]'}`}
-          >
-            <span className={`h-2 w-2 rounded-full ${taking ? 'bg-[#2f8a4c]' : 'bg-[#d97706]'}`} aria-hidden="true" />
-            {taking
-              ? t('nav.acceptingOrders')
-              : shop.ordersPausedUntil && isOrdersPausedAt(shop, nowMs)
-                ? t('nav.ordersPausedUntil', {
-                    time: formatPauseEnd(shop.ordersPausedUntil, shop.timezone ?? 'Europe/Berlin', i18n.language),
-                  })
-                : t('nav.ordersPausedBadge')}
-          </span>
-          {canManage && (
-            <PendingButton
-              type="button"
-              role="switch"
-              aria-checked={taking}
-              aria-labelledby="sidebar-status-label"
-              isPending={isLoading}
-              // The knob is absolutely positioned; the spinner is drawn below, on the side the knob is not on
-              spinner={false}
-              onClick={() => void toggle()}
-              className={`relative h-5 w-[34px] flex-shrink-0 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 disabled:opacity-50 ${
-                taking ? 'bg-[#2f8a4c]' : 'bg-[#d6cdc4]'
-              }`}
-            >
-              <span
-                className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${taking ? 'right-0.5' : 'left-0.5'}`}
-              />
-              {isLoading && (
-                <span
-                  data-pending-spinner=""
-                  aria-hidden="true"
-                  className={`absolute top-1/2 -mt-[7px] h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent text-ink ${taking ? 'left-0.5' : 'right-0.5'}`}
-                />
-              )}
-            </PendingButton>
-          )}
-        </div>
-      )}
 
       {canManage && openCount > 0 && (
         <Link
@@ -202,7 +268,7 @@ function ShopStatusSwitch({ shop, canManage }: { shop: GetShopResultDto; canMana
       )}
 
       {pausing && (
-        <PauseOrdersDialog shopId={shop.id!} onClose={() => setPausing(false)} onPaused={() => setPausing(false)} />
+        <PauseOrdersDialog alsoGoOnline={live === 'offline'} shopId={shop.id!} onClose={() => setPausing(false)} onPaused={() => setPausing(false)} />
       )}
       {offlineModalOpen && (
         <TakeShopOfflineModal
@@ -461,7 +527,7 @@ export function Sidebar({ sidebarHidden, onToggleSidebar }: { sidebarHidden: boo
       {shopId && (
         <div className="border-b border-line-soft px-3.5 pb-3 pt-4">
           <ShopSwitcher shop={currentShop} allowSwitch={!staffSession} />
-          {currentShop && <ShopStatusSwitch shop={currentShop} canManage={perms.includes('manage_shop')} />}
+          {currentShop && <ShopStatusMenu shop={currentShop} canManage={perms.includes('manage_shop')} />}
         </div>
       )}
       <nav className="flex-1 overflow-y-auto px-2.5 pb-4 pt-2.5">{navContent}</nav>

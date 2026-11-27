@@ -9,12 +9,12 @@ const STYLE: Record<ShopLiveState, { badge: string; dot: string }> = {
 };
 
 const LABEL: Record<ShopLiveState, string> = {
-  online: 'nav.acceptingOrders',
-  ordersPaused: 'nav.ordersPausedBadge',
-  offline: 'overview.paused',
+  online: 'shops.statusMenu.online',
+  ordersPaused: 'shops.statusMenu.paused',
+  offline: 'shops.statusMenu.offline',
 };
 
-/** "Nimmt Bestellungen an" / "Bestellungen pausiert" / "Offline" as a small coloured badge. */
+/** "Online" / "Pausiert" / "Offline" as a small coloured badge. */
 export function ShopLiveBadge({ state }: { state: ShopLiveState }) {
   const { t } = useTranslation();
   return (

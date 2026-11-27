@@ -552,6 +552,15 @@
     "kitchenFailed": "Could not save the kitchen timing.",
     "offlineConfirmText": "Diners will see no menu, only a notice that the restaurant is offline. You can switch it back on at any time.",
     "shopStatusTitle": "Shop status",
+    "statusMenu": {
+      "online": "Online",
+      "onlineDesc": "Guests can place orders",
+      "paused": "Paused",
+      "pausedDesc": "Menu visible, no new orders",
+      "offline": "Offline",
+      "offlineDesc": "Guests don't see the shop",
+      "changeStatus": "Change shop status"
+    },
     "cannotGoOnlineTooltip": "You can't switch the shop on yet: the checklist isn't complete.",
     "statusOnline": "Shop online",
     "statusOnlineHelp": "Switched off, the shop page shows no menu, only a notice that the restaurant is offline.",
@@ -585,8 +594,8 @@
         "danger": "Danger zone"
       },
       "statusOffline": "Offline",
-      "statusPaused": "Orders paused",
-      "statusOnline": "Online, taking orders",
+      "statusPaused": "Paused",
+      "statusOnline": "Online",
       "bannerOn": "Banner on",
       "bannerOff": "Banner off",
       "daysOpen": "{{count}} of 7 days open",

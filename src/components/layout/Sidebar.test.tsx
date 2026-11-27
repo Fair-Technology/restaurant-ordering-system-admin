@@ -1,22 +1,24 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 
-const shopMock = vi.hoisted(() => ({ data: undefined as unknown }));
+const shopMock = vi.hoisted(() => ({ data: undefined as unknown, openCount: 0, updateShop: vi.fn() }));
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key, i18n: { language: 'en' } }),
 }));
 vi.mock('react-redux', () => ({ useDispatch: () => vi.fn() }));
 vi.mock('@azure/msal-react', () => ({ useMsal: () => ({ accounts: [], instance: {} }) }));
-vi.mock('../../contexts/ToastContext', () => ({ useToast: () => ({ showToast: vi.fn() }) }));
+vi.mock('../../contexts/ToastContext', () => ({ useToast: () => ({ showToast: vi.fn(), error: vi.fn() }) }));
 vi.mock('../../services/api', () => ({
-  useGetGoLiveStatusQuery: () => ({ data: undefined }),
+  useGetGoLiveStatusQuery: () => ({
+    data: shopMock.openCount ? { criteria: Array.from({ length: shopMock.openCount }, () => ({ met: false })) } : undefined,
+  }),
   useGetMyShopsQuery: () => ({ data: undefined }),
   useGetShopByIdQuery: () => ({ data: shopMock.data }),
-  useUpdateShopMutation: () => [vi.fn(), { isLoading: false }],
+  useUpdateShopMutation: () => [shopMock.updateShop, { isLoading: false }],
 }));
 vi.mock('../../features/staff/staffSession', () => ({ readStaffSession: () => null, clearStaffSession: vi.fn() }));
 vi.mock('../../services/ordersApi', () => ({ useGetOrderQueueQuery: () => ({ data: undefined }) }));
@@ -88,14 +90,16 @@ describe('Sidebar inside a shop with every permission', () => {
   });
 });
 
-describe('Sidebar shop status switch', () => {
+describe('Sidebar shop status menu', () => {
   afterEach(() => {
     cleanup();
     shopMock.data = undefined;
+    shopMock.openCount = 0;
+    shopMock.updateShop.mockClear();
   });
 
-  const renderOffline = (callerPermissions: string[]) => {
-    shopMock.data = { id: 's1', name: 'Shop', isPaused: true, callerPermissions };
+  const renderShop = (shop: Record<string, unknown>, callerPermissions: string[]) => {
+    shopMock.data = { id: 's1', name: 'Shop', isPaused: false, callerPermissions, ...shop };
     render(
       <MemoryRouter initialEntries={['/shops/s1']}>
         <Routes>
@@ -103,16 +107,86 @@ describe('Sidebar shop status switch', () => {
         </Routes>
       </MemoryRouter>,
     );
-    return screen.getByRole('switch', { name: 'shops.shopStatusTitle' }) as HTMLButtonElement;
   };
+  const trigger = () => screen.getByRole('button', { name: 'shops.shopStatusTitle: shops.statusMenu.online' });
 
-  it('shows an off, operable switch for an offline shop with manage_shop', () => {
-    const sw = renderOffline(['manage_shop']);
-    expect(sw.getAttribute('aria-checked')).toBe('false');
-    expect(sw.disabled).toBe(false);
+  it('is a listbox button with three options for a manager, current one selected', () => {
+    renderShop({}, ['manage_shop']);
+    expect(trigger().getAttribute('aria-haspopup')).toBe('listbox');
+    fireEvent.click(trigger());
+    const opts = screen.getAllByRole('option');
+    expect(opts.map((o) => o.getAttribute('aria-selected'))).toEqual(['true', 'false', 'false']);
+    expect(opts[0].textContent).toContain('shops.statusMenu.online');
+    expect(opts[1].textContent).toContain('shops.statusMenu.paused');
+    expect(opts[2].textContent).toContain('shops.statusMenu.offline');
   });
 
-  it('disables the switch without manage_shop', () => {
-    expect(renderOffline(['view_orders']).disabled).toBe(true);
+  it('closes on Escape and returns focus to the trigger', () => {
+    renderShop({}, ['manage_shop']);
+    fireEvent.click(trigger());
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByRole('listbox')).toBeNull();
+    expect(document.activeElement).toBe(trigger());
+  });
+
+  it('is read-only without manage_shop', () => {
+    renderShop({}, ['view_orders']);
+    expect(screen.queryByRole('listbox')).toBeNull();
+    const status = screen.getByRole('status', { name: 'shops.shopStatusTitle: shops.statusMenu.online' });
+    expect(status.tagName).toBe('DIV');
+    expect(screen.queryByRole('button', { name: /shopStatusTitle/ })).toBeNull();
+  });
+
+  it('is not interactive when the platform took the shop offline', () => {
+    renderShop({ isPaused: true, offlineBySuperadmin: true }, ['manage_shop']);
+    expect(screen.getByText('nav.offlineBySuperadmin')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /shopStatusTitle/ })).toBeNull();
+  });
+
+  it('shows the pause sub-line for an auto-paused shop', () => {
+    renderShop({ ordersPaused: true }, ['manage_shop']);
+    expect(screen.getByText('nav.ordersPausedBadge')).toBeTruthy();
+  });
+
+  it('gates Online and Paused behind the checklist when offline, showing the existing tooltip', () => {
+    shopMock.openCount = 2;
+    renderShop({ isPaused: true }, ['manage_shop']);
+    fireEvent.click(screen.getByRole('button', { name: 'shops.shopStatusTitle: shops.statusMenu.offline' }));
+    const [online, paused, offline] = screen.getAllByRole('option');
+    expect(online.getAttribute('aria-disabled')).toBe('true');
+    expect(paused.getAttribute('aria-disabled')).toBe('true');
+    expect(offline.getAttribute('aria-disabled')).toBeNull();
+    fireEvent.click(online);
+    expect(screen.getByText('shops.cannotGoOnlineTooltip')).toBeTruthy();
+    expect(shopMock.updateShop).not.toHaveBeenCalled();
+  });
+
+  it('resumes a paused shop with ordersPaused:false', () => {
+    renderShop({ ordersPaused: true }, ['manage_shop']);
+    fireEvent.click(screen.getByRole('button', { name: 'shops.shopStatusTitle: shops.statusMenu.paused' }));
+    fireEvent.click(screen.getAllByRole('option')[0]);
+    expect(shopMock.updateShop).toHaveBeenCalledWith({ shopId: 's1', body: { ordersPaused: false } });
+  });
+
+  it('switches an offline shop on with isPaused:false when nothing blocks it', () => {
+    renderShop({ isPaused: true }, ['manage_shop']);
+    fireEvent.click(screen.getByRole('button', { name: 'shops.shopStatusTitle: shops.statusMenu.offline' }));
+    fireEvent.click(screen.getAllByRole('option')[0]);
+    expect(shopMock.updateShop).toHaveBeenCalledWith({ shopId: 's1', body: { isPaused: false } });
+  });
+
+  it('opens the pause dialog from Paused', () => {
+    renderShop({}, ['manage_shop']);
+    fireEvent.click(trigger());
+    fireEvent.click(screen.getAllByRole('option')[1]);
+    expect(screen.getByText('shops.pauseOrdersTitle')).toBeTruthy();
+    expect(screen.queryByRole('listbox')).toBeNull();
+  });
+
+  it('opens the offline confirmation from Offline', () => {
+    renderShop({}, ['manage_shop']);
+    fireEvent.click(trigger());
+    fireEvent.click(screen.getAllByRole('option')[2]);
+    expect(screen.getByText('shops.offlineConfirmText')).toBeTruthy();
   });
 });
