@@ -74,7 +74,7 @@ export function GoLiveChecklist({ shopId, status, onNavigate }: Props) {
                     <span className="shrink-0 text-xs font-medium text-green-600">{t('shops.goLive.done')}</span>
                   ) : (
                     <Link
-                      to={goLiveFixLink(shopId, criterion.key)}
+                      to={goLiveFixLink(shopId, criterion.key, status.hasAnyProducts)}
                       onClick={onNavigate}
                       aria-label={t('shops.goLive.setupAria', { title })}
                       className="shrink-0 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"

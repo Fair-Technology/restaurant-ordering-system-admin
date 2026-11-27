@@ -33,4 +33,10 @@ describe('goLiveFixLink', () => {
   it('unknown keys fall back to the settings page', () => {
     expect(goLiveFixLink('s1', 'some_future_key')).toBe('/shops/s1/settings');
   });
+
+  it('has_products opens the add-dish form only when the shop has no dishes', () => {
+    expect(goLiveFixLink('s1', 'has_products', false)).toBe('/shops/s1/products?addProduct=1');
+    expect(goLiveFixLink('s1', 'has_products', true)).toBe('/shops/s1/products');
+    expect(goLiveFixLink('s1', 'has_products')).toBe('/shops/s1/products');
+  });
 });

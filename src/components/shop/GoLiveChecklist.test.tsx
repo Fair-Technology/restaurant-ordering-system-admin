@@ -20,6 +20,7 @@ afterEach(cleanup);
 
 const status = {
   allMet: false,
+  hasAnyProducts: true,
   criteria: [
     { key: 'stripe_connected', met: false, description: 'RAW' },
     { key: 'has_products', met: true, description: 'RAW' },
@@ -27,11 +28,11 @@ const status = {
   ],
 } as unknown as GetGoLiveStatusApiResponse;
 
-const renderIt = () =>
+const renderIt = (st: GetGoLiveStatusApiResponse = status) =>
   render(
     <I18nextProvider i18n={i18n}>
       <MemoryRouter>
-        <GoLiveChecklist shopId="s1" status={status} />
+        <GoLiveChecklist shopId="s1" status={st} />
       </MemoryRouter>
     </I18nextProvider>,
   );
@@ -54,5 +55,23 @@ describe('GoLiveChecklist', () => {
     expect(screen.getByText('Future thing to do')).toBeTruthy();
     expect(within(sections[0]).getByRole('heading', { level: 3 })).toBeTruthy();
     expect(screen.getAllByText(en.shops.goLive.done).length).toBe(1);
+  });
+
+  it('has_products Set up link opens the add-dish form when the shop has no dishes', () => {
+    renderIt({
+      allMet: false,
+      hasAnyProducts: false,
+      criteria: [{ key: 'has_products', met: false, description: 'RAW' }],
+    } as unknown as GetGoLiveStatusApiResponse);
+    expect(screen.getByRole('link').getAttribute('href')).toBe('/shops/s1/products?addProduct=1');
+  });
+
+  it('has_products Set up link opens the plain list when dishes exist but are incomplete', () => {
+    renderIt({
+      allMet: false,
+      hasAnyProducts: true,
+      criteria: [{ key: 'has_products', met: false, description: 'RAW' }],
+    } as unknown as GetGoLiveStatusApiResponse);
+    expect(screen.getByRole('link').getAttribute('href')).toBe('/shops/s1/products');
   });
 });

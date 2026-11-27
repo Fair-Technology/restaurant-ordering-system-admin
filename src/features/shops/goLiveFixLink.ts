@@ -1,4 +1,4 @@
-export function goLiveFixLink(shopId: string, key: string): string {
+export function goLiveFixLink(shopId: string, key: string, hasAnyProducts?: boolean): string {
   switch (key) {
     case 'stripe_connected':
       return `/shops/${shopId}/settings?section=pay`;
@@ -8,7 +8,9 @@ export function goLiveFixLink(shopId: string, key: string): string {
     case 'opening_hours':
       return `/shops/${shopId}/settings?section=hours`;
     case 'has_products':
-      return `/shops/${shopId}/products`;
+      return hasAnyProducts === false
+        ? `/shops/${shopId}/products?addProduct=1`
+        : `/shops/${shopId}/products`;
     case 'has_categories':
       return `/shops/${shopId}/categories`;
     case 'dpa_accepted':
