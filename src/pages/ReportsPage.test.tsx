@@ -4,9 +4,11 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { ReportsPage } from './ReportsPage';
 
+const tMock = vi.hoisted(() => vi.fn<(key: string, opts?: unknown) => string>((key) => key));
 vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (key: string) => key, i18n: { language: 'en', exists: () => false } }),
+  useTranslation: () => ({ t: tMock, i18n: { language: 'en', exists: () => false } }),
 }));
+const limitQuery = vi.hoisted(() => ({ current: undefined as unknown }));
 const shopOverride = vi.hoisted(() => ({ current: {} as Record<string, unknown> }));
 vi.mock('../services/api', () => ({
   useGetShopByIdQuery: () => ({
@@ -31,7 +33,7 @@ vi.mock('../services/reportsApi', () => ({
   useGetSalesReportQuery: () => ({ refetch: vi.fn(), ...reportQuery.current }),
 }));
 vi.mock('../services/subscriptionApi', () => ({
-  useGetOrderLimitQuery: () => ({ data: undefined }),
+  useGetOrderLimitQuery: () => ({ data: limitQuery.current }),
 }));
 
 const REPORT = {
@@ -47,6 +49,8 @@ const REPORT = {
 
 afterEach(() => {
   cleanup();
+  tMock.mockClear();
+  limitQuery.current = undefined;
   vi.useRealTimers();
   reportQuery.current = { data: undefined, isFetching: false, isError: false };
   shopOverride.current = {};
@@ -180,5 +184,15 @@ describe('ReportsPage setup checklist', () => {
     shopOverride.current = { callerPermissions: ['view_reports', 'manage_shop'], isPaused: false };
     renderPage();
     expect(screen.queryByText('reports.setupChecklist.oneLiner')).toBeNull();
+  });
+});
+
+describe('ReportsPage order-limit plural', () => {
+  it('drives the plural form by the limit, not the used amount', () => {
+    reportQuery.current = { data: REPORT, isFetching: false, isError: false };
+    limitQuery.current = { acceptedOrderCount: 1, limit: 30 };
+    renderPage();
+    const call = tMock.mock.calls.find(([key]) => key === 'reports.monthToDate');
+    expect(call?.[1]).toEqual({ count: 30, used: 1, limit: 30 });
   });
 });

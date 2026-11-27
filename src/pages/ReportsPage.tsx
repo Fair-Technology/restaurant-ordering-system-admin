@@ -249,7 +249,7 @@ export function ReportsPage() {
               <span className="text-[#4a413b]">
                 {limit.limit === null
                   ? t('reports.monthToDateUnlimited', { count: limit.acceptedOrderCount })
-                  : t('reports.monthToDate', { count: limit.acceptedOrderCount, limit: limit.limit })}
+                  : t('reports.monthToDate', { count: limit.limit, used: limit.acceptedOrderCount, limit: limit.limit })}
               </span>
             )}
           </div>

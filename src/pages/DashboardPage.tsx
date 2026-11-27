@@ -103,7 +103,7 @@ export function DashboardPage() {
                   <span className={`text-[13px] ${s.orderLimit.limitReached ? 'font-semibold text-[#b42318]' : 'text-muted'}`}>
                     {s.orderLimit.limit === null
                       ? t('overview.unlimited', { count: s.orderLimit.acceptedOrderCount })
-                      : t('overview.limit', { count: s.orderLimit.acceptedOrderCount, limit: s.orderLimit.limit })}
+                      : t('overview.limit', { count: s.orderLimit.limit, used: s.orderLimit.acceptedOrderCount, limit: s.orderLimit.limit })}
                   </span>
                 </div>
                 <div className="mt-auto flex flex-wrap gap-2 border-t border-line-soft px-4 py-3">

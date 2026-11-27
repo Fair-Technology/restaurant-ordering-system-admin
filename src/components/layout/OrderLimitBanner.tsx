@@ -31,7 +31,8 @@ export function OrderLimitBanner({ shopId, canManageBilling }: OrderLimitBannerP
         <BannerRow
           tone={banner.tone === 'stop' ? 'bg-red-50 border-red-200 text-red-800' : 'bg-amber-50 border-amber-200 text-amber-900'}
           text={t(banner.tone === 'stop' ? 'orderLimit.bannerStop' : 'orderLimit.bannerWarning', {
-            count: banner.count,
+            count: banner.limit,
+            used: banner.count,
             limit: banner.limit,
             percent: banner.level,
           })}
