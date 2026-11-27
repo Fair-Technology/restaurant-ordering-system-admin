@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
@@ -8,9 +8,12 @@ import {
   useCreateShopMutation,
   useLazyCheckSlugAvailabilityQuery,
   useUpdateShopMutation,
+  useLazyGetGoLiveStatusQuery,
 } from '../services/api';
 import type { CreateShopRequestDto, MenuLanguage, ShopSummaryDto } from '../services/api';
 import { TakeShopOfflineModal } from '../components/shop/GoLiveModal';
+import { apiErrorMessage } from '../features/api/errorMessage';
+import { ClickTooltip } from '../components/ui/ClickTooltip';
 import { isOfflineBySuperadminError } from '../features/shops/shopStatus';
 import { visibleShops } from '../features/shops/deleteShop';
 import { defaultMenuLanguageForUiLanguage } from '../features/menu/translations';
@@ -296,7 +299,13 @@ function ShopAvailabilityToggle({
   const { t } = useTranslation();
   const toast = useToast();
   const [updateShop, { isLoading }] = useUpdateShopMutation();
+  const [fetchGoLiveStatus, { isFetching: goLiveChecking }] = useLazyGetGoLiveStatusQuery();
   const [confirmOffline, setConfirmOffline] = useState(false);
+  const [blockedTooltipOpen, setBlockedTooltipOpen] = useState(false);
+  const toggleRef = useRef<HTMLDivElement>(null);
+  const dismissTooltip = useCallback(() => setBlockedTooltipOpen(false), []);
+  const tooltipId = `shop-${shop.id}-blocked-tooltip`;
+  const showBlockedTooltip = blockedTooltipOpen && isPaused;
   const isOn = !isPaused;
 
   const handleClick = async (e: React.MouseEvent) => {
@@ -307,25 +316,45 @@ function ShopAvailabilityToggle({
       setConfirmOffline(true);
       return;
     }
+    // Going online first runs the go-live checklist; an incomplete one blocks without a request
+    try {
+      const result = await fetchGoLiveStatus({ shopId: shop.id! }).unwrap();
+      if (!result.allMet) {
+        setBlockedTooltipOpen(true);
+        return;
+      }
+    } catch {
+      toast.error(t('shops.statusFailedToSave'));
+      return;
+    }
+    setBlockedTooltipOpen(false);
     setIsPaused(false);
     try {
       await updateShop({ shopId: shop.id!, body: { isPaused: false } }).unwrap();
     } catch (err) {
       setIsPaused(true);
-      toast.error(isOfflineBySuperadminError(err) ? t('nav.offlineBySuperadminToast') : t('shops.statusFailedToSave'));
+      toast.error(isOfflineBySuperadminError(err) ? t('nav.offlineBySuperadminToast') : apiErrorMessage(err, t('shops.statusFailedToSave')));
     }
   };
 
   return (
     <>
+      <div
+        ref={toggleRef}
+        className="relative flex items-center"
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => {
+          if (e.key !== 'Escape') e.stopPropagation();
+        }}
+      >
       <PendingButton
         type="button"
         role="switch"
         aria-checked={isOn}
         aria-label={`${t('shops.statusOnline')}: ${shop.name ?? ''}`}
         onClick={handleClick}
-        onKeyDown={(e) => e.stopPropagation()}
-        isPending={isLoading}
+        isPending={isLoading || goLiveChecking}
+        aria-describedby={showBlockedTooltip ? tooltipId : undefined}
         // The knob is absolutely positioned; the spinner is drawn below, on the side the knob is not on
         spinner={false}
         disabled={shop.offlineBySuperadmin === true}
@@ -335,7 +364,7 @@ function ShopAvailabilityToggle({
         }`}
       >
         <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${isOn ? 'right-0.5' : 'left-0.5'}`} />
-        {isLoading && (
+        {(isLoading || goLiveChecking) && (
           <span
             data-pending-spinner=""
             aria-hidden="true"
@@ -343,6 +372,17 @@ function ShopAvailabilityToggle({
           />
         )}
       </PendingButton>
+      {showBlockedTooltip && (
+        <ClickTooltip
+          id={tooltipId}
+          message={t('shops.cannotGoOnlineTooltip')}
+          onDismiss={dismissTooltip}
+          containerRef={toggleRef}
+          linkTo={`/shops/${shop.id}/go-live`}
+          linkLabel={t('nav.checklist')}
+        />
+      )}
+      </div>
       {confirmOffline && (
         <div onClick={(e) => e.stopPropagation()}>
           <TakeShopOfflineModal

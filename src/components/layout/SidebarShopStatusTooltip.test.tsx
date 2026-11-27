@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import i18n from 'i18next';
 import { I18nextProvider, initReactI18next } from 'react-i18next';
@@ -74,7 +74,8 @@ describe('Sidebar shop status switch with open checklist items', () => {
     expect(screen.queryByRole('status')).toBeNull();
     fireEvent.click(sw);
     const tip = screen.getByRole('status');
-    expect(tip.textContent).toBe(MESSAGE);
+    expect(tip.textContent).toBe(`${MESSAGE}Checklist`);
+    expect(within(tip).getByRole('link', { name: 'Checklist' }).getAttribute('href')).toBe('/shops/s1/go-live');
     expect(sw.getAttribute('aria-describedby')).toBe(tip.id);
     expect(sw.getAttribute('aria-checked')).toBe('false');
     expect(mocks.navigate).not.toHaveBeenCalled();
