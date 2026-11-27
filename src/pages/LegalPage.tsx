@@ -38,6 +38,7 @@ import { countryDisplayName } from '../features/shops/openedCountries';
 import { SettingsSectionNav } from '../components/shop/SettingsSectionNav';
 import { LegalGoLiveSummary } from '../components/legal/LegalGoLiveSummary';
 import { isEraseEmailMatch } from '../features/legal/eraseConfirm';
+import { requiredImpressumKeys } from '../features/legal/impressumRequired';
 import {
   buildLegalGoLiveSummary,
   buildLegalSections,
@@ -223,6 +224,12 @@ function ImpressumCard({ shopId, legal, shopAddress, countryCode }: {
   const value = draft ?? loaded;
   const taxNumber = taxDraft ?? legal.taxNumber;
   const set = (key: ImpressumFieldKey, v: string) => setDraft({ ...value, [key]: v });
+  const requiredKeys = requiredImpressumKeys(value.legalForm);
+  // Nothing saved yet, but the form already holds an address taken from the shop.
+  const addressPrefilled = legal.impressum === null
+    && (['street', 'postcode', 'city', 'country'] as const).some((k) => loaded[k].trim() !== '');
+  // Presentation only: hide fields the form already fills (server completeness is unchanged).
+  const missingFields = legal.missingImpressumFields.filter((k) => value[k].trim() === '');
 
   const handleSave = async () => {
     setServerError(null);
@@ -243,6 +250,8 @@ function ImpressumCard({ shopId, legal, shopAddress, countryCode }: {
       type={key === 'email' ? 'email' : 'text'}
       maxLength={300}
       value={value[key]}
+      markRequired={requiredKeys.has(key)}
+      hint={key === 'vatId' ? t('legal.vatIdOrTaxHint') : undefined}
       onChange={(e) => set(key, e.target.value)}
     />
   );
@@ -264,6 +273,9 @@ function ImpressumCard({ shopId, legal, shopAddress, countryCode }: {
             ))}
           </select>
         </div>
+        {addressPrefilled && (
+          <p className="text-sm text-[#8a5a00]">{t('legal.impressumAddressPrefilled')}</p>
+        )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {IMPRESSUM_TEXT_FIELDS.map(fieldInput)}
           <div className="flex flex-col gap-1">
@@ -274,15 +286,16 @@ function ImpressumCard({ shopId, legal, shopAddress, countryCode }: {
               onChange={(e) => setTaxDraft(e.target.value)}
             />
             <p className="text-xs text-muted">{t('legal.taxNumberHelp')}</p>
+            <p className="text-xs text-muted">{t('legal.taxOrVatRequired')}</p>
           </div>
         </div>
         {value.vatId.trim() === '' && taxNumber.trim() === '' && (
           <p className="text-sm text-[#8a5a00]">{t('legal.taxIdMissing')}</p>
         )}
-        {legal.missingImpressumFields.length > 0 && (
+        {missingFields.length > 0 && (
           <p className="text-sm text-[#8a5a00]">
             {t('legal.impressumMissing', {
-              fields: legal.missingImpressumFields.map((k) => t(`legal.f.${k}`)).join(', '),
+              fields: missingFields.map((k) => t(`legal.f.${k}`)).join(', '),
             })}
           </p>
         )}

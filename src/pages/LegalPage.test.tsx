@@ -8,7 +8,7 @@ const langState = vi.hoisted(() => ({ current: 'en' }));
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string, o?: Record<string, unknown>) => (o && 'email' in o ? `${key}|${o.email}` : o && 'count' in o && !('total' in o) ? `${key}|${o.count}` : o && 'total' in o ? `${key}|${o.count}/${o.total}` : key),
+    t: (key: string, o?: Record<string, unknown>) => (o && 'fields' in o ? `${key}|${o.fields}` : o && 'email' in o ? `${key}|${o.email}` : o && 'count' in o && !('total' in o) ? `${key}|${o.count}` : o && 'total' in o ? `${key}|${o.count}/${o.total}` : key),
     i18n: { language: langState.current },
   }),
 }));
@@ -21,10 +21,12 @@ vi.mock('../services/api', async (importOriginal) => ({
       countryCode: 'DE',
       slug: 'shop',
       name: 'Test Shop',
-      address: {},
+      address: shopAddressState.current,
     },
   }),
 }));
+
+const shopAddressState = vi.hoisted(() => ({ current: {} as Record<string, string> }));
 
 const legalState = vi.hoisted(() => ({
   current: null as unknown,
@@ -91,6 +93,7 @@ beforeEach(() => {
 
 afterEach(() => {
   langState.current = 'en';
+  shopAddressState.current = {};
   cleanup();
 });
 
@@ -248,7 +251,7 @@ describe('LegalPage erase flow', () => {
 });
 
 describe('LegalPage impressum country default', () => {
-  const country = () => screen.getByLabelText('legal.f.country') as HTMLInputElement;
+  const country = () => screen.getByLabelText(/^legal\.f\.country/) as HTMLInputElement;
 
   it('prefills the localized country name (Deutschland) for a German admin with no saved impressum', () => {
     langState.current = 'de';
@@ -266,5 +269,77 @@ describe('LegalPage impressum country default', () => {
     const saved = { legalName: 'X', legalForm: 'sole_trader', representatives: 'Y', street: 's', postcode: '1', city: 'c', country: 'Germany', phone: '', email: '', registerCourt: '', registerNumber: '', vatId: '', supervisoryAuthority: '' };
     renderPage(null, '/shops/s1/legal?section=impressum', { impressum: saved });
     expect(country().value).toBe('Germany');
+  });
+});
+
+describe('LegalPage impressum required fields', () => {
+  const URL = '/shops/s1/legal?section=impressum';
+  const field = (key: string) => screen.getByLabelText(new RegExp(`^legal\\.f\\.${key}( \\*)?$`)) as HTMLInputElement;
+  const isRequired = (key: string) => field(key).getAttribute('aria-required') === 'true' && field(key).required;
+  const BASE = ['legalName', 'street', 'postcode', 'city', 'country', 'phone', 'email'];
+  const saved = (legalForm: string) => ({ legalName: 'X', legalForm, representatives: '', street: 's', postcode: '1', city: 'c', country: 'DE', phone: '', email: '', registerCourt: '', registerNumber: '', vatId: '', supervisoryAuthority: '' });
+  const expectRequired = (required: string[]) => {
+    for (const k of [...BASE, 'representatives', 'registerCourt', 'registerNumber', 'vatId', 'supervisoryAuthority']) {
+      expect(isRequired(k), k).toBe(BASE.includes(k) || required.includes(k));
+    }
+  };
+
+  it('sole_trader: only base fields required; optional fields still rendered', () => {
+    renderPage(null, URL, { impressum: saved('sole_trader') });
+    expectRequired([]);
+    expect(field('vatId')).toBeTruthy();
+    expect(field('supervisoryAuthority')).toBeTruthy();
+  });
+
+  it('gbr requires representatives only', () => {
+    renderPage(null, URL, { impressum: saved('gbr') });
+    expectRequired(['representatives']);
+  });
+
+  it('ek requires register fields only', () => {
+    renderPage(null, URL, { impressum: saved('ek') });
+    expectRequired(['registerCourt', 'registerNumber']);
+  });
+
+  it.each(['gmbh', 'ug', 'ohg', 'kg'])('%s requires representatives and register', (f) => {
+    renderPage(null, URL, { impressum: saved(f) });
+    expectRequired(['representatives', 'registerCourt', 'registerNumber']);
+  });
+
+  it('shows a non-colour asterisk marker on required labels only', () => {
+    renderPage(null, URL, { impressum: saved('sole_trader') });
+    expect(screen.getByText('legal.f.street', { exact: false }).textContent).toContain('*');
+    expect(screen.getByText('legal.f.vatId', { exact: false }).textContent).not.toContain('*');
+  });
+
+  it('live-updates required markers when the legal form changes', () => {
+    renderPage(null, URL, { impressum: saved('sole_trader') });
+    expectRequired([]);
+    fireEvent.change(screen.getByLabelText('legal.f.legalForm'), { target: { value: 'gmbh' } });
+    expectRequired(['representatives', 'registerCourt', 'registerNumber']);
+    fireEvent.change(screen.getByLabelText('legal.f.legalForm'), { target: { value: 'ek' } });
+    expectRequired(['registerCourt', 'registerNumber']);
+  });
+
+  it('always shows the tax-or-VAT note', () => {
+    renderPage(null, URL, { impressum: saved('sole_trader') });
+    expect(screen.getByText('legal.taxOrVatRequired')).toBeTruthy();
+    fireEvent.change(field('vatId'), { target: { value: 'DE123' } });
+    expect(screen.getByText('legal.taxOrVatRequired')).toBeTruthy();
+    expect(screen.getByText('legal.vatIdOrTaxHint')).toBeTruthy();
+  });
+
+  it('prefilled-not-saved: shows notice and lists only genuinely empty fields as missing', () => {
+    shopAddressState.current = { street: 'Main 1', postcode: '10115', city: 'Berlin' };
+    renderPage(null, URL, { missingImpressumFields: ['street', 'postcode', 'city', 'country', 'phone'] });
+    expect(screen.getByText('legal.impressumAddressPrefilled')).toBeTruthy();
+    expect(screen.getByText('legal.impressumMissing|legal.f.phone')).toBeTruthy();
+  });
+
+  it('no prefilled notice once an impressum is saved', () => {
+    shopAddressState.current = { street: 'Main 1', postcode: '10115', city: 'Berlin' };
+    renderPage(null, URL, { impressum: saved('sole_trader'), missingImpressumFields: ['phone'] });
+    expect(screen.queryByText('legal.impressumAddressPrefilled')).toBeNull();
+    expect(screen.getByText('legal.impressumMissing|legal.f.phone')).toBeTruthy();
   });
 });
