@@ -5,12 +5,24 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { ReportsPage } from './ReportsPage';
 
 vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (key: string) => key, i18n: { language: 'en' } }),
+  useTranslation: () => ({ t: (key: string) => key, i18n: { language: 'en', exists: () => false } }),
 }));
+const shopOverride = vi.hoisted(() => ({ current: {} as Record<string, unknown> }));
 vi.mock('../services/api', () => ({
   useGetShopByIdQuery: () => ({
-    data: { timezone: 'Europe/Berlin', currency: 'EUR', slug: 'shop', callerPermissions: ['view_reports'] },
+    data: {
+      id: 's1',
+      timezone: 'Europe/Berlin',
+      currency: 'EUR',
+      slug: 'shop',
+      callerPermissions: ['view_reports'],
+      ...shopOverride.current,
+    },
   }),
+  useGetGoLiveStatusQuery: () => ({
+    data: { allMet: false, criteria: [{ key: 'stripe_connected', met: false, description: 'x' }] },
+  }),
+  useUpdateShopMutation: () => [vi.fn(), { isLoading: false }],
 }));
 const reportQuery = vi.hoisted(() => ({
   current: { data: undefined, isFetching: false, isError: false } as Record<string, unknown>,
@@ -37,6 +49,7 @@ afterEach(() => {
   cleanup();
   vi.useRealTimers();
   reportQuery.current = { data: undefined, isFetching: false, isError: false };
+  shopOverride.current = {};
 });
 
 function renderPage() {
@@ -153,5 +166,19 @@ describe('ReportsPage keeps the last report on a range error', () => {
     expect(screen.queryByText('reports.loadError')).toBeNull();
     expect(screen.getByText('7')).toBeTruthy();
     expect(screen.getByText('reports.downloadCsv')).toBeTruthy();
+  });
+});
+
+describe('ReportsPage setup checklist', () => {
+  it('shows the checklist for an offline shop the caller can manage', () => {
+    shopOverride.current = { callerPermissions: ['view_reports', 'manage_shop'], isPaused: true };
+    renderPage();
+    expect(screen.getByText('reports.setupChecklist.title')).toBeTruthy();
+  });
+
+  it('hides the checklist for an online shop', () => {
+    shopOverride.current = { callerPermissions: ['view_reports', 'manage_shop'], isPaused: false };
+    renderPage();
+    expect(screen.queryByText('reports.setupChecklist.title')).toBeNull();
   });
 });
