@@ -1537,6 +1537,15 @@
     "loading": "Rechtliche Einstellungen werden geladen…",
     "loadError": "Die rechtlichen Einstellungen konnten nicht geladen werden.",
     "saved": "Gespeichert.",
+    "error": {
+      "invalidInput": "Bitte prüfen Sie Ihre Eingaben und versuchen Sie es erneut.",
+      "tooLong": "{{field}} darf höchstens {{max}} Zeichen haben.",
+      "legalFormInvalid": "Bitte wählen Sie eine gültige Rechtsform.",
+      "emailInvalid": "{{field}} ist keine gültige E-Mail-Adresse.",
+      "vatIdInvalid": "{{field}} muss das Format DE gefolgt von 9 Ziffern haben.",
+      "ibanInvalid": "{{field}} ist keine gültige IBAN.",
+      "bicInvalid": "{{field}} ist kein gültiger BIC."
+    },
     "saveFailed": "Speichern fehlgeschlagen.",
     "saving": "Wird gespeichert…",
     "draftBadge": "Entwurf – nicht anwaltlich geprüft",

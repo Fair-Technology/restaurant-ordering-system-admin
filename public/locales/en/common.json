@@ -1537,6 +1537,15 @@
     "loading": "Loading legal settings…",
     "loadError": "Could not load the legal settings.",
     "saved": "Saved.",
+    "error": {
+      "invalidInput": "Please check your entries and try again.",
+      "tooLong": "{{field}} may be at most {{max}} characters.",
+      "legalFormInvalid": "Please choose a valid legal form.",
+      "emailInvalid": "{{field}} is not a valid email address.",
+      "vatIdInvalid": "{{field}} must be in the format DE followed by 9 digits.",
+      "ibanInvalid": "{{field}} is not a valid IBAN.",
+      "bicInvalid": "{{field}} is not a valid BIC."
+    },
     "saveFailed": "Could not save.",
     "saving": "Saving…",
     "draftBadge": "Draft – not reviewed by a lawyer",
