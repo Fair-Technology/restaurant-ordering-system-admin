@@ -547,6 +547,7 @@
     "kitchenFailed": "Could not save the kitchen timing.",
     "offlineConfirmText": "Diners will see no menu, only a notice that the restaurant is offline. You can switch it back on at any time.",
     "shopStatusTitle": "Shop status",
+    "cannotGoOnlineTooltip": "You can't switch the shop on yet: the checklist isn't complete.",
     "statusOnline": "Shop online",
     "statusOnlineHelp": "Switched off, the shop page shows no menu, only a notice that the restaurant is offline.",
     "statusSaveMessage": "Save message",

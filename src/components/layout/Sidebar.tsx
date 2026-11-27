@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useDispatch } from 'react-redux';
 import { Link, NavLink, useNavigate, useParams } from 'react-router-dom';
 import { useMsal } from '@azure/msal-react';
@@ -26,6 +26,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useGetGoLiveStatusQuery, useGetMyShopsQuery, useGetShopByIdQuery, useUpdateShopMutation, type GetShopResultDto } from '../../services/api';
+import { ClickTooltip } from '../ui/ClickTooltip';
 import { useGetOrderQueueQuery } from '../../services/ordersApi';
 import { baseApi } from '../../services/baseApi';
 import { useNow } from '../../features/orders/useNow';
@@ -64,13 +65,15 @@ function ShopBadge({ shop, size = 36 }: { shop: Pick<GetShopResultDto, 'name' | 
 function ShopStatusSwitch({ shop, canManage }: { shop: GetShopResultDto; canManage: boolean }) {
   const { t, i18n } = useTranslation();
   const toast = useToast();
-  const navigate = useNavigate();
   const [updateShop, { isLoading }] = useUpdateShopMutation();
   const { data: goLive } = useGetGoLiveStatusQuery({ shopId: shop.id! }, { skip: !canManage, pollingInterval: 30000 });
   const nowMs = useNow(30_000);
   const live = shopLiveState(shop, nowMs);
   const [pausing, setPausing] = useState(false);
   const [offlineModalOpen, setOfflineModalOpen] = useState(false);
+  const [blockedTooltipOpen, setBlockedTooltipOpen] = useState(false);
+  const statusRowRef = useRef<HTMLDivElement>(null);
+  const dismissTooltip = useCallback(() => setBlockedTooltipOpen(false), []);
   const openCount = goLive ? goLive.criteria.filter((c) => !c.met).length : 0;
 
   const changeLive = async (next: boolean) => {
@@ -79,7 +82,7 @@ function ShopStatusSwitch({ shop, canManage }: { shop: GetShopResultDto; canMana
       return;
     }
     if (openCount > 0) {
-      navigate(`/shops/${shop.id}/go-live`);
+      setBlockedTooltipOpen(true);
       return;
     }
     try {
@@ -88,6 +91,8 @@ function ShopStatusSwitch({ shop, canManage }: { shop: GetShopResultDto; canMana
       toast.error(isOfflineBySuperadminError(err) ? t('nav.offlineBySuperadminToast') : t('shops.statusFailedToSave'));
     }
   };
+
+  const showBlockedTooltip = blockedTooltipOpen && canManage && live === 'offline' && openCount > 0;
 
   const taking = live === 'online';
   const toggle = async () => {
@@ -105,7 +110,10 @@ function ShopStatusSwitch({ shop, canManage }: { shop: GetShopResultDto; canMana
 
   return (
     <>
-      <div className="mt-2.5 flex items-center justify-between gap-2 rounded-[10px] bg-[#f1ede8] px-2.5 py-2">
+      <div
+        ref={statusRowRef}
+        className="relative mt-2.5 flex items-center justify-between gap-2 rounded-[10px] bg-[#f1ede8] px-2.5 py-2"
+      >
         <span id="sidebar-shop-status-label" className="text-[13px] font-bold text-[#4a413b]">
           {t('shops.shopStatusTitle')}
         </span>
@@ -115,7 +123,16 @@ function ShopStatusSwitch({ shop, canManage }: { shop: GetShopResultDto; canMana
           disabled={!canManage}
           isPending={isLoading}
           labelledBy="sidebar-shop-status-label"
+          describedBy={showBlockedTooltip ? 'sidebar-blocked-tooltip' : undefined}
         />
+        {showBlockedTooltip && (
+          <ClickTooltip
+            id="sidebar-blocked-tooltip"
+            message={t('shops.cannotGoOnlineTooltip')}
+            onDismiss={dismissTooltip}
+            containerRef={statusRowRef}
+          />
+        )}
       </div>
 
       {live !== 'offline' && (
