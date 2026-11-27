@@ -1,6 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { baseApi } from '../services/baseApi';
 import '../services/shopCreationRefreshesMe';
+import '../services/goLiveStatusInvalidation';
 
 export const store = configureStore({
   reducer: {
