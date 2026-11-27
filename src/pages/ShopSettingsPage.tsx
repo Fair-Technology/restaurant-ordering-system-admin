@@ -33,6 +33,7 @@ import { MyButton } from '../components/ui/MyButton';
 import { MyInput } from '../components/ui/MyInput';
 import { MySelect } from '../components/ui/MySelect';
 import { stateFieldFor } from '../features/shops/addressState';
+import { countryDisplayName } from '../features/shops/openedCountries';
 import { useToast } from '../contexts/ToastContext';
 import { PaymentsCard } from '../components/shop/PaymentsCard';
 import { OrderAlertsCard } from '../components/shop/OrderAlertsCard';
@@ -673,7 +674,7 @@ export function ShopSettingsPage() {
               <div className={stateField.kind === 'hidden' ? 'sm:col-span-2' : ''}>
                 <MyInput
                   label={t('shops.addressCountry')}
-                  value={currentAddress.country}
+                  value={countryDisplayName(shop.countryCode, i18n.language) || currentAddress.country}
                   disabled
                 />
               </div>

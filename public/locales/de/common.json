@@ -186,8 +186,8 @@
     "createTitle": "Shop erstellen",
     "shopName": "Shop-Name",
     "shopNamePlaceholder": "Mein Shop",
-    "shopSlug": "Dein Shop-Link",
-    "shopSlugHelp": "Kunden bestellen über diesen Link bei dir. Wir erstellen ihn aus deinem Shopnamen. Du brauchst keine eigene Website.",
+    "shopSlug": "Ihr Shop-Link",
+    "shopSlugHelp": "Kunden bestellen über diesen Link bei Ihnen. Wir erstellen ihn aus Ihrem Shopnamen. Sie brauchen keine eigene Website.",
     "shopSlugHint": "Nur Buchstaben, Zahlen und Bindestriche.",
     "slugChecking": "Wird geprüft…",
     "slugAvailable": "Dieser Link ist verfügbar",
@@ -206,7 +206,7 @@
     "failedToLoadShopDescription": "Beim Laden dieses Shops ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.",
     "failedToCreate": "Shop konnte nicht erstellt werden.",
     "labelName": "Name",
-    "labelSlug": "Dein Shop-Link",
+    "labelSlug": "Ihr Shop-Link",
     "logo": "Shop-Logo",
     "logoPlaceholder": "Kein Logo gesetzt",
     "uploadLogo": "Logo hochladen",
@@ -1330,7 +1330,7 @@
       "taxNumber": "Steuernummer",
       "invoiceLegalExtras": "Zusätzlicher Rechtstext auf Rechnungen",
       "maxShopsDefault": "Standard-Maximum an Restaurants",
-      "slug": "Dein Shop-Link",
+      "slug": "Ihr Shop-Link",
       "previousSlugs": "Frühere Shop-Links",
       "pendingNameChange": "Ausstehende Namensänderung",
       "taxClassId": "Steuerklasse",
@@ -1771,7 +1771,7 @@
     "add": "Gericht hinzufügen",
     "import": "Importieren",
     "importModal": {
-      "uploadHint": "Lade eine JSON-Datei mit einer Liste von Gerichten hoch. Jedes Gericht braucht einen Namen (Text, Pflicht), eine Beschreibung (Text, Pflicht, darf leer sein) und einen Preis (eine einfache Zahl in der Währung deines Shops, z. B. 12.5). Fotos werden nicht importiert (image_url wird ignoriert) – füge das Foto jedes Gerichts anschließend im Gerichte-Editor hinzu.",
+      "uploadHint": "Laden Sie eine JSON-Datei mit einer Liste von Gerichten hoch. Jedes Gericht braucht einen Namen (Text, Pflicht), eine Beschreibung (Text, Pflicht, darf leer sein) und einen Preis (eine einfache Zahl in der Währung Ihres Shops, z. B. 12.5). Fotos werden nicht importiert (image_url wird ignoriert) – fügen Sie das Foto jedes Gerichts anschließend im Gerichte-Editor hinzu.",
       "downloadExample": "Beispieldatei herunterladen",
       "confirmDiscard": "Die noch nicht importierten Produkte verwerfen?"
     },
@@ -1808,7 +1808,7 @@
       "allSaved": "Alle Änderungen gespeichert",
       "closeEditor": "Gericht-Editor schließen",
       "dialogLabel": "„{{name}}“ bearbeiten",
-      "confirmLeave": "Du hast ungespeicherte Änderungen. Ohne Speichern verlassen?",
+      "confirmLeave": "Sie haben ungespeicherte Änderungen. Ohne Speichern verlassen?",
       "untitledDish": "Unbenanntes Gericht",
       "deleteDish": "Gericht löschen",
       "dishPhoto": "Gerichtfoto",
@@ -1966,7 +1966,7 @@
     "duplicate": {
       "namePlaceholder": "{{name}} (Kopie)",
       "notCopied": "Allergene und Zusatzstoffe werden nicht kopiert; bitte bestätige sie selbst.",
-      "photoCopyFailed": "Das Foto konnte nicht kopiert werden; füge eines hinzu und schalte das Gericht ein, wenn du bereit bist."
+      "photoCopyFailed": "Das Foto konnte nicht kopiert werden; fügen Sie eines hinzu und schalten Sie das Gericht ein, wenn Sie bereit sind."
     }
   }
 }
