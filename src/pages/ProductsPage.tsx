@@ -1,3 +1,4 @@
+import { useModalA11y } from '../hooks/useModalA11y';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -79,18 +80,8 @@ export function BulkImportModal({ shopId, onClose }: { shopId: string; onClose: 
     }
     onClose();
   };
-  const attemptCloseRef = useRef(attemptClose);
-  useEffect(() => {
-    attemptCloseRef.current = attemptClose;
-  });
-
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') attemptCloseRef.current();
-    };
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, []);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const onKeyDown = useModalA11y({ onClose: attemptClose, containerRef });
 
   const downloadExample = () => {
     const url = URL.createObjectURL(new Blob([buildExampleMenuImportFile()], { type: 'application/json' }));
@@ -144,11 +135,19 @@ export function BulkImportModal({ shopId, onClose }: { shopId: string; onClose: 
           if (started && e.target === e.currentTarget) attemptClose();
         }}
       >
-        <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="import-products-title"
+          tabIndex={-1}
+          onKeyDown={onKeyDown}
+          ref={containerRef}
+          className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col"
+        >
 
           {/* Header */}
           <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-200 flex-shrink-0">
-            <h2 className="text-base font-semibold text-gray-900">Import Products</h2>
+            <h2 id="import-products-title" className="text-base font-semibold text-gray-900">Import Products</h2>
             {step !== 'importing' && (
               <button onClick={attemptClose} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
                 <X size={16} />

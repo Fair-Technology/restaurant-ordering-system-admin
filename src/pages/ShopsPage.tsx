@@ -1,3 +1,4 @@
+import { useModalA11y } from '../hooks/useModalA11y';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -35,6 +36,8 @@ import { usePageTitle } from '../features/layout/usePageTitle';
 
 export function CreateShopModal({ onClose }: { onClose: () => void }) {
   const { t, i18n } = useTranslation();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const onKeyDown = useModalA11y({ onClose, containerRef });
   const toast = useToast();
   const navigate = useNavigate();
   const [createShop, { isLoading, isError, error }] = useCreateShopMutation();
@@ -127,11 +130,19 @@ export function CreateShopModal({ onClose }: { onClose: () => void }) {
     <>
       <div className="fixed inset-0 z-40 bg-ink/30 backdrop-blur-sm" />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="max-h-[calc(100vh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-line bg-white shadow-xl">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="new-shop-title"
+          tabIndex={-1}
+          onKeyDown={onKeyDown}
+          ref={containerRef}
+          className="max-h-[calc(100vh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-line bg-white shadow-xl"
+        >
           {/* Header */}
           <div className="flex items-start justify-between border-b border-line-soft px-6 pt-5 pb-4">
             <div>
-              <h2 className="font-display text-[22px] leading-tight font-semibold">{t('shops.newShop')}</h2>
+              <h2 id="new-shop-title" className="font-display text-[22px] leading-tight font-semibold">{t('shops.newShop')}</h2>
               <p className="mt-0.5 text-[13px] text-muted">{t('shops.createSubtitle')}</p>
             </div>
             <button
