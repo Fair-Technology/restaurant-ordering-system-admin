@@ -188,7 +188,7 @@ export const legalApi = api.injectEndpoints({
       query: ({ shopId, body }) => ({ url: `/shops/${shopId}/legal`, method: 'PATCH', body }),
       invalidatesTags: (_r, _e, { shopId }) => [
         { type: 'Legal' as const, id: shopId },
-        { type: 'Shops' as const, id: `golive-${shopId}` },
+        'Shops' as const,
       ],
     }),
     acceptDpa: build.mutation<ShopLegalSettingsDto, { shopId: string; version: string }>({
@@ -199,7 +199,7 @@ export const legalApi = api.injectEndpoints({
       }),
       invalidatesTags: (_r, _e, { shopId }) => [
         { type: 'Legal' as const, id: shopId },
-        { type: 'Shops' as const, id: `golive-${shopId}` },
+        'Shops' as const,
       ],
     }),
     getDpaDocument: build.query<PlatformDocument, { version?: string }>({
