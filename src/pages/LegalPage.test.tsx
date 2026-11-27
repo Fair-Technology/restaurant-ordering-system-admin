@@ -4,10 +4,12 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { LegalPage } from './LegalPage';
 
+const langState = vi.hoisted(() => ({ current: 'en' }));
+
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, o?: Record<string, unknown>) => (o && 'email' in o ? `${key}|${o.email}` : o && 'count' in o && !('total' in o) ? `${key}|${o.count}` : o && 'total' in o ? `${key}|${o.count}/${o.total}` : key),
-    i18n: { language: 'en' },
+    i18n: { language: langState.current },
   }),
 }));
 vi.mock('../services/api', async (importOriginal) => ({
@@ -88,6 +90,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  langState.current = 'en';
   cleanup();
 });
 
@@ -241,5 +244,27 @@ describe('LegalPage erase flow', () => {
     fireEvent.click(screen.getByRole('button', { name: 'legal.eraseCancel' }));
     expect(screen.queryByRole('button', { name: 'legal.eraseConfirmButton' })).toBeNull();
     expect(legalState.erase).not.toHaveBeenCalled();
+  });
+});
+
+describe('LegalPage impressum country default', () => {
+  const country = () => screen.getByLabelText('legal.f.country') as HTMLInputElement;
+
+  it('prefills the localized country name (Deutschland) for a German admin with no saved impressum', () => {
+    langState.current = 'de';
+    renderPage(null, '/shops/s1/legal?section=impressum');
+    expect(country().value).toBe('Deutschland');
+  });
+
+  it('prefills the English name for an English admin', () => {
+    renderPage(null, '/shops/s1/legal?section=impressum');
+    expect(country().value).toBe('Germany');
+  });
+
+  it('keeps a saved impressum country verbatim', () => {
+    langState.current = 'de';
+    const saved = { legalName: 'X', legalForm: 'sole_trader', representatives: 'Y', street: 's', postcode: '1', city: 'c', country: 'Germany', phone: '', email: '', registerCourt: '', registerNumber: '', vatId: '', supervisoryAuthority: '' };
+    renderPage(null, '/shops/s1/legal?section=impressum', { impressum: saved });
+    expect(country().value).toBe('Germany');
   });
 });

@@ -34,6 +34,7 @@ import { MyInput, MyTextarea } from '../components/ui/MyInput';
 import { MySpinner } from '../components/ui/MySpinner';
 import { useToast } from '../contexts/ToastContext';
 import { formatShopDate } from '../utils/locale';
+import { countryDisplayName } from '../features/shops/openedCountries';
 import { SettingsSectionNav } from '../components/shop/SettingsSectionNav';
 import { LegalGoLiveSummary } from '../components/legal/LegalGoLiveSummary';
 import { isEraseEmailMatch } from '../features/legal/eraseConfirm';
@@ -200,12 +201,13 @@ function DpaCard({ shopId, shopName, legal, lang, countryCode }: {
 
 // ── Impressum ──────────────────────────────────────────────────────────────
 
-function ImpressumCard({ shopId, legal, shopAddress }: {
+function ImpressumCard({ shopId, legal, shopAddress, countryCode }: {
   shopId: string;
+  countryCode: string | null | undefined;
   legal: ShopLegalSettingsDto;
   shopAddress: { street?: string; postcode?: string; city?: string; country?: string } | undefined;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const toast = useToast();
   const [updateLegal, { isLoading }] = useUpdateShopLegalMutation();
   const [draft, setDraft] = useState<ImpressumFields | null>(null);
@@ -215,7 +217,7 @@ function ImpressumCard({ shopId, legal, shopAddress }: {
   const loaded: ImpressumFields = legal.impressum ?? {
     legalName: '', legalForm: 'sole_trader', representatives: '',
     street: shopAddress?.street ?? '', postcode: shopAddress?.postcode ?? '',
-    city: shopAddress?.city ?? '', country: shopAddress?.country ?? '',
+    city: shopAddress?.city ?? '', country: countryDisplayName(countryCode, i18n.language) || (shopAddress?.country ?? ''),
     phone: '', email: '', registerCourt: '', registerNumber: '', vatId: '', supervisoryAuthority: '',
   };
   const value = draft ?? loaded;
@@ -710,7 +712,7 @@ export function LegalPage() {
           {active === 'dpa' && (
             <DpaCard shopId={shopId!} shopName={shop.name ?? ''} legal={legal} lang={lang} countryCode={shop.countryCode} />
           )}
-          {active === 'impressum' && <ImpressumCard shopId={shopId!} legal={legal} shopAddress={shop.address} />}
+          {active === 'impressum' && <ImpressumCard shopId={shopId!} legal={legal} shopAddress={shop.address} countryCode={shop.countryCode} />}
           {active === 'terms' && (
             <TextCard
               id="terms" kind="terms" title={t('legal.termsTitle')} shopId={shopId!} countryCode={shop.countryCode}
