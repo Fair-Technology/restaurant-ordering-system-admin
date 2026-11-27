@@ -174,7 +174,7 @@ export function ReportsPage() {
         }
       />
 
-      {showSetupChecklist && <SetupChecklistCard shop={shop} onRefetch={() => undefined} />}
+      {showSetupChecklist && <SetupChecklistCard shop={shop} />}
 
       <Toolbar>
         {REPORT_PRESETS.map((p) => (

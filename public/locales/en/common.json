@@ -41,7 +41,6 @@
       "business": "Business"
     },
     "acceptingOrders": "Accepting orders",
-    "offlineShort": "Offline – guests can’t see the shop",
     "switchShop": "Switch shop",
     "allShops": "All shops",
     "openMenu": "Open menu",
@@ -49,7 +48,10 @@
     "hideSidebar": "Hide sidebar",
     "showSidebar": "Show sidebar",
     "waitingOrders_one": "{{count}} new order",
-    "waitingOrders_other": "{{count}} new orders"
+    "waitingOrders_other": "{{count}} new orders",
+    "checklist": "Checklist",
+    "checklistOpen_one": "{{count}} step still open",
+    "checklistOpen_other": "{{count}} steps still open"
   },
   "subscription": {
     "tagline0": "Everything you need to start taking orders online.",
@@ -1666,8 +1668,9 @@
   },
   "reports": {
     "setupChecklist": {
-      "title": "Finish setting up your shop",
-      "subtitle": "Complete every step below, then switch your shop online."
+      "oneLiner_one": "{{count}} step left before you can go live",
+      "oneLiner_other": "{{count}} steps left before you can go live",
+      "ready": "You're ready to go live"
     },
     "title": "Dashboard",
     "accessDenied": "You can't see reports for this restaurant.",

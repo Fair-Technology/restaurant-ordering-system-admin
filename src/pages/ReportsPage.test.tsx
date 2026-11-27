@@ -173,12 +173,12 @@ describe('ReportsPage setup checklist', () => {
   it('shows the checklist for an offline shop the caller can manage', () => {
     shopOverride.current = { callerPermissions: ['view_reports', 'manage_shop'], isPaused: true };
     renderPage();
-    expect(screen.getByText('reports.setupChecklist.title')).toBeTruthy();
+    expect(screen.getByText('reports.setupChecklist.oneLiner')).toBeTruthy();
   });
 
   it('hides the checklist for an online shop', () => {
     shopOverride.current = { callerPermissions: ['view_reports', 'manage_shop'], isPaused: false };
     renderPage();
-    expect(screen.queryByText('reports.setupChecklist.title')).toBeNull();
+    expect(screen.queryByText('reports.setupChecklist.oneLiner')).toBeNull();
   });
 });

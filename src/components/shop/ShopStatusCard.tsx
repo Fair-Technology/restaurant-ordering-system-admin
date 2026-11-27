@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { useNow } from '../../features/orders/useNow';
 import type { GetShopResultDto } from '../../services/api';
 import { useLazyGetGoLiveStatusQuery, useUpdateShopMutation } from '../../services/api';
@@ -18,7 +19,7 @@ import { Section } from '../layout/Page';
 import { MyButton } from '../ui/MyButton';
 import { MyInput } from '../ui/MyInput';
 import { MySwitch } from '../ui/MySwitch';
-import { GoLiveCriteriaModal, TakeShopOfflineModal } from './GoLiveModal';
+import { TakeShopOfflineModal } from './GoLiveModal';
 import { PauseOrdersDialog } from './PauseOrdersDialog';
 
 interface Props {
@@ -34,10 +35,11 @@ interface Props {
 export function ShopStatusCard({ shop, onRefetch }: Props) {
   const { t, i18n } = useTranslation();
   const toast = useToast();
+  const navigate = useNavigate();
   const shopId = shop.id!;
   const [updateShop, { isLoading: saving }] = useUpdateShopMutation();
-  const [fetchGoLiveStatus, { data: goLiveStatus, isFetching: goLiveChecking }] = useLazyGetGoLiveStatusQuery();
-  const [modal, setModal] = useState<'criteria' | 'offline' | 'pauseOrders' | null>(null);
+  const [fetchGoLiveStatus, { isFetching: goLiveChecking }] = useLazyGetGoLiveStatusQuery();
+  const [modal, setModal] = useState<'offline' | 'pauseOrders' | null>(null);
   const [messageState, setMessageState] = useState<string | null>(null);
 
   const nowMs = useNow(30_000);
@@ -68,7 +70,7 @@ export function ShopStatusCard({ shop, onRefetch }: Props) {
     try {
       const result = await fetchGoLiveStatus({ shopId }).unwrap();
       if (result.allMet) await save({ isPaused: false });
-      else setModal('criteria');
+      else navigate(`/shops/${shopId}/go-live`);
     } catch {
       toast.error(t('shops.statusFailedToSave'));
     }
@@ -151,17 +153,6 @@ export function ShopStatusCard({ shop, onRefetch }: Props) {
         )}
       </div>
 
-      {modal === 'criteria' && goLiveStatus && (
-        <GoLiveCriteriaModal
-          shopId={shopId}
-          status={goLiveStatus}
-          onClose={() => setModal(null)}
-          onSuccess={() => {
-            setModal(null);
-            onRefetch();
-          }}
-        />
-      )}
       {modal === 'offline' && (
         <TakeShopOfflineModal
           shopId={shopId}

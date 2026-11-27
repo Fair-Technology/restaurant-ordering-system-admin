@@ -41,7 +41,6 @@
       "business": "Geschäft"
     },
     "acceptingOrders": "Nimmt Bestellungen an",
-    "offlineShort": "Offline – Gäste sehen den Shop nicht",
     "switchShop": "Shop wechseln",
     "allShops": "Alle Shops",
     "openMenu": "Menü öffnen",
@@ -49,7 +48,10 @@
     "hideSidebar": "Seitenleiste ausblenden",
     "showSidebar": "Seitenleiste einblenden",
     "waitingOrders_one": "{{count}} neue Bestellung",
-    "waitingOrders_other": "{{count}} neue Bestellungen"
+    "waitingOrders_other": "{{count}} neue Bestellungen",
+    "checklist": "Checkliste",
+    "checklistOpen_one": "{{count}} Schritt noch offen",
+    "checklistOpen_other": "{{count}} Schritte noch offen"
   },
   "subscription": {
     "tagline0": "Alles, was Sie brauchen, um online Bestellungen anzunehmen.",
@@ -1666,8 +1668,9 @@
   },
   "reports": {
     "setupChecklist": {
-      "title": "Richten Sie Ihren Shop fertig ein",
-      "subtitle": "Erledigen Sie jeden Punkt unten, dann schalten Sie Ihren Shop online."
+      "oneLiner_one": "Noch {{count}} Schritt, bevor Sie live gehen können",
+      "oneLiner_other": "Noch {{count}} Schritte, bevor Sie live gehen können",
+      "ready": "Sie sind bereit, live zu gehen"
     },
     "title": "Dashboard",
     "accessDenied": "Sie können die Berichte dieses Restaurants nicht sehen.",
