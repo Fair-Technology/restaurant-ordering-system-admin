@@ -23,6 +23,11 @@ export interface ImpressumFields {
 }
 export type ImpressumFieldKey = keyof ImpressumFields;
 
+// Mirrors rs-backend/src/domain/legal/impressum.ts (source of truth) — keep in sync.
+export const FORMS_NEEDING_REPRESENTATIVES: readonly LegalForm[] = ['gbr', 'ohg', 'kg', 'gmbh', 'ug'];
+export const FORMS_NEEDING_REGISTER: readonly LegalForm[] = ['ek', 'ohg', 'kg', 'gmbh', 'ug'];
+export const BASE_REQUIRED_IMPRESSUM_KEYS: readonly ImpressumFieldKey[] = ['legalName', 'street', 'postcode', 'city', 'country', 'phone', 'email'];
+
 /** Optional, invoice-only details; never shown in the public Impressum. '' = not given. */
 export interface InvoiceLegalExtras {
   managingDirector: string;

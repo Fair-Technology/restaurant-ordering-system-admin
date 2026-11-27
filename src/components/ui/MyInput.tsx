@@ -18,9 +18,11 @@ function describedBy(hintId: string | undefined, existing: string | undefined) {
 interface MyInputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   hint?: ReactNode;
+  /** Opt-in accessible required marker: visible "*" (aria-hidden) + aria-required + native required. */
+  markRequired?: boolean;
 }
 
-export function MyInput({ label, hint, className = '', ...props }: MyInputProps) {
+export function MyInput({ label, hint, className = '', markRequired, ...props }: MyInputProps) {
   const generatedId = useId();
   const id = props.id ?? generatedId;
   const hintId = hint ? `${id}-hint` : undefined;
@@ -29,6 +31,7 @@ export function MyInput({ label, hint, className = '', ...props }: MyInputProps)
       {label && (
         <label htmlFor={id} className="text-[13px] font-semibold text-[#4a413b]">
           {label}
+          {markRequired && <span aria-hidden="true"> *</span>}
         </label>
       )}
       {hint && (
@@ -39,6 +42,7 @@ export function MyInput({ label, hint, className = '', ...props }: MyInputProps)
       <input
         className={`${BASE} ${className}`}
         {...props}
+        {...(markRequired ? { required: true, 'aria-required': 'true' as const } : {})}
         id={id}
         aria-describedby={describedBy(hintId, props['aria-describedby'])}
       />
