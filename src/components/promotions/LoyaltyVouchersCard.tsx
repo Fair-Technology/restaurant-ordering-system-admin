@@ -41,12 +41,13 @@ function showDate(date: string, language: string): string {
 export function LoyaltyVouchersCard({ shopId, shop, loyaltyEnabled }: LoyaltyVouchersCardProps) {
   const { t, i18n } = useTranslation();
   const [page, setPage] = useState(1);
+  const [nowMs] = useState(() => Date.now());
   const { data, isLoading } = useGetLoyaltyVouchersQuery({ shopId, page, pageSize: LOYALTY_VOUCHERS_PAGE_SIZE });
 
   if (!loyaltyEnabled && (!data || data.total === 0)) return null;
 
   const timeZone = shop.timezone ?? 'Europe/Berlin';
-  const today = shopToday(timeZone, Date.now());
+  const today = shopToday(timeZone, nowMs);
   const total = data?.total ?? 0;
   const pageSize = data?.pageSize ?? LOYALTY_VOUCHERS_PAGE_SIZE;
   const totalPages = Math.ceil(total / pageSize);
