@@ -83,7 +83,9 @@ export function DeliveryCard({ shop, refs, onRefetch }: Props) {
             <span />
           </div>
         )}
-        {form.zones.map((z, i) => (
+        {form.zones.map((z, i) => {
+          const postcodeForLabel = z.postcode.trim() || t('shops.deliveryNewPostcode');
+          return (
           <div key={i} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-2">
             <input
               type="text"
@@ -94,8 +96,16 @@ export function DeliveryCard({ shop, refs, onRefetch }: Props) {
               value={z.postcode}
               onChange={(e) => changeZone(i, { postcode: e.target.value })}
             />
-            <CurrencyInput valueCents={z.feeCents} onChange={(feeCents) => changeZone(i, { feeCents })} />
-            <CurrencyInput valueCents={z.minOrderCents} onChange={(minOrderCents) => changeZone(i, { minOrderCents })} />
+            <CurrencyInput
+              ariaLabel={t('shops.deliveryFeeForPostcode', { postcode: postcodeForLabel })}
+              valueCents={z.feeCents}
+              onChange={(feeCents) => changeZone(i, { feeCents })}
+            />
+            <CurrencyInput
+              ariaLabel={t('shops.deliveryMinOrderForPostcode', { postcode: postcodeForLabel })}
+              valueCents={z.minOrderCents}
+              onChange={(minOrderCents) => changeZone(i, { minOrderCents })}
+            />
             <button
               type="button"
               aria-label={t('shops.deliveryRemoveZone')}
@@ -105,7 +115,8 @@ export function DeliveryCard({ shop, refs, onRefetch }: Props) {
               ×
             </button>
           </div>
-        ))}
+          );
+        })}
         {form.zones.length < MAX_ZONES && (
           <button
             type="button"
