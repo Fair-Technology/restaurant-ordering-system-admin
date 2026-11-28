@@ -24,6 +24,22 @@ export interface LoyaltyRuleDto {
   since: string | null;
 }
 
+export interface LoyaltyVoucherDto {
+  code: string;
+  amountCents: number;
+  issuedAt: string;
+  expiresOn: string;
+  used: boolean;
+  orderRef: string | null;
+}
+
+export interface LoyaltyVouchersResultDto {
+  vouchers: LoyaltyVoucherDto[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 export interface PromotionsDto {
   codes: DiscountCodeDto[];
   loyalty: LoyaltyRuleDto;
@@ -49,6 +65,16 @@ export const promotionsApi = api.injectEndpoints({
   endpoints: (build) => ({
     getPromotions: build.query<PromotionsDto, { shopId: string }>({
       query: ({ shopId }) => ({ url: `/shops/${shopId}/promotions` }),
+      providesTags: promotionsTags,
+    }),
+    getLoyaltyVouchers: build.query<
+      LoyaltyVouchersResultDto,
+      { shopId: string; page?: number; pageSize?: number }
+    >({
+      query: ({ shopId, page, pageSize }) => ({
+        url: `/shops/${shopId}/loyalty-vouchers`,
+        params: { page, pageSize },
+      }),
       providesTags: promotionsTags,
     }),
     createDiscountCode: build.mutation<PromotionsDto, { shopId: string; body: CreateDiscountCodeBody }>({
@@ -80,6 +106,7 @@ export const promotionsApi = api.injectEndpoints({
 
 export const {
   useGetPromotionsQuery,
+  useGetLoyaltyVouchersQuery,
   useCreateDiscountCodeMutation,
   useSetDiscountCodeActiveMutation,
   useUpdateLoyaltyMutation,

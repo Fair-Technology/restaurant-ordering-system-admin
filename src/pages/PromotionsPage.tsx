@@ -9,6 +9,7 @@ import { codesLimitReached } from '../features/promotions/promotions';
 import { PageHeader, Section } from '../components/layout/Page';
 import { DiscountCodesCard } from '../components/promotions/DiscountCodesCard';
 import { LoyaltyCard } from '../components/promotions/LoyaltyCard';
+import { LoyaltyVouchersCard } from '../components/promotions/LoyaltyVouchersCard';
 import { usePageTitle } from '../features/layout/usePageTitle';
 
 export function PromotionsPage() {
@@ -64,6 +65,7 @@ export function PromotionsPage() {
         onCloseForm={() => setShowNewCode(false)}
       />
       <LoyaltyCard shopId={shopId!} shop={shop} loyalty={promotions.data.loyalty} />
+      <LoyaltyVouchersCard shopId={shopId!} shop={shop} loyaltyEnabled={promotions.data.loyalty.enabled} />
     </div>
   );
 }

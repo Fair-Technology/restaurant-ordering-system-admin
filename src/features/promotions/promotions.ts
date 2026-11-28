@@ -1,6 +1,6 @@
 import { formatCents } from '../../utils/money';
 import { parseAmountToCents } from '../orders/refunds';
-import type { CreateDiscountCodeBody, DiscountCodeDto } from '../../services/promotionsApi';
+import type { CreateDiscountCodeBody, DiscountCodeDto, LoyaltyVoucherDto } from '../../services/promotionsApi';
 
 export type CodeStatus = 'active' | 'off' | 'scheduled' | 'expired' | 'used_up';
 
@@ -12,6 +12,19 @@ export function codeStatus(
   if (c.validUntil && today > c.validUntil) return 'expired';
   if (c.totalLimit !== null && c.uses >= c.totalLimit) return 'used_up';
   if (c.validFrom && today < c.validFrom) return 'scheduled';
+  return 'active';
+}
+
+export const LOYALTY_VOUCHERS_PAGE_SIZE = 20;
+
+export type LoyaltyVoucherStatus = 'used' | 'expired' | 'active';
+
+export function loyaltyVoucherStatus(
+  v: Pick<LoyaltyVoucherDto, 'used' | 'expiresOn'>,
+  today: string,
+): LoyaltyVoucherStatus {
+  if (v.used) return 'used';
+  if (today > v.expiresOn) return 'expired';
   return 'active';
 }
 

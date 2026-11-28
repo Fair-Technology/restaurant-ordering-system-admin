@@ -826,6 +826,22 @@
     "loyaltySave": "Save",
     "loyaltySaved": "Saved.",
     "loyaltyInvalid": "Check the numbers: every 2–20 orders, €1–€50, 7–365 days.",
+    "loyaltyVouchersTitle": "Issued vouchers",
+    "loyaltyVouchersEmpty": "No vouchers issued yet.",
+    "loyaltyVoucherColumn": {
+      "code": "Code",
+      "value": "Value",
+      "issued": "Issued",
+      "validUntil": "Valid until",
+      "status": "Status",
+      "order": "Order"
+    },
+    "loyaltyVoucherStatus": {
+      "used": "used",
+      "expired": "expired",
+      "active": "not used"
+    },
+    "loyaltyVoucherNoOrder": "—",
     "codesFooter": "Up to 50 codes.",
     "codesCount": "{{count}} of {{limit}} codes",
     "search": "Search codes",
