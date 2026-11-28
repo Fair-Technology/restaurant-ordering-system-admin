@@ -3,6 +3,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { ReportsPage } from './ReportsPage';
+import i18next from 'i18next';
+import en from '../../public/locales/en/common.json';
+import de from '../../public/locales/de/common.json';
 
 const tMock = vi.hoisted(() => vi.fn<(key: string, opts?: unknown) => string>((key) => key));
 vi.mock('react-i18next', () => ({
@@ -56,7 +59,7 @@ afterEach(() => {
   shopOverride.current = {};
 });
 
-function renderPage() {
+function renderOnly() {
   render(
     <MemoryRouter initialEntries={['/shops/s1/dashboard']}>
       <Routes>
@@ -64,6 +67,10 @@ function renderPage() {
       </Routes>
     </MemoryRouter>,
   );
+}
+
+function renderPage() {
+  renderOnly();
   return { from: screen.getByLabelText('reports.from'), to: screen.getByLabelText('reports.to') };
 }
 
@@ -194,5 +201,51 @@ describe('ReportsPage order-limit plural', () => {
     renderPage();
     const call = tMock.mock.calls.find(([key]) => key === 'reports.monthToDate');
     expect(call?.[1]).toEqual({ count: 30, used: 1, limit: 30 });
+  });
+});
+
+describe('ReportsPage by-hour summary plurals', () => {
+  async function renderWithRealT(lng: 'en' | 'de', byHour: number[]) {
+    const i18n = i18next.createInstance();
+    await i18n.init({
+      lng,
+      resources: { en: { translation: en }, de: { translation: de } },
+      interpolation: { escapeValue: false },
+    });
+    tMock.mockImplementation((key, opts) => i18n.t(key, opts as never) as unknown as string);
+    reportQuery.current = { data: { ...REPORT, byHour }, isFetching: false, isError: false };
+    renderOnly();
+  }
+  const hours = (entries: Record<number, number>) => {
+    const arr = Array(24).fill(0);
+    for (const [h, n] of Object.entries(entries)) arr[Number(h)] = n;
+    return arr;
+  };
+
+  afterEach(() => tMock.mockImplementation((key) => key));
+
+  it('uses singular for both total and peak (en)', async () => {
+    await renderWithRealT('en', hours({ 3: 1 }));
+    expect(screen.getByLabelText('Orders by hour: 1 order, peak 3:00 with 1 order')).toBeTruthy();
+  });
+
+  it('uses plural total and singular peak (en)', async () => {
+    await renderWithRealT('en', hours({ 3: 1, 5: 1 }));
+    expect(screen.getByLabelText('Orders by hour: 2 orders, peak 3:00 with 1 order')).toBeTruthy();
+  });
+
+  it('uses plural for both total and peak (en)', async () => {
+    await renderWithRealT('en', hours({ 4: 2 }));
+    expect(screen.getByLabelText('Orders by hour: 2 orders, peak 4:00 with 2 orders')).toBeTruthy();
+  });
+
+  it('uses singular for both total and peak (de)', async () => {
+    await renderWithRealT('de', hours({ 3: 1 }));
+    expect(screen.getByLabelText('Bestellungen nach Uhrzeit: 1 Bestellung, Spitze 3:00 mit 1 Bestellung')).toBeTruthy();
+  });
+
+  it('uses plural total and singular peak (de)', async () => {
+    await renderWithRealT('de', hours({ 3: 1, 5: 1 }));
+    expect(screen.getByLabelText('Bestellungen nach Uhrzeit: 2 Bestellungen, Spitze 3:00 mit 1 Bestellung')).toBeTruthy();
   });
 });
