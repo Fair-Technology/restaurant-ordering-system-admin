@@ -1145,6 +1145,7 @@
     "refundComboNote": "Menüs werden immer als Ganzes erstattet",
     "refundItemsTotal": "Erstattungsbetrag: {{amount}}",
     "refundItemsNone": "Wählen Sie mindestens einen Artikel.",
+    "refundItemsExceedsMax": "Die ausgewählten Artikel übersteigen den noch erstattbaren Betrag ({{max}} übrig). Verwenden Sie stattdessen „Betrag eingeben“.",
     "refundLineItems": "Erstattete Artikel: {{items}}",
     "discountLine": "Rabatt {{code}}: −{{amount}}",
     "loyaltyVoucherSent": "Treuegutschein an den Gast gemailt.",
