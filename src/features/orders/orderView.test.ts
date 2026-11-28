@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { IntakeOrder } from '../../services/ordersApi';
 import type { OrderHistoryEntry } from '../../services/api';
-import { boardColumns, enteredStateAt, formatDuration, itemSummary, liveGroups, matchesOrderSearch, orderTiming, overdueLabel, OVERDUE_CAP_MINUTES, parseOrderFilter, ORDER_FILTERS, ORDER_SCOPE_FILTERS, ORDER_STATE_FILTERS } from './orderView';
+import { boardColumns, enteredStateAt, formatDuration, itemSummary, liveGroups, matchesOrderSearch, orderTiming, overdueLabel, OVERDUE_CAP_MINUTES, parseOrderFilter, wasHandedOver, ORDER_FILTERS, ORDER_SCOPE_FILTERS, ORDER_STATE_FILTERS } from './orderView';
 
 const NOW = Date.parse('2026-10-12T12:00:00Z');
 const min = (m: number) => new Date(NOW + m * 60000).toISOString();
@@ -205,6 +205,31 @@ describe('enteredStateAt', () => {
     ] as unknown as OrderHistoryEntry[];  // the spec declares `from` non-nullable; the initial entry stores null
     expect(enteredStateAt({ state: 'READY', history })).toBe(min(-3));
     expect(enteredStateAt({ state: 'COMPLETED', history })).toBeNull();
+  });
+});
+
+describe('wasHandedOver', () => {
+  const entry = (to: string, at: string) => ({ from: null, to, at, actor: { type: 'system' } });
+  const withHistory = (...entries: ReturnType<typeof entry>[]) => entries as unknown as OrderHistoryEntry[];
+
+  it('is true once the order reached COMPLETED', () => {
+    const history = withHistory(entry('READY', min(-10)), entry('COMPLETED', min(-5)));
+    expect(wasHandedOver(order({ state: 'COMPLETED', displayState: 'COMPLETED', history }))).toBe(true);
+  });
+
+  it('stays true after a post-handover refund changed the displayState', () => {
+    const history = withHistory(entry('READY', min(-10)), entry('COMPLETED', min(-5)));
+    expect(wasHandedOver(order({ displayState: 'REFUNDED', history }))).toBe(true);
+  });
+
+  it('is false when the order never reached COMPLETED', () => {
+    expect(wasHandedOver(order({ state: 'READY', displayState: 'READY', history: withHistory(entry('READY', min(-5))) }))).toBe(false);
+    expect(wasHandedOver(order({ displayState: 'REFUNDED', history: withHistory(entry('READY', min(-5)), entry('REFUNDED', min(-1))) }))).toBe(false);
+  });
+
+  it('is false without a history, and does not throw', () => {
+    expect(wasHandedOver(order({ history: [] }))).toBe(false);
+    expect(wasHandedOver({ history: undefined as unknown as OrderHistoryEntry[] })).toBe(false);
   });
 });
 
