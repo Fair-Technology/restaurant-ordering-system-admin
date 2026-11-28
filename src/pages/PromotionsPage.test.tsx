@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import en from '../../public/locales/en/common.json';
+import { formatShopDate } from '../utils/locale';
 import { PromotionsPage } from './PromotionsPage';
 
 // Real English strings, so assertions read like what the owner sees.
@@ -25,6 +26,7 @@ const m = vi.hoisted(() => ({
   setActive: vi.fn(),
   switching: { current: { isLoading: false, originalArgs: undefined as unknown } },
   shop: { current: { data: undefined as unknown, isLoading: false, isError: false } },
+  vouchers: { current: { data: undefined as unknown, isLoading: false, isError: false } },
   promotions: { current: { data: undefined as unknown, isLoading: false, isError: false } },
 }));
 vi.mock('../services/api', () => ({
@@ -32,6 +34,7 @@ vi.mock('../services/api', () => ({
 }));
 vi.mock('../services/promotionsApi', () => ({
   useGetPromotionsQuery: () => m.promotions.current,
+  useGetLoyaltyVouchersQuery: () => m.vouchers.current,
   useCreateDiscountCodeMutation: () => [(...a: unknown[]) => ({ unwrap: () => m.createCode(...a) }), { isLoading: false }],
   useSetDiscountCodeActiveMutation: () => [
     (...a: unknown[]) => ({ unwrap: () => m.setActive(...a) }),
@@ -91,6 +94,7 @@ beforeEach(() => {
     isError: false,
   };
   m.promotions.current = { data: { codes: codes(), loyalty }, isLoading: false, isError: false };
+  m.vouchers.current = { data: { vouchers: [], total: 0, page: 1, pageSize: 20 }, isLoading: false, isError: false };
 });
 afterEach(() => {
   cleanup();
@@ -245,5 +249,96 @@ describe('PromotionsPage', () => {
     m.promotions.current = { data: { codes: codes(), loyalty: { ...loyalty, enabled: true } }, isLoading: false, isError: false };
     renderPage();
     expect(screen.getByText(en.promotions.loyaltyConsentNote)).toBeTruthy();
+  });
+
+  describe('issued loyalty vouchers', () => {
+    const voucher = (code: string, over: Record<string, unknown> = {}) => ({
+      code,
+      amountCents: 500,
+      issuedAt: '2026-03-05T10:00:00.000Z',
+      expiresOn: '2999-01-01',
+      used: false,
+      orderRef: 'AB3-K7P',
+      ...over,
+    });
+    const setVouchers = (vouchers: unknown[], enabled: boolean) => {
+      m.promotions.current = { data: { codes: codes(), loyalty: { ...loyalty, enabled } }, isLoading: false, isError: false };
+      m.vouchers.current = { data: { vouchers, total: vouchers.length, page: 1, pageSize: 20 }, isLoading: false, isError: false };
+    };
+    const heading = () => screen.queryByRole('heading', { name: en.promotions.loyaltyVouchersTitle });
+    const voucherRows = () =>
+      within(document.getElementById('loyalty-vouchers') as HTMLElement)
+        .getAllByRole('row')
+        .slice(1)
+        .map((r) => r.textContent ?? '');
+
+    it('renders code, value, issued, valid until, status and order in server order', () => {
+      setVouchers([voucher('ZZZ-1'), voucher('AAA-2', { used: true, orderRef: 'XY9-Q2W' })], true);
+      renderPage();
+      const sec = within(document.getElementById('loyalty-vouchers') as HTMLElement);
+      expect(sec.getAllByRole('columnheader').map((h) => h.textContent)).toEqual([
+        'Code', 'Value', 'Issued', 'Valid until', 'Status', 'Order',
+      ]);
+      const rows = voucherRows();
+      expect(rows).toHaveLength(2);
+      expect(rows[0]).toContain('ZZZ-1');
+      expect(rows[1]).toContain('AAA-2');
+      expect(rows[0]).toContain('€5.00');
+      expect(rows[0]).toContain('2999-01-01');
+      expect(rows[0]).toContain('AB3-K7P');
+      expect(rows[0]).toContain(formatShopDate('2026-03-05T10:00:00.000Z', 'en', undefined, undefined, 'Europe/Berlin'));
+      expect(rows[1]).toContain('XY9-Q2W');
+    });
+
+    it('labels used, expired and active vouchers', () => {
+      setVouchers(
+        [voucher('USED', { used: true }), voucher('OLD', { expiresOn: '2000-01-01' }), voucher('LIVE')],
+        true,
+      );
+      renderPage();
+      const [used, old, live] = voucherRows();
+      expect(used).toContain('used');
+      expect(used).not.toContain('not used');
+      expect(old).toContain('expired');
+      expect(live).toContain('not used');
+    });
+
+    it('shows a placeholder when the order is unknown', () => {
+      setVouchers([voucher('NOORD', { orderRef: null })], true);
+      renderPage();
+      const row = voucherRows()[0];
+      expect(row).toContain('—');
+      expect(row).not.toContain('null');
+    });
+
+    it('shows the empty state when loyalty is on and nothing was issued', () => {
+      setVouchers([], true);
+      renderPage();
+      expect(heading()).toBeTruthy();
+      expect(screen.getByText(en.promotions.loyaltyVouchersEmpty)).toBeTruthy();
+    });
+
+    it('is absent when loyalty is off and there are no vouchers', () => {
+      setVouchers([], false);
+      renderPage();
+      expect(heading()).toBeNull();
+      expect(screen.queryByText(en.promotions.loyaltyVouchersEmpty)).toBeNull();
+    });
+
+    it('is present with its rows when loyalty is off but vouchers exist', () => {
+      setVouchers([voucher('KEEP-1')], false);
+      renderPage();
+      expect(heading()).toBeTruthy();
+      expect(voucherRows()[0]).toContain('KEEP-1');
+    });
+
+    it('never renders customer details, even if the response carried them', () => {
+      setVouchers([voucher('LEAK-1', { email: 'diner@example.com', customerName: 'Hannah Diner' })], true);
+      renderPage();
+      const text = document.getElementById('loyalty-vouchers')?.textContent ?? '';
+      expect(text).toContain('LEAK-1');
+      expect(text).not.toContain('diner@example.com');
+      expect(text).not.toContain('Hannah');
+    });
   });
 });

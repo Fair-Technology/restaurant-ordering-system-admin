@@ -826,6 +826,22 @@
     "loyaltySave": "Speichern",
     "loyaltySaved": "Gespeichert.",
     "loyaltyInvalid": "Bitte Zahlen prüfen: alle 2–20 Bestellungen, 1–50 €, 7–365 Tage.",
+    "loyaltyVouchersTitle": "Ausgegebene Gutscheine",
+    "loyaltyVouchersEmpty": "Noch keine Gutscheine ausgegeben.",
+    "loyaltyVoucherColumn": {
+      "code": "Code",
+      "value": "Wert",
+      "issued": "Ausgegeben",
+      "validUntil": "Gültig bis",
+      "status": "Status",
+      "order": "Bestellung"
+    },
+    "loyaltyVoucherStatus": {
+      "used": "eingelöst",
+      "expired": "abgelaufen",
+      "active": "nicht eingelöst"
+    },
+    "loyaltyVoucherNoOrder": "—",
     "codesFooter": "Bis zu 50 Codes.",
     "codesCount": "{{count}} von {{limit}} Codes",
     "search": "Codes durchsuchen",

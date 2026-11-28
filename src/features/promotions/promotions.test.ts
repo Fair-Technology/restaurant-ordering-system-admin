@@ -10,6 +10,7 @@ import {
   codesLimitReached,
   isCodeFormDirty,
   loyaltyStatus,
+  loyaltyVoucherStatus,
   matchesCodeFilter,
   validLabel,
   CODE_FILTERS,
@@ -141,5 +142,20 @@ describe('code filters and valid label', () => {
       from: '2026-01-01',
       until: '2026-02-01',
     });
+  });
+});
+
+describe('loyaltyVoucherStatus', () => {
+  const today = '2026-10-09';
+  it('is used whenever the voucher was redeemed, even past its date', () => {
+    expect(loyaltyVoucherStatus({ used: true, expiresOn: '2026-12-01' }, today)).toBe('used');
+    expect(loyaltyVoucherStatus({ used: true, expiresOn: '2026-01-01' }, today)).toBe('used');
+  });
+  it('is expired once the day after expiresOn has begun', () => {
+    expect(loyaltyVoucherStatus({ used: false, expiresOn: '2026-10-08' }, today)).toBe('expired');
+  });
+  it('is still active on expiresOn itself (inclusive) and before', () => {
+    expect(loyaltyVoucherStatus({ used: false, expiresOn: today }, today)).toBe('active');
+    expect(loyaltyVoucherStatus({ used: false, expiresOn: '2026-11-01' }, today)).toBe('active');
   });
 });
