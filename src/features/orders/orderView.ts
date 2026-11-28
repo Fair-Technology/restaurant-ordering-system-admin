@@ -86,7 +86,7 @@ export function boardColumns(orders: IntakeOrder[]): BoardColumn[] {
   ];
 }
 
-/** Search by order number (with or without #), guest name or table. */
+/** Search by order number (with or without #), guest name, table, or (if the query looks like a phone number) phone digits. */
 export function matchesOrderSearch(order: IntakeOrder, query: string): boolean {
   const q = query.trim().toLowerCase().replace(/^#/, '');
   if (!q) return true;
@@ -94,7 +94,8 @@ export function matchesOrderSearch(order: IntakeOrder, query: string): boolean {
     return true;
   }
   const digits = q.replace(/\D/g, '');
-  return digits !== '' && (order.customerPhone ?? '').replace(/\D/g, '').includes(digits);
+  const looksLikePhoneQuery = /^[\d\s+\-()/]+$/.test(q) && digits.length >= 3;
+  return looksLikePhoneQuery && (order.customerPhone ?? '').replace(/\D/g, '').includes(digits);
 }
 
 /** "2× Pomodoro, 1× Mittagsmenü" — the dishes of a combo count once, under the combo's name. */

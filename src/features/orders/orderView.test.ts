@@ -182,6 +182,18 @@ describe('matchesOrderSearch', () => {
     expect(matchesOrderSearch(order({ customerPhone: '0412345678' }), '0412-345-678')).toBe(true);
     expect(matchesOrderSearch(p, '0499')).toBe(false);
   });
+  it('does not match phones for queries that are not phone-like (reference fragment with a digit)', () => {
+    // default phone is '0170': contains "1", but 'tb1' is a reference-like query, not a phone number
+    const other = order({ orderRef: 'ZZZZ', customerName: 'Max', customerPhone: '0170' });
+    expect(matchesOrderSearch(other, 'tb1')).toBe(false);
+    expect(matchesOrderSearch(other, 'tb1-qqi')).toBe(false);
+  });
+  it('does not treat queries with fewer than 3 digits as phone searches', () => {
+    const other = order({ orderRef: 'ZZZZ', customerName: 'Max', customerPhone: '0170' });
+    expect(matchesOrderSearch(other, '12')).toBe(false);
+    expect(matchesOrderSearch(other, '+1')).toBe(false);
+    expect(matchesOrderSearch(other, '017')).toBe(true);
+  });
 });
 
 describe('itemSummary', () => {
