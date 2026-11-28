@@ -153,7 +153,11 @@ export function ReportsPage() {
   const peakHour = shown ? shown.byHour.indexOf(Math.max(...shown.byHour)) : 0;
   const hourSummary =
     hourTotal > 0 && shown
-      ? t('reports.byHourSummary', { total: hourTotal, peakHour: `${peakHour}:00`, peakCount: shown.byHour[peakHour] })
+      ? t('reports.byHourSummaryTemplate', {
+          totalText: t('reports.byHourSummaryCount', { count: hourTotal }),
+          peakHour: `${peakHour}:00`,
+          peakText: t('reports.byHourSummaryCount', { count: shown.byHour[peakHour] }),
+        })
       : t('reports.byHourSummaryEmpty');
   const dateInput =
     'h-9 rounded-full border border-[#e3d9ce] bg-white px-3 text-[13px] font-semibold text-ink outline-none focus-visible:border-ink';
