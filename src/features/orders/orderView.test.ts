@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { IntakeOrder } from '../../services/ordersApi';
 import type { OrderHistoryEntry } from '../../services/api';
-import { boardColumns, enteredStateAt, formatDuration, itemSummary, liveGroups, matchesOrderSearch, orderTiming, overdueLabel, OVERDUE_CAP_MINUTES, parseOrderFilter, wasHandedOver, ORDER_FILTERS, ORDER_SCOPE_FILTERS, ORDER_STATE_FILTERS } from './orderView';
+import { boardColumns, enteredStateAt, formatDuration, itemSummary, liveGroups, matchesOrderSearch, orderTiming, overdueLabel, OVERDUE_CAP_MINUTES, parseOrderFilter, showsNoSearchMatch, wasHandedOver, ORDER_FILTERS, ORDER_SCOPE_FILTERS, ORDER_STATE_FILTERS } from './orderView';
 
 const NOW = Date.parse('2026-10-12T12:00:00Z');
 const min = (m: number) => new Date(NOW + m * 60000).toISOString();
@@ -297,5 +297,19 @@ describe('overdueLabel', () => {
   });
   it('rounds fractional input', () => {
     expect(overdueLabel(0.4)).toEqual({ key: 'orders.live.late', params: { minutes: 0 }, stale: false });
+  });
+});
+
+describe('showsNoSearchMatch', () => {
+  it('is false for an empty or whitespace query regardless of handed-over matches', () => {
+    expect(showsNoSearchMatch('', 0)).toBe(false);
+    expect(showsNoSearchMatch('   ', 0)).toBe(false);
+    expect(showsNoSearchMatch('  ', 3)).toBe(false);
+  });
+  it('is true when a query matches nothing in the handed-over section', () => {
+    expect(showsNoSearchMatch('A7F3', 0)).toBe(true);
+  });
+  it('is false when the query matches a handed-over order', () => {
+    expect(showsNoSearchMatch('A7F3', 1)).toBe(false);
   });
 });
