@@ -99,12 +99,12 @@ export function DeliveryCard({ shop, refs, onRefetch }: Props) {
             <CurrencyInput
               ariaLabel={t('shops.deliveryFeeForPostcode', { postcode: postcodeForLabel })}
               valueCents={z.feeCents}
-              onChange={(feeCents) => changeZone(i, { feeCents })}
+              onChange={(feeCents) => changeZone(i, { feeCents: Math.max(0, feeCents) })}
             />
             <CurrencyInput
               ariaLabel={t('shops.deliveryMinOrderForPostcode', { postcode: postcodeForLabel })}
               valueCents={z.minOrderCents}
-              onChange={(minOrderCents) => changeZone(i, { minOrderCents })}
+              onChange={(minOrderCents) => changeZone(i, { minOrderCents: Math.max(0, minOrderCents) })}
             />
             <button
               type="button"

@@ -1456,7 +1456,7 @@
     "optionRequired": "Fügen Sie mindestens eine Option hinzu.",
     "optionNameRequired": "Jede Option braucht einen Namen.",
     "rangeInvalid": "Das Maximum muss mindestens so groß sein wie das Minimum.",
-    "priceInvalid": "Preise dürfen nicht negativ sein.",
+    "priceInvalid": "Preise können nicht negativ sein.",
     "tabsLabel": "Nach Typ filtern",
     "tabVariants": "Varianten",
     "tabExtras": "Extras",

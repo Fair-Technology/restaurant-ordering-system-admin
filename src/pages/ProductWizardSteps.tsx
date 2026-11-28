@@ -146,6 +146,7 @@ export function Step4Customise({
                     ×
                   </MyButton>
                 </div>
+                {option.priceDelta < 0 && <p role="alert" className="text-xs text-red-600">{t('optionGroups.priceInvalid')}</p>}
                 <OptionFoodInfoField allergenIds={option.allergenIds ?? []} additiveIds={option.additiveIds ?? []} refs={refs} onChange={(p) => updateVariantOption(group.id, option.id, p)} />
                 </div>
               ))}
@@ -234,6 +235,7 @@ export function Step4Customise({
                   value={option.category ?? ''}
                   onChange={(e) => updateAddonOption(group.id, option.id, { category: e.target.value })}
                 />
+                {option.priceDelta < 0 && <p role="alert" className="text-xs text-red-600">{t('optionGroups.priceInvalid')}</p>}
                 <OptionFoodInfoField allergenIds={option.allergenIds ?? []} additiveIds={option.additiveIds ?? []} refs={refs} onChange={(p) => updateAddonOption(group.id, option.id, p)} />
                 </div>
               ))}

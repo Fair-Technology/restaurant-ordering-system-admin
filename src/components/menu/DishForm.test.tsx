@@ -178,6 +178,29 @@ describe('DishForm footer', () => {
   });
 });
 
+describe('DishForm negative option prices', () => {
+  const group = (kind: 'variantGroups' | 'addonGroups') => ({
+    [kind]: [{ id: 'd1', name: 'Size', minSelectable: 0, maxSelectable: 1, options: [{ id: 'd1o', name: 'Big', priceDelta: -100, isAvailable: true }] }],
+  }) as unknown as Partial<DishFormState>;
+
+  it.each(['variantGroups', 'addonGroups'] as const)('Save is blocked and the error shows for a negative %s price', (kind) => {
+    const onSave = vi.fn();
+    render(<Harness start={initial(group(kind))} onSave={onSave} />);
+    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'Changed' } });
+    fireEvent.click(saveBtn());
+    expect(onSave).not.toHaveBeenCalled();
+    expect(screen.getByText(lookup('optionGroups.priceInvalid')).getAttribute('role')).toBe('alert');
+  });
+
+  it('Add to menu is blocked too', () => {
+    const onAddToMenu = vi.fn();
+    render(<Harness start={initial(group('addonGroups'))} props={{ mode: 'add', addRequiredLeft: 0, addStatus: { text: 'Draft', tone: 'muted' }, onAddToMenu, onSaveDraft: vi.fn(), onCancel: vi.fn(), requiredChecklist: [] }} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add to menu' }));
+    expect(onAddToMenu).not.toHaveBeenCalled();
+    expect(screen.getByText(lookup('optionGroups.priceInvalid'))).toBeTruthy();
+  });
+});
+
 describe('DishForm header and nav', () => {
   it('shows the German name, "Edit dish · categories", and the on-the-menu switch drives isAvailable and the nav', () => {
     render(<Harness start={initial()} />);
