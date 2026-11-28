@@ -1145,6 +1145,7 @@
     "refundComboNote": "Combos are refunded as a whole",
     "refundItemsTotal": "Refund total: {{amount}}",
     "refundItemsNone": "Choose at least one item.",
+    "refundItemsExceedsMax": "The ticked items total more than can still be refunded ({{max}} left). Use \"Enter an amount\" instead.",
     "refundLineItems": "Refunded items: {{items}}",
     "discountLine": "Discount {{code}}: −{{amount}}",
     "loyaltyVoucherSent": "Loyalty voucher emailed to the customer.",

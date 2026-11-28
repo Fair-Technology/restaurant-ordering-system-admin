@@ -170,6 +170,9 @@ export function RefundPanel({ shopId, order }: RefundPanelProps) {
             {t('orders.refundItemsTotal', { amount: formatMoney(itemsTotal) })}
           </p>
           {itemsTotal === 0 && <p className="text-xs text-gray-500">{t('orders.refundItemsNone')}</p>}
+          {itemsTotal > max && (
+            <p className="text-xs text-red-600">{t('orders.refundItemsExceedsMax', { max: formatMoney(max) })}</p>
+          )}
         </div>
       ) : (
         <div className="space-y-1">
