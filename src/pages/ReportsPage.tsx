@@ -170,7 +170,12 @@ export function ReportsPage() {
         actions={
           !failed &&
           shown && (
-            <MyButton variant="secondary" onClick={() => download(shown)} className="gap-2">
+            <MyButton
+              variant="secondary"
+              onClick={() => download(shown)}
+              disabled={!!rangeMessage}
+              className="gap-2"
+            >
               <Download size={16} aria-hidden="true" />
               {t('reports.downloadCsv')}
             </MyButton>
@@ -235,7 +240,7 @@ export function ReportsPage() {
       )}
 
       {!failed && shown && (
-        <div data-testid="reports-content" className={isFetching ? 'opacity-60' : ''}>
+        <div data-testid="reports-content" className={isFetching || rangeMessage ? 'opacity-60' : ''}>
           <div className="mb-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
             <StatTile label={t('reports.takings')} value={money(shown.totals.takingsCents)} help={t('reports.takingsHelp')} />
             <StatTile label={t('reports.orders')} value={String(shown.totals.orderCount)} />

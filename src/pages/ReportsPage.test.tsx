@@ -160,6 +160,8 @@ describe('ReportsPage keeps the last report on a range error', () => {
     expect(screen.getByRole('alert').textContent).toBe('reports.rangeInvalid');
     expect(screen.getByText('7')).toBeTruthy();
     expect(screen.getByText('reports.downloadCsv')).toBeTruthy();
+    expect(screen.getByTestId('reports-content').className).toContain('opacity-60');
+    expect((screen.getByRole('button', { name: /downloadCsv/ }) as HTMLButtonElement).disabled).toBe(true);
   });
 
   it('keeps the figures and CSV button when the server rejects the range with 400', () => {
@@ -177,6 +179,25 @@ describe('ReportsPage keeps the last report on a range error', () => {
     expect(screen.queryByText('reports.loadError')).toBeNull();
     expect(screen.getByText('7')).toBeTruthy();
     expect(screen.getByText('reports.downloadCsv')).toBeTruthy();
+    expect(screen.getByTestId('reports-content').className).toContain('opacity-60');
+    expect((screen.getByRole('button', { name: /downloadCsv/ }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('clears the dimming and re-enables CSV once the range is valid again', () => {
+    reportQuery.current = { data: REPORT, isFetching: false, isError: false };
+    const { from, to } = renderPage();
+    reportQuery.current = { data: undefined, isFetching: false, isError: false };
+    fireEvent.change(from, { target: { value: '2026-02-10' } });
+    fireEvent.change(to, { target: { value: '2026-02-01' } });
+    expect(screen.getByTestId('reports-content').className).toContain('opacity-60');
+
+    reportQuery.current = { data: REPORT, isFetching: false, isError: false };
+    fireEvent.change(from, { target: { value: '2026-02-01' } });
+    fireEvent.change(to, { target: { value: '2026-02-10' } });
+
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByTestId('reports-content').className).not.toContain('opacity-60');
+    expect((screen.getByRole('button', { name: /downloadCsv/ }) as HTMLButtonElement).disabled).toBe(false);
   });
 });
 
