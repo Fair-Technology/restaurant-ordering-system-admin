@@ -1755,6 +1755,7 @@
     "modeDelivery": "Delivery",
     "modeDineIn": "Table",
     "topDishes": "Top dishes",
+    "topDishesBeforeRefunds": "Before refunds",
     "quantity": "Sold",
     "amount": "Amount",
     "empty": "No accepted orders or refunds in this period.",

@@ -1755,6 +1755,7 @@
     "modeDelivery": "Lieferung",
     "modeDineIn": "Tisch",
     "topDishes": "Beliebteste Gerichte",
+    "topDishesBeforeRefunds": "Vor Erstattungen",
     "quantity": "Verkauft",
     "amount": "Betrag",
     "empty": "Keine angenommenen Bestellungen oder Erstattungen in diesem Zeitraum.",

@@ -367,7 +367,11 @@ export function ReportsPage() {
                 </div>
               </Section>
 
-              <Section title={t('reports.topDishes')} count={shown.topDishes.length}>
+              <Section
+                title={t('reports.topDishes')}
+                count={shown.topDishes.length}
+                description={t('reports.topDishesBeforeRefunds')}
+              >
                 {shown.topDishes.map((d, i) => (
                   <Row key={d.productId}>
                     <span className="w-5 text-[13px] font-bold text-[#8a7f77]">{i + 1}</span>

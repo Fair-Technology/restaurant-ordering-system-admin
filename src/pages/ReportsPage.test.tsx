@@ -300,3 +300,17 @@ describe('ReportsPage VAT-by-rate gross header', () => {
     expect(headers).not.toContain('Umsatz');
   });
 });
+
+describe('ReportsPage top dishes', () => {
+  it('notes that the top dishes figures are before refunds', () => {
+    reportQuery.current = {
+      data: { ...REPORT, topDishes: [{ productId: 'p1', name: 'E2E Cola', quantity: 1, grossCents: 225 }] },
+      isFetching: false,
+      isError: false,
+    };
+    renderOnly();
+    expect(screen.getByText('reports.topDishes')).toBeTruthy();
+    expect(screen.getByText('reports.topDishesBeforeRefunds')).toBeTruthy();
+    expect(screen.getByText('E2E Cola')).toBeTruthy();
+  });
+});
