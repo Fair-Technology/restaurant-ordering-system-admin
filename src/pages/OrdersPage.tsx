@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { CalendarDays, Search, Volume2, VolumeX } from 'lucide-react';
+import { CalendarDays, ChevronDown, Search, Volume2, VolumeX } from 'lucide-react';
 import { useGetShopByIdQuery } from '../services/api';
 import { useGetOrdersByShopQuery, useSetBusyModeMutation, type IntakeOrder, type UpcomingOrder } from '../services/ordersApi';
 import { useToast } from '../contexts/ToastContext';
@@ -17,6 +17,7 @@ import {
   orderTiming,
   overdueLabel,
   parseOrderFilter,
+  wasHandedOver,
   type LiveGroupKey,
   type OrderFilter,
 } from '../features/orders/orderView';
@@ -50,6 +51,41 @@ function Section({ dot, title, count, hint, children }: { dot: string; title: st
       </div>
       {children}
     </section>
+  );
+}
+
+/** Today's handed-over orders: collapsed by default, forced open while a search matches inside it. */
+function HandedOverSection({
+  total,
+  orders,
+  query,
+  renderRow,
+}: {
+  total: number;
+  orders: IntakeOrder[];
+  query: string;
+  renderRow: (order: IntakeOrder) => ReactNode;
+}) {
+  const { t } = useTranslation();
+  const [manuallyOpen, setManuallyOpen] = useState(false);
+  const forceOpen = query.trim() !== '' && orders.length > 0;
+  const open = manuallyOpen || forceOpen;
+  return (
+    <details
+      id="orders-handed-over"
+      open={open}
+      onToggle={(e) => setManuallyOpen(e.currentTarget.open)}
+      className="group mb-[18px] flex-shrink-0 overflow-hidden rounded-2xl border border-line bg-white"
+    >
+      <summary className="flex cursor-pointer list-none items-center gap-2.5 px-4 py-3 group-open:border-b group-open:border-line-soft [&::-webkit-details-marker]:hidden">
+        <span className="h-[9px] w-[9px] rounded-full bg-[#8a7f77]" aria-hidden="true" />
+        <h2 className="text-[15px] font-bold">{t('orders.live.handedOverTitle', { count: total })}</h2>
+        <ChevronDown className="ml-auto h-4 w-4 text-[#8a7f77] transition-transform group-open:rotate-180" aria-hidden="true" />
+      </summary>
+      <div className="max-h-[40vh] overflow-y-auto">
+        {orders.length === 0 ? <p className="p-4 text-sm text-[#8a7f77]">{t('orders.live.noMatch')}</p> : orders.map(renderRow)}
+      </div>
+    </details>
   );
 }
 
@@ -333,6 +369,21 @@ export function OrdersPage() {
 
   // What the detail column can show for the current chip
   const kind: DetailKind = !isToday ? 'history' : filter === 'upcoming' ? 'upcoming' : 'live';
+  // Handed-over-today orders leave the live queue; fetch today's window to list/search them.
+  // Capped at one page of 100 orders (any state) per day: a known v1 limitation.
+  const todayRange = dayRange('today', timeZone, new Date());
+  const handedOverQuery = useGetOrdersByShopQuery(
+    { shopId: shopId!, page: 1, pageSize: DAY_PAGE_SIZE, from: todayRange.fromIso, to: todayRange.toIso },
+    { skip: !(isToday && kind === 'live') },
+  );
+  const handedOverToday = useMemo(
+    () => ((handedOverQuery.data?.orders ?? []) as IntakeOrder[]).filter(wasHandedOver),
+    [handedOverQuery.data],
+  );
+  const handedOverShown = useMemo(
+    () => (query.trim() ? handedOverToday.filter((o) => matchesOrderSearch(o, query)) : handedOverToday),
+    [handedOverToday, query],
+  );
   const showBoard = board && boardView === 'board' && isToday && kind === 'live';
   // On the board the columns ARE the stages, so the stage filter is ignored there: a stale
   // `?filter=new|work|ready` link must not leave the board drawn from one stage only (the pills that
@@ -393,7 +444,10 @@ export function OrdersPage() {
         ? dayOrders
         : groups.flatMap((g) => g.orders);
   // Nothing is open until an order is clicked
-  const selected = listed.find((o) => o.id === selectedParam);
+  const selected = [...listed, ...(isToday && kind === 'live' ? handedOverToday : [])].find((o) => o.id === selectedParam);
+  // Opened from the handed-over section: behaves like history (invoice, refund), not live actions
+  const handedOverSelected = isToday && kind === 'live' && !!selected && handedOverToday.some((o) => o.id === selected.id);
+  const detailKind: DetailKind = handedOverSelected ? 'history' : kind;
   const columns = boardColumns(shown);
 
   const update = (changes: Record<string, string | null>) => {
@@ -409,6 +463,25 @@ export function OrdersPage() {
     update({ filter: f === 'open' ? null : f, order: null });
   };
   const select = (order: IntakeOrder) => update({ order: order.id });
+
+  const handedOverAt = (o: IntakeOrder) => o.history.find((h) => h.to === 'COMPLETED')?.at;
+  const renderHandedOverRow = (order: IntakeOrder) => {
+    const at = handedOverAt(order);
+    return (
+      <OrderRow
+        key={order.id}
+        order={order}
+        selected={selected?.id === order.id}
+        onSelect={() => select(order)}
+        time={at ? clock(at) : ''}
+        money={money}
+      />
+    );
+  };
+  const handedOverSection =
+    isToday && kind === 'live' && handedOverToday.length > 0 ? (
+      <HandedOverSection total={handedOverToday.length} orders={handedOverShown} query={query} renderRow={renderHandedOverRow} />
+    ) : null;
 
   const toggleBusy = async () => {
     if (!data?.busy) return;
@@ -486,16 +559,16 @@ export function OrdersPage() {
 
   const detail = selected ? (
     <OrderDetail
-      key={`${kind}-${selected.id}`}
+      key={`${detailKind}-${selected.id}`}
       shopId={shopId!}
       order={selected}
-      kind={kind}
+      kind={detailKind}
       nowMs={nowMs}
       timeZone={timeZone}
       defaultPrepMinutes={prepFor(selected)}
       permissions={permissions}
-      actions={kind === 'history' ? undefined : actions}
-      pendingAccept={kind === 'live' && queue.isPendingAccept(selected)}
+      actions={detailKind === 'history' ? undefined : actions}
+      pendingAccept={detailKind === 'live' && queue.isPendingAccept(selected)}
       slotLoad={selectedUpcoming ? slotLoadOf(data?.capacity, selectedUpcoming.scheduledFor) : null}
       outsideHours={selectedUpcoming?.outsideHours}
       onClose={() => update({ order: null })}
@@ -630,7 +703,8 @@ export function OrdersPage() {
 
         {/* The list, or the board for the live view at lg+ */}
         {showBoard ? (
-          <div className="flex min-h-0 flex-1 px-4 pb-4 sm:px-7">
+          <div className="flex min-h-0 flex-1 flex-col px-4 pb-4 sm:px-7">
+            <div className="flex min-h-0 flex-1">
             {queue.isLoading ? (
               <MySpinner label={t('orders.queueLoading')} />
             ) : queue.isError && !data ? (
@@ -645,6 +719,8 @@ export function OrdersPage() {
                 actionFor={rowAction}
               />
             )}
+            </div>
+            {handedOverSection && <div className="mt-3 flex-shrink-0">{handedOverSection}</div>}
           </div>
         ) : (
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-7 sm:px-7">
@@ -744,6 +820,7 @@ export function OrdersPage() {
                 </Section>
               ))
             ))}
+          {handedOverSection}
 
           {isToday &&
             kind === 'upcoming' &&

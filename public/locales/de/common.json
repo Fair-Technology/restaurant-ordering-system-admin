@@ -1182,6 +1182,7 @@
       "groupWork": "In Arbeit",
       "groupWorkHint": "nach Fälligkeit sortiert",
       "groupReady": "Fertig & unterwegs",
+      "handedOverTitle": "Übergeben ({{count}})",
       "emptyNew": "Keine neuen Bestellungen – Sie hören einen Ton, sobald eine kommt.",
       "emptyWork": "Gerade nichts in Arbeit.",
       "emptyReady": "Nichts wartet auf Abholung.",

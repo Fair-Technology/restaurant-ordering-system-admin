@@ -1182,6 +1182,7 @@
       "groupWork": "In progress",
       "groupWorkHint": "sorted by due time",
       "groupReady": "Ready & on the way",
+      "handedOverTitle": "Handed over ({{count}})",
       "emptyNew": "No new orders – you'll hear a sound as soon as one arrives.",
       "emptyWork": "Nothing in progress right now.",
       "emptyReady": "Nothing waiting to be picked up.",

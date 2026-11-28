@@ -124,6 +124,12 @@ export function enteredStateAt(order: Pick<IntakeOrder, 'state' | 'history'>): s
   return null;
 }
 
+/** True once the order has ever reached COMPLETED (handed over), even if its current
+ *  displayState later changed (e.g. a post-handover refund shows as REFUNDED). */
+export function wasHandedOver(order: Pick<IntakeOrder, 'history'>): boolean {
+  return (order.history ?? []).some((h) => h.to === 'COMPLETED');
+}
+
 export type OrderTiming =
   | { kind: 'reject'; seconds: number; progress: number; urgent: boolean }
   | { kind: 'due'; delivery: boolean; minutes: number; promised: number | null; progress: number; urgent: boolean }
