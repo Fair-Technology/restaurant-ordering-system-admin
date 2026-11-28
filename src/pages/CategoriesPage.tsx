@@ -39,6 +39,7 @@ import { Drawer } from '../components/ui/Drawer';
 import { CategoryEditor } from '../components/categories/CategoryEditor';
 import { requiredName } from '../utils/validateName';
 import { usePageTitle } from '../features/layout/usePageTitle';
+import { translateServerError } from '../features/api/serverErrorMessage';
 
 type Category = NonNullable<GetCategoriesByShopApiResponse>[number];
 
@@ -130,7 +131,7 @@ function CreateCategoryModal({
             <div className="space-y-4 px-5 py-5">
               {isError && (
                 <p role="alert" className="rounded-xl border border-[#f5c2bd] bg-[#fdeceb] p-3 text-sm text-[#b42318]">
-                  {(error as { data?: { error?: string } })?.data?.error ?? t('categories.failedToCreate')}
+                  {translateServerError(error, t, t('categories.failedToCreate'), (k) => (k === 'name' ? t('categories.name') : undefined))}
                 </p>
               )}
               <div className="flex items-center gap-2">

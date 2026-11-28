@@ -111,11 +111,11 @@ describe('availability states', () => {
     await settle();
     expect(status()).toBe('shops.slugTaken');
   });
-  it('shows the backend message for a 400', async () => {
+  it('shows a translated generic message for a 400 without a known code', async () => {
     api.check.mockReturnValue(fail(400, 'Please choose a link using letters, numbers and hyphens'));
     typeSlug('cafe');
     await settle();
-    expect(status()).toBe('Please choose a link using letters, numbers and hyphens');
+    expect(status()).toBe('errors.generic'); // raw English must not leak
   });
   it('debounces and ignores stale responses', async () => {
     api.check.mockReturnValue(ok(true));
@@ -186,12 +186,13 @@ describe('submit button state', () => {
 });
 
 describe('create 400', () => {
-  it('surfaces the backend slug-taken message in the error block', () => {
+  it('surfaces the translated slug-taken message in the error block', () => {
     cleanup();
     api.createState.isError = true;
-    api.createState.error = { status: 400, data: { error: 'This link is already taken. Please choose another.' } };
+    api.createState.error = { status: 400, data: { error: 'This link is already taken. Please choose another.', errorCode: 'SHOP_SLUG_TAKEN', field: 'slug' } };
     render(<MemoryRouter><CreateShopModal onClose={vi.fn()} /></MemoryRouter>);
-    expect(screen.getByText('This link is already taken. Please choose another.')).toBeTruthy();
+    expect(screen.getByText('errors.exists')).toBeTruthy();
+    expect(screen.queryByText('This link is already taken. Please choose another.')).toBeNull();
   });
 });
 

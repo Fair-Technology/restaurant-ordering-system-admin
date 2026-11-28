@@ -32,6 +32,7 @@ import { PageHeader, Section } from '../components/layout/Page';
 import { badgeClass, chipClass } from '../components/layout/pageStyles';
 import { formatShopCents, formatShopDate } from '../utils/locale';
 import { usePageTitle } from '../features/layout/usePageTitle';
+import { translateServerError } from '../features/api/serverErrorMessage';
 
 // Taglines shown beneath each plan name, indexed by sort position
 const PLAN_TAGLINE_KEYS = [
@@ -346,7 +347,7 @@ export function SubscriptionPage() {
       }
       if (result.kind === 'applied') setActionMessage({ type: 'success', text: t('subscription.upgradeApplied') });
     } catch (err) {
-      setUpgradeError((err as { data?: { error?: string } })?.data?.error ?? t('subscription.upgradeError'));
+      setUpgradeError(translateServerError(err, t, t('subscription.upgradeError')));
     } finally {
       setBusyPlanId(null);
     }
@@ -389,7 +390,7 @@ export function SubscriptionPage() {
     } catch (err) {
       setActionMessage({
         type: 'error',
-        text: (err as { data?: { error?: string } })?.data?.error ?? t('subscription.upgradeError'),
+        text: translateServerError(err, t, t('subscription.upgradeError')),
       });
     } finally {
       setIsPayingNow(false);

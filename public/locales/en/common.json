@@ -2010,5 +2010,15 @@
       "notCopied": "Allergens and additives are not copied; please confirm them yourself.",
       "photoCopyFailed": "Could not copy the photo; add one and turn the dish on when you're ready."
     }
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again.",
+    "exists": "This {{field}} already exists.",
+    "existsNoField": "This already exists.",
+    "limitReached": "The limit of {{max}} has been reached.",
+    "changedConcurrently": "This was changed elsewhere. Please reload and try again.",
+    "refundExceeds": "The refund amount ({{requested}}) is greater than the amount still refundable ({{available}}).",
+    "refundFailed": "The refund could not be processed. Please try again or check Stripe.",
+    "fieldInvalid": "Please check {{field}} and try again."
   }
 }

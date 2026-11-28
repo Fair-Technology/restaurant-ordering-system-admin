@@ -251,13 +251,13 @@ describe('ComboEditor — delete lives in the footer', () => {
     expect(deleteProduct).not.toHaveBeenCalled();
   });
 
-  it('a failed delete shows the server message and keeps the guard on', async () => {
-    deleteProduct.mockReturnValue({ unwrap: () => Promise.reject({ data: { error: 'nope' } }) });
+  it('a failed delete shows the translated server message and keeps the guard on', async () => {
+    deleteProduct.mockReturnValue({ unwrap: () => Promise.reject({ data: { error: 'nope', errorCode: 'SOMETHING_NEW' } }) });
     setup(combo());
     fireEvent.change(screen.getByLabelText('combos.name'), { target: { value: 'Edited' } });
     fireEvent.click(screen.getByRole('button', { name: 'combos.deleteCombo' }));
     fireEvent.click(screen.getByRole('button', { name: 'combos.delete' }));
-    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('nope'));
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('errors.generic'));
     expect(onDeleted).not.toHaveBeenCalled();
     expect(nav.shouldBlock!()).toBe(true);
   });

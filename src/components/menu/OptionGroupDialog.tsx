@@ -18,8 +18,8 @@ import {
   type OptionGroupKind,
 } from '../../features/menu/optionGroupLibrary';
 import { formatCents } from '../../utils/money';
+import { translateServerError } from '../../features/api/serverErrorMessage';
 
-const errorMessage = (err: unknown): string | undefined => (err as { data?: { error?: string } })?.data?.error;
 
 /**
  * Create or edit one library option group. Rendered in a portal so it also works from inside a drawer;
@@ -91,7 +91,7 @@ export function OptionGroupDialog({
       }
       onClose();
     } catch (err) {
-      setServerError(errorMessage(err) ?? t('optionGroups.failedToSave'));
+      setServerError(translateServerError(err, t, t('optionGroups.failedToSave'), (k) => (k === 'name' ? t('optionGroups.name') : undefined)));
     }
   };
 
