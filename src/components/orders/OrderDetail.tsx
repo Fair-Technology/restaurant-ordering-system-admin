@@ -379,7 +379,18 @@ export function OrderDetail({
           </div>
         )}
 
-        {canReject && actions && (rejecting || kind === 'upcoming') && (
+        {!live && kind === 'upcoming' && canReject && actions && !rejecting && (
+          <button
+            type="button"
+            disabled={working}
+            onClick={() => setRejecting(true)}
+            className="h-12 rounded-full border border-[#e3d9ce] bg-white px-[18px] text-sm font-semibold text-[#b42318] disabled:opacity-50"
+          >
+            {t('orders.reject')}
+          </button>
+        )}
+
+        {canReject && actions && rejecting && (
           <div className="flex flex-col gap-2.5">
             <span className="text-[13px] font-semibold text-[#4a413b]">{t('orders.live.rejectWhy')}</span>
             <div role="group" aria-label={t('orders.live.rejectWhy')} className="grid grid-cols-2 gap-1.5">
@@ -391,18 +402,16 @@ export function OrderDetail({
             </div>
             {reason && <p className="text-[13px] text-muted">{t('orders.rejectConfirm', { ref: order.orderRef })}</p>}
             <div className="flex gap-2">
-              {kind === 'live' && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setRejecting(false);
-                    setReason(null);
-                  }}
-                  className="h-12 rounded-full border border-[#e3d9ce] bg-white px-[18px] text-sm font-semibold"
-                >
-                  {t('orders.cancel')}
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => {
+                  setRejecting(false);
+                  setReason(null);
+                }}
+                className="h-12 rounded-full border border-[#e3d9ce] bg-white px-[18px] text-sm font-semibold"
+              >
+                {t('orders.cancel')}
+              </button>
               <PendingButton
                 isPending={working}
                 disabled={!reason}
