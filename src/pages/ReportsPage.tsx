@@ -348,7 +348,7 @@ export function ReportsPage() {
                     <thead>
                       <tr className="border-b border-line-soft text-left">
                         <th className={th}>{t('reports.rate')}</th>
-                        <th className={`${th} text-right`}>{t('reports.gross')}</th>
+                        <th className={`${th} text-right`}>{t('reports.grossAfterRefunds')}</th>
                         <th className={`${th} text-right`}>{t('reports.vat')}</th>
                         <th className={`${th} text-right`}>{t('reports.net')}</th>
                       </tr>

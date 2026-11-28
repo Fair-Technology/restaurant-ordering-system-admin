@@ -1725,6 +1725,7 @@
     "takingsHelp": "Money taken minus refunds, by the day the restaurant accepted each order (its own time zone).",
     "orders": "Orders",
     "gross": "Sales",
+    "grossAfterRefunds": "Gross after refunds",
     "discounts": "Discounts and vouchers",
     "deliveryFees": "Delivery fees",
     "refunds": "Refunds",
@@ -1755,7 +1756,7 @@
     "empty": "No accepted orders or refunds in this period.",
     "downloadCsv": "Download CSV",
     "csvTotal": "Total",
-    "csvGrossAt": "Sales {{rate}}",
+    "csvGrossAt": "Gross after refunds {{rate}}",
     "csvVatAt": "VAT {{rate}}",
     "csvNetAt": "Net {{rate}}"
   },
