@@ -270,3 +270,33 @@ describe('ReportsPage by-hour summary plurals', () => {
     expect(screen.getByLabelText('Bestellungen nach Uhrzeit: 2 Bestellungen, Spitze 3:00 mit 1 Bestellung')).toBeTruthy();
   });
 });
+
+describe('ReportsPage VAT-by-rate gross header', () => {
+  async function renderWithRealT(lng: 'en' | 'de') {
+    const i18n = i18next.createInstance();
+    await i18n.init({
+      lng,
+      resources: { en: { translation: en }, de: { translation: de } },
+      interpolation: { escapeValue: false },
+    });
+    tMock.mockImplementation((key, opts) => i18n.t(key, opts as never) as unknown as string);
+    reportQuery.current = { data: REPORT, isFetching: false, isError: false };
+    renderOnly();
+  }
+
+  afterEach(() => tMock.mockImplementation((key) => key));
+
+  it('labels the per-rate gross column "Gross after refunds", not "Sales" (en)', async () => {
+    await renderWithRealT('en');
+    const headers = screen.getAllByRole('columnheader').map((h) => h.textContent);
+    expect(headers).toContain('Gross after refunds');
+    expect(headers).not.toContain('Sales');
+  });
+
+  it('labels the per-rate gross column "Brutto nach Erstattungen" (de)', async () => {
+    await renderWithRealT('de');
+    const headers = screen.getAllByRole('columnheader').map((h) => h.textContent);
+    expect(headers).toContain('Brutto nach Erstattungen');
+    expect(headers).not.toContain('Umsatz');
+  });
+});
