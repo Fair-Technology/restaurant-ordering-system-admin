@@ -102,6 +102,8 @@ describe('helpers', () => {
     // one representative per area
     expect(areaOfAction('product.update')).toBe('menu');
     expect(areaOfAction('order.refund')).toBe('orders');
+    expect(areaOfAction('order.accept')).toBe('orders');
+    expect(areaOfAction('order.decline')).toBe('orders');
     expect(areaOfAction('promotion.code_create')).toBe('discounts');
     expect(areaOfAction('staff.create')).toBe('staff');
     expect(areaOfAction('subscription.upgrade')).toBe('subscription');

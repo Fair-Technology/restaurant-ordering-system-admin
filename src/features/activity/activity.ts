@@ -43,6 +43,8 @@ export const AREA_OF_ACTION: Record<string, ActivityArea> = {
   'optionGroup.option.disable': 'menu',
 
   'order.refund': 'orders',
+  'order.accept': 'orders',
+  'order.decline': 'orders',
   'shop.busy_mode': 'orders',
   'shop.orders_auto_paused': 'orders',
   'shop.missed_orders_pause_limit': 'orders',

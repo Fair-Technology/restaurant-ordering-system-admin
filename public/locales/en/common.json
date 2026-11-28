@@ -1267,6 +1267,8 @@
       "staff.password_reset": "Staff password reset",
       "customer.erase": "Customer data erased",
       "order.refund": "Order refunded",
+      "order.accept": "Order accepted",
+      "order.decline": "Order declined",
       "order.charges_backfilled": "Order charges backfilled",
       "promotion.code_create": "Discount code created",
       "promotion.code_update": "Discount code updated",
