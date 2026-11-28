@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import { PlanCard } from './SubscriptionPage';
+import { OrdersRefundNote, PlanCard } from './SubscriptionPage';
 import type { Plan } from '../services/api';
 
 vi.mock('react-i18next', () => ({
@@ -68,5 +68,12 @@ describe('PlanCard CTA', () => {
     renderCard();
     expect(screen.getByRole('button', { name: 'subscription.upgradeTo:Pro' })).toBeTruthy();
     expect(screen.queryByText('subscription.notAvailableInCurrency')).toBeNull();
+  });
+});
+
+describe('OrdersRefundNote', () => {
+  it('renders the refund note text', () => {
+    render(<OrdersRefundNote text="Accepted orders count, even if they are refunded later." />);
+    expect(screen.getByText('Accepted orders count, even if they are refunded later.')).toBeTruthy();
   });
 });
