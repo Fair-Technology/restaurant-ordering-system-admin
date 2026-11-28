@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import {
   useGetShopByIdQuery,
   useListStaffQuery,
@@ -19,9 +20,10 @@ import { MySpinner } from '../components/ui/MySpinner';
 import { PendingButton } from '../components/ui/PendingButton';
 import { useToast } from '../contexts/ToastContext';
 import { usePageTitle } from '../features/layout/usePageTitle';
+import { translateServerError } from '../features/api/serverErrorMessage';
 
-function serverErrorText(err: unknown): string {
-  return (err as { data?: { error?: string } })?.data?.error ?? '';
+function serverErrorText(err: unknown, t: TFunction): string {
+  return translateServerError(err, t, '', (k) => (k === 'username' ? t('staff.username') : undefined));
 }
 
 // ── Add-login form ───────────────────────────────────────────────────────────
@@ -56,7 +58,7 @@ function AddStaffForm({ shopId, canGrantManager, onClose }: { shopId: string; ca
       setPassword('');
       setRole('staff');
     } catch (err) {
-      setError(t('staff.saveFailed', { error: serverErrorText(err) }));
+      setError(t('staff.saveFailed', { error: serverErrorText(err, t) }));
     }
   };
 
@@ -137,7 +139,7 @@ function StaffRow({ acc, shopId }: { acc: StaffAccountDto; shopId: string }) {
         body: { isActive: !acc.isActive },
       }).unwrap();
     } catch (err) {
-      setError(t('staff.saveFailed', { error: serverErrorText(err) }));
+      setError(t('staff.saveFailed', { error: serverErrorText(err, t) }));
     }
   };
 
@@ -157,7 +159,7 @@ function StaffRow({ acc, shopId }: { acc: StaffAccountDto; shopId: string }) {
       setNewPassword('');
       setResetOpen(false);
     } catch (err) {
-      setError(t('staff.saveFailed', { error: serverErrorText(err) }));
+      setError(t('staff.saveFailed', { error: serverErrorText(err, t) }));
     } finally {
       setResetting(false);
     }
@@ -169,7 +171,7 @@ function StaffRow({ acc, shopId }: { acc: StaffAccountDto; shopId: string }) {
     try {
       await deleteStaff({ shopId, staffId: acc.id }).unwrap();
     } catch (err) {
-      setError(t('staff.saveFailed', { error: serverErrorText(err) }));
+      setError(t('staff.saveFailed', { error: serverErrorText(err, t) }));
     }
   };
 

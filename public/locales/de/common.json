@@ -2010,5 +2010,15 @@
       "notCopied": "Allergene und Zusatzstoffe werden nicht kopiert; bitte bestätigen Sie sie selbst.",
       "photoCopyFailed": "Das Foto konnte nicht kopiert werden; fügen Sie eines hinzu und schalten Sie das Gericht ein, wenn Sie bereit sind."
     }
+  },
+  "errors": {
+    "generic": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
+    "exists": "Dieser Wert für {{field}} ist bereits vergeben.",
+    "existsNoField": "Dieser Eintrag existiert bereits.",
+    "limitReached": "Das Limit von {{max}} ist erreicht.",
+    "changedConcurrently": "Das wurde an anderer Stelle geändert. Bitte neu laden und erneut versuchen.",
+    "refundExceeds": "Der Erstattungsbetrag ({{requested}}) ist höher als der noch erstattbare Betrag ({{available}}).",
+    "refundFailed": "Die Erstattung konnte nicht verarbeitet werden. Bitte versuchen Sie es erneut oder prüfen Sie Stripe.",
+    "fieldInvalid": "Bitte prüfen Sie {{field}} und versuchen Sie es erneut."
   }
 }

@@ -14,6 +14,7 @@ import { Section } from '../layout/Page';
 import { MyButton } from '../ui/MyButton';
 import { CurrencyInput } from '../ui/CurrencyInput';
 import { WeeklyHoursEditor } from './WeeklyHoursEditor';
+import { translateServerError } from '../../features/api/serverErrorMessage';
 
 interface Props {
   shop: GetShopResultDto;
@@ -43,8 +44,7 @@ export function DeliveryCard({ shop, refs, onRefetch }: Props) {
       onRefetch();
       setMessage({ kind: 'saved', text: t('shops.deliverySaved') });
     } catch (e) {
-      const detail = (e as { data?: { error?: string } })?.data?.error;
-      setMessage({ kind: 'failed', text: detail ? `${t('shops.deliveryFailed')} ${detail}` : t('shops.deliveryFailed') });
+      setMessage({ kind: 'failed', text: `${t('shops.deliveryFailed')} ${translateServerError(e, t, '')}`.trim() });
     }
   };
 

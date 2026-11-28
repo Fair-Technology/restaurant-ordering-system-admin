@@ -37,6 +37,7 @@ import { MyInput, MyTextarea } from '../ui/MyInput';
 import { DishPhotoField } from '../menu/DishPhotoField';
 import { selectClass } from '../../features/menu/useIsWide';
 import { ComboChoicesSection } from './ComboChoicesSection';
+import { translateServerError } from '../../features/api/serverErrorMessage';
 
 interface ComboEditorProps {
   shop: GetShopResultDto;
@@ -117,7 +118,7 @@ export function ComboEditor({ shop, shopId, combo, products, categories, onDone,
   };
 
   const serverMessage = (err: unknown): string =>
-    (err as { data?: { error?: string } })?.data?.error ?? t('combos.saveFailed');
+    translateServerError(err, t, t('combos.saveFailed'), (k) => (k === 'name' ? t('combos.name') : undefined));
 
   const photoMissing = comboPhotoMissing(imageFile, existingImageUrl);
   const photoError = photoEnableBlocked && photoMissing;

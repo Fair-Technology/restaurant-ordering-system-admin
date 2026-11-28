@@ -28,6 +28,7 @@ import { useCategoryDragReorder } from '../features/menu/useCategoryDragReorder'
 import { useReorderSensors } from '../features/menu/useReorderSensors';
 import { useSetCategoryComboOrderMutation } from '../services/comboOrderApi';
 import { usePageTitle } from '../features/layout/usePageTitle';
+import { translateServerError } from '../features/api/serverErrorMessage';
 
 type ComboRowProps = Parameters<typeof ComboRow>[0];
 
@@ -139,7 +140,7 @@ export function CombosPage() {
   const dishCount = (ids: string[]) => ids.filter((id) => dishIds.has(id)).length;
   const money = (cents: number) => formatCents(cents, shop.currency ?? 'EUR', i18n.language);
   const serverMessage = (err: unknown): string =>
-    (err as { data?: { error?: string } })?.data?.error ?? t('combos.saveFailed');
+    translateServerError(err, t, t('combos.saveFailed'), (k) => (k === 'name' ? t('combos.name') : undefined));
 
   const editing: ComboDto | 'new' | null =
     comboParam === 'new' ? 'new' : (combos.data.find((c) => c.id === comboParam) ?? null);

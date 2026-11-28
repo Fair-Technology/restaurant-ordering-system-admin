@@ -33,6 +33,7 @@ import { OPENED_COUNTRIES, openedCountry } from '../features/shops/openedCountri
 import { defaultNewShopForm, newShopFormError, withCountry } from '../features/shops/newShopForm';
 import { SLUG_PATTERN, slugFromName } from '../features/shops/slugFromName';
 import { usePageTitle } from '../features/layout/usePageTitle';
+import { translateServerError } from '../features/api/serverErrorMessage';
 
 export function CreateShopModal({ onClose }: { onClose: () => void }) {
   const { t, i18n } = useTranslation();
@@ -55,7 +56,7 @@ export function CreateShopModal({ onClose }: { onClose: () => void }) {
   const [slugTouched, setSlugTouched] = useState(false);
   const [checkSlug] = useLazyCheckSlugAvailabilityQuery();
   // Result of the last live check, keyed by the exact slug it was for (so stale results are ignored).
-  const [slugCheck, setSlugCheck] = useState<{ slug: string; result: 'available' | 'taken' | 'invalid' | 'failed'; message?: string } | null>(null);
+  const [slugCheck, setSlugCheck] = useState<{ slug: string; result: 'available' | 'taken' | 'invalid' | 'failed'; error?: unknown } | null>(null);
   const slug = form.slug ?? '';
   const slugValid = SLUG_PATTERN.test(slug);
   const slugIsAvailable = slugCheck?.slug === slug && slugCheck.result === 'available';
@@ -71,8 +72,7 @@ export function CreateShopModal({ onClose }: { onClose: () => void }) {
       } catch (err) {
         if (stale) return;
         const status = (err as { status?: number })?.status;
-        const message = (err as { data?: { error?: string } })?.data?.error;
-        setSlugCheck({ slug, result: status === 400 ? 'invalid' : 'failed', message });
+        setSlugCheck({ slug, result: status === 400 ? 'invalid' : 'failed', error: err });
       }
     }, 400);
     return () => {
@@ -161,7 +161,7 @@ export function CreateShopModal({ onClose }: { onClose: () => void }) {
               {isError && (
                 <div className="rounded-xl border border-[#f5c2bd] bg-[#fdeceb] p-3">
                   <p className="text-sm text-[#b42318]">
-                    {(error as { data?: { error?: string } })?.data?.error ?? t('shops.failedToCreate')}
+                    {translateServerError(error, t, t('shops.failedToCreate'), (k) => (k === 'name' ? t('shops.shopName') : k === 'slug' ? t('shops.labelSlug') : undefined))}
                   </p>
                 </div>
               )}
@@ -203,7 +203,7 @@ export function CreateShopModal({ onClose }: { onClose: () => void }) {
                   ) : slugCheck?.result === 'taken' ? (
                     <span className="text-[#b42318]">{t('shops.slugTaken')}</span>
                   ) : slugCheck?.result === 'invalid' ? (
-                    <span className="text-[#b42318]">{slugCheck.message ?? t('shops.slugInvalid')}</span>
+                    <span className="text-[#b42318]">{translateServerError(slugCheck.error, t, t('shops.slugInvalid'), (k) => (k === 'slug' ? t('shops.labelSlug') : undefined))}</span>
                   ) : (
                     <span className="text-[#b42318]">{t('shops.slugCheckFailed')}</span>
                   )}

@@ -33,6 +33,7 @@ import { Chip, Section, Toolbar } from '../layout/Page';
 import { badgeClass, chipClass, searchBoxClass } from '../layout/pageStyles';
 import { Drawer } from '../ui/Drawer';
 import { MyInput } from '../ui/MyInput';
+import { translateServerError } from '../../features/api/serverErrorMessage';
 
 // dates are stored as YYYY-MM-DD; German owners read DD.MM.YYYY
 function showDate(date: string | null, language: string): string {
@@ -68,7 +69,7 @@ export function DiscountCodesCard({ shopId, shop, data, showForm, onOpenForm, on
   const set = (patch: Partial<CodeForm>) => setForm((f) => ({ ...f, ...patch }));
 
   const serverMessage = (err: unknown): string =>
-    (err as { data?: { error?: string } })?.data?.error ?? t('promotions.saveFailed');
+    translateServerError(err, t, t('promotions.saveFailed'), (k) => (k === 'code' ? t('promotions.code') : undefined));
 
   const toggle = async (codeId: string, active: boolean) => {
     try {

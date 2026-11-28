@@ -14,6 +14,7 @@ import {
 } from '../../features/orders/refunds';
 import { MyButton } from '../ui/MyButton';
 import { MyInput } from '../ui/MyInput';
+import { translateServerError } from '../../features/api/serverErrorMessage';
 
 type Mode = 'items' | 'amount';
 
@@ -73,7 +74,10 @@ export function RefundPanel({ shopId, order }: RefundPanelProps) {
       setReason('');
       setConfirmingCents(null);
     } catch (err) {
-      const message = (err as { data?: { error?: string } })?.data?.error ?? '';
+      const message = translateServerError(err, t, '', undefined, {
+        currency: order.currency,
+        language: i18n.language,
+      });
       toast.error(t('orders.refundFailedToast', { message }));
       setConfirmingCents(null);
     }

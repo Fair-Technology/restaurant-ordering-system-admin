@@ -11,6 +11,7 @@ import { formatCents } from '../../utils/money';
 import { loyaltyStatus } from '../../features/promotions/promotions';
 import { MyInput } from '../ui/MyInput';
 import { formatShopDate } from '../../utils/locale';
+import { translateServerError } from '../../features/api/serverErrorMessage';
 
 interface LoyaltyCardProps {
   shopId: string;
@@ -51,7 +52,7 @@ export function LoyaltyCard({ shopId, shop, loyalty }: LoyaltyCardProps) {
       }).unwrap();
       toast.success(t('promotions.loyaltySaved'));
     } catch (err) {
-      toast.error((err as { data?: { error?: string } })?.data?.error ?? t('promotions.saveFailed'));
+      toast.error(translateServerError(err, t, t('promotions.saveFailed')));
     }
   };
 

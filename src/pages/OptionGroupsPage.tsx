@@ -25,13 +25,13 @@ import {
   unavailableOptionCount,
   type OptionGroupKindFilter,
 } from '../features/menu/optionGroupLibrary';
+import { translateServerError } from '../features/api/serverErrorMessage';
 
 const tabClass = (on: boolean) =>
   `inline-flex h-9 items-center gap-1.5 rounded-md px-2.5 text-[13px] font-semibold underline-offset-4 transition-colors ${
     on ? 'text-ink underline decoration-2' : 'text-[#6b625c] hover:bg-sand hover:text-ink'
   }`;
 
-const errorMessage = (err: unknown): string | undefined => (err as { data?: { error?: string } })?.data?.error;
 
 // ── One library group ──────────────────────────────────────────────────────────
 
@@ -83,7 +83,7 @@ function GroupCard({
     try {
       await deleteGroup({ shopId, groupId: group.id }).unwrap();
     } catch (err) {
-      toast.error(errorMessage(err) ?? t('optionGroups.failedToDelete'));
+      toast.error(translateServerError(err, t, t('optionGroups.failedToDelete')));
       setConfirming(false);
     }
   };

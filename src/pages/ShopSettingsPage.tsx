@@ -53,6 +53,7 @@ import type { MenuLanguage } from '../services/api';
 import { menuLanguagesOf } from '../features/menu/translations';
 import { nameChangeValidationError, SHOP_NAME_MAX_LENGTH } from '../features/shops/nameChange';
 import { usePageTitle } from '../features/layout/usePageTitle';
+import { translateServerError } from '../features/api/serverErrorMessage';
 
 const MENU_LANGUAGES: MenuLanguage[] = ['de', 'en'];
 
@@ -83,6 +84,7 @@ export function ShopSettingsPage() {
   usePageTitle('nav.settings');
   const { shopId } = useParams<{ shopId: string }>();
   const { t, i18n } = useTranslation();
+  const shopFieldLabel = (k: string) => (k === 'name' ? t('shops.labelName') : k === 'slug' ? t('shops.labelSlug') : undefined);
   const toast = useToast();
   const { data: shop, isLoading, isError, refetch } = useGetShopByIdQuery(
     { shopId: shopId! },
@@ -296,7 +298,7 @@ export function ShopSettingsPage() {
       toast.success(t('shops.nameChangeSubmitted'));
       refetch();
     } catch (err) {
-      setNameChangeError((err as { data?: { error?: string } })?.data?.error ?? t('shops.nameChangeFailed'));
+      setNameChangeError(translateServerError(err, t, t('shops.nameChangeFailed'), shopFieldLabel));
     } finally {
       setIsRequestingNameChange(false);
     }
@@ -308,7 +310,7 @@ export function ShopSettingsPage() {
       toast.success(t('shops.nameChangeCancelled'));
       refetch();
     } catch (err) {
-      toast.error((err as { data?: { error?: string } })?.data?.error ?? t('shops.nameChangeCancelFailed'));
+      toast.error(translateServerError(err, t, t('shops.nameChangeCancelFailed'), shopFieldLabel));
     }
   };
 
