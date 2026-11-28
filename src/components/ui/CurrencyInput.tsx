@@ -9,6 +9,8 @@ const BASE =
 
 interface CurrencyInputProps {
   label?: string;
+  /** Accessible name for when there is no visible `label` (e.g. one input per table row). */
+  ariaLabel?: string;
   valueCents: number;
   onChange: (cents: number) => void;
   className?: string;
@@ -18,7 +20,7 @@ interface CurrencyInputProps {
   countryCode?: string | null;
 }
 
-export function CurrencyInput({ label, valueCents, onChange, className = '', labelClassName, countryCode }: CurrencyInputProps) {
+export function CurrencyInput({ label, ariaLabel, valueCents, onChange, className = '', labelClassName, countryCode }: CurrencyInputProps) {
   const { i18n } = useTranslation();
   const id = useId();
   const formatted = new Intl.NumberFormat(shopLocale(i18n.language, countryCode), {
@@ -44,6 +46,7 @@ export function CurrencyInput({ label, valueCents, onChange, className = '', lab
       )}
       <input
         id={id}
+        aria-label={ariaLabel}
         type="text"
         inputMode="numeric"
         value={formatted}
