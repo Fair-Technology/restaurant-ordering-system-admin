@@ -17,6 +17,7 @@ import {
   orderTiming,
   overdueLabel,
   parseOrderFilter,
+  showsNoSearchMatch,
   wasHandedOver,
   type LiveGroupKey,
   type OrderFilter,
@@ -711,7 +712,7 @@ export function OrdersPage() {
               <p className="text-sm text-[#b42318]">{t('orders.queueLoadError')}</p>
             ) : (
               <OrderBoard
-                columns={columns.map((c) => ({ ...c, title: groupText[c.key].title, empty: query ? t('orders.live.noMatch') : groupText[c.key].empty }))}
+                columns={columns.map((c) => ({ ...c, title: groupText[c.key].title, empty: !query.trim() ? groupText[c.key].empty : showsNoSearchMatch(query, handedOverShown.length) ? t('orders.live.noMatch') : '' }))}
                 selectedId={selected?.id}
                 onSelect={select}
                 timeOf={liveTime}
@@ -798,7 +799,11 @@ export function OrdersPage() {
                   hint={groupText[group.key].hint}
                 >
                   {group.orders.length === 0 ? (
-                    <p className="p-4 text-sm text-[#8a7f77]">{query ? t('orders.live.noMatch') : groupText[group.key].empty}</p>
+                    !query.trim() ? (
+                      <p className="p-4 text-sm text-[#8a7f77]">{groupText[group.key].empty}</p>
+                    ) : showsNoSearchMatch(query, handedOverShown.length) ? (
+                      <p className="p-4 text-sm text-[#8a7f77]">{t('orders.live.noMatch')}</p>
+                    ) : null
                   ) : (
                     group.orders.map((order) => {
                       const time = liveTime(order);

@@ -36,7 +36,7 @@ export function OrderBoard({ columns, selectedId, onSelect, timeOf, moneyOf, act
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto">
             {column.orders.length === 0 ? (
-              <p className="p-4 text-sm text-[#8a7f77]">{column.empty}</p>
+              column.empty ? <p className="p-4 text-sm text-[#8a7f77]">{column.empty}</p> : null
             ) : (
               column.orders.map((order) => {
                 const selected = selectedId === order.id;

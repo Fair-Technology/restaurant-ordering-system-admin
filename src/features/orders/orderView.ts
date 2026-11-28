@@ -214,3 +214,13 @@ export function orderTiming(order: IntakeOrder, nowMs: number): OrderTiming {
   }
   return null;
 }
+
+/**
+ * Whether an empty live column/group should show the "no results for this search"
+ * text. False when the search already found a match among today's handed-over
+ * orders — that result is visible in the separate Handed-over section, so repeating
+ * "no order matches" next to it would be misleading.
+ */
+export function showsNoSearchMatch(query: string, handedOverMatchCount: number): boolean {
+  return query.trim() !== '' && handedOverMatchCount === 0;
+}
