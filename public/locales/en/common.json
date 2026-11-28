@@ -111,6 +111,7 @@
     "dismiss": "Dismiss message",
     "unlimited": "unlimited",
     "ordersUsage": "Orders this month",
+    "ordersRefundNote": "Accepted orders count, even if they are refunded later.",
     "staffUsage": "Staff logins",
     "choosePlan": "Choose a plan",
     "statusValue": {

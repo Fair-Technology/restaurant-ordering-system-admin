@@ -111,6 +111,7 @@
     "dismiss": "Hinweis schließen",
     "unlimited": "unbegrenzt",
     "ordersUsage": "Bestellungen in diesem Monat",
+    "ordersRefundNote": "Angenommene Bestellungen zählen, auch wenn sie später erstattet werden.",
     "staffUsage": "Mitarbeiter-Zugänge",
     "choosePlan": "Tarif wählen",
     "statusValue": {

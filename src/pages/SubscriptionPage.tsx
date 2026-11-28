@@ -223,6 +223,11 @@ export function PlanCard({
   );
 }
 
+/** Small muted note shown under the orders usage meter. */
+export function OrdersRefundNote({ text }: { text: string }) {
+  return <p className="px-4 pb-3 text-[12px] text-muted">{text}</p>;
+}
+
 /** One usage line with a warm track and a filled bar; no bar when the plan has no limit. */
 function UsageMeter({ label, used, limit, fill, unlimitedText }: { label: string; used: number; limit: number | null; fill: string; unlimitedText: string }) {
   const pct = limit && limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
@@ -567,13 +572,16 @@ export function SubscriptionPage() {
             </span>
           </div>
           {limit && (
-            <UsageMeter
-              label={t('subscription.ordersUsage')}
-              used={limit.acceptedOrderCount}
-              limit={limit.limit}
-              fill="bg-ink"
-              unlimitedText={t('subscription.unlimited')}
-            />
+            <>
+              <UsageMeter
+                label={t('subscription.ordersUsage')}
+                used={limit.acceptedOrderCount}
+                limit={limit.limit}
+                fill="bg-ink"
+                unlimitedText={t('subscription.unlimited')}
+              />
+              <OrdersRefundNote text={t('subscription.ordersRefundNote')} />
+            </>
           )}
           {staffData && (
             <UsageMeter
