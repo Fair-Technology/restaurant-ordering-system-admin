@@ -37,7 +37,7 @@ export function MinOrderCard({ shop, onRefetch }: Props) {
         <CurrencyInput
           label={t('shops.minOrderLabel')}
           valueCents={current}
-          onChange={(cents) => setValueCents(cents)}
+          onChange={(cents) => setValueCents(Math.max(0, cents))}
           countryCode={shop.countryCode}
         />
         {message && (

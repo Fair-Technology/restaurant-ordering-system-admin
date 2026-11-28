@@ -1,4 +1,4 @@
-import { useId } from 'react';
+import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { shopLocale } from '../../utils/locale';
 
@@ -23,6 +23,9 @@ interface CurrencyInputProps {
 export function CurrencyInput({ label, ariaLabel, valueCents, onChange, className = '', labelClassName, countryCode }: CurrencyInputProps) {
   const { i18n } = useTranslation();
   const id = useId();
+  // +0 and -0 are the same number, so a typed minus on an all-zero field is remembered here.
+  const [negativeZero, setNegativeZero] = useState(false);
+  const negative = valueCents !== 0 ? valueCents < 0 : negativeZero;
   const formatted = new Intl.NumberFormat(shopLocale(i18n.language, countryCode), {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
@@ -32,10 +35,17 @@ export function CurrencyInput({ label, ariaLabel, valueCents, onChange, classNam
     const digit = parseInt(e.key, 10);
     if (!isNaN(digit) && e.key >= '0' && e.key <= '9') {
       e.preventDefault();
-      onChange(Math.min(valueCents * 10 + digit, 99_999_999));
+      const magnitude = Math.min(Math.abs(valueCents) * 10 + digit, 99_999_999);
+      onChange(negative ? -magnitude : magnitude);
     } else if (e.key === 'Backspace') {
       e.preventDefault();
-      onChange(Math.floor(valueCents / 10));
+      const magnitude = Math.floor(Math.abs(valueCents) / 10);
+      if (magnitude === 0) setNegativeZero(false);
+      onChange(negative && magnitude !== 0 ? -magnitude : magnitude);
+    } else if (e.key === '-') {
+      e.preventDefault();
+      if (valueCents !== 0) onChange(-valueCents);
+      else setNegativeZero(!negativeZero);
     }
   };
 

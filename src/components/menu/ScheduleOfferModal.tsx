@@ -167,7 +167,7 @@ export function ScheduleOfferModal({
                       <CurrencyInput
                         label={t('products.offerPrice', { symbol: currencySymbol })}
                         valueCents={schedule.offerPrice}
-                        onChange={(cents) => setSchedule((s) => ({ ...s, offerPrice: cents }))}
+                        onChange={(cents) => setSchedule((s) => ({ ...s, offerPrice: Math.max(0, cents) }))}
                       />
                     </div>
                     <div>

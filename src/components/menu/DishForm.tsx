@@ -196,11 +196,18 @@ export function DishForm({
   const categoryMissing = value.categoryIds.length === 0;
   const extraMissing = translationMissing(value, extraLanguage);
 
+  const hasNegativeOptionPrice = [...value.variantGroups, ...value.addonGroups].some((g) => g.options.some((o) => o.priceDelta < 0));
+
   const save = () => {
     setTried(true);
     if (nameMissing || descMissing || categoryMissing) {
       setPickedLanguage(originalLanguage);
       setSection('basics');
+      return;
+    }
+    if (hasNegativeOptionPrice) {
+      setPickedLanguage(originalLanguage);
+      setSection('options');
       return;
     }
     onSave();
@@ -223,6 +230,11 @@ export function DishForm({
     if (addRequiredLeft > 0) {
       setPickedLanguage(originalLanguage);
       setSection(firstIncompleteAddSection(requiredChecklist ?? []) ?? 'basics');
+      return;
+    }
+    if (hasNegativeOptionPrice) {
+      setPickedLanguage(originalLanguage);
+      setSection('options');
       return;
     }
     onAddToMenu?.();
@@ -637,7 +649,7 @@ function BasicsSection({
         <CurrencyInput
           label={withBadge(t('products.price', { symbol: currencySymbol }), t('dishForm.requiredBadge'))}
           valueCents={value.form.price}
-          onChange={(cents) => patch({ form: { ...value.form, price: cents } })}
+          onChange={(cents) => patch({ form: { ...value.form, price: Math.max(0, cents) } })}
           labelClassName="text-[13px] font-semibold text-[#4a413b]"
           className="h-12 text-base! font-semibold"
         />
